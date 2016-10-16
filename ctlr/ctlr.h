@@ -69,10 +69,6 @@ uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
 int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
 
 #ifdef __cplusplus
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 } /* extern "C" */
 #endif
 

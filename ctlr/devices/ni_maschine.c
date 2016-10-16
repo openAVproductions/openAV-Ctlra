@@ -33,15 +33,35 @@
 #define OPENAV_CTLR_NI_MASCHINE
 
 #include <stdio.h>
+#include <stdint.h>
+#include "device_impl.h"
 
-struct ctlr_ni_maschine_t {
+struct ni_maschine_t {
+	uint32_t data;
 };
 
-struct ctlr_dev_t *ctlr_ni_maschine_connect(void *future)
+struct ctlr_dev_t *ni_maschine_connect(void *future)
 {
 	// allocate instance here
 	printf("%s\n", __func__);
 	return 0;
 }
+
+uint32_t ni_maschine_poll(struct ctlr_dev_t *dev)
+{
+	printf("%s\n", __func__);
+	return 0;
+}
+
+int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev) {
+	printf("%s\n", __func__);
+	return 0;
+}
+
+struct ctlr_dev_base_t ni_maschine = {
+	.connect        = ni_maschine_connect,
+	.poll           = ni_maschine_poll,
+	.disconnect     = ni_maschine_disconnect,
+};
 
 #endif /* OPENAV_CTLR_NI_MASCHINE */

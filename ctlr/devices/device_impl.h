@@ -29,11 +29,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_DEVICES
-#define OPENAV_CTLR_DEVICES
+#ifndef OPENAV_CTLR_DEVICE_IMPL
+#define OPENAV_CTLR_DEVICE_IMPL
 
-enum ctlr_dev_id_t {
-	CTLR_DEV_NI_MASCHINE,
+struct ctlr_dev_t;
+
+/* Functions each device must implement */
+typedef struct ctlr_dev_t *(*ctlr_dev_impl_connect)(void *future);
+typedef uint32_t (*ctlr_dev_impl_poll)(struct ctlr_dev_t *dev);
+typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
+
+struct ctlr_dev_base_t {
+	ctlr_dev_impl_connect connect;
+	ctlr_dev_impl_poll poll;
+	ctlr_dev_impl_disconnect disconnect;
 };
 
-#endif /* OPENAV_CTLR_DEVICES */
+extern struct ctlr_dev_base_t ni_maschine;
+
+#endif /* OPENAV_CTLR_DEVICE_IMPL */
+
