@@ -2,6 +2,16 @@
 
 int main()
 {
-	struct ctlr_dev_t *dev = ctlr_dev_connect(CTLR_DEV_NI_MASCHINE,0);
+	int dev_id = CTLR_DEV_NI_MASCHINE;
+	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id, 0);
+	uint32_t i = 5;
+
+	while(i > 0)
+	{
+		ctlr_dev_poll(dev);
+		i--;
+	}
+
+	ctlr_dev_disconnect(dev);
 	return 0;
 }

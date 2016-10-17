@@ -34,34 +34,54 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "device_impl.h"
 
 struct ni_maschine_t {
+	struct ctlr_dev_t base;
 	uint32_t data;
 };
 
+
+static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
+static int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev);
+
 struct ctlr_dev_t *ni_maschine_connect(void *future)
 {
-	// allocate instance here
+	(void)future;
+	struct ni_maschine_t *dev = calloc(1, sizeof(struct ni_maschine_t));
+	if(!dev)
+		goto fail;
+
+	dev->base.poll = ni_maschine_poll;
+	dev->base.disconnect = ni_maschine_disconnect;
+
 	printf("%s\n", __func__);
+	return (struct ctlr_dev_t *)dev;
+fail:
+	free(dev);
 	return 0;
 }
 
-uint32_t ni_maschine_poll(struct ctlr_dev_t *dev)
+static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev)
 {
+	(void)dev;
 	printf("%s\n", __func__);
 	return 0;
 }
 
-int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev) {
+static int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev) {
 	printf("%s\n", __func__);
+	free(dev);
 	return 0;
 }
 
-struct ctlr_dev_base_t ni_maschine = {
+/*
+ struct ctlr_dev_base_t ni_maschine = {
 	.connect        = ni_maschine_connect,
 	.poll           = ni_maschine_poll,
 	.disconnect     = ni_maschine_disconnect,
 };
+*/
 
 #endif /* OPENAV_CTLR_NI_MASCHINE */

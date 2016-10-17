@@ -52,7 +52,7 @@ extern "C" {
 #include "devices.h"
 
 /** Callback function that is called for each event */
-typedef void (*ctlr_event_func_t)(struct ctlr_dev_t* dev,
+typedef void (*ctlr_event_func)(struct ctlr_dev_t* dev,
 				  const struct ctlr_event_t* event);
 
 /** Connect to a controller device. */
@@ -65,8 +65,16 @@ struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id, void *future);
  */
 uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
 
-/** Disconnect from controller device, resetting to a neutral state. */
+/** Disconnect from controller device, resetting to a neutral state.
+ * @param dev The device to be disconnected
+ * @retval 0 Successfully disconnected
+ * @retval -ENOTSUP Disconnect not supported by driver
+ * @retval <0 Error in disconnecting device
+ */
 int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
+
+/** Connect function to instantiate a dev from the driver */
+typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(void *future);
 
 #ifdef __cplusplus
 } /* extern "C" */
