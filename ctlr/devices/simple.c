@@ -29,12 +29,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_DEVICES
-#define OPENAV_CTLR_DEVICES
+#ifndef OPENAV_CTLR_SIMPLE
+#define OPENAV_CTLR_SIMPLE
 
-enum ctlr_dev_id_t {
-	CTLR_DEV_SIMPLE,
-	CTLR_DEV_NI_MASCHINE,
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include "device_impl.h"
+
+struct simple_t {
+	struct ctlr_dev_t base;
+	uint32_t data;
 };
 
-#endif /* OPENAV_CTLR_DEVICES */
+static uint32_t simple_poll(struct ctlr_dev_t *dev);
+static int32_t simple_disconnect(struct ctlr_dev_t *dev);
+
+struct ctlr_dev_t *simple_connect(void *future)
+{
+	(void)future;
+	struct simple_t *dev = calloc(1, sizeof(struct simple_t));
+	if(!dev)
+		goto fail;
+
+	dev->base.poll = simple_poll;
+	dev->base.disconnect = simple_disconnect;
+
+	printf("%s\n", __func__);
+	return (struct ctlr_dev_t *)dev;
+fail:
+	free(dev);
+	return 0;
+}
+
+static uint32_t simple_poll(struct ctlr_dev_t *dev)
+{
+	(void)dev;
+	printf("%s\n", __func__);
+	return 0;
+}
+
+static int32_t simple_disconnect(struct ctlr_dev_t *dev) {
+	printf("%s\n", __func__);
+	free(dev);
+	return 0;
+}
+
+#endif /* OPENAV_CTLR_SIMPLE */

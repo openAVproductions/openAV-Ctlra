@@ -9,16 +9,18 @@ struct ctlr_dev_connect_func_t {
 	ctlr_dev_connect_func connect;
 };
 
+extern struct ctlr_dev_t *simple_connect(void *future);
 extern struct ctlr_dev_t *ni_maschine_connect(void *future);
 
-static struct ctlr_dev_connect_func_t devices[] = {
+static const struct ctlr_dev_connect_func_t devices[] = {
+	{CTLR_DEV_SIMPLE, simple_connect},
 	{CTLR_DEV_NI_MASCHINE, ni_maschine_connect},
 };
-#define NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
+#define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
 struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id, void *future)
 {
-	if(dev_id < NUM_DEVS && devices[dev_id].connect)
+	if(dev_id < CTLR_NUM_DEVS && devices[dev_id].connect)
 		return devices[dev_id].connect(future);
 	return 0;
 }
