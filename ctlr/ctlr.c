@@ -9,8 +9,7 @@ struct ctlr_dev_connect_func_t {
 	ctlr_dev_connect_func connect;
 };
 
-extern struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
-				  void *userdata, void *future);
+DECLARE_DEV_CONNECT_FUNC(simple_connect);
 
 static const struct ctlr_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},

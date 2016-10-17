@@ -53,5 +53,10 @@ typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
 						    void *userdata,
 						    void *future);
 
+/* Macro extern declaration for the connect function */
+#define DECLARE_DEV_CONNECT_FUNC(name)					\
+extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
+			    void *userdata, void *future)
+
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 
