@@ -28,6 +28,7 @@ Supported Devices
 This library currently supports the following devices:
 
 - Simple (A software device for testing the library and applications)
+- NativeInstruments Maschine Mikro MK2 (awesome drum-pad USB HID device)
 
 Contact
 -------
