@@ -10,9 +10,11 @@ struct ctlr_dev_connect_func_t {
 };
 
 DECLARE_DEV_CONNECT_FUNC(simple_connect);
+DECLARE_DEV_CONNECT_FUNC(ni_maschine_connect);
 
 static const struct ctlr_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},
+	{CTLR_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_connect},
 };
 #define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 

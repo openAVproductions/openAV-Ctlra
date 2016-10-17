@@ -54,8 +54,8 @@ void sighndlr(int signal)
 
 int main()
 {
-	int dev_id = CTLR_DEV_SIMPLE;
 	signal(SIGINT, sighndlr);
+	int dev_id = CTLR_DEV_NI_MASCHINE_MIKRO_MK2;
 	void *userdata = 0x0;
 	void *future = 0x0;
 	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
@@ -71,7 +71,7 @@ int main()
 	const uint32_t BLINK  = (1 << 31);
 	const uint32_t BRIGHT = (0x7F << 24);
 	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
-#if 1
+#if 0
 	uint32_t light_status_g = BLINK |  (0x0 << 16) | (0xFF << 8) | (0x0);
 	uint32_t light_status_b = BLINK |  (0x0 << 16) | (0x0 << 8) | (0xFF);
 	sleep(1);
