@@ -195,6 +195,31 @@ ni_maschine_pad_light_set(struct ni_maschine_t *dev, int pad,uint32_t col,
 	lights->b = lrintf(bright * ((col      ) & 0xFF));
 }
 
+static void
+ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
+				    uint8_t brightness,
+				    uint8_t contrast)
+{
+	uint8_t msg[11] = {
+		0xF8,
+		0x80,
+
+		0x00,
+		0x40,
+
+		0x00,
+		0x01,
+		0x00,
+		0x01,
+
+		brightness,
+		contrast,
+
+		0x00
+	};
+	ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
+}
+
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
 static int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev);
 
@@ -259,6 +284,8 @@ struct ctlr_dev_t *ni_maschine_connect(void *future)
 					  PAD_RELEASE_BRIGHTNESS);
 	ni_maschine_led_flush(dev);
 
+	ni_maschine_set_brightness_contrast(dev, 20, 20);
+
 	/* Assign instance callbacks */
 	dev->base.poll = ni_maschine_poll;
 	dev->base.disconnect = ni_maschine_disconnect;
@@ -290,6 +317,7 @@ static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 	for(int i = 0; i < 16; i++)
 		ni_maschine_pad_light_set(dev, i, 0xF0F0F0, 0.f);
 	ni_maschine_led_flush(dev);
+	ni_maschine_set_brightness_contrast(dev, 0, 0);
 
 	free(dev);
 	return 0;
