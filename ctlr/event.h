@@ -33,6 +33,7 @@
 #define OPENAV_CTLR_EVENT
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Types of events */
 enum ctlr_event_id_t {
@@ -68,5 +69,10 @@ struct ctlr_event_t {
 		struct ctlr_event_encoder_t encoder;
 	};
 };
+
+/** Callback function that is called for each event */
+typedef void (*ctlr_event_func)(struct ctlr_dev_t* dev,
+				const struct ctlr_event_t* event,
+				void *userdata);
 
 #endif /* OPENAV_CTLR_EVENT */

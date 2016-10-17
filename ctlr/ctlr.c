@@ -9,8 +9,10 @@ struct ctlr_dev_connect_func_t {
 	ctlr_dev_connect_func connect;
 };
 
-extern struct ctlr_dev_t *simple_connect(void *future);
-extern struct ctlr_dev_t *ni_maschine_connect(void *future);
+extern struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
+				  void *userdata, void *future);
+extern struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
+				  void *userdata, void *future);
 
 static const struct ctlr_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},
@@ -18,10 +20,15 @@ static const struct ctlr_dev_connect_func_t devices[] = {
 };
 #define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
-struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id, void *future)
+struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
+				    ctlr_event_func event_func,
+				    void *userdata,
+				    void *future)
 {
 	if(dev_id < CTLR_NUM_DEVS && devices[dev_id].connect)
-		return devices[dev_id].connect(future);
+		return devices[dev_id].connect(event_func,
+					       userdata,
+					       future);
 	return 0;
 }
 

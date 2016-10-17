@@ -51,12 +51,11 @@ extern "C" {
 #include "event.h"
 #include "devices.h"
 
-/** Callback function that is called for each event */
-typedef void (*ctlr_event_func)(struct ctlr_dev_t* dev,
-				  const struct ctlr_event_t* event);
-
 /** Connect to a controller device. */
-struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id, void *future);
+struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
+				    ctlr_event_func event_func,
+				    void *userdata,
+				    void *future);
 
 /** Poll device for events, causing event callback to be called for each
  * event that has occured since the last poll.
@@ -72,9 +71,6 @@ uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
  * @retval <0 Error in disconnecting device
  */
 int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
-
-/** Connect function to instantiate a dev from the driver */
-typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(void *future);
 
 #ifdef __cplusplus
 } /* extern "C" */

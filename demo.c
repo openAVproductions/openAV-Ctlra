@@ -1,4 +1,14 @@
+#include <stdio.h>
 #include "ctlr/ctlr.h"
+
+void demo_event_func(struct ctlr_dev_t* dev,
+		     const struct ctlr_event_t* event,
+		     void *userdata)
+{
+	(void)dev;
+	(void)userdata;
+	printf("event %d\n", event->id);
+}
 
 int main()
 {
@@ -7,7 +17,10 @@ int main()
 #else
 	int dev_id = CTLR_DEV_NI_MASCHINE;
 #endif
-	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id, 0);
+	void *userdata = 0x0;
+	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id,
+						  demo_event_func,
+						  userdata, 0x0);
 	uint32_t i = 5;
 
 	while(i > 0)

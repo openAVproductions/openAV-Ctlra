@@ -35,18 +35,33 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
 #include "device_impl.h"
 
 struct simple_t {
 	struct ctlr_dev_t base;
-	uint32_t data;
+	uint32_t event_counter;
 };
 
 static uint32_t simple_poll(struct ctlr_dev_t *dev);
 static int32_t simple_disconnect(struct ctlr_dev_t *dev);
 
-struct ctlr_dev_t *simple_connect(void *future)
+/* replay a button press/release event on every poll. Static event
+ * is held here, and fed to application in poll() */
+static struct ctlr_event_t events[] = {
+	{
+		.id = CTLR_EVENT_BUTTON,
+		.button = {
+			.button_id = 0,
+		},
+	},
+};
+
+struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
+				  void *userdata, void *future)
 {
+	// TODO: UD
+	(void)userdata;
 	(void)future;
 	struct simple_t *dev = calloc(1, sizeof(struct simple_t));
 	if(!dev)
@@ -54,6 +69,7 @@ struct ctlr_dev_t *simple_connect(void *future)
 
 	dev->base.poll = simple_poll;
 	dev->base.disconnect = simple_disconnect;
+	dev->base.event_func = event_func;
 
 	printf("%s\n", __func__);
 	return (struct ctlr_dev_t *)dev;
@@ -62,14 +78,19 @@ fail:
 	return 0;
 }
 
-static uint32_t simple_poll(struct ctlr_dev_t *dev)
+static uint32_t simple_poll(struct ctlr_dev_t *base)
 {
+	struct simple_t *dev = (struct simple_t *)base;
+	//dev->base.event_func(dev, &events[dev->event_counter], 0x0);
 	(void)dev;
+	(void)events;
 	printf("%s\n", __func__);
 	return 0;
 }
 
-static int32_t simple_disconnect(struct ctlr_dev_t *dev) {
+static int32_t simple_disconnect(struct ctlr_dev_t *base)
+{
+	struct simple_t *dev = (struct simple_t *)base;
 	printf("%s\n", __func__);
 	free(dev);
 	return 0;

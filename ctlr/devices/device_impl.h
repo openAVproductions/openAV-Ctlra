@@ -32,6 +32,8 @@
 #ifndef OPENAV_CTLR_DEVICE_IMPL
 #define OPENAV_CTLR_DEVICE_IMPL
 
+#include "../event.h"
+
 struct ctlr_dev_t;
 
 /* Functions each device must implement */
@@ -39,9 +41,16 @@ typedef uint32_t (*ctlr_dev_impl_poll)(struct ctlr_dev_t *dev);
 typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
 
 struct ctlr_dev_t {
+	ctlr_event_func event_func;
 	ctlr_dev_impl_poll poll;
 	ctlr_dev_impl_disconnect disconnect;
 };
+
+/** Connect function to instantiate a dev from the driver */
+typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
+						    void *userdata,
+						    void *future);
+
 
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 
