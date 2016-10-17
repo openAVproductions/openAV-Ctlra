@@ -33,7 +33,7 @@
 #define OPENAV_CTLR_NI_MASCHINE
 
 /* Uncomment to see debug output */
-#define NI_MASCHINE_DEBUG
+//#define NI_MASCHINE_DEBUG
 
 #include <math.h>
 #include <errno.h>
@@ -171,8 +171,11 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 	dev->light_buf[0] = 128;
 	const uint32_t size = sizeof(dev->light_buf);
 	int ret = write(dev->fd, dev->light_buf, size);
-	if(ret != size)
+	if(ret != size) {
+#ifdef NI_MASCHINE_DEBUG
 		printf("%s : write error\n", __func__);
+#endif
+	}
 }
 
 /*
@@ -262,8 +265,6 @@ struct ctlr_dev_t *ni_maschine_connect(void *future)
 	/* Assign instance callbacks */
 	dev->base.poll = ni_maschine_poll;
 	dev->base.disconnect = ni_maschine_disconnect;
-
-	printf("%s\n", __func__);
 	return (struct ctlr_dev_t *)dev;
 fail:
 	if(dev->fd)
@@ -275,7 +276,6 @@ fail:
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
-	printf("%s\n", __func__);
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
 	(void)dev;
 	return 0;
@@ -283,7 +283,9 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 
 static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 {
+#ifdef NI_MASCHINE_DEBUG
 	printf("%s\n", __func__);
+#endif
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
 	uint8_t *l = dev->light_buf;
 	for(int i = 0; i <= 30; i++)
