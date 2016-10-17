@@ -49,13 +49,12 @@ static int32_t simple_disconnect(struct ctlr_dev_t *dev);
 /* replay a button press/release event on every poll. Static event
  * is held here, and fed to application in poll() */
 static struct ctlr_event_t events[] = {
-	{
-		.id = CTLR_EVENT_BUTTON,
-		.button = {
-			.button_id = 0,
-		},
-	},
+	{.id = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 1},},
+	{.id = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 0},},
+	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta =  1},},
+	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta = -1},},
 };
+#define NUM_EVENTS (sizeof(events) / sizeof(events[0]))
 
 struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 				  void *userdata, void *future)
@@ -80,10 +79,11 @@ fail:
 static uint32_t simple_poll(struct ctlr_dev_t *base)
 {
 	struct simple_t *dev = (struct simple_t *)base;
-	struct ctlr_event_t *e[] = {&events[dev->event_counter++]};
-	dev->event_counter = dev->event_counter % 2;
-	e[0]->button.pressed = dev->event_counter;
+	struct ctlr_event_t *e[] = {&events[dev->event_counter]};
+
+	dev->event_counter = (dev->event_counter + 1) % NUM_EVENTS;
 	dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
+
 	return 0;
 }
 

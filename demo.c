@@ -11,7 +11,10 @@ void demo_event_func(struct ctlr_dev_t* dev,
 	for(uint32_t i = 0; i < num_events; i++) {
 		switch(events[i]->id) {
 		case CTLR_EVENT_BUTTON:
-			printf("[%s] button %d\n", events[0]->button.pressed ? "X" : " ", events[0]->id);
+			printf("[%s] button %d\n", events[0]->button.pressed ? " X " : "   ", events[0]->id);
+			break;
+		case CTLR_EVENT_ENCODER:
+			printf("[%s] encoder %d\n", events[0]->encoder.delta > 0 ? "-=>" : "<=-", events[0]->id);
 			break;
 		default:
 			break;
@@ -30,7 +33,7 @@ int main()
 	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id,
 						  demo_event_func,
 						  userdata, 0x0);
-	uint32_t i = 5;
+	uint32_t i = 8;
 
 	while(i > 0)
 	{

@@ -45,15 +45,19 @@ enum ctlr_event_id_t {
 
 struct ctlr_dev_t;
 
-/** Represents a "button" on a ctlr device. */
+/** Represents a button. */
 struct ctlr_event_button_t {
-	uint32_t button_id;
+	/** The id of the button */
+	uint32_t id;
+	/** The state of the button */
 	bool pressed;
 };
 
-/** Represents an "encoder" on a ctlr device. */
+/** Represents an endless stepped controller. */
 struct ctlr_event_encoder_t {
-	uint32_t encoder_id;
+	/** The id of the encoder */
+	uint32_t id;
+	/** Positive values indicate clockwise rotation, and vice-versa */
 	int32_t delta;
 };
 
@@ -61,9 +65,10 @@ struct ctlr_event_encoder_t {
 struct ctlr_event_t {
 	/** The type of this event */
 	enum ctlr_event_id_t id;
+	/** The device this event originates from */
 	struct ctlr_dev_t *dev;
 
-	/** The event data */
+	/** The event data: see demo.c for example on how to unpack */
 	union {
 		struct ctlr_event_button_t button;
 		struct ctlr_event_encoder_t encoder;
