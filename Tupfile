@@ -1,0 +1,6 @@
+include_rules
+
+: foreach *.c   |> $(CC) $(CFLAGS) -c %f -o %o |> %B.o
+
+: demo.o ctlr/libctlr.a |> $(CC) %f -o %o $(LDFLAGS) |> demo
+

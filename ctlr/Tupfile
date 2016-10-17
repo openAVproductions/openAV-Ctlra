@@ -1,0 +1,5 @@
+include_rules
+
+: foreach *.c   |> $(CC) $(CFLAGS) -c %f -o %o |> %B.o
+
+: *.o devices/*.o |> ar crs %o %f |> libctlr.a

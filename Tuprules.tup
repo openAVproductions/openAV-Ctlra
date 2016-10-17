@@ -1,0 +1,23 @@
+.gitignore
+
+CC=clang
+#CC=clang -DWASTE=1
+
+##############
+### CFLAGS ###
+##############
+
+DEBUG += -g -fPIC
+WARNINGS += -Wall -Wextra
+OPTS = -march=native -O0
+
+INCLUDES += -I.
+
+CFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
+
+##############
+### LINKER ###
+##############
+
+LDFLAGS += -lm
+
