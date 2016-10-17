@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "ctlr/ctlr.h"
 
 void demo_event_func(struct ctlr_dev_t* dev,
@@ -56,6 +57,8 @@ int main()
 		i--;
 	}
 
+	printf("done - sleeping 1\n");
+	sleep(1);
 	ctlr_dev_disconnect(dev);
 	return 0;
 }
