@@ -72,7 +72,8 @@ struct ctlr_event_t {
 
 /** Callback function that is called for each event */
 typedef void (*ctlr_event_func)(struct ctlr_dev_t* dev,
-				const struct ctlr_event_t* event,
+				uint32_t num_events,
+				struct ctlr_event_t** event,
 				void *userdata);
 
 #endif /* OPENAV_CTLR_EVENT */

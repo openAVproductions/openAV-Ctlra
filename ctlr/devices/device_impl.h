@@ -42,6 +42,8 @@ typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
 
 struct ctlr_dev_t {
 	ctlr_event_func event_func;
+	void* event_func_userdata;
+
 	ctlr_dev_impl_poll poll;
 	ctlr_dev_impl_disconnect disconnect;
 };
@@ -50,7 +52,6 @@ struct ctlr_dev_t {
 typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
 						    void *userdata,
 						    void *future);
-
 
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 

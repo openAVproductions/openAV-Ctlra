@@ -60,8 +60,6 @@ static struct ctlr_event_t events[] = {
 struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 				  void *userdata, void *future)
 {
-	// TODO: UD
-	(void)userdata;
 	(void)future;
 	struct simple_t *dev = calloc(1, sizeof(struct simple_t));
 	if(!dev)
@@ -70,6 +68,7 @@ struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 	dev->base.poll = simple_poll;
 	dev->base.disconnect = simple_disconnect;
 	dev->base.event_func = event_func;
+	dev->base.event_func_userdata = userdata;
 
 	printf("%s\n", __func__);
 	return (struct ctlr_dev_t *)dev;
@@ -81,10 +80,10 @@ fail:
 static uint32_t simple_poll(struct ctlr_dev_t *base)
 {
 	struct simple_t *dev = (struct simple_t *)base;
-	//dev->base.event_func(dev, &events[dev->event_counter], 0x0);
-	(void)dev;
-	(void)events;
-	printf("%s\n", __func__);
+	struct ctlr_event_t *e[] = {&events[dev->event_counter++]};
+	dev->event_counter = dev->event_counter % 2;
+	e[0]->button.pressed = dev->event_counter;
+	dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
 	return 0;
 }
 

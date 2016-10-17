@@ -2,12 +2,21 @@
 #include "ctlr/ctlr.h"
 
 void demo_event_func(struct ctlr_dev_t* dev,
-		     const struct ctlr_event_t* event,
+		     uint32_t num_events,
+		     struct ctlr_event_t** events,
 		     void *userdata)
 {
 	(void)dev;
 	(void)userdata;
-	printf("event %d\n", event->id);
+	for(uint32_t i = 0; i < num_events; i++) {
+		switch(events[i]->id) {
+		case CTLR_EVENT_BUTTON:
+			printf("[%s] button %d\n", events[0]->button.pressed ? "X" : " ", events[0]->id);
+			break;
+		default:
+			break;
+		};
+	}
 }
 
 int main()
