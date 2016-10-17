@@ -34,7 +34,6 @@
 
 enum ctlr_dev_id_t {
 	CTLR_DEV_SIMPLE,
-	CTLR_DEV_NI_MASCHINE,
 };
 
 #endif /* OPENAV_CTLR_DEVICES */

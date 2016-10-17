@@ -41,17 +41,15 @@ void demo_event_func(struct ctlr_dev_t* dev,
 
 int main()
 {
-#if 1
 	int dev_id = CTLR_DEV_SIMPLE;
-#else
-	int dev_id = CTLR_DEV_NI_MASCHINE;
-#endif
 	void *userdata = 0x0;
+	void *future = 0x0;
 	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id,
 						  demo_event_func,
-						  userdata, 0x0);
-	uint32_t i = 8;
+						  userdata,
+						  future);
 
+	uint32_t i = 8;
 	while(i > 0)
 	{
 		ctlr_dev_poll(dev);

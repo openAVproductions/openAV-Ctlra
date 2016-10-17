@@ -11,12 +11,9 @@ struct ctlr_dev_connect_func_t {
 
 extern struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 				  void *userdata, void *future);
-extern struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
-				  void *userdata, void *future);
 
 static const struct ctlr_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},
-	{CTLR_DEV_NI_MASCHINE, ni_maschine_connect},
 };
 #define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
