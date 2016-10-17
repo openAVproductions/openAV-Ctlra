@@ -1,5 +1,9 @@
 #CC=clang
 CC=gcc
+CFLAGS=-Wall -Wextra -g
+DEVS=ctlr/devices/simple.c ctlr/devices/ni_maschine.c 
+SRCS=ctlr/ctlr.c demo.c
+TRGT=demo
 
 all:
-	$(CC) -Wall -Wextra ctlr/devices/simple.c ctlr/devices/ni_maschine.c  ctlr/ctlr.c demo.c -o demo
+	$(CC) $(CFLAGS) $(DEVS) $(SRCS) -o $(TRGT)

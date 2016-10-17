@@ -53,6 +53,10 @@ static struct ctlr_event_t events[] = {
 	{.id = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 0},},
 	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta =  1},},
 	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta = -1},},
+	{.id = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x3,
+						.pos = 3, .pressure = 0.5f,
+						.pressed = 1 },
+	}
 };
 #define NUM_EVENTS (sizeof(events) / sizeof(events[0]))
 

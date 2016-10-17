@@ -61,6 +61,23 @@ struct ctlr_event_encoder_t {
 	int32_t delta;
 };
 
+#define CTLR_EVENT_GRID_BUTTON   (1<<0)
+#define CTLR_EVENT_GRID_PRESSURE (1<<1)
+
+/** Represents a grid of buttons */
+struct ctlr_event_grid_t {
+	/** The ID of the grid */
+	uint16_t id;
+	/** Flags: set if pressure or button */
+	uint16_t flags;
+	/** The position of the square in the grid */
+	uint32_t pos;
+	/** The pressure component of the grid, range from 0.f to 1.f */
+	float pressure;
+	/** The state of the button component of the square */
+	uint32_t pressed;
+};
+
 /** The event passed around in the API */
 struct ctlr_event_t {
 	/** The type of this event */
@@ -72,6 +89,7 @@ struct ctlr_event_t {
 	union {
 		struct ctlr_event_button_t button;
 		struct ctlr_event_encoder_t encoder;
+		struct ctlr_event_grid_t grid;
 	};
 };
 
