@@ -178,7 +178,6 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 	}
 }
 
-/*
 struct ni_maschine_rgb {
 	uint8_t r, g, b;
 };
@@ -195,7 +194,6 @@ ni_maschine_pad_light_set(struct ni_maschine_t *dev, int pad,uint32_t col,
 	lights->g = lrintf(bright * ((col >>  8) & 0xFF));
 	lights->b = lrintf(bright * ((col      ) & 0xFF));
 }
-*/
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
 static int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev);
@@ -256,10 +254,9 @@ struct ctlr_dev_t *ni_maschine_connect(void *future)
 #endif
 	for(int i = 0; i <= 30; i++)
 		l[i] = 5;
-	/*
 	for(int i = 0; i < 16; i++)
-		maschine_pad_light(dev, i, 0x101010, PAD_RELEASE_BRIGHTNESS);
-	*/
+		ni_maschine_pad_light_set(dev, i, 0xF0F0F0,
+					  PAD_RELEASE_BRIGHTNESS);
 	ni_maschine_led_flush(dev);
 
 	/* Assign instance callbacks */
@@ -290,6 +287,8 @@ static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 	uint8_t *l = dev->light_buf;
 	for(int i = 0; i <= 30; i++)
 		l[i] = 0;
+	for(int i = 0; i < 16; i++)
+		ni_maschine_pad_light_set(dev, i, 0xF0F0F0, 0.f);
 	ni_maschine_led_flush(dev);
 
 	free(dev);
