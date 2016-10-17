@@ -9,21 +9,29 @@ void demo_event_func(struct ctlr_dev_t* dev,
 	(void)dev;
 	(void)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
-		switch(events[i]->id) {
+		char *pressed = 0;
+		struct ctlr_event_t *e = events[i];
+		switch(e->id) {
 		case CTLR_EVENT_BUTTON:
 			printf("[%s] button %d\n",
-			       events[i]->button.pressed ? " X " : "   ",
-			       events[i]->id);
+			       e->button.pressed ? " X " : "   ",
+			       e->id);
 			break;
 		case CTLR_EVENT_ENCODER:
 			printf("[%s] encoder %d\n",
-			       events[i]->encoder.delta > 0 ? "-=>" : "<=-",
-			       events[i]->id);
+			       e->encoder.delta > 0 ? " ->" : "<- ",
+			       e->id);
 			break;
 		case CTLR_EVENT_GRID:
-			printf("[%s] grid %d : pressure %.3f\n",
-			       events[i]->grid.pressed ? " X " : "   ",
-			       events[i]->id, events[i]->grid.pressure);
+			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {
+				pressed = e->grid.pressed ? " X " : "   ";
+			} else {
+				pressed = "---";
+			}
+			printf("[%s] grid %d", pressed, e->grid.pos);
+			if(e->grid.flags & CTLR_EVENT_GRID_PRESSURE)
+				printf(", pressure %1.3f", e->grid.pressure);
+			printf("\n");
 			break;
 		default:
 			break;
