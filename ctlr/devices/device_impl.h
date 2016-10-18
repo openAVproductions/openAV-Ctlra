@@ -39,6 +39,9 @@ struct ctlr_dev_t;
 /* Functions each device must implement */
 typedef uint32_t (*ctlr_dev_impl_poll)(struct ctlr_dev_t *dev);
 typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
+typedef int32_t (*ctlr_dev_impl_light_set)(struct ctlr_dev_t *dev,
+					   uint32_t light_id,
+					   uint32_t light_status);
 
 struct ctlr_dev_t {
 	ctlr_event_func event_func;
@@ -46,6 +49,9 @@ struct ctlr_dev_t {
 
 	ctlr_dev_impl_poll poll;
 	ctlr_dev_impl_disconnect disconnect;
+
+	/* Feedback to device */
+	ctlr_dev_impl_light_set light_set;
 };
 
 /** Connect function to instantiate a dev from the driver */

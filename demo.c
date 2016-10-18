@@ -57,8 +57,13 @@ int main()
 		i--;
 	}
 
+	uint32_t light_id = 0;
+	uint32_t light_status = (0xFF << 16) | (0x77 << 8) | (0x10);
+	ctlr_dev_light_set(dev, light_id, light_status);
+
 	printf("done - sleeping 1\n");
 	sleep(1);
+	ctlr_dev_light_set(dev, light_id, light_status * 0);
 	ctlr_dev_disconnect(dev);
 	return 0;
 }

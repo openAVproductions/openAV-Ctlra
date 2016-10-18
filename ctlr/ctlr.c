@@ -41,3 +41,10 @@ int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev)
 		return dev->disconnect(dev);
 	return -ENOTSUP;
 }
+
+void ctlr_dev_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
+			uint32_t light_status)
+{
+	if(dev && dev->light_set)
+		dev->light_set(dev, light_id, light_status);
+}

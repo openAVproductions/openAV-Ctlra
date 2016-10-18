@@ -29,9 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_SIMPLE
-#define OPENAV_CTLR_SIMPLE
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -45,6 +42,9 @@ struct simple_t {
 
 static uint32_t simple_poll(struct ctlr_dev_t *dev);
 static int32_t simple_disconnect(struct ctlr_dev_t *dev);
+static int32_t simple_disconnect(struct ctlr_dev_t *dev);
+static void simple_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
+				uint32_t light_status);
 
 /* replay a button press/release event on every poll. Static event
  * is held here, and fed to application in poll() */
@@ -75,6 +75,8 @@ struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 
 	dev->base.poll = simple_poll;
 	dev->base.disconnect = simple_disconnect;
+	dev->base.light_set = simple_light_set;
+
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
 
@@ -104,4 +106,16 @@ static int32_t simple_disconnect(struct ctlr_dev_t *base)
 	return 0;
 }
 
-#endif /* OPENAV_CTLR_SIMPLE */
+static void simple_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
+				uint32_t light_status)
+{
+	uint32_t blink  = (light_status >> 31);
+	uint32_t bright = (light_status >> 24) & 0x7F;
+	uint32_t r      = (light_status >> 16) & 0xFF;
+	uint32_t g      = (light_status >>  8) & 0xFF;
+	uint32_t b      = (light_status >>  0) & 0xFF;
+	printf("%s : dev %p, light %d, status %d\n", __func__, dev,
+	       light_id, light_status);
+	printf("decoded: blink[%d], bright[%d], r[%d], g[%d], b[%d]\n",
+	       blink, bright, r, g, b);
+}

@@ -72,6 +72,11 @@ uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
  */
 int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
 
+/** Send Lights/LEDs feedback to device */
+void ctlr_dev_light_set(struct ctlr_dev_t *dev,
+			uint32_t light_id,
+			uint32_t light_status);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
