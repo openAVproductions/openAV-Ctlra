@@ -57,11 +57,21 @@ int main()
 		i--;
 	}
 
-	uint32_t light_id = 1;
-	uint32_t light_status = UINT32_MAX;
-	//uint32_t light_status = (0xFF << 16) | (0x77 << 8) | (0x10);
+	uint32_t light_id = 30;
+	//uint32_t light_status = UINT32_MAX;
+	const uint32_t BLINK  = (1 << 31);
+	const uint32_t BRIGHT = (0x7F << 24);
+	uint32_t light_status = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
 	sleep(1);
-	ctlr_dev_light_set(dev, light_id, light_status);
+	ctlr_dev_light_set(dev, 31, light_status);
+	ctlr_dev_light_set(dev, 31+4, light_status);
+	ctlr_dev_light_set(dev, 31+8, light_status);
+
+	for(int i = 0; i < 255; i++) {
+		ctlr_dev_light_set(dev, 9, light_status);
+		usleep(200*50);
+		printf("%d\n", i);
+	}
 
 	printf("done - sleeping 1\n");
 	sleep(1);
