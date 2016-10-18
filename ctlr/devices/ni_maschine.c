@@ -224,16 +224,21 @@ static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 				  uint32_t light_id, uint32_t status)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
-	uint8_t *l = dev->light_buf;
-
-	uint32_t tmp = status;
 	switch(light_id)
 	{
-	case 0 ... 31:
-		dev->light_buf[light_id] = (tmp >> 24) & 0x7F;
+	case 1 ... 8: /* fallthrough */
+	case 10 ... 30:
+		dev->light_buf[light_id] = (status >> 24) & 0x7F;
 		break;
-	case 32 ... 100:
-		dev->light_buf[light_id] = (tmp >> 24) & 0x7F;
+	case 9:
+		dev->light_buf[light_id  ] = ((status >> 16) & 0xFF) / 2;
+		dev->light_buf[light_id+1] = ((status >>  8) & 0xFF) / 2;
+		dev->light_buf[light_id+2] = ((status >>  0) & 0xFF) / 2;
+		break;
+	case 31 ... 47:
+		dev->light_buf[light_id  ] = ((status >> 16) & 0xFF) / 2;
+		dev->light_buf[light_id+1] = ((status >>  8) & 0xFF) / 2;
+		dev->light_buf[light_id+2] = ((status >>  0) & 0xFF) / 2;
 		break;
 	default:
 		printf("light default hit\n");
