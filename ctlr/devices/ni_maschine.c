@@ -183,7 +183,7 @@ struct ni_maschine_rgb {
 };
 
 static void
-ni_maschine_pad_light_set(struct ni_maschine_t *dev, int pad,uint32_t col,
+ni_maschine_pad_light_set(struct ni_maschine_t *dev, int pad, uint32_t col,
 			  float bright)
 {
 	struct ni_maschine_rgb *lights;
@@ -218,6 +218,28 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 		0x00
 	};
 	ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
+}
+
+static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
+				  uint32_t light_id, uint32_t status)
+{
+	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
+	uint8_t *l = dev->light_buf;
+
+	uint32_t tmp = status;
+	switch(light_id)
+	{
+	case 0 ... 31:
+		dev->light_buf[light_id] = (tmp >> 24) & 0x7F;
+		break;
+	case 32 ... 100:
+		dev->light_buf[light_id] = (tmp >> 24) & 0x7F;
+		break;
+	default:
+		printf("light default hit\n");
+		break;
+	}
+	ni_maschine_led_flush(dev);
 }
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
@@ -289,6 +311,8 @@ struct ctlr_dev_t *ni_maschine_connect(void *future)
 	/* Assign instance callbacks */
 	dev->base.poll = ni_maschine_poll;
 	dev->base.disconnect = ni_maschine_disconnect;
+	dev->base.light_set = ni_maschine_light_set;
+
 	return (struct ctlr_dev_t *)dev;
 fail:
 	if(dev->fd)
