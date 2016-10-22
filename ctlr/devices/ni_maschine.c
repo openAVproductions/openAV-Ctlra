@@ -220,6 +220,46 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 	ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
 }
 
+static void
+button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
+{
+	int i, off, btn_id, diff;
+
+	for (i = 0; i < 4; i++) {
+		diff = data[i] ^ dev->button_buf[i];
+
+		for (; !!diff; diff >>= off) {
+			off = ffs(diff);
+			btn_id = mikro_bitfield_button_map[i][8 - off];
+
+			int press = (data[i] & (1 << (off - 1))) > 0;
+
+			printf("btn id %d, press %d\n", btn_id, press);
+			//printf("[%s]\ttag %d\n", ni_maschine_buttons[btn_id].name, press);
+		}
+
+		dev->button_buf[i] = data[i];
+	}
+
+	if (dev->button_buf[4] > 15) {
+		dev->button_buf[4] = data[4];
+		return;
+	}
+
+	if (dev->button_buf[4] == data[4])
+		return;
+
+	if (((dev->button_buf[4] + 1) & 0xF) == data[4]) {
+		//ev.button.pressed = 1;
+	}
+	else {
+		//ev.button.pressed = -1;
+	}
+
+	dev->button_buf[4] = data[4];
+}
+
+
 static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 				  uint32_t light_id, uint32_t status)
 {
@@ -245,6 +285,8 @@ static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 		break;
 	}
 	ni_maschine_led_flush(dev);
+
+	return 0;
 }
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
@@ -330,7 +372,57 @@ fail:
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
-	(void)dev;
+	const int fd = dev->fd;
+	uint8_t buf[128], src, *data;
+	ssize_t nbytes;
+	int i, pads_changed;
+	int iter = 1;
+
+	do {
+		if ((nbytes = read(fd, &buf, sizeof(buf))) < 0) {
+			perror("read");
+			break;
+		}
+
+		src = buf[0];
+		data = &buf[1];
+
+		switch (src) {
+		case 32:
+			/*
+			pads_changed = unpack_pads(dev, data, dev->pads);
+			*/
+			pads_changed = 0;
+			iter = 0;
+			if (!pads_changed) {
+				continue;
+			}
+			for (i = 0; i < 16; i++) {
+				if(dev->pads[i] > 232)
+					ni_maschine_pad_light_set(dev, i, 0x0077Fe,
+							   PAD_PRESS_BRIGHTNESS);
+				else
+					ni_maschine_pad_light_set(dev, i, 0x101010,
+							   PAD_RELEASE_BRIGHTNESS);
+			}
+			ni_maschine_led_flush(dev);
+			break;
+		case 1:
+			button_dispatch(dev, data);
+			iter = 0;
+			break;
+		default:
+#ifdef NI_MASCHINE_DEBUG
+			printf(" [?] %3ld bytes from %d\n", nbytes, src);
+#endif
+			iter = 0;
+			break;
+		}
+
+		break;
+	/* TODO: do just one iter */
+	} while (iter);
+
 	return 0;
 }
 
