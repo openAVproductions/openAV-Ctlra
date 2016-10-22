@@ -235,8 +235,17 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 			int press = (data[i] & (1 << (off - 1))) > 0;
 
 			printf("btn id %d, press %d\n", btn_id, press);
-		}
 
+			struct ctlr_event_t event[] = { {
+				.id = CTLR_EVENT_BUTTON,
+				.button  = {
+					.id = btn_id,
+					.pressed = 1}, },
+			};
+			struct ctlr_event_t *e = {event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
 		dev->button_buf[i] = data[i];
 	}
 
@@ -291,7 +300,8 @@ static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
 static int32_t ni_maschine_disconnect(struct ctlr_dev_t *dev);
 
-struct ctlr_dev_t *ni_maschine_connect(void *future)
+struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
+				       void *userdata, void *future)
 {
 	(void)future;
 	struct ni_maschine_t *dev = calloc(1, sizeof(struct ni_maschine_t));
@@ -358,6 +368,10 @@ struct ctlr_dev_t *ni_maschine_connect(void *future)
 	dev->base.poll = ni_maschine_poll;
 	dev->base.disconnect = ni_maschine_disconnect;
 	dev->base.light_set = ni_maschine_light_set;
+
+	dev->base.event_func = event_func;
+	dev->base.event_func_userdata = userdata;
+
 
 	return (struct ctlr_dev_t *)dev;
 fail:
