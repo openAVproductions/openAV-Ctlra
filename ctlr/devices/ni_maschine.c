@@ -235,7 +235,6 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 			int press = (data[i] & (1 << (off - 1))) > 0;
 
 			printf("btn id %d, press %d\n", btn_id, press);
-			//printf("[%s]\ttag %d\n", ni_maschine_buttons[btn_id].name, press);
 		}
 
 		dev->button_buf[i] = data[i];
@@ -250,10 +249,10 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 		return;
 
 	if (((dev->button_buf[4] + 1) & 0xF) == data[4]) {
-		//ev.button.pressed = 1;
+		printf("encoder turn:  1\n");
 	}
 	else {
-		//ev.button.pressed = -1;
+		printf("encoder turn: -1\n");
 	}
 
 	dev->button_buf[4] = data[4];
@@ -369,6 +368,48 @@ fail:
 	return 0;
 }
 
+static int
+unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
+{
+	uint16_t new_val;
+	int i;
+	int changed = 0;
+
+	for (i = 0; i < NPADS; i++) {
+		uint16_t data1_mask = (data[1] & 0x0F);
+		new_val = data[0] | ( data1_mask << 8);
+		data += 2;
+
+		uint8_t idx = dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
+
+		uint16_t total = 0;
+		for(int j = 0; j < KERNEL_LENGTH; j++)
+		{
+			total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+		}
+		dev->pad_avg[i] = total / KERNEL_LENGTH;
+
+		dev->pad_pressures[i*KERNEL_LENGTH + idx] = new_val;
+
+		if(dev->pad_avg[i] > PAD_SENSITIVITY && pads[i] == 0) {
+#ifdef NI_MASCHINE_DEBUG
+			printf("%d pressed\n", i);
+#endif
+			pads[i] = 2000;
+			changed = 1;
+		}
+		else if(dev->pad_avg[i] < PAD_SENSITIVITY && pads[i] > 0) {
+#ifdef NI_MASCHINE_DEBUG
+			printf("%d release\n", i);
+#endif
+			pads[i] = 0;
+			changed = 1;
+		}
+	}
+
+	return changed;
+}
+
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
@@ -389,10 +430,7 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 
 		switch (src) {
 		case 32:
-			/*
 			pads_changed = unpack_pads(dev, data, dev->pads);
-			*/
-			pads_changed = 0;
 			iter = 0;
 			if (!pads_changed) {
 				continue;
