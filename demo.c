@@ -61,22 +61,24 @@ int main()
 	//uint32_t light_status = UINT32_MAX;
 	const uint32_t BLINK  = (1 << 31);
 	const uint32_t BRIGHT = (0x7F << 24);
-	uint32_t light_status = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
+	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
+	uint32_t light_status_g = BLINK |  (0x0 << 16) | (0xFF << 8) | (0x0);
+	uint32_t light_status_b = BLINK |  (0x0 << 16) | (0x0 << 8) | (0xFF);
 	sleep(1);
-	ctlr_dev_light_set(dev, 31, light_status);
-	ctlr_dev_light_set(dev, 31+4, light_status);
-	ctlr_dev_light_set(dev, 31+8, light_status);
+	ctlr_dev_light_set(dev, 31, light_status_r);
+	ctlr_dev_light_set(dev, 31+3, light_status_g);
+	ctlr_dev_light_set(dev, 31+6, light_status_b);
 
-	for(int i = 0; i < 255; i++) {
-		ctlr_dev_light_set(dev, 9, light_status);
-		usleep(200*50);
+	for(int i = 0; i < 3; i++) {
+		ctlr_dev_light_set(dev, 9, light_status_b);
+		usleep(800*500);
 		printf("%d\n", i);
+		light_status_b <<= 8;
 	}
 
-	printf("done - sleeping 1\n");
+	printf("done - sleeping\n");
 	sleep(1);
-	ctlr_dev_light_set(dev, light_id, light_status * 0);
-	sleep(1);
+	ctlr_dev_light_set(dev, light_id, light_status_r * 0);
 	ctlr_dev_disconnect(dev);
 	return 0;
 }
