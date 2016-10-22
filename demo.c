@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include "ctlr/ctlr.h"
 
+static volatile uint32_t done;
+
 void demo_event_func(struct ctlr_dev_t* dev,
 		     uint32_t num_events,
 		     struct ctlr_event_t** events,
@@ -58,10 +60,10 @@ int main()
 	}
 
 	uint32_t light_id = 30;
-	//uint32_t light_status = UINT32_MAX;
 	const uint32_t BLINK  = (1 << 31);
 	const uint32_t BRIGHT = (0x7F << 24);
 	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
+#if 1
 	uint32_t light_status_g = BLINK |  (0x0 << 16) | (0xFF << 8) | (0x0);
 	uint32_t light_status_b = BLINK |  (0x0 << 16) | (0x0 << 8) | (0xFF);
 	sleep(1);
@@ -75,9 +77,14 @@ int main()
 		printf("%d\n", i);
 		light_status_b <<= 8;
 	}
-
-	printf("done - sleeping\n");
 	sleep(1);
+#else
+	printf("polling loop now..\n");
+	while(!done) {
+		ctlr_dev_poll(dev);
+		usleep(100);
+	}
+#endif
 	ctlr_dev_light_set(dev, light_id, light_status_r * 0);
 	ctlr_dev_disconnect(dev);
 	return 0;
