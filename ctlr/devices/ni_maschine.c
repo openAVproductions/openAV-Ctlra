@@ -257,12 +257,16 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 	if (dev->button_buf[4] == data[4])
 		return;
 
-	if (((dev->button_buf[4] + 1) & 0xF) == data[4]) {
-		printf("encoder turn:  1\n");
-	}
-	else {
-		printf("encoder turn: -1\n");
-	}
+	/* Encoder direction */
+	int clockwise = ((dev->button_buf[4] + 1) & 0xF) == data[4];
+	struct ctlr_event_t event[] = { {
+		.id = CTLR_EVENT_ENCODER,
+		.encoder = {
+			.id = 0,
+			.delta = clockwise},
+	}, };
+	struct ctlr_event_t *e = {event};
+	dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
 
 	dev->button_buf[4] = data[4];
 }
