@@ -271,7 +271,6 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 	dev->button_buf[4] = data[4];
 }
 
-
 static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 				  uint32_t light_id, uint32_t status)
 {
@@ -393,6 +392,16 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 	int i;
 	int changed = 0;
 
+	struct ctlr_event_t event[] = { {
+		.id = CTLR_EVENT_GRID,
+		.grid = {
+			.id = 0,
+			.flags = CTLR_EVENT_GRID_BUTTON,
+			.pos = i,
+			.pressed = 1},
+	}, };
+	struct ctlr_event_t *e = {event};
+
 	for (i = 0; i < NPADS; i++) {
 		uint16_t data1_mask = (data[1] & 0x0F);
 		new_val = data[0] | ( data1_mask << 8);
@@ -413,8 +422,11 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 #ifdef NI_MASCHINE_DEBUG
 			printf("%d pressed\n", i);
 #endif
+			event[0].grid.pos = i;
 			pads[i] = 2000;
 			changed = 1;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 		else if(dev->pad_avg[i] < PAD_SENSITIVITY && pads[i] > 0) {
 #ifdef NI_MASCHINE_DEBUG
@@ -422,6 +434,10 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 #endif
 			pads[i] = 0;
 			changed = 1;
+			event[0].grid.pos = i;
+			event[0].grid.pressed = 0;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 	}
 
