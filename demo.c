@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include "ctlr/ctlr.h"
 
 static volatile uint32_t done;
+static struct ctlr_dev_t* dev;
 
 void demo_event_func(struct ctlr_dev_t* dev,
 		     uint32_t num_events,
@@ -42,15 +45,20 @@ void demo_event_func(struct ctlr_dev_t* dev,
 	}
 }
 
+void sighndlr(int signal)
+{
+	(void)signal;
+	ctlr_dev_disconnect(dev);
+	exit(0);
+}
+
 int main()
 {
 	int dev_id = CTLR_DEV_SIMPLE;
+	signal(SIGINT, sighndlr);
 	void *userdata = 0x0;
 	void *future = 0x0;
-	struct ctlr_dev_t *dev = ctlr_dev_connect(dev_id,
-						  demo_event_func,
-						  userdata,
-						  future);
+	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
 
 	uint32_t i = 8;
 	while(i > 0)
@@ -78,6 +86,7 @@ int main()
 		light_status_b <<= 8;
 	}
 	sleep(1);
+	(void)done;
 #else
 	printf("polling loop now..\n");
 	while(!done) {
