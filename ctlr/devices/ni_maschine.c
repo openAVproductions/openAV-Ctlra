@@ -271,6 +271,19 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 	dev->button_buf[4] = data[4];
 }
 
+static int32_t ni_maschine_grid_light_set(struct ctlr_dev_t *base, uint32_t
+					  grid_id, uint32_t light_id,
+					  uint32_t status)
+{
+	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
+	(void)grid_id;
+
+	ni_maschine_pad_light_set(dev, light_id, status & 0xFFFFFF,
+				  10.f);
+	ni_maschine_led_flush(dev);
+	return 0;
+}
+
 static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 				  uint32_t light_id, uint32_t status)
 {
@@ -371,6 +384,7 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 	dev->base.poll = ni_maschine_poll;
 	dev->base.disconnect = ni_maschine_disconnect;
 	dev->base.light_set = ni_maschine_light_set;
+	dev->base.grid_light_set = ni_maschine_grid_light_set;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
