@@ -42,6 +42,10 @@ typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
 typedef int32_t (*ctlr_dev_impl_light_set)(struct ctlr_dev_t *dev,
 					   uint32_t light_id,
 					   uint32_t light_status);
+typedef int32_t (*ctlr_dev_impl_grid_light_set)(struct ctlr_dev_t *dev,
+						uint32_t grid_id,
+						uint32_t light_id,
+						uint32_t light_status);
 
 struct ctlr_dev_t {
 	ctlr_event_func event_func;
@@ -52,6 +56,7 @@ struct ctlr_dev_t {
 
 	/* Feedback to device */
 	ctlr_dev_impl_light_set light_set;
+	ctlr_dev_impl_grid_light_set grid_light_set;
 };
 
 /** Connect function to instantiate a dev from the driver */

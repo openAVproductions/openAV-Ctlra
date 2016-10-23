@@ -86,6 +86,15 @@ void ctlr_dev_light_set(struct ctlr_dev_t *dev,
 			uint32_t light_id,
 			uint32_t light_status);
 
+
+/** Send Lights/LEDs feedback to a grid on the device. See
+ * *ctlr_dev_light_set* documentation for details.
+ */
+void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
+			     uint32_t grid_id,
+			     uint32_t light_id,
+			     uint32_t light_status);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

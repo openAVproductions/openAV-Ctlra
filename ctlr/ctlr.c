@@ -48,3 +48,10 @@ void ctlr_dev_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
 	if(dev && dev->light_set)
 		dev->light_set(dev, light_id, light_status);
 }
+
+void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev, uint32_t grid_id,
+			     uint32_t light_id, uint32_t light_status)
+{
+	if(dev && dev->grid_light_set)
+		dev->grid_light_set(dev, grid_id, light_id, light_status);
+}
