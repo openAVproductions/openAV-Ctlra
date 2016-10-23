@@ -397,7 +397,6 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 		.grid = {
 			.id = 0,
 			.flags = CTLR_EVENT_GRID_BUTTON,
-			.pos = i,
 			.pressed = 1},
 	}, };
 	struct ctlr_event_t *e = {event};
