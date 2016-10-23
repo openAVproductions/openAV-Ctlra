@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include "ctlr/ctlr.h"
+#include "ctlr/devices/ni_maschine.h"
 
 static volatile uint32_t done;
 static struct ctlr_dev_t* dev;
