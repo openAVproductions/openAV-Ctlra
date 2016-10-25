@@ -221,6 +221,74 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 }
 
 static void
+ni_maschine_screen_clear(struct ni_maschine_t *dev)
+{
+	int i;
+
+	uint8_t screen_buf[1 + 8 + 256] = {
+		[0] = 0xE0,
+
+
+		[1] = 0,
+		[2 ... 4] = 0,
+		[5] = 0x20,
+		[6] = 0,
+		[7] = 0x08,
+		[8] = 0,
+
+		[9 ... 264] = 0,
+	};
+
+	for (i = 0; i < 4; i++) {
+		screen_buf[1] = i * 32;
+		write(dev->fd, screen_buf, sizeof(screen_buf));
+	}
+}
+
+static void
+ni_screen_output_segment(int fd, int seg_idx, const uint8_t *img)
+{
+	int i, j, col, col_shift;
+	uint8_t *dst;
+
+	uint8_t msg[1 + 8 + 256] = {
+		[0] = 0xE0,
+
+		[1] = seg_idx * 32,
+		[2 ... 4] = 0,
+
+		[5] = 0x20,
+		[6] = 0,
+		[7] = 0x08,
+		[8] = 0,
+
+		[9 ... 264] = 0,
+	};
+
+	for (i = 0; i < 256; i++) {
+		dst = &msg[9 + i];
+
+		col = (seg_idx * 4) + ((i & 0x1F) / 8) + ((i / 32) * 128);
+		col_shift = i & 7;
+
+		for (j = 0; j < 8; j++)
+			*dst |= ((img[col + (j * 16)] >> col_shift) & 1) << j;
+	}
+
+	write(fd, msg, sizeof(msg));
+}
+
+/* public function for blitting bits to the screen */
+void ni_maschine_screen_blit(struct ctlr_dev_t *base, uint8_t *bits)
+{
+	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
+	int i;
+	for (i = 0; i < 4; i++)
+		ni_screen_output_segment(dev->fd, i, bits);
+}
+
+
+static void
 button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 {
 	int i, off, btn_id, diff;
@@ -259,6 +327,7 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 
 	/* Encoder direction */
 	int clockwise = ((dev->button_buf[4] + 1) & 0xF) == data[4];
+	clockwise = (clockwise * 2) - 1;
 	struct ctlr_event_t event[] = { {
 		.id = CTLR_EVENT_ENCODER,
 		.encoder = {
@@ -463,7 +532,7 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 	const int fd = dev->fd;
 	uint8_t buf[128], src, *data;
 	ssize_t nbytes;
-	int i, pads_changed;
+	int pads_changed;
 	int iter = 1;
 
 	do {
@@ -482,6 +551,7 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 			if (!pads_changed) {
 				continue;
 			}
+			/*
 			for (i = 0; i < 16; i++) {
 				if(dev->pads[i] > 232)
 					ni_maschine_pad_light_set(dev, i, 0x0077Fe,
@@ -490,6 +560,7 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 					ni_maschine_pad_light_set(dev, i, 0x101010,
 							   PAD_RELEASE_BRIGHTNESS);
 			}
+			*/
 			ni_maschine_led_flush(dev);
 			break;
 		case 1:
@@ -524,6 +595,7 @@ static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 		ni_maschine_pad_light_set(dev, i, 0xF0F0F0, 0.f);
 	ni_maschine_led_flush(dev);
 	ni_maschine_set_brightness_contrast(dev, 0, 0);
+	ni_maschine_screen_clear(dev);
 
 	free(dev);
 	return 0;

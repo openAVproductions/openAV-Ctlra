@@ -97,5 +97,7 @@ enum NI_MASCHINE_BTNS {
 	NI_MASCHINE_BTN_MUTE = 28,
 };
 
+void ni_maschine_screen_blit(struct ctlr_dev_t *dev, uint8_t *bits);
+
 #endif /* OPENAV_CTLR_NI_MASCHINE_H */
 
