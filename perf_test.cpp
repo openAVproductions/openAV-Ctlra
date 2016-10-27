@@ -54,6 +54,7 @@ void ctlr_dev_empty(benchmark::State& state)
 	while (state.KeepRunning()) {
 		ctlr_dev_poll(dev);
 	}
+	ctlr_dev_disconnect(dev);
 }
 
 void ctlr_dev_switch(benchmark::State& state)
@@ -63,6 +64,7 @@ void ctlr_dev_switch(benchmark::State& state)
 	while (state.KeepRunning()) {
 		ctlr_dev_poll(dev);
 	}
+	ctlr_dev_disconnect(dev);
 }
 
 BENCHMARK(ctlr_dev_empty);
