@@ -1,6 +1,7 @@
 .gitignore
 
 CC=clang
+CXX=clang++
 #CC=clang -DWASTE=1
 
 ##############

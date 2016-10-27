@@ -1,6 +1,7 @@
 include_rules
 
 : foreach *.c   |> $(CC) $(CFLAGS) -c %f -o %o |> %B.o
-
 : demo.o ctlr/libctlr.a |> $(CC) %f -o %o $(LDFLAGS) |> demo
 
+: foreach *.cpp   |> $(CXX) $(CFLAGS) $(CXXFLAGS) -c %f -o %o |> %B.o
+: perf_test.o ctlr/libctlr.a |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
