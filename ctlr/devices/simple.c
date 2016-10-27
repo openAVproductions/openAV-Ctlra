@@ -35,6 +35,9 @@
 
 #include "device_impl.h"
 
+/* Uncomment to print on actions */
+/* #define DEBUG_PRINTS */
+
 struct simple_t {
 	struct ctlr_dev_t base;
 	uint32_t event_counter;
@@ -80,7 +83,6 @@ struct ctlr_dev_t *simple_connect(ctlr_event_func event_func,
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
 
-	printf("%s\n", __func__);
 	return (struct ctlr_dev_t *)dev;
 fail:
 	free(dev);
@@ -101,7 +103,6 @@ static uint32_t simple_poll(struct ctlr_dev_t *base)
 static int32_t simple_disconnect(struct ctlr_dev_t *base)
 {
 	struct simple_t *dev = (struct simple_t *)base;
-	printf("%s\n", __func__);
 	free(dev);
 	return 0;
 }
@@ -114,8 +115,10 @@ static void simple_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
 	uint32_t r      = (light_status >> 16) & 0xFF;
 	uint32_t g      = (light_status >>  8) & 0xFF;
 	uint32_t b      = (light_status >>  0) & 0xFF;
+#ifdef DEBUG_PRINTS
 	printf("%s : dev %p, light %d, status %d\n", __func__, dev,
 	       light_id, light_status);
 	printf("decoded: blink[%d], bright[%d], r[%d], g[%d], b[%d]\n",
 	       blink, bright, r, g, b);
+#endif
 }
