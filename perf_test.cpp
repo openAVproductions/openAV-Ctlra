@@ -49,7 +49,7 @@ void perf_event_switch(struct ctlr_dev_t* dev,
 
 void ctlr_dev_empty(benchmark::State& state)
 {
-	dev = ctlr_dev_connect(CTLR_DEV_SIMPLE, perf_event_empty, 0, 0);
+	dev = ctlr_dev_connect(CTLR_DEV_NI_MASCHINE_MIKRO_MK2, perf_event_empty, 0, 0);
 	counter = 0;
 	while (state.KeepRunning()) {
 		ctlr_dev_poll(dev);
@@ -59,7 +59,7 @@ void ctlr_dev_empty(benchmark::State& state)
 
 void ctlr_dev_switch(benchmark::State& state)
 {
-	dev = ctlr_dev_connect(CTLR_DEV_SIMPLE, perf_event_switch, 0, 0);
+	dev = ctlr_dev_connect(CTLR_DEV_NI_MASCHINE_MIKRO_MK2, perf_event_switch, 0, 0);
 	counter = 0;
 	while (state.KeepRunning()) {
 		ctlr_dev_poll(dev);
