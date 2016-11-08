@@ -9,7 +9,7 @@ CXX=clang++
 ##############
 
 DEBUG += -g -fPIC
-WARNINGS += -Wall -Wextra
+WARNINGS += -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
 OPTS = -march=native -O0
 
 INCLUDES += -I.
