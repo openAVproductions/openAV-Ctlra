@@ -301,14 +301,13 @@ button_dispatch(struct ni_maschine_t *dev, uint8_t *data)
 			btn_id = mikro_bitfield_button_map[i][8 - off];
 
 			int press = (data[i] & (1 << (off - 1))) > 0;
-
-			printf("btn id %d, press %d\n", btn_id, press);
+			//printf("btn id %d, press %d\n", btn_id, press);
 
 			struct ctlr_event_t event[] = { {
 				.id = CTLR_EVENT_BUTTON,
 				.button  = {
 					.id = btn_id,
-					.pressed = 1}, },
+					.pressed = press}, },
 			};
 			struct ctlr_event_t *e = {event};
 			dev->base.event_func(&dev->base, 1, &e,
