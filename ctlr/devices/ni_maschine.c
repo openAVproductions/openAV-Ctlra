@@ -536,10 +536,17 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 			fprintf(stderr, "timeout\n");
 			return 0;
 		}
-		fprintf(stderr, "short recv (%d); nbytes %d\n", r, transferred);
-		nbytes = transferred;
+		nbytes = transferred /2;
 		if(nbytes == 0)
 			return 0;
+
+		if(nbytes == 32)
+			continue;
+		//fprintf(stderr, "short recv (%d); nbytes %d\n", r, transferred);
+		for(int i = 0; i < nbytes; i++) {
+			printf("%2x", buf[nbytes-1-i]);
+		}
+		printf("\n");
 
 		src = buf[0];
 		data = &buf[1];
