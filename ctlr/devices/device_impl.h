@@ -100,5 +100,7 @@ int ctlr_dev_impl_usb_open(int vid,
 			   struct ctlr_dev_t *dev,
 			   uint32_t num_skip);
 
+void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev);
+
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 

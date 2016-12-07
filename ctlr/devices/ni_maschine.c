@@ -518,26 +518,28 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
-	return 0;
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
-
-	printf("%s fix dev->fd here\n", __func__);
-	//const int fd = dev->fd;
-
-	uint8_t buf[128], src, *data;
+	uint8_t buf[1024], src, *data;
 	ssize_t nbytes;
 	int pads_changed;
 	int iter = 1;
 
 	do {
 
-		printf("%s fix dev->fd read here\n", __func__);
-		/*
-		if ((nbytes = read(fd, &buf, sizeof(buf))) < 0) {
-			perror("read");
-			break;
+		int r;
+		int transferred;
+
+#define ENDPOINT 0x81
+		r = libusb_interrupt_transfer(base->usb_handle, ENDPOINT, buf,
+					      1024, &transferred, 1000);
+		if (r == LIBUSB_ERROR_TIMEOUT) {
+			fprintf(stderr, "timeout\n");
+			return 0;
 		}
-		*/
+		fprintf(stderr, "short recv (%d); nbytes %d\n", r, transferred);
+		nbytes = transferred;
+		if(nbytes == 0)
+			return 0;
 
 		src = buf[0];
 		data = &buf[1];
@@ -594,6 +596,8 @@ static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 	ni_maschine_led_flush(dev);
 	ni_maschine_set_brightness_contrast(dev, 0, 0);
 	ni_maschine_screen_clear(dev);
+
+	ctlr_dev_impl_usb_close(dev);
 
 	free(dev);
 	return 0;

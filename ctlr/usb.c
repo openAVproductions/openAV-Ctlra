@@ -66,8 +66,25 @@ int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
 		goto fail;
 	}
 	printf("got device OK\n");
+
+	/* enable auto management of kernel claiming / unclaiming */
+	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
+		ret = libusb_set_auto_detach_kernel_driver(ctlr_dev->usb_handle, 1);
+		if(ret != LIBUSB_SUCCESS) {
+			printf("Error setting auto kernel unclaiming\n");
+			return -1;
+		}
+	} else {
+		printf("Warning: auto kernel claim/unclaiming not supported\n");
+	}
+
 	ctlr_dev->usb_device = dev;
 	return 0;
 fail:
 	return -ENODEV;
+}
+
+void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev)
+{
+	libusb_close(dev->usb_handle);
 }
