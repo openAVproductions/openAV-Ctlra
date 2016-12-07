@@ -155,9 +155,6 @@ static const int mikro_bitfield_button_map[4][8] = {
 struct ni_maschine_t {
 	struct ctlr_dev_t base;
 
-#warning remove FD here
-	int fd;
-
 	/* State of the pads */
 	uint16_t pads[16];
 
@@ -225,7 +222,8 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 
 		0x00
 	};
-	ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
+	printf("%s fix ioctl on dev->fd here\n", __func__);
+	//ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
 }
 
 static void
@@ -249,7 +247,8 @@ ni_maschine_screen_clear(struct ni_maschine_t *dev)
 
 	for (i = 0; i < 4; i++) {
 		screen_buf[1] = i * 32;
-		write(dev->fd, screen_buf, sizeof(screen_buf));
+		printf("%s fix dev->fd here\n", __func__);
+		//write(dev->fd, screen_buf, sizeof(screen_buf));
 	}
 }
 
@@ -283,7 +282,8 @@ ni_screen_output_segment(int fd, int seg_idx, const uint8_t *img)
 			*dst |= ((img[col + (j * 16)] >> col_shift) & 1) << j;
 	}
 
-	write(fd, msg, sizeof(msg));
+	printf("%s fix dev->fd here\n", __func__);
+	//write(fd, msg, sizeof(msg));
 }
 
 /* public function for blitting bits to the screen */
@@ -291,8 +291,11 @@ void ni_maschine_screen_blit(struct ctlr_dev_t *base, uint8_t *bits)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
 	int i;
+	printf("%s fix dev->fd here\n", __func__);
+#if 0
 	for (i = 0; i < 4; i++)
 		ni_screen_output_segment(dev->fd, i, bits);
+#endif
 }
 
 
@@ -514,17 +517,24 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
-	const int fd = dev->fd;
+
+	printf("%s fix dev->fd here\n", __func__);
+	//const int fd = dev->fd;
+
 	uint8_t buf[128], src, *data;
 	ssize_t nbytes;
 	int pads_changed;
 	int iter = 1;
 
 	do {
+
+		printf("%s fix dev->fd read here\n", __func__);
+		/*
 		if ((nbytes = read(fd, &buf, sizeof(buf))) < 0) {
 			perror("read");
 			break;
 		}
+		*/
 
 		src = buf[0];
 		data = &buf[1];
