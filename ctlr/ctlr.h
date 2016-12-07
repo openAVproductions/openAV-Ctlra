@@ -57,10 +57,10 @@ struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
 				    void *userdata,
 				    void *future);
 
-/** Poll device for events, causing event callback to be called for each
+/** Poll device for events, causing an event to be emitted for each
  * event that has occured since the last poll.
  * @param dev The Device to poll.
- * @retval  0 No events available from device.
+ * @returns Number of events read from device.
  */
 uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
 
@@ -88,7 +88,9 @@ void ctlr_dev_light_set(struct ctlr_dev_t *dev,
 
 
 /** Send Lights/LEDs feedback to a grid on the device. See
- * *ctlr_dev_light_set* documentation for details.
+ * *ctlr_dev_light_set* documentation for details. The *grid_id* is
+ * unique to the device, and allows easy access to lights in an array
+ * or grid pattern.
  */
 void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
 			     uint32_t grid_id,
