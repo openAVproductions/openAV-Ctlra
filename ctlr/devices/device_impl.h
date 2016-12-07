@@ -64,9 +64,9 @@ struct ctlr_dev_t {
 	int screen_interface_id;
 
 	/* libusb generic handle for this hardware device */
-	libusb_device *device;
+	libusb_device *usb_device;
 	/* The libusb handle for the opened instance of this device */
-	libusb_device_handle *handle;
+	libusb_device_handle *usb_handle;
 
 	/* Event callback function */
 	ctlr_event_func event_func;
@@ -90,6 +90,15 @@ typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
 #define DECLARE_DEV_CONNECT_FUNC(name)					\
 extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
 			    void *userdata, void *future)
+
+/** Opens the libusb handle for the given vid:pid pair, skipping the
+ * first *num_skip* entries, to allow opening the N(th) of a single
+ * type of controller. Implementation in usb.c.
+ * @retval -ENODEV when device not found */
+int ctlr_dev_impl_usb_open(int vid,
+			   int pid,
+			   struct ctlr_dev_t *dev,
+			   uint32_t num_skip);
 
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 

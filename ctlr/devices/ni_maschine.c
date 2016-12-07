@@ -33,7 +33,7 @@
 #define OPENAV_CTLR_NI_MASCHINE
 
 /* Uncomment to see debug output */
-//#define NI_MASCHINE_DEBUG
+#define NI_MASCHINE_DEBUG
 
 #include <math.h>
 #include <errno.h>
@@ -104,6 +104,7 @@ typedef enum {
 	MASCHINE_BTN_COUNT,
 } ni_maschine_buttons_t;
 
+#warning refactor button map before a release
 static const int mikro_bitfield_button_map[4][8] = {
 	{
 		MASCHINE_BTN_RESTART,
@@ -153,13 +154,17 @@ static const int mikro_bitfield_button_map[4][8] = {
 
 struct ni_maschine_t {
 	struct ctlr_dev_t base;
-	/* File descriptor to read/write USB HID messages */
+
+#warning remove FD here
 	int fd;
+
 	/* State of the pads */
 	uint16_t pads[16];
+
 	/* Initialized buffers for light and button messages */
 	uint8_t light_buf[79];
 	uint8_t button_buf[5];
+
 	/* Pressure filtering for note-onset detection */
 	uint8_t  pad_idx[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
@@ -170,12 +175,15 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 {
 	dev->light_buf[0] = 128;
 	const uint32_t size = sizeof(dev->light_buf);
+#warning TODO: Use libusb here instead of hidraw write()
+#if 0
 	int ret = write(dev->fd, dev->light_buf, size);
 	if(ret != size) {
 #ifdef NI_MASCHINE_DEBUG
 		printf("%s : write error\n", __func__);
 #endif
 	}
+#endif
 }
 
 struct ni_maschine_rgb {
@@ -352,7 +360,7 @@ static int32_t ni_maschine_grid_light_set(struct ctlr_dev_t *base, uint32_t
 	return 0;
 }
 
-static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
+static void ni_maschine_light_set(struct ctlr_dev_t *base,
 				  uint32_t light_id, uint32_t status)
 {
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
@@ -377,8 +385,6 @@ static int32_t ni_maschine_light_set(struct ctlr_dev_t *base,
 		break;
 	}
 	ni_maschine_led_flush(dev);
-
-	return 0;
 }
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *dev);
@@ -392,38 +398,15 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 	if(!dev)
 		goto fail;
 
-	int fd, i, res, found = 0;
+	int i, res, found = 0;
 	char buf[256];
 	struct hidraw_devinfo info;
 	uint8_t *l = dev->light_buf;
 
-	/* Scan for the USB HID raw device, probe for NI Maschine Mikro */
-	for (i = 0; i < 64; i++) {
-		const char *device = "/dev/hidraw";
-		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR);
-		if(fd < 0)
-			continue;
-
-		memset(&info, 0x0, sizeof(info));
-		res = ioctl(fd, HIDIOCGRAWINFO, &info);
-
-		if (res < 0) // Error with HIDIOCGRAWINFO
-			goto fail;
-
-		if (info.vendor  == NI_VENDOR &&
-		   info.product == NI_MASCHINE_MIKRO_MK2) {
-			dev->fd = fd;
-			found = 1;
-			break;
-		}
-
-		close(fd);
-		/* continue searching next HID dev */
-	}
-
-	if(!found)
-		goto fail;
+	found = ctlr_dev_impl_usb_open(NI_VENDOR,
+				       NI_MASCHINE_MIKRO_MK2,
+				       (struct ctlr_dev_t *)dev,
+				       0);
 
 	/* Initialize light buffer contents */
 	l[0] = 0x80;
@@ -460,8 +443,11 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 
 	return (struct ctlr_dev_t *)dev;
 fail:
+#warning todo libusb close dev
+#if 0
 	if(dev->fd)
 		close(dev->fd);
+#endif
 	if(dev)
 		free(dev);
 	return 0;
