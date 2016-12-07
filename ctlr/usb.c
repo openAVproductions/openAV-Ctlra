@@ -16,7 +16,7 @@ int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
 		ret = libusb_init (NULL);
 		if (ret < 0) {
 			printf("failed to initialise libusb: %s\n", libusb_error_name(ret));
-			return -EINVAL;
+			goto fail;
 		}
 	}
 
@@ -28,14 +28,14 @@ int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
 
 	int cnt = libusb_get_device_list(NULL, &devs);
 	if (cnt < 0)
-		return 0;
+		goto fail;
 
 	while ((dev = devs[i++]) != NULL) {
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(dev, &desc);
 		if (r < 0) {
 			printf("failed to get device descriptor");
-			return -1;
+			goto fail;
 		}
 #if 0
 		printf("%04x:%04x (bus %d, device %d)",
@@ -59,6 +59,9 @@ int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
 	}
 
 	libusb_free_device_list(devs, 1);
+
+	if(!dev)
+		goto fail;
 
 	/* now that we've found the device, open the handle */
 	ret = libusb_open(dev, &handle);
