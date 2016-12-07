@@ -406,10 +406,12 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 	struct hidraw_devinfo info;
 	uint8_t *l = dev->light_buf;
 
-	found = ctlr_dev_impl_usb_open(NI_VENDOR,
-				       NI_MASCHINE_MIKRO_MK2,
-				       (struct ctlr_dev_t *)dev,
-				       0);
+	int err = ctlr_dev_impl_usb_open(NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
+				         (struct ctlr_dev_t *)dev, 0);
+	if(err) {
+		printf("error finding controller\n");
+		return 0;
+	}
 
 	/* Initialize light buffer contents */
 	l[0] = 0x80;
@@ -516,6 +518,7 @@ unpack_pads(struct ni_maschine_t *dev, uint8_t *data, uint16_t *pads)
 
 static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 {
+	return 0;
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
 
 	printf("%s fix dev->fd here\n", __func__);
