@@ -34,6 +34,8 @@
 
 #include "../event.h"
 
+#include "libusb.h"
+
 struct ctlr_dev_t;
 
 /* Functions each device must implement */
@@ -48,13 +50,33 @@ typedef int32_t (*ctlr_dev_impl_grid_light_set)(struct ctlr_dev_t *dev,
 						uint32_t light_status);
 
 struct ctlr_dev_t {
+	/* Static Device Info  */
+	int vendor_id;
+	int product_id;
+	int class_id;
+
+	/* The common use-case interface that is used to write LEDs, and
+	 * read button / dial messages from the device */
+	int interface_id;
+
+	/* Some devices with screens use a seperate interface for the
+	 * screen, allowing faster or other types of transfers */
+	int screen_interface_id;
+
+	/* libusb generic handle for this hardware device */
+	libusb_device *device;
+	/* The libusb handle for the opened instance of this device */
+	libusb_device_handle *handle;
+
+	/* Event callback function */
 	ctlr_event_func event_func;
 	void* event_func_userdata;
 
+	/* Function pointers to poll events from device */
 	ctlr_dev_impl_poll poll;
 	ctlr_dev_impl_disconnect disconnect;
 
-	/* Feedback to device */
+	/* Function pointers to write feedback to device */
 	ctlr_dev_impl_light_set light_set;
 	ctlr_dev_impl_grid_light_set grid_light_set;
 };

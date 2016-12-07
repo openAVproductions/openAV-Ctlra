@@ -12,7 +12,7 @@ DEBUG += -g -fPIC
 WARNINGS += -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
 OPTS = -march=native -O0
 
-INCLUDES += -I.
+INCLUDES += -I. -I /usr/include/libusb-1.0/
 
 CFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
 
@@ -20,5 +20,5 @@ CFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
 ### LINKER ###
 ##############
 
-LDFLAGS += -lm
+LDFLAGS += -lm -lusb-1.0
 
