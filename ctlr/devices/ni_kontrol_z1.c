@@ -44,9 +44,34 @@
 #define USB_ENDPOINT_READ  (0x82)
 #define USB_ENDPOINT_WRITE (0x02)
 
+struct ni_kontrol_z1_controls_t {
+	uint8_t waste;
+	/* Left mixer chan */
+	uint16_t left_gain;
+	uint16_t left_high;
+	uint16_t left_mid;
+	uint16_t left_low;
+	uint16_t left_filter;
+	/* Right mixer chan */
+	uint16_t right_gain;
+	uint16_t right_high;
+	uint16_t right_mid;
+	uint16_t right_low;
+	uint16_t right_filter;
+	/* Mixer and Misc */
+	uint16_t cue_mix;
+	uint16_t left_fader;
+	uint16_t right_fader;
+	uint16_t crossfader;
+	/* Buttons */
+};
 struct ni_kontrol_z1_t {
 	struct ctlr_dev_t base;
-	uint32_t event_counter;
+	union {
+		uint8_t usb_bytes[15];
+		struct ni_kontrol_z1_controls_t controls;
+	};
+
 };
 
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
@@ -84,10 +109,14 @@ fail:
 	return 0;
 }
 
+static inline uint16_t byteswap(uint16_t in) {
+	return (in >> 8) | (in << 8);
+}
+
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
-	uint8_t buf[1024], src, *data;
+	uint8_t buf[1024];
 	uint32_t nbytes;
 
 	do {
@@ -104,10 +133,19 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
+		switch(nbytes) {
+		case 30: {
+			struct ni_kontrol_z1_controls_t *controls = (void*)buf;
+			printf("left gain %d\n", byteswap(controls->left_gain & 0xFF));
+			printf("left high %d\n", byteswap(controls->left_high & 0xFF));
+			break;
+			}
+		}
+
 		/* dont print pad messages */
 #if 1
 		for(int i = 0; i < nbytes; i++) {
-			printf("%2x ", buf[nbytes-1-i]);
+			printf("%02x ", buf[nbytes-1-i]);
 		}
 		printf("\n");
 #endif
