@@ -34,6 +34,7 @@
 
 enum ctlr_dev_id_t {
 	CTLR_DEV_SIMPLE,
+	CTLR_DEV_NI_KONTROL_Z1,
 	CTLR_DEV_NI_MASCHINE_MIKRO_MK2,
 };
 

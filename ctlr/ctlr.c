@@ -9,11 +9,15 @@ struct ctlr_dev_connect_func_t {
 	ctlr_dev_connect_func connect;
 };
 
+#warning TODO: refactor this to be a tailq and have devices register themselves in the .c file instead of all here
+
 DECLARE_DEV_CONNECT_FUNC(simple_connect);
+DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_connect);
 
 static const struct ctlr_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},
+	{CTLR_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
 	{CTLR_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_connect},
 };
 #define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
