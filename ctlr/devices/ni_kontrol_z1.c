@@ -40,7 +40,7 @@
 
 #define NI_VENDOR       0x17cc
 #define NI_KONTROL_Z1   0x1210
-
+#define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
 #define USB_ENDPOINT_WRITE (0x02)
 
@@ -63,8 +63,9 @@ struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
 	if(!dev)
 		goto fail;
 
-	int err = ctlr_dev_impl_usb_open(NI_VENDOR, NI_KONTROL_Z1,
-				         (struct ctlr_dev_t *)dev, 0);
+	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
+					 NI_VENDOR, NI_KONTROL_Z1,
+					 USB_INTERFACE_ID, 0);
 	if(err) {
 		printf("error conencting to Kontrol Z1 controller, is it plugged in?\n");
 		return 0;
@@ -99,17 +100,16 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 			fprintf(stderr, "timeout\n");
 			return 0;
 		}
-		nbytes = transferred /2;
+		nbytes = transferred;
 		if(nbytes == 0)
 			return 0;
 
 		/* dont print pad messages */
-#if 0
-			for(int i = 0; i < nbytes; i++) {
-				printf("%2x", buf[nbytes-1-i]);
-			}
-			printf("\n");
+#if 1
+		for(int i = 0; i < nbytes; i++) {
+			printf("%2x ", buf[nbytes-1-i]);
 		}
+		printf("\n");
 #endif
 		printf("%s got %d bytes\n", __func__, nbytes);
 	} while (nbytes > 0);

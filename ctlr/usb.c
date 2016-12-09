@@ -7,8 +7,8 @@
 
 static int ctlr_libusb_initialized;
 
-int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
-			   uint32_t num_skip)
+int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid, 
+			   int interface, uint32_t num_skip)
 {
 	int ret;
 
@@ -82,13 +82,11 @@ int ctlr_dev_impl_usb_open(int vid, int pid, struct ctlr_dev_t *ctlr_dev,
 		printf("Warning: auto kernel claim/unclaiming not supported\n");
 	}
 
-#warning fixme: Maschine uses interface 0 - claim others?
-#define MASCHINE_INTERFACE 0
-	ret = libusb_claim_interface(handle, MASCHINE_INTERFACE);
+	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
 		printf("Error in claiming interface\n");
 		int kernel_active = libusb_kernel_driver_active(handle,
-							MASCHINE_INTERFACE);
+							interface);
 		if(kernel_active)
 			printf("=> Kernel has claimed the interface."
 			       "Stop other applications using this device and retry\n");

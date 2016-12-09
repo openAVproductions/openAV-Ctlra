@@ -59,6 +59,7 @@
 #define PAD_RELEASE_BRIGHTNESS  (0.25f)
 
 /* Constants for read / write endpoints */
+#define USB_INTERFACE_ID   (0x00)
 #define USB_ENDPOINT_READ  (0x81)
 #define USB_ENDPOINT_WRITE (0x01)
 
@@ -405,8 +406,9 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 	struct hidraw_devinfo info;
 	uint8_t *l = dev->light_buf;
 
-	int err = ctlr_dev_impl_usb_open(NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
-				         (struct ctlr_dev_t *)dev, 0);
+	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
+					 NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
+					 USB_INTERFACE_ID, 0);
 	if(err) {
 		printf("error finding controller\n");
 		return 0;

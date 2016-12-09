@@ -91,13 +91,16 @@ typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
 extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
 			    void *userdata, void *future)
 
-/** Opens the libusb handle for the given vid:pid pair, skipping the
- * first *num_skip* entries, to allow opening the N(th) of a single
- * type of controller. Implementation in usb.c.
+/** Opens the libusb handle for the given vid:pid pair, claiming the given
+ * interface number. The implementation skips the first *num_skip* entries,
+ * to allow opening the N(th) of a single type of controller.
+ * Implementation in usb.c.
+ * @retval 0 on Success
  * @retval -ENODEV when device not found */
-int ctlr_dev_impl_usb_open(int vid,
+int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
+			   int vid,
 			   int pid,
-			   struct ctlr_dev_t *dev,
+			   int interface,
 			   uint32_t num_skip);
 
 /** Write bytes to a specific handle and endpoint. Some complex USB HID
