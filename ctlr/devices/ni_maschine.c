@@ -156,6 +156,7 @@ static const int mikro_bitfield_button_map[4][8] = {
 
 
 struct ni_maschine_t {
+	/* base handles USB i/o */
 	struct ctlr_dev_t base;
 
 	/* State of the pads */
