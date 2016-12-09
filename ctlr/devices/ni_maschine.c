@@ -177,6 +177,10 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 	dev->light_buf[0] = 128;
 	const uint32_t size = sizeof(dev->light_buf);
 #warning TODO: Use libusb here instead of hidraw write()
+
+	int ret = ctlr_dev_impl_usb_write(&dev->base, 0 /* interface */,
+					  USB_ENDPOINT_WRITE,
+					  dev->light_buf, size);
 #if 0
 	int ret = write(dev->fd, dev->light_buf, size);
 	if(ret != size) {
@@ -565,8 +569,6 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 			if (!pads_changed) {
 				continue;
 			}
-			printf("pad changed\n");
-#if 0
 			int i;
 			for (i = 0; i < 16; i++) {
 				if(dev->pads[i] > 232)
@@ -577,7 +579,6 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 							   PAD_RELEASE_BRIGHTNESS);
 			}
 			ni_maschine_led_flush(dev);
-#endif
 			break;
 		case 1:
 			button_dispatch(dev, data);
