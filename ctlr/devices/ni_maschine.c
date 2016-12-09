@@ -604,7 +604,7 @@ static int32_t ni_maschine_disconnect(struct ctlr_dev_t *base)
 	ni_maschine_set_brightness_contrast(dev, 0, 0);
 	ni_maschine_screen_clear(dev);
 
-	ctlr_dev_impl_usb_close(dev);
+	ctlr_dev_impl_usb_close(base);
 
 	free(dev);
 	return 0;
