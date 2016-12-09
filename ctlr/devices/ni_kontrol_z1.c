@@ -111,7 +111,6 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		}
 		printf("\n");
 #endif
-		printf("%s got %d bytes\n", __func__, nbytes);
 	} while (nbytes > 0);
 
 	/* when an event occurs, call the event writing callback */
