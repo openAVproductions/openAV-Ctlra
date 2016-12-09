@@ -226,7 +226,6 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 static void
 ni_maschine_screen_clear(struct ni_maschine_t *dev)
 {
-	return;
 	int i;
 
 	uint8_t screen_buf[1 + 8 + 256] = {
@@ -251,7 +250,8 @@ ni_maschine_screen_clear(struct ni_maschine_t *dev)
 }
 
 static void
-ni_screen_output_segment(int fd, int seg_idx, const uint8_t *img)
+ni_screen_output_segment(struct ni_maschine_t *dev, int seg_idx,
+			 const uint8_t *img)
 {
 	int i, j, col, col_shift;
 	uint8_t *dst;
@@ -280,8 +280,10 @@ ni_screen_output_segment(int fd, int seg_idx, const uint8_t *img)
 			*dst |= ((img[col + (j * 16)] >> col_shift) & 1) << j;
 	}
 
-	printf("%s fix dev->fd here\n", __func__);
-	//write(fd, msg, sizeof(msg));
+	printf("%s writing to screen now\n", __func__);
+	int ret = ctlr_dev_impl_usb_write(&dev->base, 0,
+					  USB_ENDPOINT_WRITE,
+					  msg, sizeof(msg));
 }
 
 /* public function for blitting bits to the screen */
@@ -290,10 +292,8 @@ void ni_maschine_screen_blit(struct ctlr_dev_t *base, uint8_t *bits)
 	struct ni_maschine_t *dev = (struct ni_maschine_t *)base;
 	int i;
 	printf("%s fix dev->fd here\n", __func__);
-#if 0
 	for (i = 0; i < 4; i++)
-		ni_screen_output_segment(dev->fd, i, bits);
-#endif
+		ni_screen_output_segment(dev, i, bits);
 }
 
 
