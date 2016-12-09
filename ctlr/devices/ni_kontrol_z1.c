@@ -36,20 +36,54 @@
 
 #include "device_impl.h"
 
-/* Uncomment to print on actions */
-/* #define DEBUG_PRINTS */
-
 #define NI_VENDOR       0x17cc
 #define NI_KONTROL_Z1   0x1210
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
 #define USB_ENDPOINT_WRITE (0x02)
 
+/* This struct is a generic struct to identify hw controls */
+struct ni_kontrol_z1_ctlr_t {
+	char name[29];
+	int event_id;
+	int buf_byte_offset;
+	uint32_t mask;
+};
+
+static const struct ni_kontrol_z1_ctlr_t sliders[] = {
+	/* Left */
+	{"left gain"       , 0,  1, UINT32_MAX},
+	{"left eq high"    , 0,  3, UINT32_MAX},
+	{"left eq mid"     , 0,  5, UINT32_MAX},
+	{"left eq low"     , 0,  7, UINT32_MAX},
+	{"left filter"     , 0,  9, UINT32_MAX},
+	{"right gain"      , 0, 11, UINT32_MAX},
+	{"right eq high"   , 0, 13, UINT32_MAX},
+	{"right eq mid"    , 0, 15, UINT32_MAX},
+	{"right eq low"    , 0, 17, UINT32_MAX},
+	{"right filter"    , 0, 19, UINT32_MAX},
+	{"cue mix"         , 0, 21, UINT32_MAX},
+	{"left fader"      , 0, 23, UINT32_MAX},
+	{"right fader"     , 0, 25, UINT32_MAX},
+	{"cross fader"     , 0, 27, UINT32_MAX},
+};
+#define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
+
+static const struct ni_kontrol_z1_ctlr_t buttons[] = {
+	{"headphones cue B", 0, 29, 0x10},
+	{"headphones cue B", 1, 29, 0x1},
+	{"mode"            , 2, 29, 0x2},
+	{"left filter on"  , 3, 29, 0x4},
+	{"right filter on" , 4, 29, 0x8},
+};
+#define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
+
+#define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
+
 struct ni_kontrol_z1_controls_t {
 	uint8_t waste;
 	/* Left mixer chan */
-	uint8_t left_gain_lsb;
-	uint8_t left_gain_msb;
+	uint16_t left_gain;
 	uint16_t left_high;
 	uint16_t left_mid;
 	uint16_t left_low;
@@ -67,13 +101,13 @@ struct ni_kontrol_z1_controls_t {
 	uint16_t crossfader;
 	/* Buttons */
 };
-struct ni_kontrol_z1_t {
-	struct ctlr_dev_t base;
-	union {
-		uint8_t usb_bytes[15];
-		struct ni_kontrol_z1_controls_t controls;
-	};
 
+struct ni_kontrol_z1_t {
+	/* base handles usb i/o etc */
+	struct ctlr_dev_t base;
+
+	/* current value of each controller is stored here */
+	float hw_values[CONTROLS_SIZE];
 };
 
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
@@ -111,10 +145,6 @@ fail:
 	return 0;
 }
 
-static inline uint16_t byteswap(uint16_t in) {
-	return (in >> 8) | (in << 8);
-}
-
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
@@ -137,38 +167,47 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 
 		switch(nbytes) {
 		case 30: {
-			struct ni_kontrol_z1_controls_t *controls = (void*)buf;
+			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
+				const char* name = sliders[i].name;
+				int id     = sliders[i].event_id;
+				int offset = sliders[i].buf_byte_offset;
+				int mask   = sliders[i].mask;
 
-			uint32_t left_gain = (controls->left_gain_msb << 8) | controls->left_gain_lsb;
-			//printf("0 %d, 1 %d, 2 %d, 3, %d,  left gain %d\n", buf[0], buf[1], buf[2], buf[3], left_gain);
-			printf("%d\n", left_gain);
-
-			/*
-			if(dev->controls.left_gain != left_gain) {
-				printf("left gain %d\n", left_gain);
-				dev->controls.left_gain = left_gain;
+				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+				if(dev->hw_values[i] != v) {
+					dev->hw_values[i] = v;
+					//struct ctlr_event_
+					//dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
+					//printf("%s = %d\n", sliders[i].name, v);
+				}
 			}
-			*/
+			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+				int id     = buttons[i].event_id;
+				int offset = buttons[i].buf_byte_offset;
+				int mask   = buttons[i].mask;
 
-			//printf("left high %d\n", byteswap(controls->left_high & 0xFF));
+				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+				int value_idx = SLIDERS_SIZE + i;
+
+				if(dev->hw_values[value_idx] != v) {
+					dev->hw_values[value_idx] = v;
+
+					struct ctlr_event_t event = {
+						.id = CTLR_EVENT_BUTTON,
+						.button  = {
+							.id = id,
+							.pressed = v > 0},
+					};
+					struct ctlr_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
+			}
 			break;
 			}
 		}
-
-		/* update current state of controller */
-		memcpy(&dev->controls, buf, sizeof(dev->controls));
-
-		/* dont print pad messages */
-#if 1
-		for(int i = 0; i < nbytes; i++) {
-			printf("%02x ", buf[nbytes-1-i]);
-		}
-		printf("\n");
-#endif
 	} while (nbytes > 0);
 
-	/* when an event occurs, call the event writing callback */
-	//dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
 
 	return 0;
 }
