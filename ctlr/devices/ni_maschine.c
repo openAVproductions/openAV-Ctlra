@@ -108,7 +108,6 @@ typedef enum {
 	MASCHINE_BTN_COUNT,
 } ni_maschine_buttons_t;
 
-#warning refactor button map before a release
 static const int mikro_bitfield_button_map[4][8] = {
 	{
 		MASCHINE_BTN_RESTART,
@@ -176,19 +175,9 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 {
 	dev->light_buf[0] = 128;
 	const uint32_t size = sizeof(dev->light_buf);
-#warning TODO: Use libusb here instead of hidraw write()
-
 	int ret = ctlr_dev_impl_usb_write(&dev->base, 0 /* interface */,
 					  USB_ENDPOINT_WRITE,
 					  dev->light_buf, size);
-#if 0
-	int ret = write(dev->fd, dev->light_buf, size);
-	if(ret != size) {
-#ifdef NI_MASCHINE_DEBUG
-		printf("%s : write error\n", __func__);
-#endif
-	}
-#endif
 }
 
 struct ni_maschine_rgb {
@@ -256,8 +245,6 @@ ni_maschine_screen_clear(struct ni_maschine_t *dev)
 
 	for (i = 0; i < 4; i++) {
 		screen_buf[1] = i * 32;
-		//printf("%s fix dev->fd here\n", __func__);
-		//write(dev->fd, screen_buf, sizeof(screen_buf));
 		ctlr_dev_impl_usb_write(&dev->base, 0, USB_ENDPOINT_WRITE,
 					screen_buf, sizeof(screen_buf));
 	}
@@ -430,20 +417,19 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 		l[i] = 0;
 	for(int i = 31; i <= 78; i++)
 		l[i] = 0;
-	l[19] = 0;
-
-	/* Initialize button contents */
-	dev->button_buf[4] = 16;
+	//l[19] = 0;
 
 #ifdef NI_MASCHINE_DEBUG
 	printf("Maschine connected at %s\n", buf);
 #endif
 	for(int i = 0; i <= 30; i++)
-		l[i] = 5;
+		l[i] = 0xF2; /* button brightness on startup */
 	for(int i = 0; i < 16; i++)
 		ni_maschine_pad_light_set(dev, i, 0xF0F0F0,
 					  PAD_RELEASE_BRIGHTNESS);
 	ni_maschine_led_flush(dev);
+
+	ni_maschine_screen_clear(dev);
 
 	ni_maschine_set_brightness_contrast(dev, 20, 20);
 
@@ -459,11 +445,6 @@ struct ctlr_dev_t *ni_maschine_connect(ctlr_event_func event_func,
 
 	return (struct ctlr_dev_t *)dev;
 fail:
-#warning todo libusb close dev
-#if 0
-	if(dev->fd)
-		close(dev->fd);
-#endif
 	if(dev)
 		free(dev);
 	return 0;

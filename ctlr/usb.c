@@ -108,7 +108,6 @@ int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
 
 	int r;
 	int transferred;
-
 	r = libusb_interrupt_transfer(dev->usb_handle, endpoint, data,
 				      size, &transferred, 1000);
 	if (r < 0) {
@@ -119,8 +118,6 @@ int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
 		fprintf(stderr, "short read (%d)\n", r);
 		return -1;
 	}
-
-	printf("%s\n", __func__);
 	return 0;
 }
 
