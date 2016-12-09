@@ -58,6 +58,10 @@
 #define PAD_PRESS_BRIGHTNESS    (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS  (0.25f)
 
+/* Constants for read / write endpoints */
+#define USB_ENDPOINT_READ  (0x81)
+#define USB_ENDPOINT_WRITE (0x01)
+
 typedef enum {
 	MASCHINE_BUTTON_DOWN,
 	MASCHINE_BUTTON_UP,
@@ -229,6 +233,7 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 static void
 ni_maschine_screen_clear(struct ni_maschine_t *dev)
 {
+	return;
 	int i;
 
 	uint8_t screen_buf[1 + 8 + 256] = {
@@ -247,8 +252,10 @@ ni_maschine_screen_clear(struct ni_maschine_t *dev)
 
 	for (i = 0; i < 4; i++) {
 		screen_buf[1] = i * 32;
-		printf("%s fix dev->fd here\n", __func__);
+		//printf("%s fix dev->fd here\n", __func__);
 		//write(dev->fd, screen_buf, sizeof(screen_buf));
+		ctlr_dev_impl_usb_write(&dev->base, 0, USB_ENDPOINT_WRITE,
+					screen_buf, sizeof(screen_buf));
 	}
 }
 
@@ -529,8 +536,8 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 		int r;
 		int transferred;
 
-#define ENDPOINT 0x81
-		r = libusb_interrupt_transfer(base->usb_handle, ENDPOINT, buf,
+		r = libusb_interrupt_transfer(base->usb_handle,
+					      USB_ENDPOINT_READ, buf,
 					      1024, &transferred, 1000);
 		if (r == LIBUSB_ERROR_TIMEOUT) {
 			fprintf(stderr, "timeout\n");
@@ -540,13 +547,13 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
-		if(nbytes == 32)
-			continue;
-		//fprintf(stderr, "short recv (%d); nbytes %d\n", r, transferred);
-		for(int i = 0; i < nbytes; i++) {
-			printf("%2x", buf[nbytes-1-i]);
+		/* dont print pad messages */
+		if(nbytes != 32) {
+			for(int i = 0; i < nbytes; i++) {
+				printf("%2x", buf[nbytes-1-i]);
+			}
+			printf("\n");
 		}
-		printf("\n");
 
 		src = buf[0];
 		data = &buf[1];
@@ -558,7 +565,9 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 			if (!pads_changed) {
 				continue;
 			}
-			/*
+			printf("pad changed\n");
+#if 0
+			int i;
 			for (i = 0; i < 16; i++) {
 				if(dev->pads[i] > 232)
 					ni_maschine_pad_light_set(dev, i, 0x0077Fe,
@@ -567,8 +576,8 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 					ni_maschine_pad_light_set(dev, i, 0x101010,
 							   PAD_RELEASE_BRIGHTNESS);
 			}
-			*/
 			ni_maschine_led_flush(dev);
+#endif
 			break;
 		case 1:
 			button_dispatch(dev, data);
