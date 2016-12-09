@@ -52,7 +52,6 @@ void sighndlr(int signal)
 	ctlr_dev_grid_light_set(dev, 0, 5, 0xFFFF0000);
 	ctlr_dev_grid_light_set(dev, 0, 10, 0xFFFF0000);
 	ctlr_dev_grid_light_set(dev, 0, 15, 0xFFFF0000);
-	sleep(1);
 	(void)signal;
 	ctlr_dev_disconnect(dev);
 	exit(0);
