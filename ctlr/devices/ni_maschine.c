@@ -518,10 +518,8 @@ static uint32_t ni_maschine_poll(struct ctlr_dev_t *base)
 	int iter = 1;
 
 	do {
-
 		int r;
 		int transferred;
-
 		r = libusb_interrupt_transfer(base->usb_handle,
 					      USB_ENDPOINT_READ, buf,
 					      1024, &transferred, 1000);

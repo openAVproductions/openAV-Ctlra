@@ -38,6 +38,12 @@
 /* Uncomment to print on actions */
 /* #define DEBUG_PRINTS */
 
+#define NI_VENDOR       0x17cc
+#define NI_KONTROL_Z1   0x1210
+
+#define USB_ENDPOINT_READ  (0x82)
+#define USB_ENDPOINT_WRITE (0x02)
+
 struct ni_kontrol_z1_t {
 	struct ctlr_dev_t base;
 	uint32_t event_counter;
@@ -57,6 +63,13 @@ struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
 	if(!dev)
 		goto fail;
 
+	int err = ctlr_dev_impl_usb_open(NI_VENDOR, NI_KONTROL_Z1,
+				         (struct ctlr_dev_t *)dev, 0);
+	if(err) {
+		printf("error conencting to Kontrol Z1 controller, is it plugged in?\n");
+		return 0;
+	}
+
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
 	dev->base.light_set = ni_kontrol_z1_light_set;
@@ -73,6 +86,33 @@ fail:
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+	uint8_t buf[1024], src, *data;
+	uint32_t nbytes;
+
+	do {
+		int r;
+		int transferred;
+		r = libusb_interrupt_transfer(base->usb_handle,
+					      USB_ENDPOINT_READ, buf,
+					      1024, &transferred, 1000);
+		if (r == LIBUSB_ERROR_TIMEOUT) {
+			fprintf(stderr, "timeout\n");
+			return 0;
+		}
+		nbytes = transferred /2;
+		if(nbytes == 0)
+			return 0;
+
+		/* dont print pad messages */
+#if 0
+			for(int i = 0; i < nbytes; i++) {
+				printf("%2x", buf[nbytes-1-i]);
+			}
+			printf("\n");
+		}
+#endif
+		printf("%s got %d bytes\n", __func__, nbytes);
+	} while (nbytes > 0);
 
 	/* when an event occurs, call the event writing callback */
 	//dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
