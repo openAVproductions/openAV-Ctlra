@@ -30,6 +30,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -47,7 +48,8 @@
 struct ni_kontrol_z1_controls_t {
 	uint8_t waste;
 	/* Left mixer chan */
-	uint16_t left_gain;
+	uint8_t left_gain_msb;
+	uint8_t left_gain_lsb;
 	uint16_t left_high;
 	uint16_t left_mid;
 	uint16_t left_low;
@@ -136,11 +138,25 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		switch(nbytes) {
 		case 30: {
 			struct ni_kontrol_z1_controls_t *controls = (void*)buf;
-			printf("left gain %d\n", byteswap(controls->left_gain & 0xFF));
-			printf("left high %d\n", byteswap(controls->left_high & 0xFF));
+
+			uint32_t left_gain = (controls->left_gain_lsb << 8) | controls->left_gain_msb;
+			//printf("0 %d, 1 %d, 2 %d, 3, %d,  left gain %d\n", buf[0], buf[1], buf[2], buf[3], left_gain);
+			printf("%d\n", left_gain);
+
+			/*
+			if(dev->controls.left_gain != left_gain) {
+				printf("left gain %d\n", left_gain);
+				dev->controls.left_gain = left_gain;
+			}
+			*/
+
+			//printf("left high %d\n", byteswap(controls->left_high & 0xFF));
 			break;
 			}
 		}
+
+		/* update current state of controller */
+		memcpy(&dev->controls, buf, sizeof(dev->controls));
 
 		/* dont print pad messages */
 #if 1
