@@ -48,8 +48,8 @@
 struct ni_kontrol_z1_controls_t {
 	uint8_t waste;
 	/* Left mixer chan */
-	uint8_t left_gain_msb;
 	uint8_t left_gain_lsb;
+	uint8_t left_gain_msb;
 	uint16_t left_high;
 	uint16_t left_mid;
 	uint16_t left_low;
@@ -139,7 +139,7 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		case 30: {
 			struct ni_kontrol_z1_controls_t *controls = (void*)buf;
 
-			uint32_t left_gain = (controls->left_gain_lsb << 8) | controls->left_gain_msb;
+			uint32_t left_gain = (controls->left_gain_msb << 8) | controls->left_gain_lsb;
 			//printf("0 %d, 1 %d, 2 %d, 3, %d,  left gain %d\n", buf[0], buf[1], buf[2], buf[3], left_gain);
 			printf("%d\n", left_gain);
 
