@@ -33,7 +33,7 @@
 #define OPENAV_CTLR_NI_MASCHINE
 
 /* Uncomment to see debug output */
-#define NI_MASCHINE_DEBUG
+//#define NI_MASCHINE_DEBUG
 
 #include <math.h>
 #include <errno.h>
@@ -219,8 +219,8 @@ ni_maschine_set_brightness_contrast(struct ni_maschine_t *dev,
 
 		0x00
 	};
-	printf("%s fix ioctl on dev->fd here\n", __func__);
-	//ioctl(dev->fd, HIDIOCSFEATURE(11), msg);
+#warning TODO: Howto do ioctl style message with libusb for contrast/bright?
+	//ioctl(dev->fd, HIDIOCSFEATURE(10), msg);
 }
 
 static void
