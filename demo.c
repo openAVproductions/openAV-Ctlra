@@ -24,6 +24,7 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			printf("[%s] button %d\n",
 			       e->button.pressed ? " X " : "   ",
 			       e->id);
+			ctlr_dev_grid_light_set(dev, 0, e->button.id, 0xFFFF0000);
 			break;
 		case CTLR_EVENT_ENCODER:
 			printf("[%s] encoder %d\n",
@@ -50,10 +51,6 @@ void demo_event_func(struct ctlr_dev_t* dev,
 void sighndlr(int signal)
 {
 	ctlr_dev_grid_light_set(dev, 0, 0, 0xFFFF0000);
-	ctlr_dev_grid_light_set(dev, 0, 5, 0xFFFF0000);
-	ctlr_dev_grid_light_set(dev, 0, 10, 0xFFFF0000);
-	ctlr_dev_grid_light_set(dev, 0, 15, 0xFFFF0000);
-	(void)signal;
 	ctlr_dev_disconnect(dev);
 	exit(0);
 }
