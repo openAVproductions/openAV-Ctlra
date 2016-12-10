@@ -69,6 +69,8 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			break;
 		};
 	}
+
+	ctlr_dev_light_set(dev, UINT32_MAX, 0);
 }
 
 void sighndlr(int signal)

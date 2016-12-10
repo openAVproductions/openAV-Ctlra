@@ -136,7 +136,8 @@ struct ni_kontrol_z1_t {
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 
-	/* current state of the lights, +1 for start 0x80 byte */
+	/* current state of the lights, only flush on dirty */
+	uint8_t lights_dirty;
 	uint8_t lights[NI_KONTROL_Z1_LED_COUNT];
 };
 
@@ -278,9 +279,15 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 				    uint32_t light_status)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+	int ret;
+
+	if(light_id == UINT32_MAX)
+		goto flush;
 
 	if(!dev || light_id > NI_KONTROL_Z1_LED_COUNT)
 		return;
+
+	dev->lights_dirty = 1;
 
 	uint32_t blink  = (light_status >> 31);
 	uint32_t bright = (light_status >> 24) & 0x7F;
@@ -306,26 +313,14 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 		dev->lights[light_id+1] = b;
 	}
 
-	int ret = ctlr_dev_impl_usb_write(base,
+	return;
+
+flush:
+	ret = ctlr_dev_impl_usb_write(base,
 					  USB_INTERFACE_ID,
 					  USB_ENDPOINT_WRITE,
 					  dev->lights,
 					  NI_KONTROL_Z1_LED_COUNT);
 	if(ret < 0)
-		printf("%s write failed!\n");
-
-#if 0
-	const int size = 22;
-	uint8_t buf[size];
-	memset(buf, 0x0, size);
-	for(int i = 0; i < size; i++) {
-		buf[0] = 0x80;
-		buf[i+1] = 0xFF;
-		printf("%d\n", i+1);
-		int ret = ctlr_dev_impl_usb_write(base, USB_INTERFACE_ID,
-						  USB_ENDPOINT_WRITE,
-						  buf, size);
-		sleep(1);
-	}
-#endif
+		printf("%s write failed!\n", __func__);
 }
