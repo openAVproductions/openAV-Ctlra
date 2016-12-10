@@ -39,6 +39,18 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
+			if(e->slider.id == 11) {
+				int iter = (int)((e->slider.value+0.05) * 7.f);
+				for(i = 0; i < iter; i++) {
+					ctlr_dev_light_set(dev, 0 + i, UINT32_MAX);
+					ctlr_dev_light_set(dev, 7 + i, UINT32_MAX);
+				}
+				for(; i < 7.0; i++) {
+					ctlr_dev_light_set(dev, 0 + i, 0);
+					ctlr_dev_light_set(dev, 7 + i, 0);
+				}
+			}
+
 			break;
 		case CTLR_EVENT_GRID:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
@@ -74,6 +86,15 @@ int main()
 	void *userdata = 0x0;
 	void *future = 0x0;
 	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
+	if(!dev)
+		return -1;
+
+	usleep(1000*500);
+	ctlr_dev_light_set(dev, 16, 0xff << 16);
+	usleep(1000*500);
+	ctlr_dev_light_set(dev, 16, 0xff);
+	usleep(1000*500);
+	ctlr_dev_light_set(dev, 16, 0);
 
 	uint32_t i = 8;
 	while(i > 0)

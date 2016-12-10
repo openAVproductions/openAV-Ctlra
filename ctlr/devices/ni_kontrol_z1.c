@@ -136,8 +136,8 @@ struct ni_kontrol_z1_t {
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 
-	/* current state of the lights */
-	uint8_t lights[NI_KONTROL_Z1_LED_COUNT];
+	/* current state of the lights, +1 for start 0x80 byte */
+	uint8_t lights[NI_KONTROL_Z1_LED_COUNT+1];
 };
 
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
@@ -265,7 +265,7 @@ static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 
 	/* Turn off all lights */
-	memset(dev->lights, 0, NI_KONTROL_Z1_LED_COUNT);
+	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
 	dev->lights[0] = 0x80;
 	ni_kontrol_z1_light_set(base, 0, 0);
 
@@ -296,14 +296,14 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 #endif
 
 	/* write brighness to all LEDs */
-	dev->lights[light_id] = bright;
+	dev->lights[light_id+1] = bright;
 	dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue */
 	if(light_id == NI_KONTROL_Z1_LED_FX_ON_LEFT ||
 	   light_id == NI_KONTROL_Z1_LED_FX_ON_RIGHT) {
-		dev->lights[light_id]   = r;
-		dev->lights[light_id+1] = b;
+		dev->lights[light_id+1]   = r;
+		dev->lights[light_id+2] = b;
 	}
 
 	int ret = ctlr_dev_impl_usb_write(base,

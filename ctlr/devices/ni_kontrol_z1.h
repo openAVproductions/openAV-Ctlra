@@ -61,7 +61,6 @@ enum NI_KONTROL_Z1_LEDS {
 	/* FX ON supports Orange and Blue colours */
 	NI_KONTROL_Z1_LED_FX_ON_RIGHT = 19,	/* orange */
 	NI_KONTROL_Z1_LED_UNUSED_2 = 20,	/* blue */
-	UNUSED = 21,
 	NI_KONTROL_Z1_LED_COUNT
 };
 
