@@ -4,8 +4,6 @@
 #include <signal.h>
 
 #include "ctlr/ctlr.h"
-#include "ctlr/devices/ni_maschine.h"
-#include "ctlr/devices/ni_kontrol_z1.h"
 
 static volatile uint32_t done;
 static struct ctlr_dev_t* dev;
@@ -41,7 +39,7 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
 			if(e->slider.id == 11) {
-				int iter = (int)((e->slider.value+0.05) * 7.f);
+				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
 					ctlr_dev_light_set(dev, 1 + i, UINT32_MAX);
 					ctlr_dev_light_set(dev, 8 + i, UINT32_MAX);
@@ -91,9 +89,6 @@ int main()
 	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
 	if(!dev)
 		return -1;
-
-	ctlr_dev_light_set(dev, NI_KONTROL_Z1_LED_FX_ON_RIGHT, 0xff);
-	ctlr_dev_light_set(dev, NI_KONTROL_Z1_LED_FX_ON_RIGHT, 0xff<< 16);
 
 	uint32_t i = 8;
 	while(i > 0)
