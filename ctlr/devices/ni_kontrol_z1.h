@@ -62,7 +62,8 @@ enum NI_KONTROL_Z1_LEDS {
 	NI_KONTROL_Z1_LED_COUNT
 };
 
-enum NI_KONTROL_Z1_SLIDERS {
+enum NI_KONTROL_Z1_CONTROLS {
+	/* Faders and Dials */
 	NI_KONTROL_Z1_SLIDER_LEFT_GAIN = 0,
 	NI_KONTROL_Z1_SLIDER_LEFT_EQ_HIGH = 1,
 	NI_KONTROL_Z1_SLIDER_LEFT_EQ_MID = 2,
@@ -77,9 +78,18 @@ enum NI_KONTROL_Z1_SLIDERS {
 	NI_KONTROL_Z1_SLIDER_LEFT_FADER = 11,
 	NI_KONTROL_Z1_SLIDER_RIGHT_FADER = 12,
 	NI_KONTROL_Z1_SLIDER_CROSS_FADER = 13,
+	/* Buttons */
+	NI_KONTROL_Z1_BTN_CUE_A = 14,
+	NI_KONTROL_Z1_BTN_CUE_B = 15,
+	NI_KONTROL_Z1_BTN_MODE = 16,
+	NI_KONTROL_Z1_BTN_FX_ON_L = 17,
+	NI_KONTROL_Z1_BTN_FX_ON_R = 18,
+	/* Count of all controls */
+	NI_KONTROL_Z1_CONTROLS_COUNT
 };
 
-static const char *ni_kontrol_z1_slider_names[] = {
+static const char *ni_kontrol_z1_control_names[] = {
+	/* Faders / Dials */
 	"Gain (Left)",
 	"Eq High (Left)",
 	"Eq Mid (Left)",
@@ -94,18 +104,7 @@ static const char *ni_kontrol_z1_slider_names[] = {
 	"Fader (Left)",
 	"Fader (Right)",
 	"Crossfader",
-};
-
-enum NI_KONTROL_Z1_BTNS {
-	NI_KONTROL_Z1_BTN_CUE_A = 0,
-	NI_KONTROL_Z1_BTN_CUE_B = 1,
-	NI_KONTROL_Z1_BTN_MODE = 2,
-	NI_KONTROL_Z1_BTN_FX_ON_L = 3,
-	NI_KONTROL_Z1_BTN_FX_ON_R = 4,
-	NI_KONTROL_Z1_BTN_COUNT
-};
-
-static const char *ni_kontrol_z1_btn_names[] = {
+	/* Buttons */
 	"Headphones Cue A",
 	"Headphones Cue B",
 	"Mode",
