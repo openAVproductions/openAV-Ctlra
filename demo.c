@@ -5,6 +5,7 @@
 
 #include "ctlr/ctlr.h"
 #include "ctlr/devices/ni_maschine.h"
+#include "ctlr/devices/ni_kontrol_z1.h"
 
 static volatile uint32_t done;
 static struct ctlr_dev_t* dev;
@@ -42,12 +43,12 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			if(e->slider.id == 11) {
 				int iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
-					ctlr_dev_light_set(dev, 0 + i, UINT32_MAX);
-					ctlr_dev_light_set(dev, 7 + i, UINT32_MAX);
+					ctlr_dev_light_set(dev, 1 + i, UINT32_MAX);
+					ctlr_dev_light_set(dev, 8 + i, UINT32_MAX);
 				}
 				for(; i < 7.0; i++) {
-					ctlr_dev_light_set(dev, 0 + i, 0);
-					ctlr_dev_light_set(dev, 7 + i, 0);
+					ctlr_dev_light_set(dev, 1 + i, 0);
+					ctlr_dev_light_set(dev, 8 + i, 0);
 				}
 			}
 
@@ -89,12 +90,8 @@ int main()
 	if(!dev)
 		return -1;
 
-	usleep(1000*500);
-	ctlr_dev_light_set(dev, 16, 0xff << 16);
-	usleep(1000*500);
-	ctlr_dev_light_set(dev, 16, 0xff);
-	usleep(1000*500);
-	ctlr_dev_light_set(dev, 16, 0);
+	ctlr_dev_light_set(dev, NI_KONTROL_Z1_LED_FX_ON_RIGHT, 0xff);
+	ctlr_dev_light_set(dev, NI_KONTROL_Z1_LED_FX_ON_RIGHT, 0xff<< 16);
 
 	uint32_t i = 8;
 	while(i > 0)
