@@ -74,6 +74,8 @@ static const char *ni_kontrol_z1_control_names[] = {
 	"Filter On (Left)",
 	"Filter On (Right)",
 };
+#define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_z1_control_names) /\
+			    sizeof(ni_kontrol_z1_control_names[0]))
 
 static const struct ni_kontrol_z1_ctlr_t sliders[] = {
 	/* Left */
@@ -144,6 +146,16 @@ static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *dev);
 static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
 				uint32_t light_status);
 
+static const char *
+ni_kontrol_z1_control_get_name(struct ctlr_dev_t *base,
+			       uint32_t control_id)
+{
+	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+	if(control_id < CONTROL_NAMES_SIZE)
+		return ni_kontrol_z1_control_names[control_id];
+	return 0;
+}
+
 struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
 				  void *userdata, void *future)
 {
@@ -163,6 +175,7 @@ struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
 	dev->base.light_set = ni_kontrol_z1_light_set;
+	dev->base.control_get_name = ni_kontrol_z1_control_get_name;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
