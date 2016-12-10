@@ -2,7 +2,7 @@
 
 #include "ctlr.h"
 #include "devices.h"
-#include "devices/device_impl.h"
+#include "device_impl.h"
 
 struct ctlr_dev_connect_func_t {
 	enum ctlr_dev_id_t id;

@@ -3,7 +3,7 @@
 
 #include "ctlr.h"
 #include "devices.h"
-#include "devices/device_impl.h"
+#include "device_impl.h"
 
 static int ctlr_libusb_initialized;
 

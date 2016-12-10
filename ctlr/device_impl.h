@@ -32,7 +32,7 @@
 #ifndef OPENAV_CTLR_DEVICE_IMPL
 #define OPENAV_CTLR_DEVICE_IMPL
 
-#include "../event.h"
+#include "event.h"
 
 #include "libusb.h"
 
