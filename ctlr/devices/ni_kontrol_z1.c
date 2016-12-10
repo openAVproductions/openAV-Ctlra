@@ -45,39 +45,61 @@
 #define USB_ENDPOINT_WRITE (0x02)
 
 /* This struct is a generic struct to identify hw controls */
-#warning TODO: move name to .h file for application lookup
 struct ni_kontrol_z1_ctlr_t {
-	char name[29];
 	int event_id;
 	int buf_byte_offset;
 	uint32_t mask;
 };
 
+static const char *ni_kontrol_z1_control_names[] = {
+	/* Faders / Dials */
+	"Gain (Left)",
+	"Eq High (Left)",
+	"Eq Mid (Left)",
+	"Eq Low (Left)",
+	"Filter (Left)",
+	"Gain (Right)",
+	"Eq High (Right)",
+	"Eq Mid (Right)",
+	"Eq Low (Right)",
+	"Filter (Right)",
+	"Cue Mix",
+	"Fader (Left)",
+	"Fader (Right)",
+	"Crossfader",
+	/* Buttons */
+	"Headphones Cue A",
+	"Headphones Cue B",
+	"Mode",
+	"Filter On (Left)",
+	"Filter On (Right)",
+};
+
 static const struct ni_kontrol_z1_ctlr_t sliders[] = {
 	/* Left */
-	{"left gain"       , NI_KONTROL_Z1_SLIDER_LEFT_GAIN,  1, UINT32_MAX},
-	{"left eq high"    , NI_KONTROL_Z1_SLIDER_LEFT_EQ_HIGH,  3, UINT32_MAX},
-	{"left eq mid"     , NI_KONTROL_Z1_SLIDER_LEFT_EQ_MID,  5, UINT32_MAX},
-	{"left eq low"     , NI_KONTROL_Z1_SLIDER_LEFT_EQ_LOW,  7, UINT32_MAX},
-	{"left filter"     , NI_KONTROL_Z1_SLIDER_LEFT_FILTER,  9, UINT32_MAX},
-	{"right gain"      , NI_KONTROL_Z1_SLIDER_RIGHT_GAIN, 11, UINT32_MAX},
-	{"right eq high"   , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
-	{"right eq mid"    , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_MID, 15, UINT32_MAX},
-	{"right eq low"    , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_LOW, 17, UINT32_MAX},
-	{"right filter"    , NI_KONTROL_Z1_SLIDER_RIGHT_FILTER, 19, UINT32_MAX},
-	{"cue mix"         , NI_KONTROL_Z1_SLIDER_CUE_MIX, 21, UINT32_MAX},
-	{"left fader"      , NI_KONTROL_Z1_SLIDER_LEFT_FADER, 23, UINT32_MAX},
-	{"right fader"     , NI_KONTROL_Z1_SLIDER_RIGHT_FADER, 25, UINT32_MAX},
-	{"cross fader"     , NI_KONTROL_Z1_SLIDER_CROSS_FADER, 27, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_EQ_HIGH ,  3, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_EQ_MID  ,  5, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_EQ_LOW  ,  7, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_FILTER  ,  9, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_GAIN   , 11, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_EQ_MID , 15, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_EQ_LOW , 17, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_FILTER , 19, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_CUE_MIX      , 21, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_LEFT_FADER   , 23, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_RIGHT_FADER  , 25, UINT32_MAX},
+	{NI_KONTROL_Z1_SLIDER_CROSS_FADER  , 27, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
 static const struct ni_kontrol_z1_ctlr_t buttons[] = {
-	{"headphones cue A", NI_KONTROL_Z1_BTN_CUE_A  , 29, 0x10},
-	{"headphones cue B", NI_KONTROL_Z1_BTN_CUE_B  , 29, 0x1},
-	{"mode"            , NI_KONTROL_Z1_BTN_MODE   , 29, 0x2},
-	{"left filter on"  , NI_KONTROL_Z1_BTN_FX_ON_L, 29, 0x4},
-	{"right filter on" , NI_KONTROL_Z1_BTN_FX_ON_R, 29, 0x8},
+	{NI_KONTROL_Z1_BTN_CUE_A  , 29, 0x10},
+	{NI_KONTROL_Z1_BTN_CUE_B  , 29, 0x1},
+	{NI_KONTROL_Z1_BTN_MODE   , 29, 0x2},
+	{NI_KONTROL_Z1_BTN_FX_ON_L, 29, 0x4},
+	{NI_KONTROL_Z1_BTN_FX_ON_R, 29, 0x8},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -176,7 +198,6 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		switch(nbytes) {
 		case 30: {
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-				const char* name = sliders[i].name;
 				int id     = sliders[i].event_id;
 				int offset = sliders[i].buf_byte_offset;
 				int mask   = sliders[i].mask;

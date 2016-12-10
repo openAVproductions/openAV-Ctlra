@@ -88,29 +88,5 @@ enum NI_KONTROL_Z1_CONTROLS {
 	NI_KONTROL_Z1_CONTROLS_COUNT
 };
 
-static const char *ni_kontrol_z1_control_names[] = {
-	/* Faders / Dials */
-	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
-	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
-	"Crossfader",
-	/* Buttons */
-	"Headphones Cue A",
-	"Headphones Cue B",
-	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
-};
-
 #endif /* OPENAV_CTLR_NI_KONTROL_Z1_H */
 
