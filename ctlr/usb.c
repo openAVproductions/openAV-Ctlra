@@ -108,6 +108,7 @@ int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
 	int transferred;
 	r = libusb_interrupt_transfer(dev->usb_handle, endpoint, data,
 				      size, &transferred, 1000);
+#warning TODO: fix return values here, and document in header
 	if (r < 0) {
 		fprintf(stderr, "%s intr error %d\n", __func__, r);
 		return r;

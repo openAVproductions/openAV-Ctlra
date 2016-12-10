@@ -137,7 +137,7 @@ struct ni_kontrol_z1_t {
 	float hw_values[CONTROLS_SIZE];
 
 	/* current state of the lights */
-	uint8_t lights[22];
+	uint8_t lights[NI_KONTROL_Z1_LED_COUNT];
 };
 
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
@@ -238,7 +238,6 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
-					//ni_kontrol_z1_light_set(&dev->base, 0, 0);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
@@ -264,6 +263,12 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+
+	/* Turn off all lights */
+	memset(dev->lights, 0, NI_KONTROL_Z1_LED_COUNT);
+	dev->lights[0] = 0x80;
+	ni_kontrol_z1_light_set(base, 0, 0);
+
 	free(dev);
 	return 0;
 }
@@ -272,11 +277,17 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status)
 {
+	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+
+	if(!dev || light_id > NI_KONTROL_Z1_LED_COUNT)
+		return;
+
 	uint32_t blink  = (light_status >> 31);
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	uint32_t r      = (light_status >> 16) & 0xFF;
 	uint32_t g      = (light_status >>  8) & 0xFF;
 	uint32_t b      = (light_status >>  0) & 0xFF;
+
 #ifdef DEBUG_PRINTS
 	printf("%s : dev %p, light %d, status %d\n", __func__, dev,
 	       light_id, light_status);
@@ -284,6 +295,26 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 	       blink, bright, r, g, b);
 #endif
 
+	/* write brighness to all LEDs */
+	dev->lights[light_id] = bright;
+	dev->lights[0] = 0x80;
+
+	/* FX ON buttons have orange and blue */
+	if(light_id == NI_KONTROL_Z1_LED_FX_ON_LEFT ||
+	   light_id == NI_KONTROL_Z1_LED_FX_ON_RIGHT) {
+		dev->lights[light_id]   = r;
+		dev->lights[light_id+1] = b;
+	}
+
+	int ret = ctlr_dev_impl_usb_write(base,
+					  USB_INTERFACE_ID,
+					  USB_ENDPOINT_WRITE,
+					  dev->lights,
+					  NI_KONTROL_Z1_LED_COUNT);
+	if(ret < 0)
+		printf("%s write failed!\n");
+
+#if 0
 	const int size = 22;
 	uint8_t buf[size];
 	memset(buf, 0x0, size);
@@ -296,4 +327,5 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 						  buf, size);
 		sleep(1);
 	}
+#endif
 }

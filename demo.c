@@ -26,7 +26,7 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
-			ctlr_dev_grid_light_set(dev, 0, e->button.id, 0xFFFF0000);
+			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
