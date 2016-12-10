@@ -273,7 +273,7 @@ static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
 	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
 	dev->lights[0] = 0x80;
 	ni_kontrol_z1_light_set(base, 0, 0);
-	ctlr_dev_light_flush(dev, 0);
+	ni_kontrol_z1_light_flush(base, 0);
 
 	free(dev);
 	return 0;
