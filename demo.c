@@ -70,7 +70,7 @@ void demo_event_func(struct ctlr_dev_t* dev,
 		};
 	}
 
-	ctlr_dev_light_set(dev, UINT32_MAX, 0);
+	ctlr_dev_light_flush(dev, 0);
 }
 
 void sighndlr(int signal)
@@ -129,7 +129,6 @@ int main()
 		usleep(100);
 	}
 #endif
-	ctlr_dev_light_set(dev, light_id, light_status_r * 0);
 	ctlr_dev_disconnect(dev);
 	return 0;
 }

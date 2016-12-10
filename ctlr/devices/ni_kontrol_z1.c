@@ -144,8 +144,11 @@ struct ni_kontrol_z1_t {
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
 static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *dev);
 static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *dev);
-static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
-				uint32_t light_status);
+static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev,
+				    uint32_t light_id,
+				    uint32_t light_status);
+static void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base,
+				      uint32_t force);
 
 static const char *
 ni_kontrol_z1_control_get_name(struct ctlr_dev_t *base,
@@ -177,6 +180,7 @@ struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
 	dev->base.light_set = ni_kontrol_z1_light_set;
 	dev->base.control_get_name = ni_kontrol_z1_control_get_name;
+	dev->base.light_flush = ni_kontrol_z1_light_flush;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
@@ -269,6 +273,7 @@ static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
 	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
 	dev->lights[0] = 0x80;
 	ni_kontrol_z1_light_set(base, 0, 0);
+	ctlr_dev_light_flush(dev, 0);
 
 	free(dev);
 	return 0;
@@ -280,9 +285,6 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	int ret;
-
-	if(light_id == UINT32_MAX)
-		goto flush;
 
 	if(!dev || light_id > NI_KONTROL_Z1_LED_COUNT)
 		return;
@@ -314,9 +316,15 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 	}
 
 	return;
+}
 
-flush:
-	ret = ctlr_dev_impl_usb_write(base,
+void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
+{
+	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+	if(!dev->lights_dirty && !force)
+		return;
+
+	int ret = ctlr_dev_impl_usb_write(base,
 					  USB_INTERFACE_ID,
 					  USB_ENDPOINT_WRITE,
 					  dev->lights,
