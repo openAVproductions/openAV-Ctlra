@@ -97,6 +97,17 @@ void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
+/** Get the human readable name for *control_id* from *dev*. The
+ * control id is passed in eg: event.button.id, or can be any of the
+ * DEVICE_NAME_CONTROLS enumeration. Ownership of the string *remains* in
+ * the driver, so the application *must not* attempt to free the returned
+ * pointer.
+ * @retval 0 Invalid control_id requested
+ * @retval Ptr A pointer to a string representing the control name
+ * */
+const char *ctlr_dev_control_get_name(struct ctlr_dev_t *dev,
+				      uint32_t control_id);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

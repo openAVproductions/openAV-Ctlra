@@ -61,3 +61,11 @@ void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev, uint32_t grid_id,
 	if(dev && dev->grid_light_set)
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
+
+const char * ctlr_dev_control_get_name(struct ctlr_dev_t *dev,
+				       uint32_t control_id)
+{
+	if(dev && dev->control_get_name)
+		return dev->control_get_name(dev, control_id);
+	return 0;
+}

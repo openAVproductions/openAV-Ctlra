@@ -19,22 +19,29 @@ void demo_event_func(struct ctlr_dev_t* dev,
 	for(uint32_t i = 0; i < num_events; i++) {
 		char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
+		const char *name = 0;
 		switch(e->id) {
 		case CTLR_EVENT_BUTTON:
-			printf("[%s] button %d\n",
+			name = ctlr_dev_control_get_name(dev, e->button.id);
+			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
-			       e->button.id);
+			       name, e->button.id);
 			ctlr_dev_grid_light_set(dev, 0, e->button.id, 0xFFFF0000);
 			break;
 		case CTLR_EVENT_ENCODER:
-			printf("[%s] encoder %d\n",
+			name = ctlr_dev_control_get_name(dev, e->button.id);
+			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       e->encoder.id);
+			       name, e->button.id);
 			break;
 		case CTLR_EVENT_SLIDER:
-			printf("[%03d] slider %d\n", (int)(e->slider.value * 100.f), e->slider.id );
+			name = ctlr_dev_control_get_name(dev, e->button.id);
+			printf("[%03d] slider %s (%d)\n",
+			       (int)(e->slider.value * 100.f),
+			       name, e->slider.id);
 			break;
 		case CTLR_EVENT_GRID:
+			name = ctlr_dev_control_get_name(dev, e->button.id);
 			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {
 				pressed = e->grid.pressed ? " X " : "   ";
 			} else {
