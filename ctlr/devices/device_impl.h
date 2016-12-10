@@ -44,6 +44,8 @@ typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
 typedef void (*ctlr_dev_impl_light_set)(struct ctlr_dev_t *dev,
 					   uint32_t light_id,
 					   uint32_t light_status);
+typedef void (*ctlr_dev_impl_light_flush)(struct ctlr_dev_t *dev,
+					  uint32_t force);
 typedef int32_t (*ctlr_dev_impl_grid_light_set)(struct ctlr_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,
@@ -82,6 +84,7 @@ struct ctlr_dev_t {
 	/* Function pointers to write feedback to device */
 	ctlr_dev_impl_light_set light_set;
 	ctlr_dev_impl_grid_light_set grid_light_set;
+	ctlr_dev_impl_light_flush light_flush;
 
 	/* Function pointer to retrive info about a particular control */
 	ctlr_dev_impl_control_get_name control_get_name;

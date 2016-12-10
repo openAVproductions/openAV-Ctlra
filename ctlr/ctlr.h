@@ -72,7 +72,8 @@ uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
  */
 int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
 
-/** Send Lights/LEDs feedback to device.
+/** Write Lights/LEDs feedback to device. See *ctlr_dev_lights_flush* to
+ * flush the actual bytes over the cable to the device.
  * The *light_id* is a value specific to the device that enumerates each
  * available light. The *light_status* variable represents the state of
  * the light, as a bitmask of 3 properties: blinking, brightness, colour.
@@ -86,6 +87,11 @@ void ctlr_dev_light_set(struct ctlr_dev_t *dev,
 			uint32_t light_id,
 			uint32_t light_status);
 
+/** Flush the bytes with the Lights/LEDs info over the cable. The device
+ * implementation must track which lights are actually dirty, and only
+ * flush the bytes needed. If *force* is set, force flush everything.
+ */
+void ctlr_dev_light_flush(struct ctlr_dev_t *dev, uint32_t force);
 
 /** Send Lights/LEDs feedback to a grid on the device. See
  * *ctlr_dev_light_set* documentation for details. The *grid_id* is
