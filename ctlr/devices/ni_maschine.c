@@ -175,9 +175,9 @@ struct ni_maschine_t {
 
 static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 {
-	dev->light_buf[0] = 128;
+	dev->light_buf[0] = 0x80;
 	const uint32_t size = sizeof(dev->light_buf);
-	int ret = ctlr_dev_impl_usb_write(&dev->base, 0 /* interface */,
+	int ret = ctlr_dev_impl_usb_write(&dev->base, USB_INTERFACE_ID,
 					  USB_ENDPOINT_WRITE,
 					  dev->light_buf, size);
 }

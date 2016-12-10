@@ -23,13 +23,13 @@ void demo_event_func(struct ctlr_dev_t* dev,
 		case CTLR_EVENT_BUTTON:
 			printf("[%s] button %d\n",
 			       e->button.pressed ? " X " : "   ",
-			       e->id);
+			       e->button.id);
 			ctlr_dev_grid_light_set(dev, 0, e->button.id, 0xFFFF0000);
 			break;
 		case CTLR_EVENT_ENCODER:
 			printf("[%s] encoder %d\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       e->id);
+			       e->encoder.id);
 			break;
 		case CTLR_EVENT_SLIDER:
 			printf("[%03d] slider %d\n", (int)(e->slider.value * 100.f), e->slider.id );

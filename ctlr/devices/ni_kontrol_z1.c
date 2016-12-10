@@ -43,6 +43,7 @@
 #define USB_ENDPOINT_WRITE (0x02)
 
 /* This struct is a generic struct to identify hw controls */
+#warning TODO: move name to .h file for application lookup
 struct ni_kontrol_z1_ctlr_t {
 	char name[29];
 	int event_id;
@@ -108,6 +109,9 @@ struct ni_kontrol_z1_t {
 
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
+
+	/* current state of the lights */
+	uint8_t lights[22];
 };
 
 static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
@@ -151,7 +155,9 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 	uint8_t buf[1024];
 	uint32_t nbytes;
 
+
 	do {
+#warning refactor this to use the ctlr_dev_t abstraction for I/O
 		int r;
 		int transferred;
 		r = libusb_interrupt_transfer(base->usb_handle,
@@ -196,6 +202,7 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
+					ni_kontrol_z1_light_set(&dev->base, 0, 0);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
@@ -225,8 +232,9 @@ static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
 	return 0;
 }
 
-static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
-				uint32_t light_status)
+static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
+				    uint32_t light_id,
+				    uint32_t light_status)
 {
 	uint32_t blink  = (light_status >> 31);
 	uint32_t bright = (light_status >> 24) & 0x7F;
@@ -239,4 +247,18 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
 	printf("decoded: blink[%d], bright[%d], r[%d], g[%d], b[%d]\n",
 	       blink, bright, r, g, b);
 #endif
+
+	const int size = 22;
+	uint8_t buf[size];
+	memset(buf, 0x0, size);
+	for(int i = 0; i < size; i++) {
+		buf[0] = 0x80;
+		buf[i+1] = 0xFF;
+		printf("%d\n", i+1);
+		int ret = ctlr_dev_impl_usb_write(base, USB_INTERFACE_ID,
+						  USB_ENDPOINT_WRITE,
+						  buf, size);
+		sleep(1);
+	}
+
 }
