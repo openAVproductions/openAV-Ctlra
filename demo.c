@@ -31,6 +31,9 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       e->id);
 			break;
+		case CTLR_EVENT_SLIDER:
+			printf("[%03d] slider %d\n", (int)(e->slider.value * 100.f), e->slider.id );
+			break;
 		case CTLR_EVENT_GRID:
 			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {
 				pressed = e->grid.pressed ? " X " : "   ";

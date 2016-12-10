@@ -53,19 +53,19 @@ struct ni_kontrol_z1_ctlr_t {
 static const struct ni_kontrol_z1_ctlr_t sliders[] = {
 	/* Left */
 	{"left gain"       , 0,  1, UINT32_MAX},
-	{"left eq high"    , 0,  3, UINT32_MAX},
-	{"left eq mid"     , 0,  5, UINT32_MAX},
-	{"left eq low"     , 0,  7, UINT32_MAX},
-	{"left filter"     , 0,  9, UINT32_MAX},
-	{"right gain"      , 0, 11, UINT32_MAX},
-	{"right eq high"   , 0, 13, UINT32_MAX},
-	{"right eq mid"    , 0, 15, UINT32_MAX},
-	{"right eq low"    , 0, 17, UINT32_MAX},
-	{"right filter"    , 0, 19, UINT32_MAX},
-	{"cue mix"         , 0, 21, UINT32_MAX},
-	{"left fader"      , 0, 23, UINT32_MAX},
-	{"right fader"     , 0, 25, UINT32_MAX},
-	{"cross fader"     , 0, 27, UINT32_MAX},
+	{"left eq high"    , 1,  3, UINT32_MAX},
+	{"left eq mid"     , 2,  5, UINT32_MAX},
+	{"left eq low"     , 3,  7, UINT32_MAX},
+	{"left filter"     , 4,  9, UINT32_MAX},
+	{"right gain"      , 5, 11, UINT32_MAX},
+	{"right eq high"   , 6, 13, UINT32_MAX},
+	{"right eq mid"    , 7, 15, UINT32_MAX},
+	{"right eq low"    , 8, 17, UINT32_MAX},
+	{"right filter"    , 9, 19, UINT32_MAX},
+	{"cue mix"         ,10, 21, UINT32_MAX},
+	{"left fader"      ,11, 23, UINT32_MAX},
+	{"right fader"     ,12, 25, UINT32_MAX},
+	{"cross fader"     ,13, 27, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
@@ -176,9 +176,15 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
 				if(dev->hw_values[i] != v) {
 					dev->hw_values[i] = v;
-					//struct ctlr_event_
-					//dev->base.event_func(base, 1, e, dev->base.event_func_userdata);
-					//printf("%s = %d\n", sliders[i].name, v);
+					struct ctlr_event_t event = {
+						.id = CTLR_EVENT_SLIDER,
+						.slider  = {
+							.id = id,
+							.value = v / 4096.f},
+					};
+					struct ctlr_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
 				}
 			}
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {

@@ -61,6 +61,14 @@ struct ctlr_event_encoder_t {
 	int32_t delta;
 };
 
+/** Represents a fader or dial with a fixed range of movement. */
+struct ctlr_event_slider_t {
+	/** The id of the slider */
+	uint32_t id;
+	/** Absolute position of the control */
+	float value;
+};
+
 #define CTLR_EVENT_GRID_BUTTON   (1<<0)
 #define CTLR_EVENT_GRID_PRESSURE (1<<1)
 
@@ -91,6 +99,7 @@ struct ctlr_event_t {
 	union {
 		struct ctlr_event_button_t button;
 		struct ctlr_event_encoder_t encoder;
+		struct ctlr_event_slider_t slider;
 		struct ctlr_event_grid_t grid;
 	};
 };
