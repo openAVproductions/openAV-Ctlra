@@ -36,6 +36,8 @@
 
 #include "device_impl.h"
 
+#include "ni_kontrol_z1.h"
+
 #define NI_VENDOR       0x17cc
 #define NI_KONTROL_Z1   0x1210
 #define USB_INTERFACE_ID   (0x03)
@@ -53,29 +55,29 @@ struct ni_kontrol_z1_ctlr_t {
 
 static const struct ni_kontrol_z1_ctlr_t sliders[] = {
 	/* Left */
-	{"left gain"       , 0,  1, UINT32_MAX},
-	{"left eq high"    , 1,  3, UINT32_MAX},
-	{"left eq mid"     , 2,  5, UINT32_MAX},
-	{"left eq low"     , 3,  7, UINT32_MAX},
-	{"left filter"     , 4,  9, UINT32_MAX},
-	{"right gain"      , 5, 11, UINT32_MAX},
-	{"right eq high"   , 6, 13, UINT32_MAX},
-	{"right eq mid"    , 7, 15, UINT32_MAX},
-	{"right eq low"    , 8, 17, UINT32_MAX},
-	{"right filter"    , 9, 19, UINT32_MAX},
-	{"cue mix"         ,10, 21, UINT32_MAX},
-	{"left fader"      ,11, 23, UINT32_MAX},
-	{"right fader"     ,12, 25, UINT32_MAX},
-	{"cross fader"     ,13, 27, UINT32_MAX},
+	{"left gain"       , NI_KONTROL_Z1_SLIDER_LEFT_GAIN,  1, UINT32_MAX},
+	{"left eq high"    , NI_KONTROL_Z1_SLIDER_LEFT_EQ_HIGH,  3, UINT32_MAX},
+	{"left eq mid"     , NI_KONTROL_Z1_SLIDER_LEFT_EQ_MID,  5, UINT32_MAX},
+	{"left eq low"     , NI_KONTROL_Z1_SLIDER_LEFT_EQ_LOW,  7, UINT32_MAX},
+	{"left filter"     , NI_KONTROL_Z1_SLIDER_LEFT_FILTER,  9, UINT32_MAX},
+	{"right gain"      , NI_KONTROL_Z1_SLIDER_RIGHT_GAIN, 11, UINT32_MAX},
+	{"right eq high"   , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
+	{"right eq mid"    , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_MID, 15, UINT32_MAX},
+	{"right eq low"    , NI_KONTROL_Z1_SLIDER_RIGHT_EQ_LOW, 17, UINT32_MAX},
+	{"right filter"    , NI_KONTROL_Z1_SLIDER_RIGHT_FILTER, 19, UINT32_MAX},
+	{"cue mix"         , NI_KONTROL_Z1_SLIDER_CUE_MIX, 21, UINT32_MAX},
+	{"left fader"      , NI_KONTROL_Z1_SLIDER_LEFT_FADER, 23, UINT32_MAX},
+	{"right fader"     , NI_KONTROL_Z1_SLIDER_RIGHT_FADER, 25, UINT32_MAX},
+	{"cross fader"     , NI_KONTROL_Z1_SLIDER_CROSS_FADER, 27, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
 static const struct ni_kontrol_z1_ctlr_t buttons[] = {
-	{"headphones cue B", 0, 29, 0x10},
-	{"headphones cue B", 1, 29, 0x1},
-	{"mode"            , 2, 29, 0x2},
-	{"left filter on"  , 3, 29, 0x4},
-	{"right filter on" , 4, 29, 0x8},
+	{"headphones cue A", NI_KONTROL_Z1_BTN_CUE_A  , 29, 0x10},
+	{"headphones cue B", NI_KONTROL_Z1_BTN_CUE_B  , 29, 0x1},
+	{"mode"            , NI_KONTROL_Z1_BTN_MODE   , 29, 0x2},
+	{"left filter on"  , NI_KONTROL_Z1_BTN_FX_ON_L, 29, 0x4},
+	{"right filter on" , NI_KONTROL_Z1_BTN_FX_ON_R, 29, 0x8},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -202,7 +204,7 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
-					ni_kontrol_z1_light_set(&dev->base, 0, 0);
+					//ni_kontrol_z1_light_set(&dev->base, 0, 0);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
@@ -260,5 +262,4 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 						  buf, size);
 		sleep(1);
 	}
-
 }
