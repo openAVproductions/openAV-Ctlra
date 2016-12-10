@@ -114,7 +114,11 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
 
 /** Write bytes to a specific handle and endpoint. Some complex USB HID
  * controllers have multiple Interfaces (selected by the handle_idx), and
- * more than one *endpoint* per Interface. */
+ * more than one *endpoint* per Interface.
+ * @retval 0 on success
+ * @retval -1 if not all data was written
+ * @retval -anyhing_else Transfer error
+ */
 int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
 			    int endpoint, uint8_t *data, uint32_t size);
 
