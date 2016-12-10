@@ -112,15 +112,18 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
 			   int interface,
 			   uint32_t num_skip);
 
-/** Write bytes to a specific handle and endpoint. Some complex USB HID
+/** Xfer bytes to a specific handle and endpoint. Some complex USB HID
  * controllers have multiple Interfaces (selected by the handle_idx), and
- * more than one *endpoint* per Interface.
- * @retval 0 on success
- * @retval -1 if not all data was written
- * @retval -anyhing_else Transfer error
+ * more than one *endpoint* per Interface. Reading or Writing is chosen
+ * based on the endpoint type - in or out (from the host POV).
+ * Eg: Endpoing 0x81 is in (so the host recieves data from it)
+ *     Performing a xfer() with endpoint 0x81 causes a read of the device.
+ * @retval 0 No bytes transferred
+ * @retval positive Amount of bytes xfered to/from endpoint
+ * @retval negative Error occurred in transfer.
  */
-int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
-			    int endpoint, uint8_t *data, uint32_t size);
+int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
+			   int endpoint, uint8_t *data, uint32_t size);
 
 /** Close the USB device handles, returning them to the kernel */
 void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev);

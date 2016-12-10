@@ -100,24 +100,19 @@ fail:
 	return -ENODEV;
 }
 
-int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, int handle_idx,
-			    int endpoint, uint8_t *data, uint32_t size)
+int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
+			   int endpoint, uint8_t *data, uint32_t size)
 {
-
-	int r;
 	int32_t transferred;
-
-	r = libusb_interrupt_transfer(dev->usb_handle, endpoint, data,
+	int r = libusb_interrupt_transfer(dev->usb_handle, endpoint, data,
 				      size, &transferred, 1000);
-	if (r < 0) {
-		fprintf(stderr, "%s error on writing %d\n", __func__, r);
+	if (r == -7) /* timeout */ {
+		return 0;
+	} else if (r < 0) {
+		fprintf(stderr, "%s error writing %d\n", __func__, r);
 		return r;
 	}
-	if ((uint32_t)transferred < size) {
-		fprintf(stderr, "short read (%d)\n", r);
-		return -1;
-	}
-	return 0;
+	return transferred;
 }
 
 void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev)

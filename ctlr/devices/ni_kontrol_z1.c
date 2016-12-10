@@ -34,9 +34,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "device_impl.h"
-
 #include "ni_kontrol_z1.h"
+#include "../device_impl.h"
 
 #define NI_VENDOR       0x17cc
 #define NI_KONTROL_Z1   0x1210
@@ -195,21 +194,13 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	uint8_t buf[1024];
-	uint32_t nbytes;
-
+	int32_t nbytes;
 
 	do {
-#warning refactor this to use the ctlr_dev_t abstraction for I/O
-		int r;
-		int transferred;
-		r = libusb_interrupt_transfer(base->usb_handle,
-					      USB_ENDPOINT_READ, buf,
-					      1024, &transferred, 1000);
-		if (r == LIBUSB_ERROR_TIMEOUT) {
-			fprintf(stderr, "timeout\n");
-			return 0;
-		}
-		nbytes = transferred;
+		int handle_idx = 0;
+		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
+							 USB_ENDPOINT_READ,
+							 buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -324,11 +315,11 @@ void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	int ret = ctlr_dev_impl_usb_write(base,
-					  USB_INTERFACE_ID,
-					  USB_ENDPOINT_WRITE,
-					  dev->lights,
-					  NI_KONTROL_Z1_LED_COUNT);
+	int ret = ctlr_dev_impl_usb_xfer(base,
+					 USB_INTERFACE_ID,
+					 USB_ENDPOINT_WRITE,
+					 dev->lights,
+					 NI_KONTROL_Z1_LED_COUNT);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }

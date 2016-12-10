@@ -47,7 +47,7 @@
 #include <sys/ioctl.h>
 #include <linux/hidraw.h>
 
-#include "device_impl.h"
+#include "../device_impl.h"
 
 #define NPADS                   16
 #define NI_VENDOR               0x17cc
@@ -177,9 +177,9 @@ static void ni_maschine_led_flush(struct ni_maschine_t *dev)
 {
 	dev->light_buf[0] = 0x80;
 	const uint32_t size = sizeof(dev->light_buf);
-	int ret = ctlr_dev_impl_usb_write(&dev->base, USB_INTERFACE_ID,
-					  USB_ENDPOINT_WRITE,
-					  dev->light_buf, size);
+	int ret = ctlr_dev_impl_usb_xfer(&dev->base, USB_INTERFACE_ID,
+					 USB_ENDPOINT_WRITE,
+					 dev->light_buf, size);
 }
 
 struct ni_maschine_rgb {
@@ -246,7 +246,7 @@ ni_maschine_screen_clear(struct ni_maschine_t *dev)
 
 	for (i = 0; i < 4; i++) {
 		screen_buf[1] = i * 32;
-		ctlr_dev_impl_usb_write(&dev->base, 0, USB_ENDPOINT_WRITE,
+		ctlr_dev_impl_usb_xfer(&dev->base, 0, USB_ENDPOINT_WRITE,
 					screen_buf, sizeof(screen_buf));
 	}
 }
@@ -283,9 +283,9 @@ ni_screen_output_segment(struct ni_maschine_t *dev, int seg_idx,
 	}
 
 	printf("%s writing to screen now\n", __func__);
-	int ret = ctlr_dev_impl_usb_write(&dev->base, 0,
-					  USB_ENDPOINT_WRITE,
-					  msg, sizeof(msg));
+	int ret = ctlr_dev_impl_usb_xfer(&dev->base, 0,
+					 USB_ENDPOINT_WRITE,
+					 msg, sizeof(msg));
 }
 
 /* public function for blitting bits to the screen */
