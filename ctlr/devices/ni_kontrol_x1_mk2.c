@@ -410,33 +410,22 @@ static void ni_kontrol_x1_mk2_light_set(struct ctlr_dev_t *base,
 	if(!dev || light_id > NI_KONTROL_X1_MK2_LED_COUNT)
 		return;
 
-	dev->lights_dirty = 1;
-
-	uint32_t blink  = (light_status >> 31);
-	uint32_t bright = (light_status >> 24) & 0x7F;
-	uint32_t r      = (light_status >> 16) & 0xFF;
-	uint32_t g      = (light_status >>  8) & 0xFF;
-	uint32_t b      = (light_status >>  0) & 0xFF;
-
-#ifdef DEBUG_PRINTS
-	printf("%s : dev %p, light %d, status %d\n", __func__, dev,
-	       light_id, light_status);
-	printf("decoded: blink[%d], bright[%d], r[%d], g[%d], b[%d]\n",
-	       blink, bright, r, g, b);
-#endif
-
 	/* write brighness to all LEDs */
+	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-	dev->lights[0] = 0x80;
 
-	/* FX ON buttons have orange and blue */
-	if(light_id == NI_KONTROL_X1_MK2_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_X1_MK2_LED_FX_ON_RIGHT) {
+	/* Range of lights here support RGB */
+	if(light_id >= NI_KONTROL_X1_MK2_LED_LEFT_HOTCUE_1 &&
+	   light_id < NI_KONTROL_X1_MK2_LED_LEFT_FLUX) {
+		uint32_t r      = (light_status >> 16) & 0xFF;
+		uint32_t g      = (light_status >>  8) & 0xFF;
+		uint32_t b      = (light_status >>  0) & 0xFF;
 		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
+		dev->lights[light_id+1] = g;
+		dev->lights[light_id+2] = b;
 	}
 
-	return;
+	dev->lights_dirty = 1;
 }
 
 void ni_kontrol_x1_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
@@ -445,6 +434,7 @@ void ni_kontrol_x1_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
+	dev->lights[0] = 0x80;
 	int ret = ctlr_dev_impl_usb_xfer(base,
 					 USB_INTERFACE_ID,
 					 USB_ENDPOINT_WRITE,
