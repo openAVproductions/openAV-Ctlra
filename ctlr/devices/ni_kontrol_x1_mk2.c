@@ -60,12 +60,48 @@ static const char *ni_kontrol_x1_mk2_control_names[] = {
 	"FX 2 Knob (Right)",
 	"FX 3 Knob (Right)",
 	"FX 4 Knob (Right)",
+	/* Encoders */
+	"Encoder Rotate (Middle)",
+	"Encoder Rotate (Left)",
+	"Encoder Rotate (Right)",
 	/* Buttons */
-	"Headphones Cue A",
-	"Headphones Cue B",
-	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
+	"FX 1 Button (Left)",
+	"FX 2 Button (Left)",
+	"FX 3 Button (Left)",
+	"FX 4 Button (Left)",
+	"FX 1 Button (Right)",
+	"FX 2 Button (Right)",
+	"FX 3 Button (Right)",
+	"FX 4 Button (Right)",
+	"FX Select 1 (Left)",
+	"FX Select 2 (Left)",
+	"FX Select 1 (Right)",
+	"FX Select 2 (Right)",
+	"Left Arrow",
+	"Shift",
+	"Right Arrow",
+	"Encoder Right Press",
+	"Right Hotcue 1",
+	"Right Hotcue 2",
+	"Right Hotcue 3",
+	"Right Hotcue 4",
+	"Right Flux",
+	"Right Sync",
+	"Right Cue",
+	"Right Play",
+	"Left Hotcue 1",
+	"Left Hotcue 2",
+	"Left Hotcue 3",
+	"Left Hotcue 4",
+	"Left Flux",
+	"Left Sync",
+	"Left Cue",
+	"Left Play",
+	"Encoder Touch (Right)",
+	"Encoder Touch (Middle)",
+	"Encoder Touch (Left)",
+	"Encoder Press (Middle)",
+	"Encoder Press (Left)",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_x1_mk2_control_names) /\
 			    sizeof(ni_kontrol_x1_mk2_control_names[0]))
@@ -104,10 +140,10 @@ static const struct ni_kontrol_x1_mk2_ctlr_t buttons[] = {
 	{NI_KONTROL_X1_MK2_BTN_RIGHT_FX_SELECT1, 20, 0x20},
 	{NI_KONTROL_X1_MK2_BTN_RIGHT_FX_SELECT2, 20, 0x10},
 	/* Arrow / Shift buttons between encoders */
-	{NI_KONTROL_X1_MK2_BTN_LEFT_ARROW      , 20, 0x08},
-	{NI_KONTROL_X1_MK2_BTN_SHIFT           , 20, 0x04},
-	{NI_KONTROL_X1_MK2_BTN_RIGHT_ARROW     , 20, 0x02},
-	{NI_KONTROL_X1_MK2_BTN_ENCODER_RIGHT   , 20, 0x01},
+	{NI_KONTROL_X1_MK2_BTN_LEFT_ARROW         , 20, 0x08},
+	{NI_KONTROL_X1_MK2_BTN_SHIFT              , 20, 0x04},
+	{NI_KONTROL_X1_MK2_BTN_RIGHT_ARROW        , 20, 0x02},
+	{NI_KONTROL_X1_MK2_BTN_ENCODER_RIGHT_PRESS, 20, 0x01},
 	/* Right lower btn controls */
 	{NI_KONTROL_X1_MK2_BTN_RIGHT_1   , 21, 0x80},
 	{NI_KONTROL_X1_MK2_BTN_RIGHT_2   , 21, 0x40},
@@ -284,9 +320,9 @@ static uint32_t ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
+#if 0
 #define GREEN   "\x1b[32m"
 #define RESET   "\x1b[0m"
-
 		for(int i = 0; i < 31; i++) {
 			char v = buf[i];
 			if(v)
@@ -295,7 +331,7 @@ static uint32_t ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 				printf("%02x ", v);
 		}
 		printf("\n");
-
+#endif
 		struct ni_kontrol_x1_mk2_controls_t *c = (void *)buf;
 
 		switch(nbytes) {
