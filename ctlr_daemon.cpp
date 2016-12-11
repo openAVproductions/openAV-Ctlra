@@ -35,9 +35,9 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
-			message[0] = 0xb0;
+			message[0] = e->button.pressed ? 0x90 : 0x80;
 			message[1] = e->button.id;
-			message[2] = int(e->button.pressed * 127.f);
+			message[2] = e->button.pressed ? 0x70 : 0;
 			midiout->sendMessage( &message );
 			break;
 		case CTLR_EVENT_ENCODER:
