@@ -15,6 +15,7 @@ OPTS = -march=native -O0
 INCLUDES += -I. -I /usr/include/libusb-1.0/
 
 CFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
+CXXFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS) -Wno-c++11-compat-deprecated-writable-strings
 
 ##############
 ### LINKER ###

@@ -3,20 +3,29 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include <iostream>
+#include <cstdlib>
+#include "rtmidi/RtMidi.h"
+
 #include "ctlr/ctlr.h"
 
 static volatile uint32_t done;
 static struct ctlr_dev_t* dev;
+static RtMidiOut *midiout;
 
 void demo_event_func(struct ctlr_dev_t* dev,
-		     uint32_t num_events,
-		     struct ctlr_event_t** events,
-		     void *userdata)
+                     uint32_t num_events,
+                     struct ctlr_event_t** events,
+                     void *userdata)
 {
 	(void)dev;
 	(void)userdata;
+
+	/* reserve 3 bytes */
+	std::vector<unsigned char> message(3);
+
 	for(uint32_t i = 0; i < num_events; i++) {
-		char *pressed = 0;
+		const char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
 		const char *name = 0;
 		switch(e->id) {
@@ -26,6 +35,10 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
+			message[0] = 0xb0;
+			message[1] = e->button.id;
+			message[2] = int(e->button.pressed * 127.f);
+			midiout->sendMessage( &message );
 			break;
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
@@ -49,12 +62,17 @@ void demo_event_func(struct ctlr_dev_t* dev,
 					ctlr_dev_light_set(dev, 8 + i, 0);
 				}
 			}
-
+			message[0] = 0xb0;
+			message[1] = e->slider.id;
+			message[2] = int(e->slider.value * 127.f);
+			midiout->sendMessage( &message );
 			break;
+
 		case CTLR_EVENT_GRID:
+			static const char* grid_pressed[] = { " X ", "   " };
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {
-				pressed = e->grid.pressed ? " X " : "   ";
+				pressed = grid_pressed[e->grid.pressed];
 			} else {
 				pressed = "---";
 			}
@@ -81,8 +99,17 @@ void sighndlr(int signal)
 int main()
 {
 	signal(SIGINT, sighndlr);
+
+	midiout = new RtMidiOut();
+	unsigned int nPorts = midiout->getPortCount();
+	if ( nPorts == 0 ) {
+		std::cout << "No ports available!\n";
+		return 0;
+	}
+	midiout->openPort( 1 );
+
 	//int dev_id = CTLR_DEV_SIMPLE;
-	int dev_id = CTLR_DEV_NI_KONTROL_Z1;
+	enum ctlr_dev_id_t dev_id = CTLR_DEV_NI_KONTROL_Z1;
 	//int dev_id = CTLR_DEV_NI_MASCHINE_MIKRO_MK2;
 	void *userdata = 0x0;
 	void *future = 0x0;
@@ -91,8 +118,7 @@ int main()
 		return -1;
 
 	uint32_t i = 8;
-	while(i > 0)
-	{
+	while(i > 0) {
 		ctlr_dev_poll(dev);
 		i--;
 	}
@@ -101,29 +127,14 @@ int main()
 	const uint32_t BLINK  = (1 << 31);
 	const uint32_t BRIGHT = (0x7F << 24);
 	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
-#if 0
-	uint32_t light_status_g = BLINK |  (0x0 << 16) | (0xFF << 8) | (0x0);
-	uint32_t light_status_b = BLINK |  (0x0 << 16) | (0x0 << 8) | (0xFF);
-	sleep(1);
-	ctlr_dev_light_set(dev, 31, light_status_r);
-	ctlr_dev_light_set(dev, 31+3, light_status_g);
-	ctlr_dev_light_set(dev, 31+6, light_status_b);
 
-	for(int i = 0; i < 3; i++) {
-		ctlr_dev_light_set(dev, 9, light_status_b);
-		usleep(800*500);
-		printf("%d\n", i);
-		light_status_b <<= 8;
-	}
-	sleep(1);
-	(void)done;
-#else
 	printf("polling loop now..\n");
 	while(!done) {
 		ctlr_dev_poll(dev);
 		usleep(100);
 	}
-#endif
+
 	ctlr_dev_disconnect(dev);
+	delete midiout;
 	return 0;
 }
