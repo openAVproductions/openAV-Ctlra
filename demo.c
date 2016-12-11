@@ -82,7 +82,8 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 	//int dev_id = CTLR_DEV_SIMPLE;
-	int dev_id = CTLR_DEV_NI_KONTROL_Z1;
+	//int dev_id = CTLR_DEV_NI_KONTROL_Z1;
+	int dev_id = CTLR_DEV_NI_KONTROL_X1_MK2;
 	//int dev_id = CTLR_DEV_NI_MASCHINE_MIKRO_MK2;
 	void *userdata = 0x0;
 	void *future = 0x0;
