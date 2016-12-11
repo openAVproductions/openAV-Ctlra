@@ -95,11 +95,6 @@ typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
 						    void *userdata,
 						    void *future);
 
-/* Macro extern declaration for the connect function */
-#define DECLARE_DEV_CONNECT_FUNC(name)					\
-extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
-			    void *userdata, void *future)
-
 /** Opens the libusb handle for the given vid:pid pair, claiming the given
  * interface number. The implementation skips the first *num_skip* entries,
  * to allow opening the N(th) of a single type of controller.
@@ -127,6 +122,13 @@ int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
 
 /** Close the USB device handles, returning them to the kernel */
 void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev);
+
+/* IMPLEMENTATION DETAILS ONLY BELOW HERE */
+
+/* Macro extern declaration for the connect function */
+#define DECLARE_DEV_CONNECT_FUNC(name)					\
+extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
+			    void *userdata, void *future)
 
 #endif /* OPENAV_CTLR_DEVICE_IMPL */
 
