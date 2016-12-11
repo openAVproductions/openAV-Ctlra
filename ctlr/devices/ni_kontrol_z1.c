@@ -37,8 +37,8 @@
 #include "ni_kontrol_z1.h"
 #include "../device_impl.h"
 
-#define NI_VENDOR       0x17cc
-#define NI_KONTROL_Z1   0x1210
+#define NI_VENDOR          (0x17cc)
+#define NI_KONTROL_Z1      (0x1210)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
 #define USB_ENDPOINT_WRITE (0x02)
@@ -106,48 +106,16 @@ static const struct ni_kontrol_z1_ctlr_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-struct ni_kontrol_z1_controls_t {
-	uint8_t waste;
-	/* Left mixer chan */
-	uint16_t left_gain;
-	uint16_t left_high;
-	uint16_t left_mid;
-	uint16_t left_low;
-	uint16_t left_filter;
-	/* Right mixer chan */
-	uint16_t right_gain;
-	uint16_t right_high;
-	uint16_t right_mid;
-	uint16_t right_low;
-	uint16_t right_filter;
-	/* Mixer and Misc */
-	uint16_t cue_mix;
-	uint16_t left_fader;
-	uint16_t right_fader;
-	uint16_t crossfader;
-	/* Buttons */
-};
-
+/* Represents the the hardware device */
 struct ni_kontrol_z1_t {
 	/* base handles usb i/o etc */
 	struct ctlr_dev_t base;
-
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
-
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 	uint8_t lights[NI_KONTROL_Z1_LED_COUNT];
 };
-
-static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *dev);
-static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *dev);
-static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *dev);
-static void ni_kontrol_z1_light_set(struct ctlr_dev_t *dev,
-				    uint32_t light_id,
-				    uint32_t light_status);
-static void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base,
-				      uint32_t force);
 
 static const char *
 ni_kontrol_z1_control_get_name(struct ctlr_dev_t *base,
@@ -156,37 +124,6 @@ ni_kontrol_z1_control_get_name(struct ctlr_dev_t *base,
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_z1_control_names[control_id];
-	return 0;
-}
-
-struct ctlr_dev_t *ni_kontrol_z1_connect(ctlr_event_func event_func,
-				  void *userdata, void *future)
-{
-	(void)future;
-	struct ni_kontrol_z1_t *dev = calloc(1, sizeof(struct ni_kontrol_z1_t));
-	if(!dev)
-		goto fail;
-
-	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_Z1,
-					 USB_INTERFACE_ID, 0);
-	if(err) {
-		printf("error conencting to Kontrol Z1 controller, is it plugged in?\n");
-		return 0;
-	}
-
-	dev->base.poll = ni_kontrol_z1_poll;
-	dev->base.disconnect = ni_kontrol_z1_disconnect;
-	dev->base.light_set = ni_kontrol_z1_light_set;
-	dev->base.control_get_name = ni_kontrol_z1_control_get_name;
-	dev->base.light_flush = ni_kontrol_z1_light_flush;
-
-	dev->base.event_func = event_func;
-	dev->base.event_func_userdata = userdata;
-
-	return (struct ctlr_dev_t *)dev;
-fail:
-	free(dev);
 	return 0;
 }
 
@@ -252,21 +189,6 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 		}
 	} while (nbytes > 0);
 
-
-	return 0;
-}
-
-static int32_t ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
-{
-	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
-
-	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
-	dev->lights[0] = 0x80;
-	ni_kontrol_z1_light_set(base, 0, 0);
-	ni_kontrol_z1_light_flush(base, 0);
-
-	free(dev);
 	return 0;
 }
 
@@ -280,36 +202,25 @@ static void ni_kontrol_z1_light_set(struct ctlr_dev_t *base,
 	if(!dev || light_id > NI_KONTROL_Z1_LED_COUNT)
 		return;
 
-	dev->lights_dirty = 1;
-
-	uint32_t blink  = (light_status >> 31);
-	uint32_t bright = (light_status >> 24) & 0x7F;
-	uint32_t r      = (light_status >> 16) & 0xFF;
-	uint32_t g      = (light_status >>  8) & 0xFF;
-	uint32_t b      = (light_status >>  0) & 0xFF;
-
-#ifdef DEBUG_PRINTS
-	printf("%s : dev %p, light %d, status %d\n", __func__, dev,
-	       light_id, light_status);
-	printf("decoded: blink[%d], bright[%d], r[%d], g[%d], b[%d]\n",
-	       blink, bright, r, g, b);
-#endif
-
 	/* write brighness to all LEDs */
+	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
 	dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue */
 	if(light_id == NI_KONTROL_Z1_LED_FX_ON_LEFT ||
 	   light_id == NI_KONTROL_Z1_LED_FX_ON_RIGHT) {
+		uint32_t r      = (light_status >> 16) & 0xFF;
+		uint32_t b      = (light_status >>  0) & 0xFF;
 		dev->lights[light_id  ] = r;
 		dev->lights[light_id+1] = b;
 	}
 
-	return;
+	dev->lights_dirty = 1;
 }
 
-void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
+void
+ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	if(!dev->lights_dirty && !force)
@@ -323,3 +234,51 @@ void ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
+
+static int32_t
+ni_kontrol_z1_disconnect(struct ctlr_dev_t *base)
+{
+	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
+
+	/* Turn off all lights */
+	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
+	dev->lights[0] = 0x80;
+	ni_kontrol_z1_light_set(base, 0, 0);
+	ni_kontrol_z1_light_flush(base, 0);
+
+	free(dev);
+	return 0;
+}
+
+struct ctlr_dev_t *
+ni_kontrol_z1_connect(ctlr_event_func event_func,
+				  void *userdata, void *future)
+{
+	(void)future;
+	struct ni_kontrol_z1_t *dev = calloc(1, sizeof(struct ni_kontrol_z1_t));
+	if(!dev)
+		goto fail;
+
+	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
+					 NI_VENDOR, NI_KONTROL_Z1,
+					 USB_INTERFACE_ID, 0);
+	if(err) {
+		printf("error conencting to Kontrol Z1 controller, is it plugged in?\n");
+		return 0;
+	}
+
+	dev->base.poll = ni_kontrol_z1_poll;
+	dev->base.disconnect = ni_kontrol_z1_disconnect;
+	dev->base.light_set = ni_kontrol_z1_light_set;
+	dev->base.control_get_name = ni_kontrol_z1_control_get_name;
+	dev->base.light_flush = ni_kontrol_z1_light_flush;
+
+	dev->base.event_func = event_func;
+	dev->base.event_func_userdata = userdata;
+
+	return (struct ctlr_dev_t *)dev;
+fail:
+	free(dev);
+	return 0;
+}
+
