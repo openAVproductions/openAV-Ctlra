@@ -9,6 +9,7 @@ void kontrol_x1_update_state(struct ctlr_dev_t *dev, struct dummy_data *d)
 	uint32_t i;
 	int v = d->volume > 0.5f;
 	ctlr_dev_light_set(dev, 15, v * UINT32_MAX);
+	printf("led %d set to %d, %p\n", 15, v, dev);
 	ctlr_dev_light_flush(dev, 0);
 	return;
 }
@@ -19,13 +20,12 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 		     void *userdata)
 {
 	struct dummy_data *dummy = (void *)userdata;
-	(void)dev;
-	(void)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
 		char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
 		const char *name = 0;
 		switch(e->id) {
+
 		case CTLR_EVENT_BUTTON:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] button %s (%d)\n",
@@ -33,12 +33,14 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 			       name, e->button.id);
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
+
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
+
 		case CTLR_EVENT_SLIDER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%03d] slider %s (%d)\n",
@@ -55,8 +57,8 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 					ctlr_dev_light_set(dev, 8 + i, 0);
 				}
 			}
-
 			break;
+
 		case CTLR_EVENT_GRID:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {

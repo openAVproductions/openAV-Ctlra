@@ -13,6 +13,8 @@ struct dummy_data {
 	int playing[2];
 };
 
+typedef void (*update_state_cb)(struct ctlr_dev_t *dev, struct dummy_data *d);
+
 /* Functions to poll / push state to the devs */
 void kontrol_x1_update_state(struct ctlr_dev_t *dev, struct dummy_data *d);
 void kontrol_x1_func(struct ctlr_dev_t* dev, uint32_t num_events,
