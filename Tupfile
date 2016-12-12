@@ -3,6 +3,6 @@ include_rules
 : foreach *.c   |> $(CC)  $(CFLAGS) -c %f -o %o |> %B.o
 : foreach *.cpp rtmidi/*.cpp |> $(CXX) $(CFLAGS) -D__UNIX_JACK__ -D__LINUX_ALSA__ $(CXXFLAGS) -c %f -o %o |> %B.o
 
-: demo.o ctlr/libctlr.a        |> $(CC)  %f -o %o $(LDFLAGS) |> demo
-: ctlr_daemon.o RtMidi.o ctlr/libctlr.a |> $(CXX) -DUNIX_JACK -DLINUX_ALSA %f -o %o $(LDFLAGS) -ljack -lasound -lpthread |> ctlr_daemon
-: perf_test.o ctlr/libctlr.a   |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
+: examples/vegas_mode/*.o ctlr/libctlr.a  |> $(CC) -I ctlr/ %f -o %o $(LDFLAGS) |> vegas_mode
+: ctlr_daemon.o RtMidi.o ctlr/libctlr.a   |> $(CXX) -DUNIX_JACK -DLINUX_ALSA %f -o %o $(LDFLAGS) -ljack -lasound -lpthread |> ctlr_daemon
+: perf_test.o ctlr/libctlr.a              |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
