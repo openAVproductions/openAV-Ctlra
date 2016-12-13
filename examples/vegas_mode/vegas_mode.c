@@ -63,6 +63,7 @@ int main()
 	}
 
 	struct ctlr_t* dev;
+	dummy.revision = 0;
 	uint64_t controller_revision = 0;
 	while(!done) {
 		/* Poll all controllers */
@@ -82,6 +83,7 @@ int main()
 	/* Disconnect all */
 	TAILQ_FOREACH(dev, &ctlr_list, list) {
 		ctlr_dev_disconnect(dev->ctlr);
+		free(dev);
 	}
 
 	return 0;

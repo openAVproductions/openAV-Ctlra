@@ -310,6 +310,7 @@ ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
 		printf("error conencting to Kontrol Z1 controller, is it plugged in?\n");
+		free(dev);
 		return 0;
 	}
 
