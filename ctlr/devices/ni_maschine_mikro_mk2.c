@@ -175,10 +175,10 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 		switch(nbytes) {
 		case 65: {
 				for(int i = 0; i < 16; i++) {
-					uint16_t v = *((uint16_t *)&buf[i+1]);
-					printf("%s", v > 50 ? "." : " " );
+					uint16_t v = *((uint16_t *)&buf[i*2]);
+					//printf("%d\n", v);
 				}
-				printf("\n");
+				//printf("\n");
 			}
 			break;
 		case 6: {
@@ -284,7 +284,7 @@ ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 					 USB_INTERFACE_ID,
 					 USB_ENDPOINT_WRITE,
 					 dev->lights,
-					 18);
+					 62);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
