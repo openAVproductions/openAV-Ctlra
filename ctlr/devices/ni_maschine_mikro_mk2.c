@@ -173,6 +173,14 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 			return 0;
 
 		switch(nbytes) {
+		case 65: {
+				for(int i = 0; i < 16; i++) {
+					uint16_t v = *((uint16_t *)&buf[i+1]);
+					printf("%s", v > 50 ? "." : " " );
+				}
+				printf("\n");
+			}
+			break;
 		case 6: {
 			for(uint32_t i = 0; i < ENCODERS_SIZE; i++) {
 #if 0
