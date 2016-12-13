@@ -15,13 +15,6 @@ void sighndlr(int signal)
 	done = 1;
 }
 
-struct ctlr_t {
-	TAILQ_ENTRY(ctlr_t) list;
-	struct ctlr_dev_t* ctlr;
-	update_state_cb update_state;
-};
-TAILQ_HEAD(ctlr_list_t, ctlr_t);
-
 struct ctlr_supported_t {
 	enum ctlr_dev_id_t dev_id;
 	ctlr_poll_func ctlr_poll;
@@ -36,6 +29,13 @@ static const struct ctlr_supported_t ctlr_supported[] = {
 #define CTLR_SUPPORTED_SIZE (sizeof(ctlr_supported) /\
 			     sizeof(ctlr_supported[0]))
 
+struct ctlr_t {
+	TAILQ_ENTRY(ctlr_t) list;
+	struct ctlr_dev_t* ctlr;
+	update_state_cb update_state;
+};
+TAILQ_HEAD(ctlr_list_t, ctlr_t);
+
 int main()
 {
 	signal(SIGINT, sighndlr);
@@ -48,11 +48,10 @@ int main()
 
 	for(uint32_t i = 0; i < CTLR_SUPPORTED_SIZE; i++) {
 		const struct ctlr_supported_t* sup = &ctlr_supported[i];
-		printf("sup devid %d\n", sup->dev_id);
 		struct ctlr_dev_t* ctlr = ctlr_dev_connect(sup->dev_id,
-							   sup->ctlr_poll,
-							   &dummy,
-							   future);
+		                          sup->ctlr_poll,
+		                          &dummy,
+		                          future);
 		if(ctlr) {
 			struct ctlr_t *dev = calloc(1, sizeof(struct ctlr_t));
 			if(!dev) return -1;
@@ -81,7 +80,8 @@ int main()
 	}
 
 	/* Disconnect all */
-	TAILQ_FOREACH(dev, &ctlr_list, list) {
+	while ((dev = TAILQ_FIRST(&ctlr_list))) {
+		TAILQ_REMOVE(&ctlr_list, dev, list);
 		ctlr_dev_disconnect(dev->ctlr);
 		free(dev);
 	}
