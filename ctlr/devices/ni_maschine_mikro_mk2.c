@@ -144,7 +144,8 @@ struct ni_maschine_mikro_mk2_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
-	uint8_t lights[NI_MASCHINE_MIKRO_MK2_LED_COUNT];
+#warning FIXME: lights array size
+	uint8_t lights[200];
 };
 
 static const char *
@@ -266,17 +267,28 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlr_dev_t *base,
 void
 ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 {
-	return;
-
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	if(!dev->lights_dirty && !force)
 		return;
+
+	/*
+	int strt = 1;
+	dev->lights[0] = 0x80;
+	for(int i = strt; i < strt + 187; i++) {
+		dev->lights[i] = 0xF; // blue
+		printf("%d\n", i);
+	}
+
+	printf("%s\n", __func__);
+	*/
+	memset(dev->lights, 0x0, sizeof(dev->lights));
+	dev->lights[0] = 0x80;
 
 	int ret = ctlr_dev_impl_usb_xfer(base,
 					 USB_INTERFACE_ID,
 					 USB_ENDPOINT_WRITE,
 					 dev->lights,
-					 NI_MASCHINE_MIKRO_MK2_LED_COUNT);
+					 sizeof(dev->lights));
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -287,8 +299,6 @@ ni_maschine_mikro_mk2_disconnect(struct ctlr_dev_t *base)
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_MASCHINE_MIKRO_MK2_LED_COUNT);
-	dev->lights[0] = 0x80;
 	ni_maschine_mikro_mk2_light_set(base, 0, 0);
 	ni_maschine_mikro_mk2_light_flush(base, 0);
 
