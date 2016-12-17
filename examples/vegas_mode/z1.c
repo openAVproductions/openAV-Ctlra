@@ -1,6 +1,8 @@
 
 #include "global.h"
 
+#include <string.h>
+
 #include "ctlr/ctlr.h"
 #include "ctlr/devices/ni_kontrol_z1.h"
 
@@ -23,7 +25,6 @@ void kontrol_z1_func(struct ctlr_dev_t* dev,
 	struct dummy_data *dummy = (void *)userdata;
 	(void)dev;
 	(void)userdata;
-	printf("%s\n", __func__);
 	for(uint32_t i = 0; i < num_events; i++) {
 		char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
@@ -36,13 +37,19 @@ void kontrol_z1_func(struct ctlr_dev_t* dev,
 			       name, e->button.id);
 			//ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			dummy->buttons[e->button.id] = e->button.pressed;
+			if(e->button.id == NI_KONTROL_Z1_BTN_MODE) {
+				memset(&dummy->buttons, e->button.pressed,
+				       sizeof(struct dummy_data));
+			}
 			break;
+
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
+
 		case CTLR_EVENT_SLIDER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%03d] slider %s (%d)\n",
