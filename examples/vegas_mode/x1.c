@@ -28,24 +28,30 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 
 		case CTLR_EVENT_BUTTON:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
+#if 0
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
+#endif
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
+#if 0
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
+#endif
 			break;
 
 		case CTLR_EVENT_SLIDER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
+#if 0
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
+#endif
 			if(e->slider.id == 11) {
 				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
