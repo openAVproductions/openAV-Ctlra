@@ -101,18 +101,11 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-	midiout = new RtMidiOut();
+	midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "CtlrDaemon");
 	unsigned int nPorts = midiout->getPortCount();
 	if ( nPorts == 0 ) {
 		std::cout << "No ports available!\n";
 		return 0;
-	}
-
-	try {
-		midiout->openPort( 1 );
-	} catch (...) {
-		printf("failed to open midi port 1, opening 0\n");
-		midiout->openPort( 0 );
 	}
 
 	//int dev_id = CTLR_DEV_SIMPLE;
@@ -123,6 +116,13 @@ int main()
 	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
 	if(!dev)
 		return -1;
+
+	try {
+		midiout->openVirtualPort( ctlr_dev_get_name(dev) );
+	} catch (...) {
+		printf("CtlrError: failed to open virtual midi port\n");
+		return -1;
+	}
 
 	uint32_t i = 8;
 	while(i > 0) {
