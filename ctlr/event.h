@@ -33,7 +33,6 @@
 #define OPENAV_CTLR_EVENT
 
 #include <stdint.h>
-#include <stdbool.h>
 
 /* Types of events */
 enum ctlr_event_id_t {
@@ -50,7 +49,7 @@ struct ctlr_event_button_t {
 	/** The id of the button */
 	uint32_t id;
 	/** The state of the button */
-	bool pressed;
+	uint8_t pressed;
 };
 
 /** Represents an endless stepped controller. */

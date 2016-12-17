@@ -319,8 +319,11 @@ ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
 		return 0;
 	}
 
-	snprintf(dev->base.name, sizeof(dev->base.name),
-		"Native Instruments Maschine Mikro Mk2");
+	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
+		"Native Instruments");
+	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
+		"Maschine Mikro Mk2");
+
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;

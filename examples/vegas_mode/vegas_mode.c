@@ -58,13 +58,13 @@ int main()
 			if(!dev) return -1;
 			dev->ctlr = ctlr;
 			dev->update_state = sup->update_state;
+
+			struct ctlr_dev_info_t info;
+			ctlr_dev_get_info(dev->ctlr, &info);
+			printf("Vegas: connected to ctlr %s %s\n",
+			       info.vendor, info.device);
+
 			TAILQ_INSERT_TAIL(&ctlr_list, dev, list);
-			const char* name = ctlr_dev_get_name(dev->ctlr);
-			if(name)
-				printf("Vegas: connected to ctlr %s\n", name);
-			else
-				printf("Vegas: connected to ctlr ID %d, but it"
-				       " doesn't provide it's name\n", i);
 		}
 	}
 

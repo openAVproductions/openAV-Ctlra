@@ -117,8 +117,10 @@ int main()
 	if(!dev)
 		return -1;
 
+	struct ctlr_dev_info_t info;
+	ctlr_dev_get_info(dev, &info);
 	try {
-		midiout->openVirtualPort( ctlr_dev_get_name(dev) );
+		midiout->openVirtualPort(info.device);
 	} catch (...) {
 		printf("CtlrError: failed to open virtual midi port\n");
 		return -1;

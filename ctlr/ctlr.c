@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <string.h>
 
 #include "ctlr.h"
 #include "devices.h"
@@ -72,11 +73,23 @@ void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev, uint32_t grid_id,
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
 
-const char *ctlr_dev_get_name(struct ctlr_dev_t *dev)
+void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
+		       struct ctlr_dev_info_t * info)
 {
-	if(dev && strlen(dev->name) > 0)
-		return dev->name;
-	return 0;
+	if(!dev)
+		return;
+
+	memset(info, 0, sizeof(info));
+
+	snprintf(info->vendor, sizeof(info->vendor), "Unknown");
+	snprintf(info->device, sizeof(info->device), "Unknown");
+	snprintf(info->serial, sizeof(info->serial), "Unknown");
+	info->serial_number = 0;
+
+	snprintf(info->vendor, sizeof(info->vendor), dev->info.vendor);
+	snprintf(info->device, sizeof(info->device), dev->info.device);
+	snprintf(info->serial, sizeof(info->serial), dev->info.serial);
+	info->serial_number = dev->info.serial_number;
 }
 
 const char * ctlr_dev_control_get_name(struct ctlr_dev_t *dev,

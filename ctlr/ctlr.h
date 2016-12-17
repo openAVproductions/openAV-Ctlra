@@ -34,8 +34,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#else
-#include <stdbool.h>
 #endif
 
 #include <stdint.h>
@@ -103,9 +101,24 @@ void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
+/** Struct that provides info about the controller */
+#define CTLR_DEV_NAME_MAX   32
+#define CTLR_DEV_SERIAL_MAX 64
+struct ctlr_dev_info_t {
+	/** Name of the vendor/company */
+	char vendor[CTLR_DEV_NAME_MAX];
+	/** Name of the device */
+	char device[CTLR_DEV_NAME_MAX];
+	/** Serial as a string (if applicable) */
+	char serial[CTLR_DEV_SERIAL_MAX];
+	/** Serial as a number (if applicable) */
+	uint64_t serial_number;
+};
+
 /** Get the human readable name for the device. The returned pointer is
  * still owned by the ctlr library, the application must not free it */
-const char *ctlr_dev_get_name(struct ctlr_dev_t *dev);
+void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
+		       struct ctlr_dev_info_t * info);
 
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the

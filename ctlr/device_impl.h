@@ -32,8 +32,8 @@
 #ifndef OPENAV_CTLR_DEVICE_IMPL
 #define OPENAV_CTLR_DEVICE_IMPL
 
+#include "ctlr.h"
 #include "event.h"
-
 #include "libusb.h"
 
 struct ctlr_dev_t;
@@ -53,8 +53,6 @@ typedef int32_t (*ctlr_dev_impl_grid_light_set)(struct ctlr_dev_t *dev,
 typedef const char* (*ctlr_dev_impl_control_get_name)
 						(struct ctlr_dev_t *dev,
 						uint32_t control_id);
-
-#define CTLR_DEV_NAME_LEN 64
 
 struct ctlr_dev_t {
 	/* Static Device Info  */
@@ -91,8 +89,8 @@ struct ctlr_dev_t {
 	/* Function pointer to retrive info about a particular control */
 	ctlr_dev_impl_control_get_name control_get_name;
 
-	/* Human readable name of device */
-	char name[CTLR_DEV_NAME_LEN];
+	/* Internal representation of the controller info */
+	struct ctlr_dev_info_t info;
 };
 
 /** Connect function to instantiate a dev from the driver */
