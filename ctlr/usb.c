@@ -104,7 +104,7 @@ int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
 {
 	int32_t transferred;
 	int r = libusb_interrupt_transfer(dev->usb_handle, endpoint, data,
-				      size, &transferred, 100);
+				      size, &transferred, 25);
 	if (r == -7) /* timeout */ {
 		return 0;
 	} else if (r < 0) {
