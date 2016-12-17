@@ -315,7 +315,6 @@ ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
 					 NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
-		printf("error conencting to mikro mk2 controller, is it plugged in?\n");
 		free(dev);
 		return 0;
 	}

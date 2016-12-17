@@ -271,7 +271,6 @@ ni_kontrol_f1_connect(ctlr_event_func event_func,
 					 NI_VENDOR, NI_KONTROL_F1,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
-		printf("error conencting to F1 controller, is it plugged in?\n");
 		free(dev);
 		return 0;
 	}

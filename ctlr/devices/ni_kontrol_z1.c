@@ -263,7 +263,6 @@ ni_kontrol_z1_connect(ctlr_event_func event_func,
 					 NI_VENDOR, NI_KONTROL_Z1,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
-		printf("error conencting to Z1 controller, is it plugged in?\n");
 		free(dev);
 		return 0;
 	}

@@ -335,7 +335,6 @@ struct ctlr_dev_t *ni_kontrol_x1_mk2_connect(ctlr_event_func event_func,
 					 NI_VENDOR, NI_KONTROL_X1_MK2,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
-		printf("error conencting to Kontrol X1 MK2 controller, is it plugged in?\n");
 		free(dev);
 		return 0;
 	}
