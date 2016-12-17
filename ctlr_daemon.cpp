@@ -106,7 +106,13 @@ int main()
 		std::cout << "No ports available!\n";
 		return 0;
 	}
-	midiout->openPort( 1 );
+
+	try {
+		midiout->openPort( 1 );
+	} catch (...) {
+		printf("failed to open midi port 1, opening 0\n");
+		midiout->openPort( 0 );
+	}
 
 	//int dev_id = CTLR_DEV_SIMPLE;
 	enum ctlr_dev_id_t dev_id = CTLR_DEV_NI_KONTROL_Z1;
