@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "ctlr.h"
@@ -79,16 +80,16 @@ void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
 	if(!dev)
 		return;
 
-	memset(info, 0, sizeof(info));
+	memset(info, 0, sizeof(*info));
 
-	snprintf(info->vendor, sizeof(info->vendor), "Unknown");
-	snprintf(info->device, sizeof(info->device), "Unknown");
-	snprintf(info->serial, sizeof(info->serial), "Unknown");
+	snprintf(info->vendor, sizeof(info->vendor), "%s", "Unknown");
+	snprintf(info->device, sizeof(info->device), "%s", "Unknown");
+	snprintf(info->serial, sizeof(info->serial), "%s", "Unknown");
 	info->serial_number = 0;
 
-	snprintf(info->vendor, sizeof(info->vendor), dev->info.vendor);
-	snprintf(info->device, sizeof(info->device), dev->info.device);
-	snprintf(info->serial, sizeof(info->serial), dev->info.serial);
+	snprintf(info->vendor, sizeof(info->vendor), "%s", dev->info.vendor);
+	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
+	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
 	info->serial_number = dev->info.serial_number;
 }
 

@@ -340,9 +340,9 @@ struct ctlr_dev_t *ni_kontrol_x1_mk2_connect(ctlr_event_func event_func,
 	}
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		"Native Instruments");
+		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		"Kontrol X2 Mk2");
+		 "%s", "Kontrol X2 Mk2");
 
 	dev->base.poll = ni_kontrol_x1_mk2_poll;
 	dev->base.disconnect = ni_kontrol_x1_mk2_disconnect;

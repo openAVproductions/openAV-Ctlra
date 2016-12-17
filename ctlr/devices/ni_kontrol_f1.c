@@ -276,9 +276,9 @@ ni_kontrol_f1_connect(ctlr_event_func event_func,
 	}
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		"Native Instruments");
+		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		"Kontrol F1");
+		 "%s", "Kontrol F1");
 
 	dev->base.poll = ni_kontrol_f1_poll;
 	dev->base.disconnect = ni_kontrol_f1_disconnect;
