@@ -339,6 +339,9 @@ struct ctlr_dev_t *ni_kontrol_x1_mk2_connect(ctlr_event_func event_func,
 		return 0;
 	}
 
+	snprintf(dev->base.name, sizeof(dev->base.name),
+		"Native Instruments Kontrol X1 Mk2");
+
 	dev->base.poll = ni_kontrol_x1_mk2_poll;
 	dev->base.disconnect = ni_kontrol_x1_mk2_disconnect;
 	dev->base.light_set = ni_kontrol_x1_mk2_light_set;
