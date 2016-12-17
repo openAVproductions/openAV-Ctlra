@@ -59,6 +59,7 @@ int main()
 			dev->ctlr = ctlr;
 			dev->update_state = sup->update_state;
 			TAILQ_INSERT_TAIL(&ctlr_list, dev, list);
+			printf("Vegas: connected to ctlr %d\n", i);
 		}
 	}
 
