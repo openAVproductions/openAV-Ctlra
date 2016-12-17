@@ -101,7 +101,7 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-	midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "CtlrDaemon");
+	midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "OpenAV Ctlr");
 	unsigned int nPorts = midiout->getPortCount();
 	if ( nPorts == 0 ) {
 		std::cout << "No ports available!\n";
@@ -114,8 +114,10 @@ int main()
 	void *userdata = 0x0;
 	void *future = 0x0;
 	dev = ctlr_dev_connect(dev_id, demo_event_func, userdata, future);
-	if(!dev)
+	if(!dev) {
+		printf("CtlrError: failed to connect to device\n");
 		return -1;
+	}
 
 	struct ctlr_dev_info_t info;
 	ctlr_dev_get_info(dev, &info);
@@ -126,18 +128,11 @@ int main()
 		return -1;
 	}
 
-	uint32_t i = 8;
-	while(i > 0) {
-		ctlr_dev_poll(dev);
-		i--;
-	}
-
 	uint32_t light_id = 30;
 	const uint32_t BLINK  = (1 << 31);
 	const uint32_t BRIGHT = (0x7F << 24);
 	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
 
-	printf("polling loop now..\n");
 	while(!done) {
 		ctlr_dev_poll(dev);
 		usleep(100);
