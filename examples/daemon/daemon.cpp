@@ -41,12 +41,14 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			message[2] = e->button.pressed ? 0x70 : 0;
 			midiout->sendMessage( &message );
 			break;
+
 		case CTLR_EVENT_ENCODER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
+
 		case CTLR_EVENT_SLIDER:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%03d] slider %s (%d)\n",
@@ -92,9 +94,8 @@ void demo_event_func(struct ctlr_dev_t* dev,
 
 void sighndlr(int signal)
 {
-	ctlr_dev_grid_light_set(dev, 0, 0, 0xFFFF0000);
-	ctlr_dev_disconnect(dev);
-	exit(0);
+	done = 1;
+	printf("\n");
 }
 
 int main()
@@ -128,17 +129,13 @@ int main()
 		return -1;
 	}
 
-	uint32_t light_id = 30;
-	const uint32_t BLINK  = (1 << 31);
-	const uint32_t BRIGHT = (0x7F << 24);
-	uint32_t light_status_r = BLINK | BRIGHT | (0xFF << 16) | (0x0 << 8) | (0x0);
-
 	while(!done) {
 		ctlr_dev_poll(dev);
-		usleep(100);
+		usleep(1);
 	}
 
 	ctlr_dev_disconnect(dev);
 	delete midiout;
+
 	return 0;
 }
