@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #include <sys/queue.h>
 
@@ -42,6 +43,7 @@ int main()
 	signal(SIGINT, sighndlr);
 
 	struct dummy_data dummy;
+	memset(&dummy, 0, sizeof(struct dummy_data));
 	void *future = 0x0;
 
 	struct ctlr_list_t ctlr_list;

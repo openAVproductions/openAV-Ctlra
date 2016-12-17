@@ -9,7 +9,10 @@ void kontrol_x1_update_state(struct ctlr_dev_t *dev, struct dummy_data *d)
 	uint32_t i;
 	int v = d->volume > 0.5f;
 	ctlr_dev_light_set(dev, 15, v * UINT32_MAX);
-	printf("led %d set to %d, %p\n", 15, v, dev);
+
+	for(i = 0; i < VEGAS_BTN_COUNT; i++)
+		ctlr_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
+
 	ctlr_dev_light_flush(dev, 0);
 	return;
 }
@@ -27,12 +30,13 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 		switch(e->id) {
 
 		case CTLR_EVENT_BUTTON:
-			name = ctlr_dev_control_get_name(dev, e->button.id);
 #if 0
+			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
 #endif
+			dummy->buttons[e->button.id] = e->button.pressed;
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 

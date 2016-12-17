@@ -7,10 +7,13 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define VEGAS_BTN_COUNT 64
+
 struct dummy_data {
 	uint64_t revision;
 	float volume;
 	int playing[2];
+	int buttons[VEGAS_BTN_COUNT];
 };
 
 /* Typedefs so we can store the per-device functions in a struct, see
