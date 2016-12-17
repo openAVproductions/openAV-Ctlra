@@ -54,6 +54,8 @@ typedef const char* (*ctlr_dev_impl_control_get_name)
 						(struct ctlr_dev_t *dev,
 						uint32_t control_id);
 
+#define CTLR_DEV_NAME_LEN 64
+
 struct ctlr_dev_t {
 	/* Static Device Info  */
 	int vendor_id;
@@ -88,6 +90,9 @@ struct ctlr_dev_t {
 
 	/* Function pointer to retrive info about a particular control */
 	ctlr_dev_impl_control_get_name control_get_name;
+
+	/* Human readable name of device */
+	char name[CTLR_DEV_NAME_LEN];
 };
 
 /** Connect function to instantiate a dev from the driver */

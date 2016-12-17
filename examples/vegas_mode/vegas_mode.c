@@ -59,7 +59,12 @@ int main()
 			dev->ctlr = ctlr;
 			dev->update_state = sup->update_state;
 			TAILQ_INSERT_TAIL(&ctlr_list, dev, list);
-			printf("Vegas: connected to ctlr %d\n", i);
+			const char* name = ctlr_dev_get_name(dev->ctlr);
+			if(name)
+				printf("Vegas: connected to ctlr %s\n", name);
+			else
+				printf("Vegas: connected to ctlr ID %d, but it"
+				       " doesn't provide it's name\n", i);
 		}
 	}
 

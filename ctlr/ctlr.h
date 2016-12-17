@@ -103,6 +103,10 @@ void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
+/** Get the human readable name for the device. The returned pointer is
+ * still owned by the ctlr library, the application must not free it */
+const char *ctlr_dev_get_name(struct ctlr_dev_t *dev);
+
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the
  * DEVICE_NAME_CONTROLS enumeration. Ownership of the string *remains* in
