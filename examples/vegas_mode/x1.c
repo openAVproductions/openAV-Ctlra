@@ -22,7 +22,7 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 		     struct ctlr_event_t** events,
 		     void *userdata)
 {
-	struct dummy_data *dummy = (void *)userdata;
+	struct dummy_data *d = (void *)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
 		char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
@@ -30,32 +30,33 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 		switch(e->id) {
 
 		case CTLR_EVENT_BUTTON:
-#if 0
-			name = ctlr_dev_control_get_name(dev, e->button.id);
-			printf("[%s] button %s (%d)\n",
-			       e->button.pressed ? " X " : "   ",
-			       name, e->button.id);
-#endif
-			dummy->buttons[e->button.id] = e->button.pressed;
+			if(d->print_events) {
+				name = ctlr_dev_control_get_name(dev, e->button.id);
+				printf("[%s] button %s (%d)\n",
+				       e->button.pressed ? " X " : "   ",
+				       name, e->button.id);
+			}
+			d->buttons[e->button.id] = e->button.pressed;
 			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 
 		case CTLR_EVENT_ENCODER:
-			name = ctlr_dev_control_get_name(dev, e->button.id);
-#if 0
-			printf("[%s] encoder %s (%d)\n",
-			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
-#endif
+			if(d->print_events) {
+				name = ctlr_dev_control_get_name(dev, e->button.id);
+				printf("[%s] encoder %s (%d)\n",
+				       e->encoder.delta > 0 ? " ->" : "<- ",
+				       name, e->button.id);
+			}
 			break;
 
 		case CTLR_EVENT_SLIDER:
-			name = ctlr_dev_control_get_name(dev, e->button.id);
-#if 0
-			printf("[%03d] slider %s (%d)\n",
-			       (int)(e->slider.value * 100.f),
-			       name, e->slider.id);
-#endif
+			if(d->print_events) {
+				name = ctlr_dev_control_get_name(dev, e->button.id);
+				printf("[%03d] slider %s (%d)\n",
+				       (int)(e->slider.value * 100.f),
+				       name, e->slider.id);
+			}
+
 			if(e->slider.id == 11) {
 				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
@@ -70,21 +71,23 @@ void kontrol_x1_func(struct ctlr_dev_t* dev,
 			break;
 
 		case CTLR_EVENT_GRID:
-			name = ctlr_dev_control_get_name(dev, e->button.id);
 			if(e->grid.flags & CTLR_EVENT_GRID_BUTTON) {
 				pressed = e->grid.pressed ? " X " : "   ";
 			} else {
 				pressed = "---";
 			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLR_EVENT_GRID_PRESSURE)
-				printf(", pressure %1.3f", e->grid.pressure);
-			printf("\n");
+			if(d->print_events) {
+				name = ctlr_dev_control_get_name(dev, e->button.id);
+				printf("[%s] grid %d", pressed, e->grid.pos);
+				if(e->grid.flags & CTLR_EVENT_GRID_PRESSURE)
+					printf(", pressure %1.3f", e->grid.pressure);
+				printf("\n");
+			}
 			break;
 		default:
 			break;
 		};
 	}
-	dummy->revision++;
+	d->revision++;
 }
 

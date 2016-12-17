@@ -38,13 +38,18 @@ struct ctlr_t {
 };
 TAILQ_HEAD(ctlr_list_t, ctlr_t);
 
-int main()
+int main(int argc, char** argv)
 {
 	signal(SIGINT, sighndlr);
 
 	struct dummy_data dummy;
 	memset(&dummy, 0, sizeof(struct dummy_data));
 	void *future = 0x0;
+
+	if(argc > 1) {
+		printf("argc = %d\n", argc);
+		dummy.print_events = 1;
+	}
 
 	struct ctlr_list_t ctlr_list;
 	TAILQ_INIT(&ctlr_list);

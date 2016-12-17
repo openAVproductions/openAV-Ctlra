@@ -10,6 +10,7 @@
 #define VEGAS_BTN_COUNT 64
 
 struct dummy_data {
+	uint8_t print_events;
 	uint64_t revision;
 	float volume;
 	int playing[2];
