@@ -1,0 +1,8 @@
+include_rules
+
+CFLAGS += "-I../../ctlr/"
+CFLAGS += "-I../../"
+CFLAGS += "-I."
+
+
+: foreach *.c *.cpp   |> $(CXX) $(CFLAGS) -D__UNIX_JACK__ -D__LINUX_ALSA__ -c %f -o %o |> %B.o

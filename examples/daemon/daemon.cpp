@@ -5,7 +5,8 @@
 
 #include <iostream>
 #include <cstdlib>
-#include "rtmidi/RtMidi.h"
+
+#include "RtMidi.h"
 
 #include "ctlr/ctlr.h"
 
