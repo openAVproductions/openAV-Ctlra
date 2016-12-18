@@ -261,6 +261,11 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 	if(!dev)
 		goto fail;
 
+	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
+		 "%s", "Native Instruments");
+	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
+		 "%s", "Kontrol D2");
+
 	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
 					 NI_VENDOR, NI_KONTROL_D2,
 					 USB_INTERFACE_ID, 0);
@@ -268,11 +273,6 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 		free(dev);
 		return 0;
 	}
-
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol D2");
 
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;
