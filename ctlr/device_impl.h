@@ -34,7 +34,6 @@
 
 #include "ctlr.h"
 #include "event.h"
-#include "libusb.h"
 
 struct ctlr_dev_t;
 
@@ -69,9 +68,8 @@ struct ctlr_dev_t {
 	int screen_interface_id;
 
 	/* libusb generic handle for this hardware device */
-	libusb_device *usb_device;
-	/* The libusb handle for the opened instance of this device */
-	libusb_device_handle *usb_handle;
+	//hid_device *usb_handle;
+	void *hidapi_usb_handle;
 
 	/* Event callback function */
 	ctlr_event_func event_func;

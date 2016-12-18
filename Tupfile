@@ -3,6 +3,8 @@ include_rules
 : foreach *.c   |> $(CC)  $(CFLAGS) -c %f -o %o |> %B.o
 : foreach *.cpp |> $(CXX) $(CFLAGS) $(CXXFLAGS) -c %f -o %o |> %B.o
 
+LDFLAGS+=-lhidapi-libusb
+
 : examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlr/libctlr.a  |> $(CC) -I. %f -o %o $(LDFLAGS) |> vegas_mode
 
 : perf_test.o ctlr/libctlr.a         |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
