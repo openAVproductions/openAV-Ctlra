@@ -147,6 +147,7 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
+#if 0
 		static uint8_t old[22];
 		for(int i = 0; i < nbytes; i++) {
 			if(old[i] != buf[i]) {
@@ -157,6 +158,7 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 				printf("%02x ", buf[i]);
 		}
 		printf("\n");
+#endif
 
 		switch(nbytes) {
 		case 22: {
@@ -173,6 +175,34 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 						.slider  = {
 							.id = id,
 							.value = v / 4096.f},
+					};
+					struct ctlr_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
+			}
+
+			/* Grid */
+			static uint8_t grid_masks[] = {
+				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
+				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+			};
+			for(uint32_t i = 0; i < 16; i++) {
+				int offset = 1 + i / 8;
+				int mask   = grid_masks[i];
+
+				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+				int value_idx = SLIDERS_SIZE + i;
+				if(dev->hw_values[value_idx] != v) {
+					dev->hw_values[value_idx] = v;
+					struct ctlr_event_t event = {
+						.id = CTLR_EVENT_GRID,
+						.grid  = {
+							.id = 0,
+							.flags = CTLR_EVENT_GRID_BUTTON,
+							.pos = i,
+							.pressed = v
+						},
 					};
 					struct ctlr_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,

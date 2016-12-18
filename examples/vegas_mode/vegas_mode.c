@@ -24,7 +24,7 @@ struct ctlr_supported_t {
 
 static const struct ctlr_supported_t ctlr_supported[] = {
 	{CTLR_DEV_NI_KONTROL_Z1, kontrol_z1_func, kontrol_z1_update_state},
-	{CTLR_DEV_NI_KONTROL_F1, kontrol_z1_func, kontrol_z1_update_state},
+	{CTLR_DEV_NI_KONTROL_F1, kontrol_f1_func, kontrol_f1_update_state},
 	{CTLR_DEV_NI_KONTROL_X1_MK2, kontrol_x1_func, kontrol_x1_update_state},
 	{CTLR_DEV_NI_MASCHINE_MIKRO_MK2, mm_func, mm_update_state},
 };
