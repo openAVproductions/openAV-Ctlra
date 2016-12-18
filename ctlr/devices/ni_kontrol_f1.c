@@ -109,7 +109,9 @@ static const struct ni_kontrol_f1_ctlr_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
-#define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
+#define GRID_SIZE 16
+
+#define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE + GRID_SIZE)
 
 /* Represents the the hardware device */
 struct ni_kontrol_f1_t {
@@ -187,12 +189,12 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
 				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
 			};
-			for(uint32_t i = 0; i < 16; i++) {
+			for(uint32_t i = 0; i < GRID_SIZE; i++) {
 				int offset = 1 + i / 8;
 				int mask   = grid_masks[i];
 
 				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				int value_idx = SLIDERS_SIZE + i;
+				int value_idx = SLIDERS_SIZE + BUTTONS_SIZE + i;
 				if(dev->hw_values[value_idx] != v) {
 					dev->hw_values[value_idx] = v;
 					struct ctlr_event_t event = {
@@ -220,8 +222,6 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 
 				if(dev->hw_values[value_idx] != v) {
 					dev->hw_values[value_idx] = v;
-					printf("%s : %d\n",
-					       ni_kontrol_f1_control_names[8+i], v);
 
 					struct ctlr_event_t event = {
 						.id = CTLR_EVENT_BUTTON,
