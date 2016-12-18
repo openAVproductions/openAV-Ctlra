@@ -9,8 +9,8 @@
 
 static int ctlr_libusb_initialized;
 
-int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid, 
-			   int interface, uint32_t num_skip)
+int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
+                           int interface, uint32_t num_skip)
 {
 	int ret;
 
@@ -24,10 +24,10 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 
 	ctlr_dev->hidapi_usb_handle = hid_open(vid, pid, NULL);
 	if(!ctlr_dev->hidapi_usb_handle) {
-		printf("handle not ok\n");
+		printf("%s : usb device open failed for device %s\n",
+		       __func__, ctlr_dev->info.vendor);
 		return -ENXIO;
 	}
-	printf("handle ok\n");
 
 	hid_set_nonblocking(ctlr_dev->hidapi_usb_handle, 1);
 
@@ -37,19 +37,28 @@ fail:
 }
 
 int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, int handle_idx,
-			   uint8_t *data, uint32_t size)
+                           uint8_t *data, uint32_t size)
 {
-	//int res = hid_read(dev->hidapi_usb_handle, data, size);
-	return 0;
+	int result = hid_read_timeout(dev->hidapi_usb_handle, data, size, 500);
+	printf("hid read timeout\n");
+	if (result > 0) {
+		//int res = hid_read(dev->hidapi_usb_handle, data, size);
+		return 0;
+	}
 }
 
 int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
-			   int endpoint,
-			    uint8_t *data, uint32_t size)
+                           int endpoint,
+                           uint8_t *data, uint32_t size)
 {
 
 	//int res = hid_write(handle, buf, 128);
 	int res = hid_read(dev->hidapi_usb_handle, data, size);
+	//int res = hid_read_timeout(dev->hidapi_usb_handle, data, size, 50);
+	if (res < 0) {
+#warning TODO: exception path, *error* on read, so stop polling
+	}
+
 	return res;
 }
 
