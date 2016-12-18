@@ -42,8 +42,8 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, uint32_t idx,
 			   uint8_t *data, uint32_t size)
 {
-	int res = hid_read_timeout(dev->hidapi_usb_handle[idx],
-				      data, size, 500);
+	//int res = hid_read_timeout(dev->hidapi_usb_handle[idx], data, size, 500);
+	int res = hid_read(dev->hidapi_usb_handle[idx], data, size);
 	if (res > 0) {
 		return res;
 	}

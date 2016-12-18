@@ -236,7 +236,7 @@ ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	buf[0] = 0;
 	buf[1] = 0x80;
 
-	memcpy(&buf[2], dev->lights, sizeof(dev->lights));
+	memcpy(&buf[1], dev->lights, sizeof(dev->lights));
 
 	for(int i = 0; i < NI_KONTROL_Z1_LED_COUNT+1; i++) {
 		uint8_t *data = buf;
@@ -247,11 +247,8 @@ ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 
 	/* technically interface 3, but testin showed 0 works but 3 doesnt */
 	buf[0] = 0;
-	buf[1] = 0x80;
 
-	int ret = ctlr_dev_impl_usb_write(base,
-					  USB_HANDLE_IDX,
-					  buf,
+	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, buf,
 					  NI_KONTROL_Z1_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
