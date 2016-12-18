@@ -40,6 +40,7 @@
 #define NI_VENDOR          (0x17cc)
 #define NI_KONTROL_F1      (0x1120)
 #define USB_INTERFACE_ID   (0x00)
+#define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
 #define USB_ENDPOINT_WRITE (0x01)
 
@@ -114,6 +115,8 @@ struct ni_kontrol_f1_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+
+	uint8_t lights_interface;
 	uint8_t lights[NI_KONTROL_F1_LED_COUNT];
 };
 
@@ -135,13 +138,21 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
-							 USB_ENDPOINT_READ,
-							 buf, 1024);
+		nbytes = ctlr_dev_impl_usb_read(base, USB_HANDLE_IDX,
+						buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
-		printf("read %d\n", nbytes);
+		static uint8_t old[22];
+		for(int i = 0; i < nbytes; i++) {
+			if(old[i] != buf[i]) {
+				old[i] = buf[i];
+				printf("\033[31m%02x\033[0m ", buf[i]);
+			}
+			else
+				printf("%02x ", buf[i]);
+		}
+		printf("\n");
 
 		return 0;
 
@@ -234,11 +245,11 @@ ni_kontrol_f1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	int ret = ctlr_dev_impl_usb_xfer(base,
-					 USB_INTERFACE_ID,
-					 USB_ENDPOINT_WRITE,
-					 dev->lights,
-					 NI_KONTROL_F1_LED_COUNT);
+	dev->lights_interface = 0;
+	uint8_t *data = &dev->lights_interface;
+
+	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
+					  NI_KONTROL_F1_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
