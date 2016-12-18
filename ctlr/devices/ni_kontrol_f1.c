@@ -160,7 +160,6 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 
 		switch(nbytes) {
 		case 22: {
-#if 0
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
 				int id     = sliders[i].event_id;
 				int offset = sliders[i].buf_byte_offset;
@@ -180,7 +179,6 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
-#endif
 
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
