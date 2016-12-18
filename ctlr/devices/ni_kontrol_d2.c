@@ -37,11 +37,15 @@
 #include "ni_kontrol_d2.h"
 #include "../device_impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_D2      (0x1400)
-#define USB_INTERFACE_ID   (0x0)
-#define USB_ENDPOINT_READ  (0x81)
-#define USB_ENDPOINT_WRITE (0x01)
+#define NI_VENDOR                 (0x17cc)
+#define NI_KONTROL_D2             (0x1400)
+
+#define USB_INTERFACE_BTNS        (0x0)
+#define USB_ENDPOINT_BTNS_READ    (0x81)
+#define USB_ENDPOINT_BTNS_WRITE   (0x01)
+
+#define USB_INTERFACE_SCREEN      (0x1)
+#define USB_ENDPOINT_SCREEN_WRITE (0x2)
 
 /* This struct is a generic struct to identify hw controls */
 struct ni_kontrol_d2_ctlr_t {
@@ -114,6 +118,11 @@ struct ni_kontrol_d2_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+
+	/* bit hacky, but allows sending of endpoint address as the
+	 * usb transfer, as hidapi encodes endpoint by first byte of
+	 * transfer. */
+	uint8_t lights_endpoint;
 	uint8_t lights[NI_KONTROL_D2_LED_COUNT];
 };
 
@@ -137,9 +146,9 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
-							 USB_ENDPOINT_READ,
-							 buf, 1024);
+		/* USB_ENDPOINT_BTNS_READ, */
+		nbytes = ctlr_dev_impl_usb_read(base, handle_idx,
+						buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -228,11 +237,11 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	int ret = ctlr_dev_impl_usb_xfer(base,
-					 USB_INTERFACE_ID,
-					 USB_ENDPOINT_WRITE,
-					 dev->lights,
-					 NI_KONTROL_D2_LED_COUNT);
+	dev->lights_endpoint = USB_ENDPOINT_BTNS_WRITE;
+	int ret = ctlr_dev_impl_usb_write(base,
+					  USB_INTERFACE_BTNS,
+					  &dev->lights_endpoint,
+					  NI_KONTROL_D2_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -268,7 +277,8 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 
 	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
 					 NI_VENDOR, NI_KONTROL_D2,
-					 USB_INTERFACE_ID, 0);
+					 USB_INTERFACE_BTNS,
+					 USB_INTERFACE_BTNS);
 	if(err) {
 		free(dev);
 		return 0;

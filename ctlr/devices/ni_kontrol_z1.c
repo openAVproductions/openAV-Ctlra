@@ -39,6 +39,7 @@
 
 #define NI_VENDOR          (0x17cc)
 #define NI_KONTROL_Z1      (0x1210)
+#define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
 #define USB_ENDPOINT_WRITE (0x02)
@@ -132,12 +133,12 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	uint8_t buf[1024];
 	int32_t nbytes;
+	//buf[0] = USB_ENDPOINT_READ;
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
-							 USB_ENDPOINT_READ,
-							 buf, 1024);
+		nbytes = ctlr_dev_impl_usb_read(base, USB_HANDLE_IDX,
+						buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -266,7 +267,7 @@ ni_kontrol_z1_connect(ctlr_event_func event_func,
 
 	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
 					 NI_VENDOR, NI_KONTROL_Z1,
-					 USB_INTERFACE_ID, 0);
+					 USB_INTERFACE_ID, USB_HANDLE_IDX);
 	if(err) {
 		free(dev);
 		return 0;

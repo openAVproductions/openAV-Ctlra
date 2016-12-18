@@ -42,13 +42,12 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, uint32_t idx,
 			   uint8_t *data, uint32_t size)
 {
-	int result = hid_read_timeout(dev->hidapi_usb_handle[idx],
+	int res = hid_read_timeout(dev->hidapi_usb_handle[idx],
 				      data, size, 500);
-	printf("hid read timeout\n");
-	if (result > 0) {
-		//int res = hid_read(dev->hidapi_usb_handle, data, size);
-		return 0;
+	if (res > 0) {
+		return res;
 	}
+	return 0;
 }
 
 int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, uint32_t idx,

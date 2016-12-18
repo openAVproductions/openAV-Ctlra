@@ -106,6 +106,13 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
 			   int interface,
 			   uint32_t handle_idx);
 
+/** Read bytes from the usb device, this is a non-blocking function but
+ * _not_ realtime safe function. It polls the usb handle specified by *idx*
+ * of the device *dev*, reading bytes up to *size* into the buffer pointed
+ * to by *data*. */
+int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, uint32_t idx,
+			   uint8_t *data, uint32_t size);
+
 /** Xfer bytes to a specific handle and endpoint. Some complex USB HID
  * controllers have multiple Interfaces (selected by the handle_idx), and
  * more than one *endpoint* per Interface. Reading or Writing is chosen
