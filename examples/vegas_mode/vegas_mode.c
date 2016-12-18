@@ -47,7 +47,6 @@ int main(int argc, char** argv)
 	void *future = 0x0;
 
 	if(argc > 1) {
-		printf("argc = %d\n", argc);
 		dummy.print_events = 1;
 	}
 

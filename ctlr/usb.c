@@ -18,7 +18,7 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 		ret = hid_init();
 		if (ret < 0) {
 			printf("failed to initialise usb backend: %d\n", ret);
-			goto fail;
+			return -ENODEV;
 		}
 	}
 
@@ -37,8 +37,6 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 		       __func__, ctlr_dev->info.device);
 
 	return 0;
-fail:
-	return -ENODEV;
 }
 
 int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, int handle_idx,
