@@ -232,7 +232,7 @@ ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_interface;
 
 	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					  80);
+					  NI_KONTROL_Z1_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }

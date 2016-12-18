@@ -123,7 +123,7 @@ struct ni_kontrol_f1_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
-	uint8_t lights[NI_KONTROL_F1_LED_COUNT+10];
+	uint8_t lights[NI_KONTROL_F1_LED_COUNT+100];
 };
 
 static const char *
@@ -279,8 +279,20 @@ ni_kontrol_f1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	dev->lights_interface = 0;
 	uint8_t *data = &dev->lights_interface;
 
+	//for(unsigned i = 0; i < sizeof(dev->lights); i++) {
+	for(unsigned i = 0; i < 25; i++) {
+		dev->lights[i] = 0x02;
+	}
+
+#if 0
+	// 25 + (i*3) = BRG pads
+	for(int i = 0; i < 24; i++)
+		dev->lights[25+i*3] = 0xf;
+#endif
+
+	dev->lights[0] = 0x80;
 	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					  NI_KONTROL_F1_LED_COUNT+1);
+					  80);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
