@@ -113,6 +113,10 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
 int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, uint32_t idx,
 			   uint8_t *data, uint32_t size);
 
+
+int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, uint32_t idx,
+			    uint8_t *data, uint32_t size);
+
 /** Xfer bytes to a specific handle and endpoint. Some complex USB HID
  * controllers have multiple Interfaces (selected by the handle_idx), and
  * more than one *endpoint* per Interface. Reading or Writing is chosen
