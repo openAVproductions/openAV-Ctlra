@@ -116,7 +116,7 @@ struct ni_kontrol_z1_t {
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
-	uint8_t lights_endpoint;
+	uint8_t lights_interface;
 	uint8_t lights[NI_KONTROL_Z1_LED_COUNT];
 };
 
@@ -227,28 +227,11 @@ ni_kontrol_z1_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	if(!dev->lights_dirty && !force)
 		return;
+	/* technically interface 3, testing showed 0 works but 3 doesnt */
+	dev->lights_interface = 0;
+	uint8_t *data = &dev->lights_interface;
 
-	uint8_t buf[32];
-	printf("writing now\n");
-	dev->lights_endpoint = USB_INTERFACE_ID;
-
-	/* technically interface 3, but testin showed 0 works but 3 doesnt */
-	buf[0] = 0;
-	buf[1] = 0x80;
-
-	memcpy(&buf[1], dev->lights, sizeof(dev->lights));
-
-	for(int i = 0; i < NI_KONTROL_Z1_LED_COUNT+1; i++) {
-		uint8_t *data = buf;
-		//data[i] = 0x0;
-		printf("%02x ", data[i]);
-	}
-	printf("\n");
-
-	/* technically interface 3, but testin showed 0 works but 3 doesnt */
-	buf[0] = 0;
-
-	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, buf,
+	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
 					  NI_KONTROL_Z1_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
