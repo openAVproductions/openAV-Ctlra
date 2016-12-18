@@ -53,55 +53,59 @@ struct ni_kontrol_f1_ctlr_t {
 
 static const char *ni_kontrol_f1_control_names[] = {
 	/* Faders / Dials */
-	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
-	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
-	"Crossfader",
+	"Filter 1",
+	"Filter 2",
+	"Filter 3",
+	"Filter 4",
+	"Fader 1",
+	"Fader 2",
+	"Fader 3",
+	"Fader 4",
 	/* Buttons */
-	"Headphones Cue A",
-	"Headphones Cue B",
-	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
+	"Shift",
+	"Reverse",
+	"Type",
+	"Size",
+	"Browse",
+	"Encoder Press",
+	"Stop 1",
+	"Stop 2",
+	"Stop 3",
+	"Stop 4",
+	"Sync",
+	"Quantize",
+	"Capture",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_f1_control_names) /\
 			    sizeof(ni_kontrol_f1_control_names[0]))
 
 static const struct ni_kontrol_f1_ctlr_t sliders[] = {
 	/* Left */
-	{NI_KONTROL_F1_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_LEFT_EQ_HIGH ,  3, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_LEFT_EQ_MID  ,  5, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_LEFT_EQ_LOW  ,  7, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_LEFT_FILTER  ,  9, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_GAIN   , 11, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_EQ_MID , 15, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_EQ_LOW , 17, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_FILTER , 19, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_CUE_MIX      , 21, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_LEFT_FADER   , 23, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_RIGHT_FADER  , 25, UINT32_MAX},
-	{NI_KONTROL_F1_SLIDER_CROSS_FADER  , 27, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FILTER_1,  6, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FILTER_2,  8, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FILTER_3, 10, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FILTER_4, 12, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FADER_1 , 14, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FADER_2 , 16, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FADER_3 , 18, UINT32_MAX},
+	{NI_KONTROL_F1_SLIDER_FADER_4 , 20, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
 static const struct ni_kontrol_f1_ctlr_t buttons[] = {
-	{NI_KONTROL_F1_BTN_CUE_A  , 29, 0x10},
-	{NI_KONTROL_F1_BTN_CUE_B  , 29, 0x1},
-	{NI_KONTROL_F1_BTN_MODE   , 29, 0x2},
-	{NI_KONTROL_F1_BTN_FX_ON_L, 29, 0x4},
-	{NI_KONTROL_F1_BTN_FX_ON_R, 29, 0x8},
+	{NI_KONTROL_F1_BTN_SHIFT        , 3, 0x80},
+	{NI_KONTROL_F1_BTN_REVERSE      , 3, 0x40},
+	{NI_KONTROL_F1_BTN_TYPE         , 3, 0x20},
+	{NI_KONTROL_F1_BTN_SIZE         , 3, 0x10},
+	{NI_KONTROL_F1_BTN_BROWSE       , 3, 0x08},
+	{NI_KONTROL_F1_BTN_ENCODER_PRESS, 3, 0x04},
+	{NI_KONTROL_F1_BTN_STOP_1       , 4, 0x80},
+	{NI_KONTROL_F1_BTN_STOP_2       , 4, 0x40},
+	{NI_KONTROL_F1_BTN_STOP_3       , 4, 0x20},
+	{NI_KONTROL_F1_BTN_STOP_4       , 4, 0x10},
+	{NI_KONTROL_F1_BTN_SYNC         , 4, 0x08},
+	{NI_KONTROL_F1_BTN_QUANT        , 4, 0x04},
+	{NI_KONTROL_F1_BTN_CAPTURE      , 4, 0x02},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -117,7 +121,7 @@ struct ni_kontrol_f1_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
-	uint8_t lights[NI_KONTROL_F1_LED_COUNT];
+	uint8_t lights[NI_KONTROL_F1_LED_COUNT+10];
 };
 
 static const char *
@@ -154,10 +158,9 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 		}
 		printf("\n");
 
-		return 0;
-
 		switch(nbytes) {
-		case 30: {
+		case 22: {
+#if 0
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
 				int id     = sliders[i].event_id;
 				int offset = sliders[i].buf_byte_offset;
@@ -177,6 +180,8 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
+#endif
+
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
@@ -187,6 +192,8 @@ static uint32_t ni_kontrol_f1_poll(struct ctlr_dev_t *base)
 
 				if(dev->hw_values[value_idx] != v) {
 					dev->hw_values[value_idx] = v;
+					printf("%s : %d\n",
+					       ni_kontrol_f1_control_names[8+i], v);
 
 					struct ctlr_event_t event = {
 						.id = CTLR_EVENT_BUTTON,
