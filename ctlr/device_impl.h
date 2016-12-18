@@ -53,23 +53,21 @@ typedef const char* (*ctlr_dev_impl_control_get_name)
 						(struct ctlr_dev_t *dev,
 						uint32_t control_id);
 
+#define CTLR_USB_IFACE_PER_DEV 2
+
 struct ctlr_dev_t {
 	/* Static Device Info  */
 	int vendor_id;
 	int product_id;
 	int class_id;
 
-	/* The common use-case interface that is used to write LEDs, and
-	 * read button / dial messages from the device */
-	int interface_id;
-
-	/* Some devices with screens use a seperate interface for the
-	 * screen, allowing faster or other types of transfers */
-	int screen_interface_id;
-
-	/* libusb generic handle for this hardware device */
-	//hid_device *usb_handle;
-	void *hidapi_usb_handle;
+	/* usb handle for this hardware device. An array of them is
+	 * available as certain complex controllers require more than one
+	 * usb interface to be fully controlled (typically screen/buttons
+	 * are on bulk/interrupt interfaces). The controller is responsible
+	 * for providing the correct interface_id to the usb_read/write()
+	 * functions */
+	void *hidapi_usb_handle[CTLR_USB_IFACE_PER_DEV];
 
 	/* Event callback function */
 	ctlr_event_func event_func;
@@ -106,7 +104,7 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
 			   int vid,
 			   int pid,
 			   int interface,
-			   uint32_t num_skip);
+			   uint32_t handle_idx);
 
 /** Xfer bytes to a specific handle and endpoint. Some complex USB HID
  * controllers have multiple Interfaces (selected by the handle_idx), and
