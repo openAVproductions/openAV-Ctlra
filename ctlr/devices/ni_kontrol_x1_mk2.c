@@ -39,7 +39,8 @@
 
 #define NI_VENDOR          (0x17cc)
 #define NI_KONTROL_X1_MK2  (0x1220)
-#define USB_INTERFACE_ID   (0x00)
+#define USB_INTERFACE_ID   (0x0)
+#define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
 #define USB_ENDPOINT_WRITE (0x01)
 
@@ -180,6 +181,8 @@ struct ni_kontrol_x1_mk2_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+
+	uint8_t lights_interface;
 	uint8_t lights[NI_KONTROL_X1_MK2_LED_COUNT];
 };
 
@@ -202,13 +205,10 @@ ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
-							 USB_ENDPOINT_READ,
-							 buf, 1024);
+		nbytes = ctlr_dev_impl_usb_read(base, USB_HANDLE_IDX,
+						buf, 1024);
 		if(nbytes == 0)
 			return 0;
-
-		struct ni_kontrol_x1_mk2_controls_t *c = (void *)buf;
 
 		switch(nbytes) {
 		case 31: {
@@ -231,6 +231,7 @@ ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
+
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
@@ -257,7 +258,6 @@ ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 			}
 		}
 	} while (nbytes > 0);
-
 
 	return 0;
 }
@@ -298,12 +298,12 @@ ni_kontrol_x1_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
+	uint8_t *data = &dev->lights_interface;
+	dev->lights_interface = 0;
 	dev->lights[0] = 0x80;
-	int ret = ctlr_dev_impl_usb_xfer(base,
-					 USB_INTERFACE_ID,
-					 USB_ENDPOINT_WRITE,
-					 dev->lights,
-					 NI_KONTROL_X1_MK2_LED_COUNT);
+
+	int ret = ctlr_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
+					  NI_KONTROL_X1_MK2_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -329,7 +329,7 @@ struct ctlr_dev_t *ni_kontrol_x1_mk2_connect(ctlr_event_func event_func,
 	(void)future;
 	struct ni_kontrol_x1_mk2_t *dev = calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
 	if(!dev)
-		goto fail;
+		return 0;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
@@ -354,8 +354,5 @@ struct ctlr_dev_t *ni_kontrol_x1_mk2_connect(ctlr_event_func event_func,
 	dev->base.event_func_userdata = userdata;
 
 	return (struct ctlr_dev_t *)dev;
-fail:
-	free(dev);
-	return 0;
 }
 
