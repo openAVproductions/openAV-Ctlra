@@ -152,6 +152,9 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
+		printf("nbytes = %d\n", nbytes);
+		return 0;
+
 		switch(nbytes) {
 		case 30: {
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
@@ -237,11 +240,12 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
+	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = USB_ENDPOINT_BTNS_WRITE;
-	int ret = ctlr_dev_impl_usb_write(base,
-					  USB_INTERFACE_BTNS,
-					  &dev->lights_endpoint,
-					  NI_KONTROL_D2_LED_COUNT+1);
+	data[1] = 0x80;
+
+	int ret = ctlr_dev_impl_usb_write(base, USB_INTERFACE_BTNS,
+					  data, NI_KONTROL_D2_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
