@@ -246,10 +246,6 @@ static void ni_kontrol_f1_light_set(struct ctlr_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status)
 {
-
-	return;
-
-
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 	int ret;
 
