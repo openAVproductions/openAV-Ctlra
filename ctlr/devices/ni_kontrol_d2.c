@@ -138,11 +138,16 @@ ni_kontrol_d2_control_get_name(struct ctlr_dev_t *base,
 	return 0;
 }
 
+void ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base);
+
 static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	uint8_t buf[1024];
+
 	int32_t nbytes;
+
+	ni_kontrol_d2_screen_flush(base);
 
 	do {
 		int handle_idx = 0;
@@ -234,6 +239,67 @@ static void ni_kontrol_d2_light_set(struct ctlr_dev_t *base,
 }
 
 void
+ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
+{
+	const uint8_t header[] = {
+		0x84, 0x00, 0x00, 0x60,
+		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+		0x01, 0xe0, 0x01, 0x10
+	};
+	const uint8_t footer[] = {
+		0x03, 0x00, 0x00, 0x00,
+		0x40, 0x00, 0x00, 0x00
+	};
+
+	uint8_t buf[1024];
+	uint32_t idx = 0;
+
+	buf[idx++] = 0x2; // usb interface
+
+	/* put header in place */
+#if 0
+	memcpy( &buf[idx], header, sizeof(header));
+	idx += sizeof(header);
+#endif
+
+	printf("sizeof header %d\n", sizeof(header));
+	for(int i = 0; i < sizeof(header); i++) {
+		buf[idx++] = header[i];
+	}
+
+	/* command 01 draw line */
+	buf[idx++] = 0x1;
+	/* lenght */
+	buf[idx++] = 0x0f;
+	buf[idx++] = 0xff;
+	buf[idx++] = 0xff;
+	/* px 1 color in 565 */
+	buf[idx++] = 0b1111100;
+	buf[idx++] = 0b1111111;
+	/* px 2 color in 565 */
+	buf[idx++] = 0b1111100;
+	buf[idx++] = 0b0000000;
+
+	printf("sizeof footer %d\n", sizeof(footer));
+	for(int i = 0; i < sizeof(footer); i++) {
+		buf[idx++] = footer[i];
+	}
+
+	for(int i = 0; i < idx; i++) {
+		printf("%02x ", buf[i]);
+	}
+	printf("\n");
+
+	/* screen write now */
+	int ret = ctlr_dev_impl_usb_write(base, USB_INTERFACE_BTNS,
+					  buf, idx);
+	if(ret < 0)
+		printf("%s write failed!\n", __func__);
+	printf("write to screen ok\n");
+}
+
+void
 ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
@@ -248,6 +314,9 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 					  data, NI_KONTROL_D2_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
+
+	printf("calling screen write now\n");
+	ni_kontrol_d2_screen_flush(base);
 }
 
 static int32_t
@@ -279,14 +348,28 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol D2");
 
+	/* Open buttons / leds handle */
 	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
 					 NI_VENDOR, NI_KONTROL_D2,
 					 USB_INTERFACE_BTNS,
 					 USB_INTERFACE_BTNS);
 	if(err) {
-		free(dev);
-		return 0;
+		printf("%s: failed to open button usb interface\n", __func__);
+		goto fail;
 	}
+
+#if 0
+	/* Open screen USB handle */
+	err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
+					 NI_VENDOR, NI_KONTROL_D2,
+					 USB_INTERFACE_SCREEN,
+					 USB_INTERFACE_SCREEN);
+	if(err) {
+		printf("ret = %d\n", err);
+		printf("%s: failed to open screen usb interface\n", __func__);
+		goto fail;
+	}
+#endif
 
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;

@@ -55,6 +55,7 @@ int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, uint32_t idx,
 	int res = hid_write(dev->hidapi_usb_handle[idx], data, size);
 	if (res < 0) {
 #warning TODO: exception path, *error* on read, so stop polling
+		printf("hid write failed %d\n", res);
 	}
 
 	return res;
