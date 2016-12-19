@@ -35,7 +35,7 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
-			ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
+			//ctlr_dev_light_set(dev, e->button.id, UINT32_MAX);
 			message[0] = e->button.pressed ? 0x90 : 0x80;
 			message[1] = e->button.id;
 			message[2] = e->button.pressed ? 0x70 : 0;
@@ -57,12 +57,12 @@ void demo_event_func(struct ctlr_dev_t* dev,
 			if(e->slider.id == 11) {
 				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
-					ctlr_dev_light_set(dev, 1 + i, UINT32_MAX);
-					ctlr_dev_light_set(dev, 8 + i, UINT32_MAX);
+					//ctlr_dev_light_set(dev, 1 + i, UINT32_MAX);
+					//ctlr_dev_light_set(dev, 8 + i, UINT32_MAX);
 				}
 				for(; i < 7.0; i++) {
-					ctlr_dev_light_set(dev, 1 + i, 0);
-					ctlr_dev_light_set(dev, 8 + i, 0);
+					//ctlr_dev_light_set(dev, 1 + i, 0);
+					//ctlr_dev_light_set(dev, 8 + i, 0);
 				}
 			}
 			message[0] = 0xb0;
@@ -110,7 +110,8 @@ int main()
 	}
 
 	//int dev_id = CTLR_DEV_SIMPLE;
-	enum ctlr_dev_id_t dev_id = CTLR_DEV_NI_KONTROL_Z1;
+	//enum ctlr_dev_id_t dev_id = CTLR_DEV_NI_KONTROL_Z1;
+	enum ctlr_dev_id_t dev_id = CTLR_DEV_NI_KONTROL_X1_MK2;
 	//int dev_id = CTLR_DEV_NI_MASCHINE_MIKRO_MK2;
 	void *userdata = 0x0;
 	void *future = 0x0;
