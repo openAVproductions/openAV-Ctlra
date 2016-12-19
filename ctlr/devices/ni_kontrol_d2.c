@@ -147,7 +147,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 
 	int32_t nbytes;
 
-	ni_kontrol_d2_screen_flush(base);
+	//ni_kontrol_d2_screen_flush(base);
 
 	do {
 		int handle_idx = 0;
@@ -316,7 +316,7 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 		printf("%s write failed!\n", __func__);
 
 	printf("calling screen write now\n");
-	ni_kontrol_d2_screen_flush(base);
+	//ni_kontrol_d2_screen_flush(base);
 }
 
 static int32_t
