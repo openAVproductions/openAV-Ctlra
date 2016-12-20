@@ -55,7 +55,61 @@ struct ni_kontrol_d2_ctlr_t {
 };
 
 static const char *ni_kontrol_d2_control_names[] = {
-	"Gain (Left)",
+	"Deck A",
+	"Deck B",
+	"Deck C",
+	"Deck D",
+	"FX Button 1",
+	"FX Button 2",
+	"FX Button 3",
+	"FX Button 4",
+	"FX Dial Touch 1",
+	"FX Dial Touch 2",
+	"FX Dial Touch 3",
+	"FX Dial Touch 4",
+	"FX Select",
+	"Screen Left 1",
+	"Screen Left 2",
+	"Screen Left 3",
+	"Screen Left 4",
+	"Screen Right 1",
+	"Screen Right 2",
+	"Screen Right 3",
+	"Screen Right 4",
+	"Encoder Touch 1",
+	"Encoder Touch 2",
+	"Encoder Touch 3",
+	"Encoder Touch 4",
+	"Browse Encoder Press",
+	"Browse Encoder Touch",
+	"Back",
+	"Capture",
+	"Edit",
+	"Loop Encoder Press",
+	"Loop Encoder Touch",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
 			    sizeof(ni_kontrol_d2_control_names[0]))
@@ -75,6 +129,31 @@ static const struct ni_kontrol_d2_ctlr_t buttons[] = {
 	{NI_KONTROL_D2_BTN_FX_2    , 3, 0x04},
 	{NI_KONTROL_D2_BTN_FX_3    , 3, 0x02},
 	{NI_KONTROL_D2_BTN_FX_4    , 3, 0x01},
+	{NI_KONTROL_D2_BTN_FX_DIAL_TOUCH_1,  9, 0x40},
+	{NI_KONTROL_D2_BTN_FX_DIAL_TOUCH_2,  9, 0x80},
+	{NI_KONTROL_D2_BTN_FX_DIAL_TOUCH_3, 10, 0x10},
+	{NI_KONTROL_D2_BTN_FX_DIAL_TOUCH_4, 10, 0x20},
+	{NI_KONTROL_D2_BTN_FX_SELECT, 2, 0x40},
+	{NI_KONTROL_D2_BTN_SCREEN_LEFT_1, 2, 0x20},
+	{NI_KONTROL_D2_BTN_SCREEN_LEFT_2, 2, 0x10},
+	{NI_KONTROL_D2_BTN_SCREEN_LEFT_3, 2, 0x01},
+	{NI_KONTROL_D2_BTN_SCREEN_LEFT_4, 4, 0x40},
+	{NI_KONTROL_D2_BTN_SCREEN_RIGHT_1, 3, 0x08},
+	{NI_KONTROL_D2_BTN_SCREEN_RIGHT_2, 3, 0x10},
+	{NI_KONTROL_D2_BTN_SCREEN_RIGHT_3, 3, 0x20},
+	{NI_KONTROL_D2_BTN_SCREEN_RIGHT_4, 3, 0x40},
+	{NI_KONTROL_D2_BTN_SCREEN_ENCODER_TOUCH_1, 9, 0x02},
+	{NI_KONTROL_D2_BTN_SCREEN_ENCODER_TOUCH_2, 9, 0x04},
+	{NI_KONTROL_D2_BTN_SCREEN_ENCODER_TOUCH_3, 9, 0x08},
+	{NI_KONTROL_D2_BTN_SCREEN_ENCODER_TOUCH_4, 9, 0x10},
+	{NI_KONTROL_D2_BTN_ENCODER_BROWSE_PRESS, 2, 0x08},
+	{NI_KONTROL_D2_BTN_ENCODER_BROWSE_TOUCH, 9, 0x20},
+	{NI_KONTROL_D2_BTN_BACK,    4, 0x80},
+	{NI_KONTROL_D2_BTN_CAPTURE, 4, 0x20},
+	{NI_KONTROL_D2_BTN_EDIT,    4, 0x01},
+	{NI_KONTROL_D2_BTN_ENCODER_LOOP_PRESS, 6, 0x10},
+	{NI_KONTROL_D2_BTN_ENCODER_LOOP_TOUCH, 9, 0x01},
+
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -161,7 +240,9 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
-					printf("button id %d %d\n", i, v > 1);
+					printf("button %s : id %d %d\n",
+					       ni_kontrol_d2_control_names[i],
+					       i, v > 0);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
@@ -287,7 +368,7 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 
-	printf("calling screen write now\n");
+	//printf("calling screen write now\n");
 	//ni_kontrol_d2_screen_flush(base);
 }
 
