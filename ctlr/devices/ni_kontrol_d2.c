@@ -55,27 +55,7 @@ struct ni_kontrol_d2_ctlr_t {
 };
 
 static const char *ni_kontrol_d2_control_names[] = {
-	/* Faders / Dials */
 	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
-	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
-	"Crossfader",
-	/* Buttons */
-	"Headphones Cue A",
-	"Headphones Cue B",
-	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
 			    sizeof(ni_kontrol_d2_control_names[0]))
@@ -83,28 +63,18 @@ static const char *ni_kontrol_d2_control_names[] = {
 static const struct ni_kontrol_d2_ctlr_t sliders[] = {
 	/* Left */
 	{NI_KONTROL_D2_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_LEFT_EQ_HIGH ,  3, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_LEFT_EQ_MID  ,  5, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_LEFT_EQ_LOW  ,  7, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_LEFT_FILTER  ,  9, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_GAIN   , 11, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_EQ_MID , 15, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_EQ_LOW , 17, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_FILTER , 19, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_CUE_MIX      , 21, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_LEFT_FADER   , 23, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_RIGHT_FADER  , 25, UINT32_MAX},
-	{NI_KONTROL_D2_SLIDER_CROSS_FADER  , 27, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
 static const struct ni_kontrol_d2_ctlr_t buttons[] = {
-	{NI_KONTROL_D2_BTN_CUE_A  , 29, 0x10},
-	{NI_KONTROL_D2_BTN_CUE_B  , 29, 0x1},
-	{NI_KONTROL_D2_BTN_MODE   , 29, 0x2},
-	{NI_KONTROL_D2_BTN_FX_ON_L, 29, 0x4},
-	{NI_KONTROL_D2_BTN_FX_ON_R, 29, 0x8},
+	{NI_KONTROL_D2_BTN_DECK_A  , 5, 0x01},
+	{NI_KONTROL_D2_BTN_DECK_B  , 5, 0x02},
+	{NI_KONTROL_D2_BTN_DECK_C  , 5, 0x04},
+	{NI_KONTROL_D2_BTN_DECK_D  , 5, 0x08},
+	{NI_KONTROL_D2_BTN_FX_1    , 2, 0x80},
+	{NI_KONTROL_D2_BTN_FX_2    , 3, 0x04},
+	{NI_KONTROL_D2_BTN_FX_3    , 3, 0x02},
+	{NI_KONTROL_D2_BTN_FX_4    , 3, 0x01},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -123,7 +93,8 @@ struct ni_kontrol_d2_t {
 	 * usb transfer, as hidapi encodes endpoint by first byte of
 	 * transfer. */
 	uint8_t lights_endpoint;
-	uint8_t lights[NI_KONTROL_D2_LED_COUNT];
+#warning fix constant here
+	uint8_t lights[NI_KONTROL_D2_LED_COUNT+100];
 };
 
 static const char *
@@ -157,11 +128,8 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 		if(nbytes == 0)
 			return 0;
 
-		printf("nbytes = %d\n", nbytes);
-		return 0;
-
 		switch(nbytes) {
-		case 30: {
+		case 25: {
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
 				int id     = sliders[i].event_id;
 				int offset = sliders[i].buf_byte_offset;
@@ -181,6 +149,9 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
+			break;
+		}
+		case 17: {
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
@@ -190,6 +161,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
+					printf("button id %d %d\n", i, v > 1);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
