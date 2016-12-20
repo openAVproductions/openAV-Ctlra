@@ -172,20 +172,16 @@ static const struct ni_kontrol_d2_ctlr_t buttons[] = {
 	{NI_KONTROL_D2_BTN_PAD_6, 7, 0x40},
 	{NI_KONTROL_D2_BTN_PAD_7, 7, 0x80},
 	{NI_KONTROL_D2_BTN_PAD_8, 7, 0x02},
-
 	{NI_KONTROL_D2_BTN_HOTCUE, 8, 0x08},
 	{NI_KONTROL_D2_BTN_LOOP  , 8, 0x04},
 	{NI_KONTROL_D2_BTN_FREEZE, 8, 0x02},
 	{NI_KONTROL_D2_BTN_REMIX , 8, 0x01},
 	{NI_KONTROL_D2_BTN_FLUX  , 7, 0x10},
 	{NI_KONTROL_D2_BTN_DECK  , 7, 0x04},
-
 	{NI_KONTROL_D2_BTN_SHIFT, 8, 0x80},
 	{NI_KONTROL_D2_BTN_SYNC , 8, 0x40},
 	{NI_KONTROL_D2_BTN_CUE  , 8, 0x20},
 	{NI_KONTROL_D2_BTN_PLAY , 8, 0x10},
-
-
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -348,8 +344,8 @@ ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
 	idx += sizeof(header);
 #endif
 
-	printf("sizeof header %d\n", sizeof(header));
-	for(int i = 0; i < sizeof(header); i++) {
+	//printf("sizeof header %d\n", sizeof(header));
+	for(unsigned i = 0; i < sizeof(header); i++) {
 		buf[idx++] = header[i];
 	}
 
@@ -366,12 +362,12 @@ ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
 	buf[idx++] = 0b1111100;
 	buf[idx++] = 0b0000000;
 
-	printf("sizeof footer %d\n", sizeof(footer));
-	for(int i = 0; i < sizeof(footer); i++) {
+	//printf("sizeof footer %d\n", sizeof(footer));
+	for(unsigned i = 0; i < sizeof(footer); i++) {
 		buf[idx++] = footer[i];
 	}
 
-	for(int i = 0; i < idx; i++) {
+	for(unsigned i = 0; i < idx; i++) {
 		printf("%02x ", buf[i]);
 	}
 	printf("\n");
@@ -381,7 +377,8 @@ ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
 					  buf, idx);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
-	printf("write to screen ok\n");
+	else
+		printf("write to screen ok\n");
 }
 
 void
