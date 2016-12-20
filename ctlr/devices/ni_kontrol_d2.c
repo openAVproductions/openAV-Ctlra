@@ -117,11 +117,8 @@ static const char *ni_kontrol_d2_control_names[] = {
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
 			    sizeof(ni_kontrol_d2_control_names[0]))
 
-static const struct ni_kontrol_d2_ctlr_t sliders[] = {
-	/* Left */
-	{NI_KONTROL_D2_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
-};
-#define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
+/* Sliders are calulated on the fly */
+#define SLIDERS_SIZE (12)
 
 static const struct ni_kontrol_d2_ctlr_t buttons[] = {
 	{NI_KONTROL_D2_BTN_DECK_A  , 5, 0x01},
@@ -237,19 +234,22 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 
 		switch(nbytes) {
 		case 25: {
-			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-				int id     = sliders[i].event_id;
-				int offset = sliders[i].buf_byte_offset;
-				int mask   = sliders[i].mask;
-
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				if(dev->hw_values[i] != v) {
-					dev->hw_values[i] = v;
+			for(uint32_t i = 0; i < 4; i++) {
+				/* screen encoders here */
+				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
+				//printf("%04x ", val);
+			}
+			for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
+				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
+				float v = ((float)val) / 0xfee;
+				if(dev->hw_values[i] != val) {
+					dev->hw_values[i] = val;
 					struct ctlr_event_t event = {
 						.id = CTLR_EVENT_SLIDER,
 						.slider  = {
-							.id = id,
-							.value = v / 4096.f},
+							.id = i,
+							.value = v
+						},
 					};
 					struct ctlr_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
