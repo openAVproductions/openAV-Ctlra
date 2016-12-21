@@ -406,7 +406,7 @@ ni_kontrol_d2_light_set(struct ctlr_dev_t *base, uint32_t light_id,
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_KONTROL_D2_LED_COUNT)
+	if(!dev || light_id > LEDS_SIZE)
 		return;
 
 	/* write brighness to all LEDs */
