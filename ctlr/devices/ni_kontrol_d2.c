@@ -301,35 +301,6 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 	return 0;
 }
 
-static void ni_kontrol_d2_light_set(struct ctlr_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status)
-{
-	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-	int ret;
-
-	if(!dev || light_id > NI_KONTROL_D2_LED_COUNT)
-		return;
-
-	/* write brighness to all LEDs */
-	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
-	dev->lights[0] = 0x80;
-
-	/* FX ON buttons have orange and blue
-	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_D2_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t g      = (light_status >>  8) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
-	}
-	*/
-
-	dev->lights_dirty = 1;
-}
-
 void
 ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
 {
@@ -392,6 +363,35 @@ ni_kontrol_d2_screen_flush(struct ctlr_dev_t *base)
 		printf("write to screen ok\n");
 }
 
+static void
+ni_kontrol_d2_light_set(struct ctlr_dev_t *base, uint32_t light_id,
+			uint32_t light_status)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	int ret;
+
+	if(!dev || light_id > NI_KONTROL_D2_LED_COUNT)
+		return;
+
+	/* write brighness to all LEDs */
+	uint32_t bright = (light_status >> 24) & 0x7F;
+	dev->lights[light_id] = bright;
+	dev->lights[0] = 0x80;
+
+	/* FX ON buttons have orange and blue
+	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
+	   light_id == NI_KONTROL_D2_LED_FX_ON_RIGHT) {
+		uint32_t r      = (light_status >> 16) & 0xFF;
+		uint32_t g      = (light_status >>  8) & 0xFF;
+		uint32_t b      = (light_status >>  0) & 0xFF;
+		dev->lights[light_id  ] = r;
+		dev->lights[light_id+1] = b;
+	}
+	*/
+
+	dev->lights_dirty = 1;
+}
+
 void
 ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 {
@@ -400,11 +400,29 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 		return;
 
 	uint8_t *data = &dev->lights_endpoint;
-	dev->lights_endpoint = USB_ENDPOINT_BTNS_WRITE;
-	data[1] = 0x80;
+	dev->lights_endpoint = 0x80;
+	//memset(&data[3], 0x0f, 20);
+	//data[1] = 0x80;
+	
+	printf("%s : writing now...\n", __func__);
+	/*
+	char buf[256];
+	buf[0] = 0x80;
+	for(int i = 1; i < 256; i++)
+		buf[i] = 0x0f;
+	*/
+	data[0] = 0x80;
+	/*
+	for(int i = 1; i < 256; i++)
+		data[i] = 0x0f;
+	*/
+	//int ret = hid_write(dev->base.hidapi_usb_handle[0], (void *)buf, 128);
+	int ret = ctlr_dev_impl_usb_write(&dev->base, 0, data, 128);
+	printf("hid write res = %d\n", ret);
 
-	int ret = ctlr_dev_impl_usb_write(base, USB_INTERFACE_BTNS,
-					  data, NI_KONTROL_D2_LED_COUNT+1);
+	//ret = ctlr_dev_impl_usb_write(base, 0, data, 60);
+
+	printf("%s : ret %d\n", __func__, ret);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 
@@ -418,9 +436,9 @@ ni_kontrol_d2_disconnect(struct ctlr_dev_t *base)
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_KONTROL_D2_LED_COUNT);
-	dev->lights[0] = 0x80;
-	ni_kontrol_d2_light_set(base, 0, 0);
+	//memset(&dev->lights[1], 0, NI_KONTROL_D2_LED_COUNT);
+	//dev->lights[0] = 0x80;
+	//ni_kontrol_d2_light_set(base, 0, 0);
 	ni_kontrol_d2_light_flush(base, 0);
 
 	free(dev);
@@ -462,6 +480,24 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 		printf("%s: failed to open screen usb interface\n", __func__);
 		goto fail;
 	}
+#endif
+
+#if 1 /*debug lights */
+
+#include "hidapi.h"
+#include <unistd.h>
+	char buf[256];
+	buf[0] = 0x80;
+	for(int i = 1; i < 256; i++)
+		buf[i] = 0x0f;
+	//int ret = hid_write(dev->base.hidapi_usb_handle[0], (void *)buf, 128);
+	int ret = ctlr_dev_impl_usb_write(&dev->base, 0, buf, 128);
+	printf("hid write res = %d\n", ret);
+	usleep(1000*50);
+	for(int i = 1; i < 256; i++)
+		buf[i] = 0x01;
+	ret = ctlr_dev_impl_usb_write(&dev->base, 0, buf, 128);
+	printf("hid write res = %d\n", ret);
 #endif
 
 	dev->base.poll = ni_kontrol_d2_poll;

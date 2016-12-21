@@ -24,17 +24,19 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 
 	ctlr_dev->hidapi_usb_handle[idx] = hid_open(vid, pid, NULL);
 	if(!ctlr_dev->hidapi_usb_handle[idx]) {
-#if 0 /* verbose ctlr logging */
+#if 1 /* verbose ctlr logging */
 		printf("%s : usb device open failed for device %s\n",
 		       __func__, ctlr_dev->info.device);
 #endif
 		return -ENXIO;
 	}
 
+#if 1
 	ret = hid_set_nonblocking(ctlr_dev->hidapi_usb_handle[idx], 1);
 	if(ret < 0)
 		printf("%s: Warning, failed to set device %s to non-blocking\n",
 		       __func__, ctlr_dev->info.device);
+#endif
 
 	return 0;
 }
@@ -65,13 +67,8 @@ int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
                            int endpoint,
                            uint8_t *data, uint32_t size)
 {
-	//int res = hid_write(handle, buf, 128);
-	int res = hid_read(dev->hidapi_usb_handle[handle_idx], data, size);
-	if (res < 0) {
-#warning TODO: exception path, *error* on read, so stop polling
-	}
-
-	return res;
+	printf("%s : OLD OUTDATED  - FIX WHERE I'M CALLED FROM!!\n", __func__);
+	return -1;
 }
 
 void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev)

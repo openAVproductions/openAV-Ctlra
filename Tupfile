@@ -4,6 +4,8 @@ include_rules
 : foreach *.cpp |> $(CXX) $(CFLAGS) $(CXXFLAGS) -c %f -o %o |> %B.o
 
 LDFLAGS+=-lhidapi-libusb
+# Also works, but less stable on linux from experience here
+#LDFLAGS+=-lhidapi-hidraw
 
 : examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlr/libctlr.a  |> $(CC) -I. %f -o %o $(LDFLAGS) |> vegas_mode
 
