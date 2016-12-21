@@ -3,8 +3,13 @@ include_rules
 : foreach *.c   |> $(CC)  $(CFLAGS) -c %f -o %o |> %B.o
 : foreach *.cpp |> $(CXX) $(CFLAGS) $(CXXFLAGS) -c %f -o %o |> %B.o
 
+
+# hidraw works from a clean boot, but less stable on linux in general.
+# if libusb has previously accessed the device, hidraw fails. This is
+# probably due to the fact that libusb *incorrectly* doesn't restore the
+# kernel driver (which it should). For now sticking to libusb version, but
+# not ideal. Plain libusb (not hidapi) has hotplug callbacks, which are nice...
 LDFLAGS+=-lhidapi-libusb
-# Also works, but less stable on linux from experience here
 #LDFLAGS+=-lhidapi-hidraw
 
 : examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlr/libctlr.a  |> $(CC) -I. %f -o %o $(LDFLAGS) |> vegas_mode
