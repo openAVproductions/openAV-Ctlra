@@ -55,7 +55,7 @@ void kontrol_z1_func(struct ctlr_dev_t* dev,
 
 		case CTLR_EVENT_SLIDER:
 			if(d->print_events) {
-				name = ctlr_dev_control_get_name(dev, e->button.id);
+				name = ctlr_dev_control_get_name(dev, e->slider.id);
 				printf("[%03d] slider %s (%d)\n",
 				       (int)(e->slider.value * 100.f),
 				       name, e->slider.id);

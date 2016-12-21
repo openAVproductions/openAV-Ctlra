@@ -113,6 +113,19 @@ static const char *ni_kontrol_d2_control_names[] = {
 	"Sync",
 	"Cue",
 	"Play",
+	/* Sliders */
+	"Screen Encoder 1",
+	"Screen Encoder 2",
+	"Screen Encoder 3",
+	"Screen Encoder 4",
+	"Fader 1",
+	"Fader 2",
+	"Fader 3",
+	"Fader 4",
+	"FX Dial 1",
+	"FX Dial 2",
+	"FX Dial 3",
+	"FX Dial 4",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
 			    sizeof(ni_kontrol_d2_control_names[0]))
@@ -206,10 +219,8 @@ ni_kontrol_d2_control_get_name(struct ctlr_dev_t *base,
 			       uint32_t control_id)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-#if 0
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_d2_control_names[control_id];
-#endif
 	return 0;
 }
 
@@ -238,16 +249,18 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 				/* screen encoders here */
 				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
 				//printf("%04x ", val);
+				//NI_KONTROL_D2_SLIDER_SCREEN_ENCODER_1 + i
 			}
 			for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
 				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
 				float v = ((float)val) / 0xfee;
 				if(dev->hw_values[i] != val) {
 					dev->hw_values[i] = val;
+					int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 5);
 					struct ctlr_event_t event = {
 						.id = CTLR_EVENT_SLIDER,
 						.slider  = {
-							.id = i,
+							.id = id,
 							.value = v
 						},
 					};
@@ -258,21 +271,17 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 			}
 			break;
 		}
+
 		case 17: {
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
 				int mask   = buttons[i].mask;
-
 				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
 				int value_idx = SLIDERS_SIZE + i;
 
 				if(dev->hw_values[value_idx] != v) {
-					printf("button %s : id %d %d\n",
-					       ni_kontrol_d2_control_names[i],
-					       i, v > 0);
 					dev->hw_values[value_idx] = v;
-
 					struct ctlr_event_t event = {
 						.id = CTLR_EVENT_BUTTON,
 						.button  = {
@@ -286,7 +295,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 			}
 			break;
 			}
-		}
+		} /* switch */
 	} while (nbytes > 0);
 
 	return 0;

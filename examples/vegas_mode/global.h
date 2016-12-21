@@ -32,6 +32,10 @@ void kontrol_z1_update_state(struct ctlr_dev_t *dev, struct dummy_data *d);
 void kontrol_z1_func(struct ctlr_dev_t* dev, uint32_t num_events,
 		     struct ctlr_event_t** events, void *userdata);
 
+void kontrol_d2_update_state(struct ctlr_dev_t *dev, struct dummy_data *d);
+void kontrol_d2_func(struct ctlr_dev_t* dev, uint32_t num_events,
+		     struct ctlr_event_t** events, void *userdata);
+
 void kontrol_f1_update_state(struct ctlr_dev_t *dev, struct dummy_data *d);
 void kontrol_f1_func(struct ctlr_dev_t* dev, uint32_t num_events,
 		     struct ctlr_event_t** events, void *userdata);
