@@ -316,14 +316,16 @@ static void ni_kontrol_d2_light_set(struct ctlr_dev_t *base,
 	dev->lights[light_id] = bright;
 	dev->lights[0] = 0x80;
 
-	/* FX ON buttons have orange and blue */
+	/* FX ON buttons have orange and blue
 	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
 	   light_id == NI_KONTROL_D2_LED_FX_ON_RIGHT) {
 		uint32_t r      = (light_status >> 16) & 0xFF;
+		uint32_t g      = (light_status >>  8) & 0xFF;
 		uint32_t b      = (light_status >>  0) & 0xFF;
 		dev->lights[light_id  ] = r;
 		dev->lights[light_id+1] = b;
 	}
+	*/
 
 	dev->lights_dirty = 1;
 }
