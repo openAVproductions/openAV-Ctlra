@@ -197,6 +197,42 @@ static const struct ni_kontrol_d2_ctlr_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+/* Complicated:
+ * Some lights have 3x colours (so 3 bytes) others 2, and most 1.
+ * Do some math, and end up with this size. This is used as the USB
+ * transfer size, and the size in the dev struct - so getting it wrong
+ * means memcpy()-ing of invalid ranges, and overwriting stuff - don't :)
+ */
+	/*
+	1-24   pads
+	25     fx select
+	26-29  fx btn 1 to 4
+	30-33  screen left 1 to 4
+	34-37  screen right 1 to 4
+	38 back
+	39 cap
+	40 edit
+	41-44 track on 1 to 4
+	45 hotque(white)
+	46     (blue)
+	47,48 loop w/b
+	49 50 freeze w/b
+	51 52 Remix
+	53 Flux
+	54 55 Deck 
+	56 Shift
+	57 sync (green)
+	58 sync (red)
+	59 cue
+	60 play
+	61-64 loop surround white
+	65-68 loop surround blue
+	69-94: 25 touchstrip leds blue left to right
+	94-+25: 25 touchstrip leds orange left to right
+	119 - 122 decks a b c d
+	*/
+#define LEDS_SIZE (122)
+
 /* Represents the the hardware device */
 struct ni_kontrol_d2_t {
 	/* base handles usb i/o etc */
@@ -211,7 +247,7 @@ struct ni_kontrol_d2_t {
 	 * transfer. */
 	uint8_t lights_endpoint;
 #warning fix constant here
-	uint8_t lights[NI_KONTROL_D2_LED_COUNT+100];
+	uint8_t lights[LEDS_SIZE];
 };
 
 static const char *
@@ -376,7 +412,7 @@ ni_kontrol_d2_light_set(struct ctlr_dev_t *base, uint32_t light_id,
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-	dev->lights[0] = 0x80;
+	//dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue
 	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
@@ -401,28 +437,9 @@ ni_kontrol_d2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
-	//memset(&data[3], 0x0f, 20);
-	//data[1] = 0x80;
-	
-	printf("%s : writing now...\n", __func__);
-	/*
-	char buf[256];
-	buf[0] = 0x80;
-	for(int i = 1; i < 256; i++)
-		buf[i] = 0x0f;
-	*/
-	data[0] = 0x80;
-	/*
-	for(int i = 1; i < 256; i++)
-		data[i] = 0x0f;
-	*/
-	//int ret = hid_write(dev->base.hidapi_usb_handle[0], (void *)buf, 128);
-	int ret = ctlr_dev_impl_usb_write(&dev->base, 0, data, 128);
-	printf("hid write res = %d\n", ret);
+	//memset(dev->lights, 0xff, LEDS_SIZE);
 
-	//ret = ctlr_dev_impl_usb_write(base, 0, data, 60);
-
-	printf("%s : ret %d\n", __func__, ret);
+	int ret = ctlr_dev_impl_usb_write(&dev->base, 0, data, LEDS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 
@@ -482,7 +499,7 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 	}
 #endif
 
-#if 1 /*debug lights */
+#if 0 /*debug lights */
 
 #include "hidapi.h"
 #include <unistd.h>
@@ -491,11 +508,16 @@ ni_kontrol_d2_connect(ctlr_event_func event_func,
 	for(int i = 1; i < 256; i++)
 		buf[i] = 0x0f;
 	//int ret = hid_write(dev->base.hidapi_usb_handle[0], (void *)buf, 128);
+	
+	buf[0] = 0x80;
 	int ret = ctlr_dev_impl_usb_write(&dev->base, 0, buf, 128);
 	printf("hid write res = %d\n", ret);
 	usleep(1000*50);
 	for(int i = 1; i < 256; i++)
-		buf[i] = 0x01;
+		dev->lights[i] = 0x0a;
+	memcpy(&buf[1], dev->lights, 127);
+
+	//buf[0] = 0x80;
 	ret = ctlr_dev_impl_usb_write(&dev->base, 0, buf, 128);
 	printf("hid write res = %d\n", ret);
 #endif
