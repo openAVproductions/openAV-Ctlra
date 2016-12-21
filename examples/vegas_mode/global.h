@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define VEGAS_BTN_COUNT 64
+#define VEGAS_BTN_COUNT 128
 
 struct dummy_data {
 	uint8_t print_events;

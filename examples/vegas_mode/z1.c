@@ -39,8 +39,7 @@ void kontrol_z1_func(struct ctlr_dev_t* dev,
 			}
 			d->buttons[e->button.id] = e->button.pressed;
 			if(e->button.id == NI_KONTROL_Z1_BTN_MODE) {
-				memset(&d->buttons, e->button.pressed,
-				       sizeof(struct dummy_data));
+				memset(&d->buttons, e->button.pressed, VEGAS_BTN_COUNT);
 			}
 			break;
 
