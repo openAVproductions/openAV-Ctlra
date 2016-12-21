@@ -20,6 +20,7 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *ctlr_dev, int vid, int pid,
 			printf("failed to initialise usb backend: %d\n", ret);
 			return -ENODEV;
 		}
+		ctlr_libusb_initialized = 1;
 	}
 
 	ctlr_dev->hidapi_usb_handle[idx] = hid_open(vid, pid, NULL);
