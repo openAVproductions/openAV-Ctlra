@@ -136,6 +136,8 @@ static const struct ni_maschine_mikro_mk2_ctlr_t encoders[] = {
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
+#define LIGHTS_SIZE 80
+
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk2_t {
 	/* base handles usb i/o etc */
@@ -144,8 +146,10 @@ struct ni_maschine_mikro_mk2_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
-#warning FIXME: lights array size
-	uint8_t lights[200];
+
+	/* Lights endpoint used to transfer with hidapi */
+	uint8_t lights_endpoint;
+	uint8_t lights[LIGHTS_SIZE];
 };
 
 static const char *
@@ -277,12 +281,11 @@ ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	memset(dev->lights, 0xff, 128);
-	dev->lights[0] = 0x80;
+	uint8_t *data = &dev->lights_endpoint;
+	dev->lights_endpoint = 0x80;
+	memset(dev->lights, 0xff, LIGHTS_SIZE);
 
-	int ret = ctlr_dev_impl_usb_write(base, 0,
-					  dev->lights,
-					  80);
+	int ret = ctlr_dev_impl_usb_write(base, 0, data, LIGHTS_SIZE);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
