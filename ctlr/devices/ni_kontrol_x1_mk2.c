@@ -221,7 +221,7 @@ ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 				if(dev->hw_values[i] != v) {
 					dev->hw_values[i] = v;
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_SLIDER,
+						.type = CTLR_EVENT_SLIDER,
 						.slider  = {
 							.id = id,
 							.value = v / 4096.f},
@@ -244,7 +244,7 @@ ni_kontrol_x1_mk2_poll(struct ctlr_dev_t *base)
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_BUTTON,
+						.type = CTLR_EVENT_BUTTON,
 						.button  = {
 							.id = id,
 							.pressed = v > 0},

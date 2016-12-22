@@ -154,7 +154,7 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 				if(dev->hw_values[i] != v) {
 					dev->hw_values[i] = v;
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_SLIDER,
+						.type = CTLR_EVENT_SLIDER,
 						.slider  = {
 							.id = id,
 							.value = v / 4096.f},
@@ -176,7 +176,7 @@ static uint32_t ni_kontrol_z1_poll(struct ctlr_dev_t *base)
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_BUTTON,
+						.type = CTLR_EVENT_BUTTON,
 						.button  = {
 							.id = id,
 							.pressed = v > 0},

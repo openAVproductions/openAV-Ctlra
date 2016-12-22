@@ -262,7 +262,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 					dev->hw_values[value_idx] = v;
 
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_BUTTON,
+						.type = CTLR_EVENT_BUTTON,
 						.button  = {
 							.id = id,
 							.pressed = v > 0},

@@ -294,7 +294,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 					dev->hw_values[i] = val;
 					int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 5);
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_SLIDER,
+						.type = CTLR_EVENT_SLIDER,
 						.slider  = {
 							.id = id,
 							.value = v
@@ -319,7 +319,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlr_dev_t *base)
 				if(dev->hw_values[value_idx] != v) {
 					dev->hw_values[value_idx] = v;
 					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_BUTTON,
+						.type = CTLR_EVENT_BUTTON,
 						.button  = {
 							.id = id,
 							.pressed = v > 0},

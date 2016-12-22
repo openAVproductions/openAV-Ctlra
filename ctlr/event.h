@@ -35,7 +35,7 @@
 #include <stdint.h>
 
 /* Types of events */
-enum ctlr_event_id_t {
+enum ctlr_event_type_t {
 	CTLR_EVENT_BUTTON = 0,
 	CTLR_EVENT_ENCODER,
 	CTLR_EVENT_SLIDER,
@@ -90,9 +90,7 @@ struct ctlr_event_grid_t {
 /** The event passed around in the API */
 struct ctlr_event_t {
 	/** The type of this event */
-	enum ctlr_event_id_t id;
-	/** The device this event originates from */
-	struct ctlr_dev_t *dev;
+	enum ctlr_event_type_t type;
 
 	/** The event data: see demo.c for example on how to unpack */
 	union {

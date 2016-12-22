@@ -26,7 +26,7 @@ void mm_func(struct ctlr_dev_t* dev,
 		char *pressed = 0;
 		struct ctlr_event_t *e = events[i];
 		const char *name = 0;
-		switch(e->id) {
+		switch(e->type) {
 		case CTLR_EVENT_BUTTON:
 			name = ctlr_dev_control_get_name(dev, e->button.id);
 			printf("[%s] button %s (%d)\n",

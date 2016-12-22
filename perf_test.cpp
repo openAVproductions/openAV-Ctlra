@@ -33,7 +33,7 @@ void perf_event_switch(struct ctlr_dev_t* dev,
 {
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlr_event_t *e = events[i];
-		switch(e->id) {
+		switch(e->type) {
 		case CTLR_EVENT_BUTTON:
 			break;
 		case CTLR_EVENT_ENCODER:

@@ -52,17 +52,17 @@ static void simple_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
 /* replay a button press/release event on every poll. Static event
  * is held here, and fed to application in poll() */
 static struct ctlr_event_t events[] = {
-	{.id = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 1},},
-	{.id = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 0},},
-	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta =  1},},
-	{.id = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta = -1},},
-	{.id = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x3,
+	{.type = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 1},},
+	{.type = CTLR_EVENT_BUTTON , .button  = {.id = 0, .pressed = 0},},
+	{.type = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta =  1},},
+	{.type = CTLR_EVENT_ENCODER, .encoder = {.id = 0, .delta = -1},},
+	{.type = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x3,
 						.pos = 3, .pressure = 0.5f,
 						.pressed = 1 },},
-	{.id = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x1,
+	{.type = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x1,
 						.pos = 3, .pressure = 0.3f,
 						.pressed = 1 },},
-	{.id = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x2,
+	{.type = CTLR_EVENT_GRID, .grid = {.id = 0, .flags = 0x2,
 						.pos = 3, .pressure = 0.7f,
 						.pressed = 1 },}
 };
