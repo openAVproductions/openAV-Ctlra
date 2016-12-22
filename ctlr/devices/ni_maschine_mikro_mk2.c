@@ -160,9 +160,10 @@ struct ni_maschine_mikro_mk2_t {
 	uint8_t lights[LIGHTS_SIZE];
 
 	/* Pressure filtering for note-onset detection */
-	uint16_t pads[16]; /* current state */
 	uint8_t  pad_idx;
-	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
+	uint16_t pads[NPADS]; /* current state */
+	uint16_t pad_avg[NPADS]; /* average */
+	uint16_t pad_pressures[NPADS*KERNEL_LENGTH]; /* values history */
 };
 
 static const char *
@@ -191,26 +192,38 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 		switch(nbytes) {
 		case 64: {
 				uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
+				int changed = 0;
 				for(int i = 0; i < NPADS; i++) {
-					uint16_t v = *((uint16_t *)&buf[i*2]);
-					//dev->pad_pressures[i] = v;
-					dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
+					uint16_t v = buf[0] | ((buf[1] & 0x0F) << 8);
+					if(i == 0) {
+						//printf("%04d\n", v);
+					}
 
 					uint16_t total = 0;
 					for(int j = 0; j < KERNEL_LENGTH; j++)
 						total += dev->pad_pressures[i*KERNEL_LENGTH + j];
 
+					dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
 
 					uint16_t avg = total / KERNEL_LENGTH;
+					dev->pad_avg[i] = avg;
 
 					if(avg > PAD_SENSITIVITY && dev->pads[i] == 0) {
-						printf("%d pressed, avg = %d\n", i, avg);
+						//printf("%d pressed, avg = %d\n", i, avg);
 						dev->pads[i] = 1;
+						changed = 1;
 					}
 					else if(avg < PAD_SENSITIVITY && dev->pads[i] > 0) {
-						printf("%d released, avg = %d\n", i, avg);
+						//printf("%d released, avg = %d\n", i, avg);
 						dev->pads[i] = 0;
+						changed = 1;
 					}
+				}
+				if(changed) {
+					for(int i = 0; i < NPADS; i++) {
+						printf("%04d ", dev->pad_avg[i]);
+					}
+					printf("\n");
 				}
 			}
 			break;
