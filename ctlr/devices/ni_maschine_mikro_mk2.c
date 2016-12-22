@@ -166,17 +166,16 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_xfer(base, handle_idx,
-							 USB_ENDPOINT_READ,
-							 buf, 1024);
+		nbytes = ctlr_dev_impl_usb_read(base, handle_idx,
+						buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
 		switch(nbytes) {
-		case 65: {
+		case 64: {
 				for(int i = 0; i < 16; i++) {
 					uint16_t v = *((uint16_t *)&buf[i*2]);
-					//printf("%d\n", v);
+					//printf("%02x ", v);
 				}
 				//printf("\n");
 			}
@@ -278,13 +277,12 @@ ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
+	memset(dev->lights, 0xff, 128);
 	dev->lights[0] = 0x80;
 
-	int ret = ctlr_dev_impl_usb_xfer(base,
-					 USB_INTERFACE_ID,
-					 USB_ENDPOINT_WRITE,
-					 dev->lights,
-					 62);
+	int ret = ctlr_dev_impl_usb_write(base, 0,
+					  dev->lights,
+					  80);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
