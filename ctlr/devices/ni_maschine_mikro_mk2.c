@@ -136,7 +136,15 @@ static const struct ni_maschine_mikro_mk2_ctlr_t encoders[] = {
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
-#define LIGHTS_SIZE 80
+#define LIGHTS_SIZE (80)
+
+#define NPADS                  (16)
+/* KERNEL_LENGTH must be a power of 2 for masking */
+#define KERNEL_LENGTH          (8)
+#define KERNEL_MASK            (KERNEL_LENGTH-1)
+#define PAD_SENSITIVITY        (250)
+#define PAD_PRESS_BRIGHTNESS   (0.9999f)
+#define PAD_RELEASE_BRIGHTNESS (0.25f)
 
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk2_t {
@@ -150,6 +158,11 @@ struct ni_maschine_mikro_mk2_t {
 	/* Lights endpoint used to transfer with hidapi */
 	uint8_t lights_endpoint;
 	uint8_t lights[LIGHTS_SIZE];
+
+	/* Pressure filtering for note-onset detection */
+	uint16_t pads[16]; /* current state */
+	uint8_t  pad_idx;
+	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 };
 
 static const char *
@@ -177,11 +190,28 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 
 		switch(nbytes) {
 		case 64: {
-				for(int i = 0; i < 16; i++) {
+				uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
+				for(int i = 0; i < NPADS; i++) {
 					uint16_t v = *((uint16_t *)&buf[i*2]);
-					//printf("%02x ", v);
+					//dev->pad_pressures[i] = v;
+					dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
+
+					uint16_t total = 0;
+					for(int j = 0; j < KERNEL_LENGTH; j++)
+						total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+
+
+					uint16_t avg = total / KERNEL_LENGTH;
+
+					if(avg > PAD_SENSITIVITY && dev->pads[i] == 0) {
+						printf("%d pressed, avg = %d\n", i, avg);
+						dev->pads[i] = 1;
+					}
+					else if(avg < PAD_SENSITIVITY && dev->pads[i] > 0) {
+						printf("%d released, avg = %d\n", i, avg);
+						dev->pads[i] = 0;
+					}
 				}
-				//printf("\n");
 			}
 			break;
 		case 6: {
