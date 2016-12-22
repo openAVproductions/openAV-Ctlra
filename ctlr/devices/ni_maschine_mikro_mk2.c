@@ -283,7 +283,6 @@ ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
-	memset(dev->lights, 0xff, LIGHTS_SIZE);
 
 	int ret = ctlr_dev_impl_usb_write(base, 0, data, LIGHTS_SIZE);
 	if(ret < 0)
@@ -295,10 +294,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlr_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
-	/* Turn off all lights */
-	ni_maschine_mikro_mk2_light_set(base, 1, 0);
+	memset(dev->lights, 0x0, LIGHTS_SIZE);
 	ni_maschine_mikro_mk2_light_flush(base, 1);
-
 	free(dev);
 	return 0;
 }
