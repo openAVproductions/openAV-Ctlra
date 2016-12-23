@@ -453,9 +453,7 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
 	/* Turn off all lights */
-	//memset(&dev->lights[1], 0, NI_KONTROL_D2_LED_COUNT);
-	//dev->lights[0] = 0x80;
-	//ni_kontrol_d2_light_set(base, 0, 0);
+	memset(&dev->lights[1], 0, LEDS_SIZE);
 	ni_kontrol_d2_light_flush(base, 0);
 
 	free(dev);
