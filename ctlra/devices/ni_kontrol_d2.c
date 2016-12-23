@@ -497,28 +497,12 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	}
 #endif
 
-#if 0 /*debug lights */
+	memset(dev->lights, 0xf, sizeof(dev->lights));
+	ni_kontrol_d2_light_flush(&dev->base, 1);
+	usleep(1000*100);
+	memset(dev->lights, 0x0, sizeof(dev->lights));
+	ni_kontrol_d2_light_flush(&dev->base, 1);
 
-#include "hidapi.h"
-#include <unistd.h>
-	char buf[256];
-	buf[0] = 0x80;
-	for(int i = 1; i < 256; i++)
-		buf[i] = 0x0f;
-	//int ret = hid_write(dev->base.hidapi_usb_handle[0], (void *)buf, 128);
-	
-	buf[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_write(&dev->base, 0, buf, 128);
-	printf("hid write res = %d\n", ret);
-	usleep(1000*50);
-	for(int i = 1; i < 256; i++)
-		dev->lights[i] = 0x0a;
-	memcpy(&buf[1], dev->lights, 127);
-
-	//buf[0] = 0x80;
-	ret = ctlra_dev_impl_usb_write(&dev->base, 0, buf, 128);
-	printf("hid write res = %d\n", ret);
-#endif
 
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;

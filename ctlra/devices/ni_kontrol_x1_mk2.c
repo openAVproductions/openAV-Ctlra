@@ -174,6 +174,10 @@ static const struct ni_kontrol_x1_mk2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+/* Multi-colour lights take multiple bytes for colour, but only one
+ * enum value - hence lights size is > led count */
+#define LIGHTS_SIZE (NI_KONTROL_X1_MK2_LED_COUNT+8)
+
 struct ni_kontrol_x1_mk2_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
@@ -183,7 +187,7 @@ struct ni_kontrol_x1_mk2_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
-	uint8_t lights[NI_KONTROL_X1_MK2_LED_COUNT];
+	uint8_t lights[LIGHTS_SIZE];
 };
 
 static const char *
@@ -302,9 +306,8 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0;
 	dev->lights[0] = 0x80;
-
 	int ret = ctlra_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					  NI_KONTROL_X1_MK2_LED_COUNT+1);
+					   LIGHTS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
