@@ -11,13 +11,14 @@ CXX=g++
 ##############
 
 DEBUG += -g -fPIC
-WARNINGS += -std=c11 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
+WARNINGS += -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable
 OPTS = -march=native -O0
 
 INCLUDES += -I. -I /usr/include/libusb-1.0/
 
-CFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
-CXXFLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS) -Wno-c++11-compat-deprecated-writable-strings
+GENERIC_FLAGS = $(DEBUG) $(WARNINGS) $(INCLUDES) $(OPTS)
+CFLAGS = -std=c11 $(GENERIC_FLAGS)
+CXXFLAGS = $(GENERIC_FLAGS) -Wno-c++11-compat-deprecated-writable-strings
 
 ##############
 ### LINKER ###
