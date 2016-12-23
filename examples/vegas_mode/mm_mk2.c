@@ -46,13 +46,13 @@ void mm_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_GRID:
-			if(e->grid.flags & CTLRA_EVENT_GRID_BUTTON) {
+			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				pressed = e->grid.pressed ? " X " : "   ";
 			} else {
 				pressed = "---";
 			}
 			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRA_EVENT_GRID_PRESSURE)
+			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
 			break;

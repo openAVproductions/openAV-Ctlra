@@ -202,7 +202,7 @@ static uint32_t ni_kontrol_f1_poll(struct ctlra_dev_t *base)
 						.type = CTLRA_EVENT_GRID,
 						.grid  = {
 							.id = 0,
-							.flags = CTLRA_EVENT_GRID_BUTTON,
+							.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
 							.pos = i,
 							.pressed = v
 						},

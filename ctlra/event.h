@@ -70,15 +70,14 @@ struct ctlra_event_slider_t {
 	float value;
 };
 
-//#warning TODO: Rename to GRID_FLAG_BTN/PRESSURE
-#define CTLRA_EVENT_GRID_BUTTON   (1<<0)
-#define CTLRA_EVENT_GRID_PRESSURE (1<<1)
+#define CTLRA_EVENT_GRID_FLAG_BUTTON   (1<<0)
+#define CTLRA_EVENT_GRID_FLAG_PRESSURE (1<<1)
 
 /** Represents a grid of buttons */
 struct ctlra_event_grid_t {
 	/** The ID of the grid */
 	uint16_t id;
-	/** Flags: set if pressure or button */
+	/** Flags: set if pressure or button, see defines above */
 	uint16_t flags;
 	/** The position of the square in the grid */
 	uint32_t pos;

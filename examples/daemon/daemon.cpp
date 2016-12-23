@@ -74,13 +74,13 @@ void demo_event_func(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_GRID:
 			static const char* grid_pressed[] = { " X ", "   " };
 			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID, e->button.id);
-			if(e->grid.flags & CTLRA_EVENT_GRID_BUTTON) {
+			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];
 			} else {
 				pressed = "---";
 			}
 			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRA_EVENT_GRID_PRESSURE)
+			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
 			break;
