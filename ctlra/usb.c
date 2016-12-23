@@ -25,19 +25,17 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid,
 
 	ctlra_dev->hidapi_usb_handle[idx] = hid_open(vid, pid, NULL);
 	if(!ctlra_dev->hidapi_usb_handle[idx]) {
-#if 1 /* verbose ctlra logging */
+#if 0 /* verbose ctlra logging */
 		printf("%s : usb device open failed for device %s\n",
 		       __func__, ctlra_dev->info.device);
 #endif
 		return -ENXIO;
 	}
 
-#if 1
 	ret = hid_set_nonblocking(ctlra_dev->hidapi_usb_handle[idx], 1);
 	if(ret < 0)
 		printf("%s: Warning, failed to set device %s to non-blocking\n",
 		       __func__, ctlra_dev->info.device);
-#endif
 
 	return 0;
 }
