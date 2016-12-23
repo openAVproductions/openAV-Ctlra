@@ -78,13 +78,11 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 	}
 }
 
-#warning TODO: cleanly shutdown entire USB subsystem
-#if 0
 void ctlra_impl_usb_shutdown()
 {
-	res = hid_exit();
+	int res = hid_exit();
 	if(res)
 		printf("Ctlr: %s Warning: hid_exit() returns %d\n",
-		       __func__, red);
+		       __func__, res);
 }
-#endif
+

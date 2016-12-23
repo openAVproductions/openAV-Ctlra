@@ -6,6 +6,9 @@
 #include "devices.h"
 #include "device_impl.h"
 
+/* For cleaning up the USB subsystem */
+extern void ctlra_impl_usb_shutdown();
+
 struct ctlra_dev_connect_func_t {
 	enum ctlra_dev_id_t id;
 	ctlra_dev_connect_func connect;
@@ -109,3 +112,10 @@ const char * ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 		return dev->control_get_name(dev, type, control_id);
 	return 0;
 }
+
+void ctlra_exit()
+{
+	ctlra_impl_usb_shutdown();
+}
+
+

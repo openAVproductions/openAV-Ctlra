@@ -146,6 +146,11 @@ const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
 
+/** Cleanup any resources allocated internally in Ctlra.
+ * The application is expected to have called *ctlra_dev_disconnect*
+ * on all open devices before calling this function. */
+void ctlra_exit();
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

@@ -104,5 +104,7 @@ int main(int argc, char** argv)
 		free(dev);
 	}
 
+	ctlra_exit();
+
 	return 0;
 }
