@@ -4,4 +4,4 @@ CFLAGS+=-I/usr/include/hidapi/
 
 : foreach *.c   |> $(CC) $(CFLAGS) -c %f -o %o |> %B.o
 
-: *.o devices/*.o |> ar crs %o %f |> libctlr.a
+: *.o devices/*.o |> ar crs %o %f |> libctlra.a

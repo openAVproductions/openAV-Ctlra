@@ -1,6 +1,6 @@
 include_rules
 
-CFLAGS += "-I../../ctlr/"
+CFLAGS += "-I../../ctlra/"
 CFLAGS += "-I../../"
 CFLAGS += "-I."
 

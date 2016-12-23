@@ -44,7 +44,7 @@
 #define USB_ENDPOINT_WRITE    (0x01)
 
 /* This struct is a generic struct to identify hw controls */
-struct ni_maschine_mikro_mk2_ctlr_t {
+struct ni_maschine_mikro_mk2_ctlra_t {
 	int event_id;
 	int buf_byte_offset;
 	uint32_t mask;
@@ -87,7 +87,7 @@ static const char *ni_maschine_mikro_mk2_control_names[] = {
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mikro_mk2_control_names) /\
 			    sizeof(ni_maschine_mikro_mk2_control_names[0]))
 
-static const struct ni_maschine_mikro_mk2_ctlr_t buttons[] = {
+static const struct ni_maschine_mikro_mk2_ctlra_t buttons[] = {
 	{NI_MASCHINE_MIKRO_MK2_BTN_RESTART    , 1, 0x80},
 	{NI_MASCHINE_MIKRO_MK2_BTN_LEFT_ARROW , 1, 0x40},
 	{NI_MASCHINE_MIKRO_MK2_BTN_RIGHT_ARROW, 1, 0x20},
@@ -129,7 +129,7 @@ static const struct ni_maschine_mikro_mk2_ctlr_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
-static const struct ni_maschine_mikro_mk2_ctlr_t encoders[] = {
+static const struct ni_maschine_mikro_mk2_ctlra_t encoders[] = {
 	{NI_MASCHINE_MIKRO_MK2_BTN_ENCODER_ROTATE, 5, 0x0F},
 };
 #define ENCODERS_SIZE (sizeof(encoders) / sizeof(encoders[0]))
@@ -149,7 +149,7 @@ static const struct ni_maschine_mikro_mk2_ctlr_t encoders[] = {
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk2_t {
 	/* base handles usb i/o etc */
-	struct ctlr_dev_t base;
+	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
@@ -167,7 +167,7 @@ struct ni_maschine_mikro_mk2_t {
 };
 
 static const char *
-ni_maschine_mikro_mk2_control_get_name(struct ctlr_dev_t *base,
+ni_maschine_mikro_mk2_control_get_name(struct ctlra_dev_t *base,
 			       uint32_t control_id)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
@@ -176,7 +176,7 @@ ni_maschine_mikro_mk2_control_get_name(struct ctlr_dev_t *base,
 	return 0;
 }
 
-static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
+static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	uint8_t buf[1024];
@@ -184,7 +184,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlr_dev_impl_usb_read(base, handle_idx,
+		nbytes = ctlra_dev_impl_usb_read(base, handle_idx,
 						buf, 1024);
 		if(nbytes == 0)
 			return 0;
@@ -237,13 +237,13 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
 				if(dev->hw_values[i] != v) {
 					dev->hw_values[i] = v;
-					struct ctlr_event_t event = {
-						.id = CTLR_EVENT_SLIDER,
+					struct ctlra_event_t event = {
+						.id = CTLRA_EVENT_SLIDER,
 						.slider  = {
 							.id = id,
 							.value = v / 4096.f},
 					};
-					struct ctlr_event_t *e = {&event};
+					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
 							     dev->base.event_func_userdata);
 				}
@@ -261,13 +261,13 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 				if(dev->hw_values[value_idx] != v) {
 					dev->hw_values[value_idx] = v;
 
-					struct ctlr_event_t event = {
-						.type = CTLR_EVENT_BUTTON,
+					struct ctlra_event_t event = {
+						.type = CTLRA_EVENT_BUTTON,
 						.button  = {
 							.id = id,
 							.pressed = v > 0},
 					};
-					struct ctlr_event_t *e = {&event};
+					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
 							     dev->base.event_func_userdata);
 				}
@@ -280,7 +280,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlr_dev_t *base)
 	return 0;
 }
 
-static void ni_maschine_mikro_mk2_light_set(struct ctlr_dev_t *base,
+static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status)
 {
@@ -318,7 +318,7 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlr_dev_t *base,
 }
 
 void
-ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
+ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	if(!dev->lights_dirty && !force)
@@ -327,13 +327,13 @@ ni_maschine_mikro_mk2_light_flush(struct ctlr_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
-	int ret = ctlr_dev_impl_usb_write(base, 0, data, LIGHTS_SIZE);
+	int ret = ctlra_dev_impl_usb_write(base, 0, data, LIGHTS_SIZE);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
 
 static int32_t
-ni_maschine_mikro_mk2_disconnect(struct ctlr_dev_t *base)
+ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
@@ -343,8 +343,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlr_dev_t *base)
 	return 0;
 }
 
-struct ctlr_dev_t *
-ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
+struct ctlra_dev_t *
+ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
 {
 	(void)future;
@@ -357,7 +357,7 @@ ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Maschine Mikro Mk2");
 
-	int err = ctlr_dev_impl_usb_open((struct ctlr_dev_t *)dev,
+	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
 					 NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
 					 USB_INTERFACE_ID, 0);
 	if(err) {
@@ -374,7 +374,7 @@ ni_maschine_mikro_mk2_connect(ctlr_event_func event_func,
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
 
-	return (struct ctlr_dev_t *)dev;
+	return (struct ctlra_dev_t *)dev;
 fail:
 	free(dev);
 	return 0;

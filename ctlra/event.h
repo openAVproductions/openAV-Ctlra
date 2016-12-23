@@ -29,23 +29,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_EVENT
-#define OPENAV_CTLR_EVENT
+#ifndef OPENAV_CTLRA_EVENT
+#define OPENAV_CTLRA_EVENT
 
 #include <stdint.h>
 
 /* Types of events */
-enum ctlr_event_type_t {
-	CTLR_EVENT_BUTTON = 0,
-	CTLR_EVENT_ENCODER,
-	CTLR_EVENT_SLIDER,
-	CTLR_EVENT_GRID,
+enum ctlra_event_type_t {
+	CTLRA_EVENT_BUTTON = 0,
+	CTLRA_EVENT_ENCODER,
+	CTLRA_EVENT_SLIDER,
+	CTLRA_EVENT_GRID,
 };
 
-struct ctlr_dev_t;
+struct ctlra_dev_t;
 
 /** Represents a button. */
-struct ctlr_event_button_t {
+struct ctlra_event_button_t {
 	/** The id of the button */
 	uint32_t id;
 	/** The state of the button */
@@ -53,7 +53,7 @@ struct ctlr_event_button_t {
 };
 
 /** Represents an endless stepped controller. */
-struct ctlr_event_encoder_t {
+struct ctlra_event_encoder_t {
 	/** The id of the encoder */
 	uint32_t id;
 	/** Positive values indicate clockwise rotation, and vice-versa */
@@ -61,18 +61,18 @@ struct ctlr_event_encoder_t {
 };
 
 /** Represents a fader or dial with a fixed range of movement. */
-struct ctlr_event_slider_t {
+struct ctlra_event_slider_t {
 	/** The id of the slider */
 	uint32_t id;
 	/** Absolute position of the control */
 	float value;
 };
 
-#define CTLR_EVENT_GRID_BUTTON   (1<<0)
-#define CTLR_EVENT_GRID_PRESSURE (1<<1)
+#define CTLRA_EVENT_GRID_BUTTON   (1<<0)
+#define CTLRA_EVENT_GRID_PRESSURE (1<<1)
 
 /** Represents a grid of buttons */
-struct ctlr_event_grid_t {
+struct ctlra_event_grid_t {
 	/** The ID of the grid */
 	uint16_t id;
 	/** Flags: set if pressure or button */
@@ -88,23 +88,23 @@ struct ctlr_event_grid_t {
 };
 
 /** The event passed around in the API */
-struct ctlr_event_t {
+struct ctlra_event_t {
 	/** The type of this event */
-	enum ctlr_event_type_t type;
+	enum ctlra_event_type_t type;
 
 	/** The event data: see demo.c for example on how to unpack */
 	union {
-		struct ctlr_event_button_t button;
-		struct ctlr_event_encoder_t encoder;
-		struct ctlr_event_slider_t slider;
-		struct ctlr_event_grid_t grid;
+		struct ctlra_event_button_t button;
+		struct ctlra_event_encoder_t encoder;
+		struct ctlra_event_slider_t slider;
+		struct ctlra_event_grid_t grid;
 	};
 };
 
 /** Callback function that is called for each event */
-typedef void (*ctlr_event_func)(struct ctlr_dev_t* dev,
+typedef void (*ctlra_event_func)(struct ctlra_dev_t* dev,
 				uint32_t num_events,
-				struct ctlr_event_t** event,
+				struct ctlra_event_t** event,
 				void *userdata);
 
-#endif /* OPENAV_CTLR_EVENT */
+#endif /* OPENAV_CTLRA_EVENT */

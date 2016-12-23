@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_H
-#define OPENAV_CTLR_H
+#ifndef OPENAV_CTLRA_H
+#define OPENAV_CTLRA_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,8 +50,8 @@ extern "C" {
 #include "devices.h"
 
 /** Connect to a controller device. */
-struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
-				    ctlr_event_func event_func,
+struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
+				    ctlra_event_func event_func,
 				    void *userdata,
 				    void *future);
 
@@ -60,7 +60,7 @@ struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
  * @param dev The Device to poll.
  * @returns Number of events read from device.
  */
-uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
+uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev);
 
 /** Disconnect from controller device, resetting to a neutral state.
  * @param dev The device to be disconnected
@@ -68,9 +68,9 @@ uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev);
  * @retval -ENOTSUP Disconnect not supported by driver
  * @retval <0 Error in disconnecting device
  */
-int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
+int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev);
 
-/** Write Lights/LEDs feedback to device. See *ctlr_dev_lights_flush* to
+/** Write Lights/LEDs feedback to device. See *ctlra_dev_lights_flush* to
  * flush the actual bytes over the cable to the device.
  * The *light_id* is a value specific to the device that enumerates each
  * available light. The *light_status* variable represents the state of
@@ -81,7 +81,7 @@ int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev);
  * Controllers should support these inputs as best they can for the given
  * light_id.
  */
-void ctlr_dev_light_set(struct ctlr_dev_t *dev,
+void ctlra_dev_light_set(struct ctlra_dev_t *dev,
 			uint32_t light_id,
 			uint32_t light_status);
 
@@ -89,36 +89,36 @@ void ctlr_dev_light_set(struct ctlr_dev_t *dev,
  * implementation must track which lights are actually dirty, and only
  * flush the bytes needed. If *force* is set, force flush everything.
  */
-void ctlr_dev_light_flush(struct ctlr_dev_t *dev, uint32_t force);
+void ctlra_dev_light_flush(struct ctlra_dev_t *dev, uint32_t force);
 
 /** Send Lights/LEDs feedback to a grid on the device. See
- * *ctlr_dev_light_set* documentation for details. The *grid_id* is
+ * *ctlra_dev_light_set* documentation for details. The *grid_id* is
  * unique to the device, and allows easy access to lights in an array
  * or grid pattern.
  */
-void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev,
+void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
 			     uint32_t grid_id,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
 /** Struct that provides info about the controller */
-#define CTLR_DEV_NAME_MAX   32
-#define CTLR_DEV_SERIAL_MAX 64
-struct ctlr_dev_info_t {
+#define CTLRA_DEV_NAME_MAX   32
+#define CTLRA_DEV_SERIAL_MAX 64
+struct ctlra_dev_info_t {
 	/** Name of the vendor/company */
-	char vendor[CTLR_DEV_NAME_MAX];
+	char vendor[CTLRA_DEV_NAME_MAX];
 	/** Name of the device */
-	char device[CTLR_DEV_NAME_MAX];
+	char device[CTLRA_DEV_NAME_MAX];
 	/** Serial as a string (if applicable) */
-	char serial[CTLR_DEV_SERIAL_MAX];
+	char serial[CTLRA_DEV_SERIAL_MAX];
 	/** Serial as a number (if applicable) */
 	uint64_t serial_number;
 };
 
 /** Get the human readable name for the device. The returned pointer is
- * still owned by the ctlr library, the application must not free it */
-void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
-		       struct ctlr_dev_info_t * info);
+ * still owned by the ctlra library, the application must not free it */
+void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
+		       struct ctlra_dev_info_t * info);
 
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the
@@ -128,11 +128,11 @@ void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
  * @retval 0 Invalid control_id requested
  * @retval Ptr A pointer to a string representing the control name
  * */
-const char *ctlr_dev_control_get_name(struct ctlr_dev_t *dev,
+const char *ctlra_dev_control_get_name(struct ctlra_dev_t *dev,
 				      uint32_t control_id);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* OPENAV_CTLR_H */
+#endif /* OPENAV_CTLRA_H */

@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ctlr.h"
+#include "ctlra.h"
 #include "devices.h"
 #include "device_impl.h"
 
-struct ctlr_dev_connect_func_t {
-	enum ctlr_dev_id_t id;
-	ctlr_dev_connect_func connect;
+struct ctlra_dev_connect_func_t {
+	enum ctlra_dev_id_t id;
+	ctlra_dev_connect_func connect;
 };
 
 #warning TODO: refactor this to be a tailq and have devices register themselves in the .c file instead of all here
@@ -20,7 +20,7 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
-static const struct ctlr_dev_connect_func_t devices[] = {
+static const struct ctlra_dev_connect_func_t devices[] = {
 	{CTLR_DEV_SIMPLE, simple_connect},
 	{CTLR_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
 	{CTLR_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
@@ -30,8 +30,8 @@ static const struct ctlr_dev_connect_func_t devices[] = {
 };
 #define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
-struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
-				    ctlr_event_func event_func,
+struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
+				    ctlra_event_func event_func,
 				    void *userdata,
 				    void *future)
 {
@@ -42,42 +42,42 @@ struct ctlr_dev_t *ctlr_dev_connect(enum ctlr_dev_id_t dev_id,
 	return 0;
 }
 
-uint32_t ctlr_dev_poll(struct ctlr_dev_t *dev)
+uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 {
 	if(dev && dev->poll)
 		return dev->poll(dev);
 	return 0;
 }
 
-int32_t ctlr_dev_disconnect(struct ctlr_dev_t *dev)
+int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
 	if(dev && dev->disconnect)
 		return dev->disconnect(dev);
 	return -ENOTSUP;
 }
 
-void ctlr_dev_light_set(struct ctlr_dev_t *dev, uint32_t light_id,
+void ctlra_dev_light_set(struct ctlra_dev_t *dev, uint32_t light_id,
 			uint32_t light_status)
 {
 	if(dev && dev->light_set)
 		dev->light_set(dev, light_id, light_status);
 }
 
-void ctlr_dev_light_flush(struct ctlr_dev_t *dev, uint32_t force)
+void ctlra_dev_light_flush(struct ctlra_dev_t *dev, uint32_t force)
 {
 	if(dev && dev->light_flush)
 		dev->light_flush(dev, force);
 }
 
-void ctlr_dev_grid_light_set(struct ctlr_dev_t *dev, uint32_t grid_id,
+void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev, uint32_t grid_id,
 			     uint32_t light_id, uint32_t light_status)
 {
 	if(dev && dev->grid_light_set)
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
 
-void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
-		       struct ctlr_dev_info_t * info)
+void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
+		       struct ctlra_dev_info_t * info)
 {
 	if(!dev)
 		return;
@@ -95,7 +95,7 @@ void ctlr_dev_get_info(const struct ctlr_dev_t *dev,
 	info->serial_number = dev->info.serial_number;
 }
 
-const char * ctlr_dev_control_get_name(struct ctlr_dev_t *dev,
+const char * ctlra_dev_control_get_name(struct ctlra_dev_t *dev,
 				       uint32_t control_id)
 {
 	if(dev && dev->control_get_name)

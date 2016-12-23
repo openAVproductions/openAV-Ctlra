@@ -29,33 +29,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef OPENAV_CTLR_DEVICE_IMPL
-#define OPENAV_CTLR_DEVICE_IMPL
+#ifndef OPENAV_CTLRA_DEVICE_IMPL
+#define OPENAV_CTLRA_DEVICE_IMPL
 
-#include "ctlr.h"
+#include "ctlra.h"
 #include "event.h"
 
-struct ctlr_dev_t;
+struct ctlra_dev_t;
 
 /* Functions each device must implement */
-typedef uint32_t (*ctlr_dev_impl_poll)(struct ctlr_dev_t *dev);
-typedef int32_t (*ctlr_dev_impl_disconnect)(struct ctlr_dev_t *dev);
-typedef void (*ctlr_dev_impl_light_set)(struct ctlr_dev_t *dev,
+typedef uint32_t (*ctlra_dev_impl_poll)(struct ctlra_dev_t *dev);
+typedef int32_t (*ctlra_dev_impl_disconnect)(struct ctlra_dev_t *dev);
+typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,
 					   uint32_t light_id,
 					   uint32_t light_status);
-typedef void (*ctlr_dev_impl_light_flush)(struct ctlr_dev_t *dev,
+typedef void (*ctlra_dev_impl_light_flush)(struct ctlra_dev_t *dev,
 					  uint32_t force);
-typedef int32_t (*ctlr_dev_impl_grid_light_set)(struct ctlr_dev_t *dev,
+typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,
 						uint32_t light_status);
-typedef const char* (*ctlr_dev_impl_control_get_name)
-						(struct ctlr_dev_t *dev,
+typedef const char* (*ctlra_dev_impl_control_get_name)
+						(struct ctlra_dev_t *dev,
 						uint32_t control_id);
 
-#define CTLR_USB_IFACE_PER_DEV 2
+#define CTLRA_USB_IFACE_PER_DEV 2
 
-struct ctlr_dev_t {
+struct ctlra_dev_t {
 	/* Static Device Info  */
 	int vendor_id;
 	int product_id;
@@ -67,30 +67,30 @@ struct ctlr_dev_t {
 	 * are on bulk/interrupt interfaces). The controller is responsible
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
-	void *hidapi_usb_handle[CTLR_USB_IFACE_PER_DEV];
+	void *hidapi_usb_handle[CTLRA_USB_IFACE_PER_DEV];
 
 	/* Event callback function */
-	ctlr_event_func event_func;
+	ctlra_event_func event_func;
 	void* event_func_userdata;
 
 	/* Function pointers to poll events from device */
-	ctlr_dev_impl_poll poll;
-	ctlr_dev_impl_disconnect disconnect;
+	ctlra_dev_impl_poll poll;
+	ctlra_dev_impl_disconnect disconnect;
 
 	/* Function pointers to write feedback to device */
-	ctlr_dev_impl_light_set light_set;
-	ctlr_dev_impl_grid_light_set grid_light_set;
-	ctlr_dev_impl_light_flush light_flush;
+	ctlra_dev_impl_light_set light_set;
+	ctlra_dev_impl_grid_light_set grid_light_set;
+	ctlra_dev_impl_light_flush light_flush;
 
 	/* Function pointer to retrive info about a particular control */
-	ctlr_dev_impl_control_get_name control_get_name;
+	ctlra_dev_impl_control_get_name control_get_name;
 
 	/* Internal representation of the controller info */
-	struct ctlr_dev_info_t info;
+	struct ctlra_dev_info_t info;
 };
 
 /** Connect function to instantiate a dev from the driver */
-typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
+typedef struct ctlra_dev_t *(*ctlra_dev_connect_func)(ctlra_event_func event_func,
 						    void *userdata,
 						    void *future);
 
@@ -100,7 +100,7 @@ typedef struct ctlr_dev_t *(*ctlr_dev_connect_func)(ctlr_event_func event_func,
  * Implementation in usb.c.
  * @retval 0 on Success
  * @retval -ENODEV when device not found */
-int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
+int ctlra_dev_impl_usb_open(struct ctlra_dev_t *dev,
 			   int vid,
 			   int pid,
 			   int interface,
@@ -110,11 +110,11 @@ int ctlr_dev_impl_usb_open(struct ctlr_dev_t *dev,
  * _not_ realtime safe function. It polls the usb handle specified by *idx*
  * of the device *dev*, reading bytes up to *size* into the buffer pointed
  * to by *data*. */
-int ctlr_dev_impl_usb_read(struct ctlr_dev_t *dev, uint32_t idx,
+int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
 			   uint8_t *data, uint32_t size);
 
 
-int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, uint32_t idx,
+int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,
 			    uint8_t *data, uint32_t size);
 
 /** Xfer bytes to a specific handle and endpoint. Some complex USB HID
@@ -127,18 +127,18 @@ int ctlr_dev_impl_usb_write(struct ctlr_dev_t *dev, uint32_t idx,
  * @retval positive Amount of bytes xfered to/from endpoint
  * @retval negative Error occurred in transfer.
  */
-int ctlr_dev_impl_usb_xfer(struct ctlr_dev_t *dev, int handle_idx,
+int ctlra_dev_impl_usb_xfer(struct ctlra_dev_t *dev, int handle_idx,
 			   int endpoint, uint8_t *data, uint32_t size);
 
 /** Close the USB device handles, returning them to the kernel */
-void ctlr_dev_impl_usb_close(struct ctlr_dev_t *dev);
+void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
 
 /* Macro extern declaration for the connect function */
 #define DECLARE_DEV_CONNECT_FUNC(name)					\
-extern struct ctlr_dev_t *name(ctlr_event_func event_func,		\
+extern struct ctlra_dev_t *name(ctlra_event_func event_func,		\
 			    void *userdata, void *future)
 
-#endif /* OPENAV_CTLR_DEVICE_IMPL */
+#endif /* OPENAV_CTLRA_DEVICE_IMPL */
 

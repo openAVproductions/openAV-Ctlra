@@ -12,8 +12,8 @@ include_rules
 LDFLAGS+=-lhidapi-libusb
 #LDFLAGS+=-lhidapi-hidraw
 
-: examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlr/libctlr.a  |> $(CC) -I. %f -o %o $(LDFLAGS) |> vegas_mode
+: examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlra/libctlra.a  |> $(CC) -I. %f -o %o $(LDFLAGS) |> vegas_mode
 
-#: perf_test.o ctlr/libctlr.a         |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
+#: perf_test.o ctlra/libctlra.a         |> $(CXX) %f -o %o $(LDFLAGS) -lbenchmark -lpthread |> perf_test
 
-: examples/daemon/*.o ctlr/libctlr.a |> $(CXX) %f -o %o $(LDFLAGS) -ljack -lasound -lpthread |> daemon
+: examples/daemon/*.o ctlra/libctlra.a |> $(CXX) %f -o %o $(LDFLAGS) -ljack -lasound -lpthread |> daemon
