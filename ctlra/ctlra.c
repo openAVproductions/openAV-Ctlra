@@ -21,21 +21,21 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
-	{CTLR_DEV_SIMPLE, simple_connect},
-	{CTLR_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
-	{CTLR_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
-	{CTLR_DEV_NI_KONTROL_F1, ni_kontrol_f1_connect},
-	{CTLR_DEV_NI_KONTROL_X1_MK2, ni_kontrol_x1_mk2_connect},
-	{CTLR_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_mikro_mk2_connect},
+	{CTLRA_DEV_SIMPLE, simple_connect},
+	{CTLRA_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
+	{CTLRA_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
+	{CTLRA_DEV_NI_KONTROL_F1, ni_kontrol_f1_connect},
+	{CTLRA_DEV_NI_KONTROL_X1_MK2, ni_kontrol_x1_mk2_connect},
+	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_mikro_mk2_connect},
 };
-#define CTLR_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
+#define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
 struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
 				    ctlra_event_func event_func,
 				    void *userdata,
 				    void *future)
 {
-	if(dev_id < CTLR_NUM_DEVS && devices[dev_id].connect)
+	if(dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect)
 		return devices[dev_id].connect(event_func,
 					       userdata,
 					       future);

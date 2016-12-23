@@ -30,7 +30,7 @@ void demo_event_func(struct ctlra_dev_t* dev,
 		struct ctlra_event_t *e = events[i];
 		const char *name = 0;
 		switch(e->type) {
-		case CTLRAA_EVENT_BUTTON:
+		case CTLRA_EVENT_BUTTON:
 			name = ctlra_dev_control_get_name(dev, e->button.id);
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
@@ -42,14 +42,14 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			midiout->sendMessage( &message );
 			break;
 
-		case CTLRAA_EVENT_ENCODER:
+		case CTLRA_EVENT_ENCODER:
 			name = ctlra_dev_control_get_name(dev, e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
 
-		case CTLRAA_EVENT_SLIDER:
+		case CTLRA_EVENT_SLIDER:
 			name = ctlra_dev_control_get_name(dev, e->button.id);
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
@@ -71,16 +71,16 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			midiout->sendMessage( &message );
 			break;
 
-		case CTLRAA_EVENT_GRID:
+		case CTLRA_EVENT_GRID:
 			static const char* grid_pressed[] = { " X ", "   " };
 			name = ctlra_dev_control_get_name(dev, e->button.id);
-			if(e->grid.flags & CTLRAA_EVENT_GRID_BUTTON) {
+			if(e->grid.flags & CTLRA_EVENT_GRID_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];
 			} else {
 				pressed = "---";
 			}
 			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRAA_EVENT_GRID_PRESSURE)
+			if(e->grid.flags & CTLRA_EVENT_GRID_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
 			break;
@@ -109,10 +109,10 @@ int main()
 		return 0;
 	}
 
-	//int dev_id = CTLRAA_DEV_SIMPLE;
-	//enum ctlra_dev_id_t dev_id = CTLRAA_DEV_NI_KONTROL_Z1;
-	enum ctlra_dev_id_t dev_id = CTLRAA_DEV_NI_KONTROL_X1_MK2;
-	//int dev_id = CTLRAA_DEV_NI_MASCHINE_MIKRO_MK2;
+	//int dev_id = CTLRA_DEV_SIMPLE;
+	//enum ctlra_dev_id_t dev_id = CTLRA_DEV_NI_KONTROL_Z1;
+	enum ctlra_dev_id_t dev_id = CTLRA_DEV_NI_KONTROL_X1_MK2;
+	//int dev_id = CTLRA_DEV_NI_MASCHINE_MIKRO_MK2;
 	void *userdata = 0x0;
 	void *future = 0x0;
 	dev = ctlra_dev_connect(dev_id, demo_event_func, userdata, future);

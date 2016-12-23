@@ -39,7 +39,7 @@ extern "C" {
 #include <stdint.h>
 
 /** @file
- * Ctlr is a lightweight C library for accessing controllers, to
+ * Ctlra is a lightweight C library for accessing controllers, to
  * make it easier to implement support for them in software. This library
  * abstracts the hardware and transport layer, providing events for all
  * inputs available, and functions that can be called to display feedback

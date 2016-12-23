@@ -74,7 +74,7 @@ int ctlra_dev_impl_usb_xfer(struct ctlra_dev_t *dev, int handle_idx,
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
-	for(int i = 0; i < CTLR_USB_IFACE_PER_DEV; i++) {
+	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 		if(dev->hidapi_usb_handle[i])
 			hid_close(dev->hidapi_usb_handle[i]);
 	}

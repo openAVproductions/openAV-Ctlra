@@ -1,7 +1,7 @@
-Ctlr - A C Library for Controller Support
-=========================================
+Ctlra - A C Library for Controller Support
+==========================================
 
-LibCtlr is a plain C library that supports easily programming with
+LibCtlra is a plain C library that supports easily programming with
 hardware controllers like USB HID devices. Recently controllers have
 become much more powerful and feature-rich devices, resulting in tight
 integration between software and hardware controllers. This places a
