@@ -73,6 +73,14 @@ uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev);
  */
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev);
 
+/** Change the Event func. This may be useful when integrating into
+ * an application that doesn't know yet which event func to attach to
+ * the device when connecting to it. A dummy event_func can be used, and
+ * the correct one set on the device when it is known.
+ */
+void ctlra_dev_set_event_func(struct ctlra_dev_t* dev,
+			      ctlra_event_func event_func);
+
 /** Write Lights/LEDs feedback to device. See *ctlra_dev_lights_flush* to
  * flush the actual bytes over the cable to the device.
  * The *light_id* is a value specific to the device that enumerates each

@@ -49,6 +49,12 @@ uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 	return 0;
 }
 
+void ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func ef)
+{
+	if(dev)
+		dev->event_func = ef;
+}
+
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
 	if(dev && dev->disconnect)
