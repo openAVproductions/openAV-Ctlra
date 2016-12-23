@@ -246,7 +246,6 @@ struct ni_kontrol_d2_t {
 	 * usb transfer, as hidapi encodes endpoint by first byte of
 	 * transfer. */
 	uint8_t lights_endpoint;
-#warning fix constant here
 	uint8_t lights[LEDS_SIZE];
 };
 

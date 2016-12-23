@@ -187,7 +187,8 @@ struct ni_kontrol_x1_mk2_t {
 };
 
 static const char *
-ni_kontrol_x1_mk2_control_get_name(struct ctlra_dev_t *base,
+ni_kontrol_x1_mk2_control_get_name(const struct ctlra_dev_t *base,
+			       enum ctlra_event_type_t type,
 			       uint32_t control_id)
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;

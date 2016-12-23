@@ -70,7 +70,7 @@ struct ctlra_event_slider_t {
 	float value;
 };
 
-#warning TODO: Rename to GRID_FLAG_BTN/PRESSURE
+//#warning TODO: Rename to GRID_FLAG_BTN/PRESSURE
 #define CTLRA_EVENT_GRID_BUTTON   (1<<0)
 #define CTLRA_EVENT_GRID_PRESSURE (1<<1)
 
