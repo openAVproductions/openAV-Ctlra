@@ -95,10 +95,11 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	info->serial_number = dev->info.serial_number;
 }
 
-const char * ctlra_dev_control_get_name(struct ctlra_dev_t *dev,
-				       uint32_t control_id)
+const char * ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
+					enum ctlra_event_type_t type,
+					uint32_t control_id)
 {
 	if(dev && dev->control_get_name)
-		return dev->control_get_name(dev, control_id);
+		return dev->control_get_name(dev, type, control_id);
 	return 0;
 }

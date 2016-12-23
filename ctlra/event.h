@@ -40,6 +40,8 @@ enum ctlra_event_type_t {
 	CTLRA_EVENT_ENCODER,
 	CTLRA_EVENT_SLIDER,
 	CTLRA_EVENT_GRID,
+	/* The number of event types there are */
+	CTLRA_EVENT_T_COUNT,
 };
 
 struct ctlra_dev_t;
@@ -68,6 +70,7 @@ struct ctlra_event_slider_t {
 	float value;
 };
 
+#warning TODO: Rename to GRID_FLAG_BTN/PRESSURE
 #define CTLRA_EVENT_GRID_BUTTON   (1<<0)
 #define CTLRA_EVENT_GRID_PRESSURE (1<<1)
 

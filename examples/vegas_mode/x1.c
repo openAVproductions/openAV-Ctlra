@@ -26,37 +26,17 @@ void kontrol_x1_func(struct ctlra_dev_t* dev,
 	for(uint32_t i = 0; i < num_events; i++) {
 		char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
-		const char *name = 0;
 		switch(e->type) {
 
 		case CTLRA_EVENT_BUTTON:
-			if(d->print_events) {
-				name = ctlra_dev_control_get_name(dev, e->button.id);
-				printf("[%s] button %s (%d)\n",
-				       e->button.pressed ? " X " : "   ",
-				       name, e->button.id);
-			}
 			d->buttons[e->button.id] = e->button.pressed;
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			if(d->print_events) {
-				name = ctlra_dev_control_get_name(dev, e->button.id);
-				printf("[%s] encoder %s (%d)\n",
-				       e->encoder.delta > 0 ? " ->" : "<- ",
-				       name, e->button.id);
-			}
 			break;
 
 		case CTLRA_EVENT_SLIDER:
-			if(d->print_events) {
-				name = ctlra_dev_control_get_name(dev, e->button.id);
-				printf("[%03d] slider %s (%d)\n",
-				       (int)(e->slider.value * 100.f),
-				       name, e->slider.id);
-			}
-
 			if(e->slider.id == 11) {
 				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
@@ -71,18 +51,6 @@ void kontrol_x1_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_GRID:
-			if(e->grid.flags & CTLRA_EVENT_GRID_BUTTON) {
-				pressed = e->grid.pressed ? " X " : "   ";
-			} else {
-				pressed = "---";
-			}
-			if(d->print_events) {
-				name = ctlra_dev_control_get_name(dev, e->button.id);
-				printf("[%s] grid %d", pressed, e->grid.pos);
-				if(e->grid.flags & CTLRA_EVENT_GRID_PRESSURE)
-					printf(", pressure %1.3f", e->grid.pressure);
-				printf("\n");
-			}
 			break;
 		default:
 			break;

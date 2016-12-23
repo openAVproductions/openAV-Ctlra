@@ -49,6 +49,9 @@ extern "C" {
 #include "event.h"
 #include "devices.h"
 
+#define CTLRA_DEV_NAME_MAX   32
+#define CTLRA_DEV_SERIAL_MAX 64
+
 /** Connect to a controller device. */
 struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
 				    ctlra_event_func event_func,
@@ -102,8 +105,6 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
 			     uint32_t light_status);
 
 /** Struct that provides info about the controller */
-#define CTLRA_DEV_NAME_MAX   32
-#define CTLRA_DEV_SERIAL_MAX 64
 struct ctlra_dev_info_t {
 	/** Name of the vendor/company */
 	char vendor[CTLRA_DEV_NAME_MAX];
@@ -113,6 +114,11 @@ struct ctlra_dev_info_t {
 	char serial[CTLRA_DEV_SERIAL_MAX];
 	/** Serial as a number (if applicable) */
 	uint64_t serial_number;
+
+	/** Number of controls the device has of each type. Read eg number
+	 * buttons by accessing th array by *ctlra_event_type_t*
+	 * CTRLA_EVENT_BUTTON */
+	uint32_t control_count[CTLRA_EVENT_T_COUNT];
 };
 
 /** Get the human readable name for the device. The returned pointer is
@@ -128,8 +134,9 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
  * @retval 0 Invalid control_id requested
  * @retval Ptr A pointer to a string representing the control name
  * */
-const char *ctlra_dev_control_get_name(struct ctlra_dev_t *dev,
-				      uint32_t control_id);
+const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
+				       enum ctlra_event_type_t type,
+				       uint32_t control_id);
 
 #ifdef __cplusplus
 } /* extern "C" */

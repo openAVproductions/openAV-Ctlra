@@ -31,7 +31,7 @@ void demo_event_func(struct ctlra_dev_t* dev,
 		const char *name = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
-			name = ctlra_dev_control_get_name(dev, e->button.id);
+			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_BUTTON, e->button.id);
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
@@ -43,14 +43,14 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			name = ctlra_dev_control_get_name(dev, e->button.id);
+			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_ENCODER,  e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
 
 		case CTLRA_EVENT_SLIDER:
-			name = ctlra_dev_control_get_name(dev, e->button.id);
+			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_SLIDER, e->button.id);
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
@@ -73,7 +73,7 @@ void demo_event_func(struct ctlra_dev_t* dev,
 
 		case CTLRA_EVENT_GRID:
 			static const char* grid_pressed[] = { " X ", "   " };
-			name = ctlra_dev_control_get_name(dev, e->button.id);
+			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID, e->button.id);
 			if(e->grid.flags & CTLRA_EVENT_GRID_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];
 			} else {

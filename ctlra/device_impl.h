@@ -50,7 +50,8 @@ typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t light_id,
 						uint32_t light_status);
 typedef const char* (*ctlra_dev_impl_control_get_name)
-						(struct ctlra_dev_t *dev,
+						(const struct ctlra_dev_t *dev,
+						enum ctlra_event_type_t type,
 						uint32_t control_id);
 
 #define CTLRA_USB_IFACE_PER_DEV 2
