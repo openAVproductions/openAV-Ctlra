@@ -62,14 +62,6 @@ int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,
 	return res;
 }
 
-int ctlra_dev_impl_usb_xfer(struct ctlra_dev_t *dev, int handle_idx,
-                           int endpoint,
-                           uint8_t *data, uint32_t size)
-{
-	printf("%s : OLD OUTDATED  - FIX WHERE I'M CALLED FROM!!\n", __func__);
-	return -1;
-}
-
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
