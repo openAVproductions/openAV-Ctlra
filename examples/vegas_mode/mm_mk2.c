@@ -7,10 +7,9 @@
 void mm_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
 {
 	uint32_t i;
-	int v = d->volume > 0.5f;
-	ctlra_dev_light_set(dev, 15, v * UINT32_MAX);
+	for(i = 0; i < VEGAS_BTN_COUNT; i++)
+		ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
 	ctlra_dev_light_flush(dev, 0);
-	printf("%s, led %d\n", __func__, v);
 	return;
 }
 
