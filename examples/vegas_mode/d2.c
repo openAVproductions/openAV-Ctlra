@@ -17,7 +17,7 @@ static cairo_t *cr = 0;
 
 void d2_screen_init()
 {
-	surface = cairo_image_surface_create (CAIRO_FORMAT_RGB16_565,
+	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 					      WIDTH, HEIGHT);
 	if(!surface)
 		printf("!surface\n");
@@ -25,6 +25,20 @@ void d2_screen_init()
 	if(!cr)
 		printf("!cr\n");
 }
+
+static inline
+void pixel_convert(int r, int g, int b, uint8_t *data)
+{
+	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
+	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
+	b = ((int)((b / 255.0) * 31)) & ((1<<5)-1);
+
+	uint16_t combined = (b | g << 5 | r << 11);
+	data[0] = combined >> 8;
+	data[1] = combined & 0xff;
+}
+
+
 
 void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 {
@@ -38,11 +52,15 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 
 	/* draw on surface */
 	cairo_set_source_rgb(cr, 255, 0, 0);
-	cairo_rectangle(cr, 0, 0, 20, 272);
+	cairo_rectangle(cr, d->progress * (480-10), 20, 40, 40);
 	cairo_fill(cr);
 
-	cairo_set_source_rgb(cr, 255, 81, 0);
-	cairo_rectangle(cr, d->progress * (480-10), 20, 10, 10);
+	cairo_set_source_rgb(cr, 0, 255, 0);
+	cairo_rectangle(cr, d->progress * (480-10), 60, 40, 40);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 0, 0, 255);
+	cairo_rectangle(cr, d->progress * (480-10),100, 40, 40);
 	cairo_fill(cr);
 
 	cairo_surface_flush(surface);
@@ -56,15 +74,21 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 
 
 	uint8_t *pixels = ni_kontrol_d2_screen_get_pixels(dev);
-	uint8_t *write_head = pixels;
+	uint16_t *write_head = (uint16_t*)pixels;
 	/* Copy the Cairo pixels to the usb buffer, taking the
-	 * stride of the cairo memory into account */
+	 * stride of the cairo memory into account, converting from
+	 * RGB into the BGR that the screen expects */
 	for(int j = 0; j < HEIGHT; j++) {
-		for(int i = 0; i < WIDTH * 2; i++) {
-			/* single pixel, but 2 bytes at at time:
-			 * converts from RGB -> BGR */
-			int idx = (j * WIDTH * 2) + i;
-			write_head[idx+0] = data[(j * stride) + i+0];
+		for(int i = 0; i < WIDTH; i++) {
+			uint8_t *p = &data[(j * stride) + (i*4)];
+#if 0
+			uint16_t r = ((*p) & 0b1111100000000000) >> 11;
+			uint16_t g = ((*p) & 0b0000011111100000);
+			uint16_t b = ((*p) & 0b0000000000011111) << 11;
+#endif
+			int idx = (j * WIDTH) + (i);
+			pixel_convert(p[2], p[1], p[0], &write_head[idx]);
+			//printf("%d %d %d, %d %d\n", p[0], p[1], p[2], pixels[idx], pixels[idx+1]);
 		}
 	}
 
