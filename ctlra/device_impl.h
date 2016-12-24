@@ -62,13 +62,15 @@ struct ctlra_dev_t {
 	int product_id;
 	int class_id;
 
-	/* usb handle for this hardware device. An array of them is
-	 * available as certain complex controllers require more than one
+	/* usb handle for this hardware device. */
+	void *usb_device;
+
+	/* Certain complex controllers require more than one
 	 * usb interface to be fully controlled (typically screen/buttons
 	 * are on bulk/interrupt interfaces). The controller is responsible
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
-	void *hidapi_usb_handle[CTLRA_USB_IFACE_PER_DEV];
+	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
 
 	/* Event callback function */
 	ctlra_event_func event_func;
@@ -103,9 +105,7 @@ typedef struct ctlra_dev_t *(*ctlra_dev_connect_func)(ctlra_event_func event_fun
  * @retval -ENODEV when device not found */
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *dev,
 			   int vid,
-			   int pid,
-			   int interface,
-			   uint32_t handle_idx);
+			   int pid);
 
 /** Read bytes from the usb device, this is a non-blocking function but
  * _not_ realtime safe function. It polls the usb handle specified by *idx*
