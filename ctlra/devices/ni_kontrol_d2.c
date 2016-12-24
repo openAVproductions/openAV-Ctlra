@@ -461,8 +461,8 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, LEDS_SIZE);
-	ni_kontrol_d2_light_flush(base, 0);
+	memset(dev->lights, 0x0, sizeof(dev->lights));
+	ni_kontrol_d2_light_flush(&dev->base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
@@ -507,9 +507,6 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	}
 
 	memset(dev->lights, 0xff, sizeof(dev->lights));
-	ni_kontrol_d2_light_flush(&dev->base, 1);
-	usleep(1000*300);
-	memset(dev->lights, 0x0, sizeof(dev->lights));
 	ni_kontrol_d2_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_kontrol_d2_poll;

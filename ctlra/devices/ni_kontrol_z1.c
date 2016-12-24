@@ -288,9 +288,6 @@ ni_kontrol_z1_connect(ctlra_event_func event_func,
 
 	memset(dev->lights, 0xff, sizeof(dev->lights));
 	ni_kontrol_z1_light_flush(&dev->base, 1);
-	usleep(1000*300);
-	memset(dev->lights, 0x0, sizeof(dev->lights));
-	ni_kontrol_z1_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
