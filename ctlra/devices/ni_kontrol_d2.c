@@ -404,6 +404,21 @@ ni_kontrol_d2_screen_flush(struct ctlra_dev_t *base)
 #endif
 }
 
+void
+ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *base,
+			       uint8_t *orange,
+			       uint8_t *blue)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	dev->lights_dirty = 1;
+	// 69-94: 25 touchstrip leds blue left to right
+	// 94-+25: 25 touchstrip leds orange left to right
+	for(int i = 0; i < 25; i++) {
+		dev->lights[68+i] = blue[i];
+		dev->lights[93+i] = orange[i];//0x0;//blue[i];
+	}
+}
+
 static void
 ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 			uint32_t light_status)

@@ -250,5 +250,19 @@ enum NI_KONTROL_D2_CONTROLS {
 	NI_KONTROL_D2_CONTROLS_COUNT
 };
 
+#include <stdint.h>
+/* forward declaration only */
+struct ctlra_dev_t;
+
+/* Helper: set the touchstrip LEDs in a convienient way.
+ * Dev is the device, orange and blue, are pointers to an array
+ * of uint8_ts, both 25 elements long. The value of each element is
+ * the brightness of the LEDs. Element 0 is the leftmost LED for both
+ * arrays */
+void ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *dev,
+				    uint8_t *orange,
+				    uint8_t *blue);
+
+
 #endif /* OPENAV_CTLRA_NI_KONTROL_D2_H */
 
