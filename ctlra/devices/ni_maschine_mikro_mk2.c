@@ -292,7 +292,7 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_MASCHINE_MIKRO_MK2_LED_COUNT)
+	if(!dev || light_id > sizeof(dev->lights))
 		return;
 
 	/* write brighness to all LEDs */
