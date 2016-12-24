@@ -203,34 +203,34 @@ static const struct ni_kontrol_d2_ctlra_t buttons[] = {
  * transfer size, and the size in the dev struct - so getting it wrong
  * means memcpy()-ing of invalid ranges, and overwriting stuff - don't :)
  */
-	/*
-	1-24   pads
-	25     fx select
-	26-29  fx btn 1 to 4
-	30-33  screen left 1 to 4
-	34-37  screen right 1 to 4
-	38 back
-	39 cap
-	40 edit
-	41-44 track on 1 to 4
-	45 hotque(white)
-	46     (blue)
-	47,48 loop w/b
-	49 50 freeze w/b
-	51 52 Remix
-	53 Flux
-	54 55 Deck 
-	56 Shift
-	57 sync (green)
-	58 sync (red)
-	59 cue
-	60 play
-	61-64 loop surround white
-	65-68 loop surround blue
-	69-94: 25 touchstrip leds blue left to right
-	94-+25: 25 touchstrip leds orange left to right
-	119 - 122 decks a b c d
-	*/
+/*
+1-24   pads
+25     fx select
+26-29  fx btn 1 to 4
+30-33  screen left 1 to 4
+34-37  screen right 1 to 4
+38 back
+39 cap
+40 edit
+41-44 track on 1 to 4
+45 hotque(white)
+46     (blue)
+47,48 loop w/b
+49 50 freeze w/b
+51 52 Remix
+53 Flux
+54 55 Deck
+56 Shift
+57 sync (green)
+58 sync (red)
+59 cue
+60 play
+61-64 loop surround white
+65-68 loop surround blue
+69-94: 25 touchstrip leds blue left to right
+94-+25: 25 touchstrip leds orange left to right
+119 - 122 decks a b c d
+*/
 #define LEDS_SIZE (122)
 
 /* Represents the the hardware device */
@@ -251,16 +251,14 @@ struct ni_kontrol_d2_t {
 
 static const char *
 ni_kontrol_d2_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+                               enum ctlra_event_type_t type,
+                               uint32_t control_id)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_d2_control_names[control_id];
 	return 0;
 }
-
-void ni_kontrol_d2_screen_flush(struct ctlra_dev_t *base);
 
 static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 {
@@ -269,14 +267,12 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 
 	int32_t nbytes;
 
-	//ni_kontrol_d2_screen_flush(base);
-
 	do {
 		int handle_idx = 0;
 		/* USB_ENDPOINT_BTNS_READ, */
 		nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
-						 USB_ENDPOINT_BTNS_READ,
-						 buf, 1024);
+		                USB_ENDPOINT_BTNS_READ,
+		                buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -303,7 +299,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 					};
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
+					                     dev->base.event_func_userdata);
 				}
 			}
 			break;
@@ -323,15 +319,16 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 						.type = CTLRA_EVENT_BUTTON,
 						.button  = {
 							.id = id,
-							.pressed = v > 0},
+							.pressed = v > 0
+						},
 					};
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
+					                     dev->base.event_func_userdata);
 				}
 			}
 			break;
-			}
+		}
 		} /* switch */
 	} while (nbytes > 0);
 
@@ -339,64 +336,40 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 }
 
 void
-ni_kontrol_d2_screen_flush(struct ctlra_dev_t *base)
+ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data)
 {
+	/* Screen blit commands - no need to have publicly in header */
 	const uint8_t header[] = {
 		0x84, 0x00, 0x00, 0x60,
 		0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,
-		0x01, 0xe0, 0x01, 0x10
+		0x01, 0xe0, 0x01, 0x10,
+	};
+#define NUM_PX 130560
+	const uint8_t command[] = {
+		/* num_px/2: 0xff00 is the (total_px/2) */
+		0x00, 0x0, 0xff, 0x00,
 	};
 	const uint8_t footer[] = {
 		0x03, 0x00, 0x00, 0x00,
 		0x40, 0x00, 0x00, 0x00
 	};
 
-	uint8_t buf[1024];
-	uint32_t idx = 0;
+	struct d2_screen_blit {
+		uint8_t header [sizeof(header)];
+		uint8_t command[sizeof(command)];
+		uint8_t pixels [NUM_PX*2]; // 565 uses 2 bytes per pixel
+		uint8_t footer [sizeof(footer)];
+	};
 
-	buf[idx++] = 0x2; // usb interface
-
-	/* put header in place */
-#if 0
-	memcpy( &buf[idx], header, sizeof(header));
-	idx += sizeof(header);
-#endif
-
-	//printf("sizeof header %d\n", sizeof(header));
-	for(unsigned i = 0; i < sizeof(header); i++) {
-		buf[idx++] = header[i];
-	}
-
-	/* command 01 draw line */
-	buf[idx++] = 0x1;
-	/* lenght */
-	buf[idx++] = 0x0f;
-	buf[idx++] = 0xff;
-	buf[idx++] = 0xff;
-	/* px 1 color in 565 */
-	buf[idx++] = 0b1111100;
-	buf[idx++] = 0b1111111;
-	/* px 2 color in 565 */
-	buf[idx++] = 0b1111100;
-	buf[idx++] = 0b0000000;
-
-	//printf("sizeof footer %d\n", sizeof(footer));
-	for(unsigned i = 0; i < sizeof(footer); i++) {
-		buf[idx++] = footer[i];
-	}
-
-	for(unsigned i = 0; i < idx; i++) {
-		printf("%02x ", buf[i]);
-	}
 	printf("\n");
 
 	/* screen write now */
 #if 0
 #warning TODO: port to BULK not interrupt writes
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_INTERFACE_SCREEN,
-						     USB_ENDPOINT_SCREEN_WRITE,
-						     buf, idx);
+	                USB_ENDPOINT_SCREEN_WRITE,
+	                buf, idx);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 	else
@@ -406,8 +379,8 @@ ni_kontrol_d2_screen_flush(struct ctlra_dev_t *base)
 
 void
 ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *base,
-			       uint8_t *orange,
-			       uint8_t *blue)
+                               uint8_t *orange,
+                               uint8_t *blue)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	dev->lights_dirty = 1;
@@ -421,7 +394,7 @@ ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *base,
 
 static void
 ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
-			uint32_t light_status)
+                        uint32_t light_status)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	int ret;
@@ -460,9 +433,9 @@ ni_kontrol_d2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	//memset(dev->lights, 0xff, LEDS_SIZE);
 
 	int ret = ctlra_dev_impl_usb_interrupt_write(&dev->base,
-						     USB_INTERFACE_BTNS,
-						     USB_ENDPOINT_BTNS_WRITE,
-						     data, LEDS_SIZE+1);
+	                USB_INTERFACE_BTNS,
+	                USB_ENDPOINT_BTNS_WRITE,
+	                data, LEDS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 
@@ -486,7 +459,7 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 
 struct ctlra_dev_t *
 ni_kontrol_d2_connect(ctlra_event_func event_func,
-				  void *userdata, void *future)
+                      void *userdata, void *future)
 {
 	(void)future;
 	struct ni_kontrol_d2_t *dev = calloc(1, sizeof(struct ni_kontrol_d2_t));
@@ -494,9 +467,9 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 		goto fail;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
+	         "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol D2");
+	         "%s", "Kontrol D2");
 
 	/* Open buttons / leds handle */
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_D2);
@@ -506,16 +479,16 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	}
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
-						USB_INTERFACE_BTNS,
-						USB_INTERFACE_BTNS);
+	                                        USB_INTERFACE_BTNS,
+	                                        USB_INTERFACE_BTNS);
 	if(err) {
 		printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
-						USB_INTERFACE_SCREEN,
-						USB_INTERFACE_SCREEN);
+	                                        USB_INTERFACE_SCREEN,
+	                                        USB_INTERFACE_SCREEN);
 	if(err) {
 		printf("%s: failed to open screen usb interface\n", __func__);
 		goto fail;
