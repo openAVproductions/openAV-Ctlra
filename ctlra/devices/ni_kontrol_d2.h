@@ -263,6 +263,9 @@ void ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *dev,
 				    uint8_t *orange,
 				    uint8_t *blue);
 
+/* Blit data to the screen. The data must be *exactly* the format the
+ * screen expects - RGB 565, with (480 * 272 * 2) bytes. */
+void ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data);
 
 #endif /* OPENAV_CTLRA_NI_KONTROL_D2_H */
 

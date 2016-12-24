@@ -6,6 +6,69 @@
 #include "ctlra/ctlra.h"
 #include "ctlra/devices/ni_kontrol_d2.h"
 
+/* for drawing graphics to screen */
+#include <cairo/cairo.h>
+
+static cairo_surface_t *surface = 0;
+static cairo_t *cr = 0;
+
+#define WIDTH  480
+#define HEIGHT 272
+
+void d2_screen_init()
+{
+	surface = cairo_image_surface_create (CAIRO_FORMAT_RGB16_565,
+					      WIDTH, HEIGHT);
+	if(!surface)
+		printf("!surface\n");
+	cr = cairo_create (surface);
+	if(!cr)
+		printf("!cr\n");
+}
+
+void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
+{
+	if(surface == 0)
+		d2_screen_init();
+
+	/* blank background */
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_rectangle(cr, 0, 0, 480, 272);
+	cairo_fill(cr);
+
+	/* draw on surface */
+	cairo_set_source_rgb(cr, 255, 0, 0);
+	cairo_rectangle(cr, 0, 0, 20, 272);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 255, 81, 0);
+	cairo_rectangle(cr, d->progress * (480-10), 20, 10, 10);
+	cairo_fill(cr);
+
+	cairo_surface_flush(surface);
+
+	/* Calculate stride / pixel copy */
+	int stride = cairo_image_surface_get_stride(surface);
+	unsigned char * data = cairo_image_surface_get_data(surface);
+	printf("data = %p, stride %d\n", data, stride);
+	if(!data)
+		printf("error data == 0\n");
+	uint32_t data_idx = 0;
+
+	uint8_t pixels[WIDTH*HEIGHT*2];
+	uint8_t *write_head = pixels;
+	/* Copy the Cairo pixels to the usb buffer, taking the
+	 * stride of the cairo memory into account */
+	for(int j = 0; j < HEIGHT; j++) {
+		for(int i = 0; i < WIDTH*2; i++) {
+			int idx = (j * WIDTH * 2) + i;
+			write_head[idx] = data[(j * stride) + i];
+		}
+	}
+
+	ni_kontrol_d2_screen_blit(dev, pixels);
+}
+
 void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
 {
 	uint32_t i;
@@ -20,10 +83,13 @@ void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
 		blue[i] = 0xff;
 	}
 	orange[i] = 0xff;
-
 	ni_kontrol_d2_light_touchstrip(dev, orange, blue);
 
+	/* flush LED feedback first (most important) */
 	ctlra_dev_light_flush(dev, 1);
+
+	/* Redraw + flush screen */
+	d2_screen_draw(dev, d);
 	return;
 }
 

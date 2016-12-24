@@ -340,10 +340,10 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data)
 {
 	/* Screen blit commands - no need to have publicly in header */
 	const uint8_t header[] = {
-		0x84, 0x00, 0x00, 0x60,
-		0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00,
-		0x01, 0xe0, 0x01, 0x10,
+		0x84,  0x0, 0x0, 0x60,
+		0x0,  0x0, 0x0,  0x0,
+		0x0,  0x0, 0x0,  0x0,
+		0x1, 0xe0, 0x1, 0x10,
 	};
 #define NUM_PX 130560
 	const uint8_t command[] = {
@@ -362,10 +362,14 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data)
 		uint8_t footer [sizeof(footer)];
 	};
 
+
 	/* TODO: Move this to the dev struct and provide a pointer to the
 	 * app where to blit the pixel data? (Cairo rending-> packed needs
 	 * to do a loop already...) */
 	struct d2_screen_blit blit;
+	memcpy(blit.header , header , sizeof(header));
+	memcpy(blit.command, command, sizeof(command));
+	memcpy(blit.footer , footer , sizeof(footer));
 	/* Copy the data from the app into the transfer. No avoiding this
 	 * as we need to add the header/command/footer around it */
 	memcpy(blit.pixels, screen_data, sizeof(blit.pixels));
