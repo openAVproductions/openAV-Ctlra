@@ -145,8 +145,9 @@ static uint32_t ni_kontrol_f1_poll(struct ctlra_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlra_dev_impl_usb_read(base, USB_HANDLE_IDX,
-						buf, 1024);
+		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+							   USB_ENDPOINT_READ,
+							   buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -277,9 +278,8 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	dev->lights_interface = 0;
+	dev->lights_interface = 0x80;
 	uint8_t *data = &dev->lights_interface;
-
 	/*
 	//for(unsigned i = 0; i < sizeof(dev->lights); i++) {
 	for(unsigned i = 0; i < 25; i++) {
@@ -294,8 +294,9 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 #endif
 
 	dev->lights[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					  60);
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data, 60);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -305,12 +306,13 @@ ni_kontrol_f1_disconnect(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 
+
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_F1_LED_COUNT);
 	dev->lights[0] = 0x80;
-	ni_kontrol_f1_light_set(base, 0, 0);
-	ni_kontrol_f1_light_flush(base, 0);
+	ni_kontrol_f1_light_flush(base, 1);
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -329,13 +331,20 @@ ni_kontrol_f1_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol F1");
 
-	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_F1,
-					 USB_INTERFACE_ID, 0);
+	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_F1);
 	if(err) {
 		free(dev);
 		return 0;
 	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base, USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	memset(dev->lights, 0xff, sizeof(dev->lights));
+	ni_kontrol_f1_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_kontrol_f1_poll;
 	dev->base.disconnect = ni_kontrol_f1_disconnect;
