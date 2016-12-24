@@ -17,6 +17,10 @@ struct dummy_data {
 	int buttons[VEGAS_BTN_COUNT];
 };
 
+/* "useful" parts of the program */
+int audio_init();
+void audio_exit();
+
 /* Typedefs so we can store the per-device functions in a struct, see
  * vegas_mode.c ctlra_supported_t for details and how these are  used */
 typedef void (*update_state_cb)(struct ctlra_dev_t *dev, struct dummy_data *d);
