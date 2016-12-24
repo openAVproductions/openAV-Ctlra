@@ -323,6 +323,7 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	dev->lights[0] = 0x80;
 	ni_kontrol_x1_mk2_light_flush(base, 1);
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
