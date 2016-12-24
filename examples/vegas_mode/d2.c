@@ -13,7 +13,16 @@ void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
 	for(i = 0; i < VEGAS_BTN_COUNT; i++)
 		ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
 
-	ctlra_dev_light_flush(dev, 0);
+	uint8_t orange[25] = {0};
+	uint8_t blue[25] = {0};
+
+	for(int i = 0; i < d->progress * 25; i++) {
+		blue[i] = 0xff;
+	}
+
+	ni_kontrol_d2_light_touchstrip(dev, orange, blue);
+
+	ctlra_dev_light_flush(dev, 1);
 	return;
 }
 
@@ -62,8 +71,8 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_SLIDER:
+			d->volume = e->slider.value;
 			if(e->slider.id == 5) {
-				d->volume = e->slider.value;
 				uint32_t iter = (int)((d->volume+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {
 					ctlra_dev_light_set(dev, 1 + i, UINT32_MAX);

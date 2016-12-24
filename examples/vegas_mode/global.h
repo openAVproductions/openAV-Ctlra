@@ -13,6 +13,7 @@ struct dummy_data {
 	uint8_t print_events;
 	uint64_t revision;
 	float volume;
+	float progress;
 	int playing[2];
 	int buttons[VEGAS_BTN_COUNT];
 };

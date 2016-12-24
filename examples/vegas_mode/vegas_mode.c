@@ -79,6 +79,8 @@ int main(int argc, char** argv)
 		}
 	}
 
+	audio_init(&dummy);
+
 	struct ctlra_t* dev;
 	dummy.revision = 0;
 	uint64_t controller_revision = 0;
@@ -96,6 +98,8 @@ int main(int argc, char** argv)
 		}
 		usleep(100);
 	}
+
+	audio_exit();
 
 	/* Disconnect all */
 	while ((dev = TAILQ_FIRST(&ctlra_list))) {
