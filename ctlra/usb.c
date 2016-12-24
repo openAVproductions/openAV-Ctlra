@@ -121,28 +121,20 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	ctlra_dev->usb_interface[handle_idx] = handle;
 
 	return 0;
-
-#if 0
-	ctlra_dev->hidapi_usb_handle[idx] = hid_open(vid, pid, NULL);
-	if(!ctlra_dev->hidapi_usb_handle[idx]) {
-#if 0 /* verbose ctlra logging */
-		printf("%s : usb device open failed for device %s\n",
-		       __func__, ctlra_dev->info.device);
-#endif
-		return -ENXIO;
-	}
-
-	ret = hid_set_nonblocking(ctlra_dev->hidapi_usb_handle[idx], 1);
-	if(ret < 0)
-		printf("%s: Warning, failed to set device %s to non-blocking\n",
-		       __func__, ctlra_dev->info.device);
-#endif
-	return 0;
 }
 
 int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
-			   uint8_t *data, uint32_t size)
+			    uint32_t endpoint, uint8_t *data, uint32_t size)
 {
+	int transferred;
+	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
+				      size, &transferred, 1000);
+	if (r < 0) {
+		fprintf(stderr, "intr error %d\n", r);
+		return r;
+	}
+	return transferred;
+
 	/*
 	int res = hid_read(dev->hidapi_usb_handle[idx], data, size);
 	if (res < 0) {
@@ -150,7 +142,6 @@ int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 	return res;
 	*/
-	return 0;
 }
 
 int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,
