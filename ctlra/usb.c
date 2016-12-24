@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ctlra.h"
 #include "devices.h"
@@ -10,6 +11,7 @@
 #define USB_PATH_MAX 256
 
 static int ctlra_libusb_initialized;
+static struct libusb_context *ctx = 0;
 
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 {
@@ -18,7 +20,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 	printf("%s: %d\n", __func__, __LINE__);
 
 	if(!ctlra_libusb_initialized) {
-		ret = libusb_init (NULL);
+		ret = libusb_init (&ctx);
 		if (ret < 0) {
 			printf("failed to initialise libusb: %s\n", libusb_error_name(ret));
 			goto fail;
@@ -70,6 +72,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 
 	printf("%s: usb device %p\n", __func__, dev);
 	ctlra_dev->usb_device = dev;
+	memset(ctlra_dev->usb_interface, 0, sizeof(ctlra_dev->usb_interface));
 
 	return 0;
 fail:
@@ -93,7 +96,7 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		printf("Error in claiming interface\n");
 		return -1;
 	}
-	printf("%s: interface %d open from device OK\n", __func__, interface);
+	//printf("%s: interface %d open from device OK\n", __func__, interface);
 
 	/* enable auto management of kernel claiming / unclaiming */
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
@@ -129,6 +132,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	int transferred;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
 				      size, &transferred, 1000);
+	if(r == LIBUSB_ERROR_TIMEOUT)
+		return 0;
 	if (r < 0) {
 		fprintf(stderr, "intr error %d\n", r);
 		return r;
@@ -151,21 +156,25 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
-#if 0
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
-		if(dev->hidapi_usb_handle[i])
-			hid_close(dev->hidapi_usb_handle[i]);
+		if(dev->usb_interface[i]) {
+			int ret = libusb_release_interface(dev->usb_device, i);
+			if(ret == LIBUSB_ERROR_NOT_FOUND) {
+				// Seems to always happen? LibUSB bug?
+				//printf("%s: release interface error: interface %d not found, continuing...\n", __func__, i);
+			}
+			else if (ret == LIBUSB_ERROR_NO_DEVICE)
+			      printf("%s: release interface error: no device, continuing...\n", __func__);
+			else if(ret < 0) {
+				printf("%s:Ctrla Warning: release interface ret: %d\n", __func__, ret);
+			}
+			libusb_close(dev->usb_interface[i]);
+		}
 	}
-#endif
 }
 
 void ctlra_impl_usb_shutdown()
 {
-#if 0
-	int res = hid_exit();
-	if(res)
-		printf("Ctlr: %s Warning: hid_exit() returns %d\n",
-		       __func__, res);
-#endif
+	libusb_exit(ctx);
 }
 
