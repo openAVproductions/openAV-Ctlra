@@ -40,6 +40,7 @@
 #define NI_VENDOR             (0x17cc)
 #define NI_MASCHINE_MIKRO_MK2 (0x1200)
 #define USB_INTERFACE_ID      (0x00)
+#define USB_HANDLE_IDX        (0x00)
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
 
@@ -183,15 +184,17 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024];
 	int32_t nbytes;
 
+	int iter = 0;
 	do {
-		int handle_idx = 0;
-		nbytes = ctlra_dev_impl_usb_read(base, handle_idx,
-						buf, 1024);
+		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+							   USB_ENDPOINT_READ,
+							   buf, 1024);
+		//printf("mm read %d\n", nbytes);
 		if(nbytes == 0)
 			return 0;
 
 		switch(nbytes) {
-		case 64: {
+		case 65: {
 				uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
 				int changed = 0;
 				for(int i = 0; i < NPADS; i++) {
@@ -276,7 +279,8 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 			break;
 			}
 		}
-	} while (nbytes > 0);
+		iter++;
+	} while (nbytes > 0 && iter < 2);
 
 	return 0;
 }
@@ -328,7 +332,9 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
-	int ret = ctlra_dev_impl_usb_write(base, 0, data, LIGHTS_SIZE);
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data, LIGHTS_SIZE);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -359,12 +365,21 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		 "%s", "Maschine Mikro Mk2");
 
 	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_MASCHINE_MIKRO_MK2,
-					 USB_INTERFACE_ID, 0);
+					  NI_VENDOR, NI_MASCHINE_MIKRO_MK2);
 	if(err) {
 		free(dev);
 		return 0;
 	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+						USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	memset(dev->lights, 0xff, sizeof(dev->lights));
+	ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
