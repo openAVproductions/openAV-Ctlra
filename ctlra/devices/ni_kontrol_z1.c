@@ -230,7 +230,6 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 	/* technically interface 3, testing showed 0 works but 3 doesnt */
-	dev->lights_interface = 0;
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0x80;
 
@@ -249,9 +248,7 @@ ni_kontrol_z1_disconnect(struct ctlra_dev_t *base)
 
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
-	dev->lights[0] = 0x80;
-	ni_kontrol_z1_light_set(base, 0, 0);
-	ni_kontrol_z1_light_flush(base, 0);
+	ni_kontrol_z1_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);

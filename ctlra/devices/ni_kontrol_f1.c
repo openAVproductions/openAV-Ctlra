@@ -293,7 +293,7 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 		dev->lights[25+i*3] = 0xf;
 #endif
 
-	//dev->lights[0] = 0x80;
+	dev->lights[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data, 81);
