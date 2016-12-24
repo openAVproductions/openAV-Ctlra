@@ -16,9 +16,10 @@ void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
 	uint8_t orange[25] = {0};
 	uint8_t blue[25] = {0};
 
-	for(int i = 0; i < d->progress * 25; i++) {
+	for(i = 0; i < d->progress * 25; i++) {
 		blue[i] = 0xff;
 	}
+	orange[i] = 0xff;
 
 	ni_kontrol_d2_light_touchstrip(dev, orange, blue);
 
