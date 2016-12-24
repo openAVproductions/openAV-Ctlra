@@ -123,8 +123,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	return 0;
 }
 
-int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
-			    uint32_t endpoint, uint8_t *data, uint32_t size)
+int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
+				  uint32_t endpoint, uint8_t *data, uint32_t size)
 {
 	int transferred;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
@@ -134,28 +134,19 @@ int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
 		return r;
 	}
 	return transferred;
-
-	/*
-	int res = hid_read(dev->hidapi_usb_handle[idx], data, size);
-	if (res < 0) {
-#warning TODO: exception path, *error* on read, so stop polling
-	}
-	return res;
-	*/
 }
 
-int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,
-			    uint8_t *data, uint32_t size)
+int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
+				       uint32_t endpoint, uint8_t *data, uint32_t size)
 {
-	/*
-	int res = hid_write(dev->hidapi_usb_handle[idx], data, size);
-	if (res < 0) {
-#warning TODO: exception path, *error* on read, so stop polling
-		printf("hid write failed %d\n", res);
+	int transferred;
+	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
+				      size, &transferred, 1000);
+	if (r < 0) {
+		fprintf(stderr, "intr error %d\n", r);
+		return r;
 	}
-	*/
-
-	return 0;
+	return transferred;
 }
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)

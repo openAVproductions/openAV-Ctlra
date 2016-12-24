@@ -115,12 +115,14 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
  * _not_ realtime safe function. It polls the usb handle specified by *idx*
  * of the device *dev*, reading bytes up to *size* into the buffer pointed
  * to by *data*. */
-int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
-			    uint32_t endpoint, uint8_t *data, uint32_t size);
+int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
+				      uint32_t endpoint, uint8_t *data,
+				      uint32_t size);
 
 /** Writes bytes to the device */
-int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,
-			     uint8_t *data, uint32_t size);
+int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
+				       uint32_t endpoint, uint8_t *data,
+				       uint32_t size);
 
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
