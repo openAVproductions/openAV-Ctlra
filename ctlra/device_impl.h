@@ -97,22 +97,26 @@ typedef struct ctlra_dev_t *(*ctlra_dev_connect_func)(ctlra_event_func event_fun
 						    void *userdata,
 						    void *future);
 
-/** Opens the libusb handle for the given vid:pid pair, claiming the given
- * interface number. The implementation skips the first *num_skip* entries,
- * to allow opening the N(th) of a single type of controller.
+/** Opens the libusb handle for the given vid:pid.
  * Implementation in usb.c.
  * @retval 0 on Success
+ * @retval -1 on Error
  * @retval -ENODEV when device not found */
-int ctlra_dev_impl_usb_open(struct ctlra_dev_t *dev,
-			   int vid,
-			   int pid);
+int ctlra_dev_impl_usb_open(struct ctlra_dev_t *dev, int vid, int pid);
+
+/** Opens the interface on a usb device. This allows controllers to make
+ * multiple connections to interfaces, allowing access to screens, lights,
+ * etc regardless of what USB endpoints they are presented on.
+ */
+int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
+				      int interface, int handle_idx);
 
 /** Read bytes from the usb device, this is a non-blocking function but
  * _not_ realtime safe function. It polls the usb handle specified by *idx*
  * of the device *dev*, reading bytes up to *size* into the buffer pointed
  * to by *data*. */
 int ctlra_dev_impl_usb_read(struct ctlra_dev_t *dev, uint32_t idx,
-			   uint8_t *data, uint32_t size);
+			    uint8_t *data, uint32_t size);
 
 /** Writes bytes to the device */
 int ctlra_dev_impl_usb_write(struct ctlra_dev_t *dev, uint32_t idx,

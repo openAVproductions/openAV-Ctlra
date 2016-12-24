@@ -15,6 +15,8 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 {
 	int ret;
 
+	printf("%s: %d\n", __func__, __LINE__);
+
 	if(!ctlra_libusb_initialized) {
 		ret = libusb_init (NULL);
 		if (ret < 0) {
@@ -26,7 +28,6 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 
 	libusb_device **devs;
 	libusb_device *dev;
-	libusb_device_handle *handle;
 	int i = 0, j = 0;
 	uint8_t path[USB_PATH_MAX];
 
@@ -67,7 +68,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 	if(!dev)
 		goto fail;
 
-	printf("%s: device handle %p\n", __func__, dev);
+	printf("%s: usb device %p\n", __func__, dev);
 	ctlra_dev->usb_device = dev;
 
 	return 0;
@@ -92,7 +93,7 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		printf("Error in claiming interface\n");
 		return -1;
 	}
-	printf("got device OK\n");
+	printf("%s: interface %d open from device OK\n", __func__, interface);
 
 	/* enable auto management of kernel claiming / unclaiming */
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
