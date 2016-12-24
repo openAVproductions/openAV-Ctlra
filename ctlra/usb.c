@@ -131,7 +131,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	int transferred;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
-				      size, &transferred, 100);
+				      size, &transferred, 10);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
