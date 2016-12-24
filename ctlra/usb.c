@@ -127,11 +127,13 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 }
 
 int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
-				  uint32_t endpoint, uint8_t *data, uint32_t size)
+				      uint32_t endpoint, uint8_t *data,
+				      uint32_t size)
 {
 	int transferred;
-	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
-				      size, &transferred, 10);
+	const uint32_t timeout = 10;
+	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
+					  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
@@ -142,16 +144,34 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 }
 
 int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
-				       uint32_t endpoint, uint8_t *data, uint32_t size)
+				       uint32_t endpoint, uint8_t *data,
+				       uint32_t size)
 {
 	int transferred;
-	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint, data,
-				      size, &transferred, 100);
+	const uint32_t timeout = 100;
+	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
+					  data, size, &transferred, timeout);
 	if (r < 0) {
 		fprintf(stderr, "intr error %d\n", r);
 		return r;
 	}
 	return transferred;
+}
+
+int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
+				  uint32_t endpoint, uint8_t *data,
+				  uint32_t size)
+{
+	const uint32_t timeout = 1000;
+	int transferred;
+	int ret = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
+				       data, size, &transferred, timeout);
+	if (ret < 0) {
+		fprintf(stderr, "intr error %d\n", ret);
+		return ret;
+	}
+	return transferred;
+
 }
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)

@@ -119,10 +119,15 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 				      uint32_t endpoint, uint8_t *data,
 				      uint32_t size);
 
-/** Writes bytes to the device */
+/** Writes bytes to the device using an interrupt USB transfer*/
 int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 				       uint32_t endpoint, uint8_t *data,
 				       uint32_t size);
+
+/** Writes bytes to the device using a bulk USB transfer*/
+int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
+				  uint32_t endpoint, uint8_t *data,
+				  uint32_t size);
 
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);

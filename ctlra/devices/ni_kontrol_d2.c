@@ -362,19 +362,22 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data)
 		uint8_t footer [sizeof(footer)];
 	};
 
-	printf("\n");
+	/* TODO: Move this to the dev struct and provide a pointer to the
+	 * app where to blit the pixel data? (Cairo rending-> packed needs
+	 * to do a loop already...) */
+	struct d2_screen_blit blit;
+	/* Copy the data from the app into the transfer. No avoiding this
+	 * as we need to add the header/command/footer around it */
+	memcpy(blit.pixels, screen_data, sizeof(blit.pixels));
 
 	/* screen write now */
-#if 0
-#warning TODO: port to BULK not interrupt writes
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_INTERFACE_SCREEN,
-	                USB_ENDPOINT_SCREEN_WRITE,
-	                buf, idx);
+	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
+						USB_ENDPOINT_SCREEN_WRITE,
+						(uint8_t *)&blit, sizeof(blit));
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 	else
 		printf("write to screen ok\n");
-#endif
 }
 
 void
