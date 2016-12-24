@@ -24,8 +24,8 @@ DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{CTLRA_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
-#if 0
 	{CTLRA_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
+#if 0
 	{CTLRA_DEV_NI_KONTROL_F1, ni_kontrol_f1_connect},
 	{CTLRA_DEV_NI_KONTROL_X1_MK2, ni_kontrol_x1_mk2_connect},
 	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_mikro_mk2_connect},

@@ -139,8 +139,9 @@ static uint32_t ni_kontrol_z1_poll(struct ctlra_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlra_dev_impl_usb_read(base, USB_HANDLE_IDX,
-						buf, 1024);
+		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+							   USB_ENDPOINT_READ,
+							   buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -231,9 +232,12 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	/* technically interface 3, testing showed 0 works but 3 doesnt */
 	dev->lights_interface = 0;
 	uint8_t *data = &dev->lights_interface;
+	dev->lights_interface = 0x80;
 
-	int ret = ctlra_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					  NI_KONTROL_Z1_LED_COUNT+1);
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     NI_KONTROL_Z1_LED_COUNT+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -249,6 +253,7 @@ ni_kontrol_z1_disconnect(struct ctlra_dev_t *base)
 	ni_kontrol_z1_light_set(base, 0, 0);
 	ni_kontrol_z1_light_flush(base, 0);
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -267,13 +272,25 @@ ni_kontrol_z1_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol Z1");
 
-	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_Z1,
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					 NI_VENDOR, NI_KONTROL_Z1);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 					 USB_INTERFACE_ID, USB_HANDLE_IDX);
 	if(err) {
 		free(dev);
 		return 0;
 	}
+
+	memset(dev->lights, 0xff, sizeof(dev->lights));
+	ni_kontrol_z1_light_flush(&dev->base, 1);
+	usleep(1000*300);
+	memset(dev->lights, 0x0, sizeof(dev->lights));
+	ni_kontrol_z1_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
