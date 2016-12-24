@@ -123,6 +123,7 @@ struct ni_kontrol_f1_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
+#warning TODO: fix LED size
 	uint8_t lights[NI_KONTROL_F1_LED_COUNT+100];
 };
 
@@ -257,7 +258,6 @@ static void ni_kontrol_f1_light_set(struct ctlra_dev_t *base,
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-	dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue */
 	if(light_id == NI_KONTROL_F1_LED_FX_ON_LEFT ||
@@ -293,10 +293,10 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 		dev->lights[25+i*3] = 0xf;
 #endif
 
-	dev->lights[0] = 0x80;
+	//dev->lights[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
-						     data, 60);
+						     data, 81);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -308,7 +308,7 @@ ni_kontrol_f1_disconnect(struct ctlra_dev_t *base)
 
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_KONTROL_F1_LED_COUNT);
+	memset(&dev->lights[1], 0, sizeof(dev->lights));
 	dev->lights[0] = 0x80;
 	ni_kontrol_f1_light_flush(base, 1);
 
