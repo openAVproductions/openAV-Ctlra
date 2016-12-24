@@ -210,8 +210,9 @@ ni_kontrol_x1_mk2_poll(struct ctlra_dev_t *base)
 
 	do {
 		int handle_idx = 0;
-		nbytes = ctlra_dev_impl_usb_read(base, USB_HANDLE_IDX,
-						buf, 1024);
+		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+							   USB_ENDPOINT_READ,
+							   buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -304,10 +305,10 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 		return;
 
 	uint8_t *data = &dev->lights_interface;
-	dev->lights_interface = 0;
-	dev->lights[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_write(base, USB_HANDLE_IDX, data,
-					   LIGHTS_SIZE+1);
+	dev->lights_interface = 0x80;
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data, LIGHTS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -320,8 +321,7 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_X1_MK2_LED_COUNT);
 	dev->lights[0] = 0x80;
-	ni_kontrol_x1_mk2_light_set(base, 0, 0);
-	ni_kontrol_x1_mk2_light_flush(base, 0);
+	ni_kontrol_x1_mk2_light_flush(base, 1);
 
 	free(dev);
 	return 0;
@@ -340,13 +340,20 @@ struct ctlra_dev_t *ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol X2 Mk2");
 
-	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_X1_MK2,
-					 USB_INTERFACE_ID, 0);
+	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_X1_MK2);
 	if(err) {
 		free(dev);
 		return 0;
 	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base, USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	memset(dev->lights, 0xff, sizeof(dev->lights));
+	ni_kontrol_x1_mk2_light_flush(&dev->base, 1);
 
 	dev->base.poll = ni_kontrol_x1_mk2_poll;
 	dev->base.disconnect = ni_kontrol_x1_mk2_disconnect;
