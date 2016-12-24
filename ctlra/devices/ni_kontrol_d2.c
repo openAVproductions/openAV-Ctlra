@@ -274,8 +274,9 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 	do {
 		int handle_idx = 0;
 		/* USB_ENDPOINT_BTNS_READ, */
-		nbytes = ctlra_dev_impl_usb_read(base, handle_idx,
-						buf, 1024);
+		nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
+						 USB_ENDPOINT_BTNS_READ,
+						 buf, 1024);
 		if(nbytes == 0)
 			return 0;
 
@@ -391,12 +392,16 @@ ni_kontrol_d2_screen_flush(struct ctlra_dev_t *base)
 	printf("\n");
 
 	/* screen write now */
-	int ret = ctlra_dev_impl_usb_write(base, USB_INTERFACE_BTNS,
-					  buf, idx);
+#if 0
+#warning TODO: port to BULK not interrupt writes
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_INTERFACE_SCREEN,
+						     USB_ENDPOINT_SCREEN_WRITE,
+						     buf, idx);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 	else
 		printf("write to screen ok\n");
+#endif
 }
 
 static void
@@ -439,7 +444,10 @@ ni_kontrol_d2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	dev->lights_endpoint = 0x80;
 	//memset(dev->lights, 0xff, LEDS_SIZE);
 
-	int ret = ctlra_dev_impl_usb_write(&dev->base, 0, data, LEDS_SIZE+1);
+	int ret = ctlra_dev_impl_usb_interrupt_write(&dev->base,
+						     USB_INTERFACE_BTNS,
+						     USB_ENDPOINT_BTNS_WRITE,
+						     data, LEDS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 
@@ -456,6 +464,7 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 	memset(&dev->lights[1], 0, LEDS_SIZE);
 	ni_kontrol_d2_light_flush(base, 0);
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -475,34 +484,33 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 		 "%s", "Kontrol D2");
 
 	/* Open buttons / leds handle */
-	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_D2,
-					 USB_INTERFACE_BTNS,
-					 USB_INTERFACE_BTNS);
+	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_D2);
 	if(err) {
 		printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
 
-#if 0
-	/* Open screen USB handle */
-	err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					 NI_VENDOR, NI_KONTROL_D2,
-					 USB_INTERFACE_SCREEN,
-					 USB_INTERFACE_SCREEN);
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+						USB_INTERFACE_BTNS,
+						USB_INTERFACE_BTNS);
 	if(err) {
-		printf("ret = %d\n", err);
+		printf("%s: failed to open button usb interface\n", __func__);
+		goto fail;
+	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+						USB_INTERFACE_SCREEN,
+						USB_INTERFACE_SCREEN);
+	if(err) {
 		printf("%s: failed to open screen usb interface\n", __func__);
 		goto fail;
 	}
-#endif
 
-	memset(dev->lights, 0xf, sizeof(dev->lights));
+	memset(dev->lights, 0xff, sizeof(dev->lights));
 	ni_kontrol_d2_light_flush(&dev->base, 1);
-	usleep(1000*100);
+	usleep(1000*300);
 	memset(dev->lights, 0x0, sizeof(dev->lights));
 	ni_kontrol_d2_light_flush(&dev->base, 1);
-
 
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;
