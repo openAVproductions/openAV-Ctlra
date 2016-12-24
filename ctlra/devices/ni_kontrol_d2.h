@@ -263,9 +263,24 @@ void ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *dev,
 				    uint8_t *orange,
 				    uint8_t *blue);
 
-/* Blit data to the screen. The data must be *exactly* the format the
- * screen expects - RGB 565, with (480 * 272 * 2) bytes. */
-void ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data);
+/* This function returns the location of *EXACTLY* (480 * 272 * 2) bytes,
+ * which the application must fill in. Writing one byte out of bounds in
+ * EITHER direction will cause the screen-write to fail: here be dragons!
+ *
+ * The data format is as follows:
+ * - BGR 565 encoding:
+ *   - 2 bytes per pixel
+ *   - 5 bits blue
+ *   - 6 bits green
+ *   - 5 bits red 
+ *
+ * The application is expected to write this format directly the the
+ * pointer returned by this function.
+ */
+uint8_t *ni_kontrol_d2_screen_get_pixels(struct ctlra_dev_t *base);
+
+/* Blit data to the screen. */
+void ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base);
 
 #endif /* OPENAV_CTLRA_NI_KONTROL_D2_H */
 

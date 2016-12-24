@@ -50,23 +50,25 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 	/* Calculate stride / pixel copy */
 	int stride = cairo_image_surface_get_stride(surface);
 	unsigned char * data = cairo_image_surface_get_data(surface);
-	printf("data = %p, stride %d\n", data, stride);
 	if(!data)
 		printf("error data == 0\n");
 	uint32_t data_idx = 0;
 
-	uint8_t pixels[WIDTH*HEIGHT*2];
+
+	uint8_t *pixels = ni_kontrol_d2_screen_get_pixels(dev);
 	uint8_t *write_head = pixels;
 	/* Copy the Cairo pixels to the usb buffer, taking the
 	 * stride of the cairo memory into account */
 	for(int j = 0; j < HEIGHT; j++) {
-		for(int i = 0; i < WIDTH*2; i++) {
+		for(int i = 0; i < WIDTH * 2; i++) {
+			/* single pixel, but 2 bytes at at time:
+			 * converts from RGB -> BGR */
 			int idx = (j * WIDTH * 2) + i;
-			write_head[idx] = data[(j * stride) + i];
+			write_head[idx+0] = data[(j * stride) + i+0];
 		}
 	}
 
-	ni_kontrol_d2_screen_blit(dev, pixels);
+	ni_kontrol_d2_screen_blit(dev);
 }
 
 void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)

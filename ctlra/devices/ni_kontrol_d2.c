@@ -233,6 +233,30 @@ static const struct ni_kontrol_d2_ctlra_t buttons[] = {
 */
 #define LEDS_SIZE (122)
 
+
+/* Screen blit commands - no need to have publicly in header */
+const uint8_t header[] = {
+	0x84,  0x0, 0x0, 0x60,
+	0x0,  0x0, 0x0,  0x0,
+	0x0,  0x0, 0x0,  0x0,
+	0x1, 0xe0, 0x1, 0x10,
+};
+const uint8_t command[] = {
+	/* num_px/2: 0xff00 is the (total_px/2) */
+	0x00, 0x0, 0xff, 0x00,
+};
+const uint8_t footer[] = {
+	0x03, 0x00, 0x00, 0x00,
+	0x40, 0x00, 0x00, 0x00
+};
+#define NUM_PX (480 * 272)
+struct d2_screen_blit {
+	uint8_t header [sizeof(header)];
+	uint8_t command[sizeof(command)];
+	uint8_t pixels [NUM_PX*2]; // 565 uses 2 bytes per pixel
+	uint8_t footer [sizeof(footer)];
+};
+
 /* Represents the the hardware device */
 struct ni_kontrol_d2_t {
 	/* base handles usb i/o etc */
@@ -247,6 +271,11 @@ struct ni_kontrol_d2_t {
 	 * transfer. */
 	uint8_t lights_endpoint;
 	uint8_t lights[LEDS_SIZE];
+	uint8_t waste;
+
+	/* this is a huge datastructure that includes full frame pixels,
+	 * leave it at the end of the struct to get out of the way */
+	struct d2_screen_blit screen_blit;
 };
 
 static const char *
@@ -335,53 +364,32 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
-void
-ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base, uint8_t *screen_data)
+uint8_t *
+ni_kontrol_d2_screen_get_pixels(struct ctlra_dev_t *base)
 {
-	/* Screen blit commands - no need to have publicly in header */
-	const uint8_t header[] = {
-		0x84,  0x0, 0x0, 0x60,
-		0x0,  0x0, 0x0,  0x0,
-		0x0,  0x0, 0x0,  0x0,
-		0x1, 0xe0, 0x1, 0x10,
-	};
-#define NUM_PX 130560
-	const uint8_t command[] = {
-		/* num_px/2: 0xff00 is the (total_px/2) */
-		0x00, 0x0, 0xff, 0x00,
-	};
-	const uint8_t footer[] = {
-		0x03, 0x00, 0x00, 0x00,
-		0x40, 0x00, 0x00, 0x00
-	};
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	return &dev->screen_blit.pixels;
+}
 
-	struct d2_screen_blit {
-		uint8_t header [sizeof(header)];
-		uint8_t command[sizeof(command)];
-		uint8_t pixels [NUM_PX*2]; // 565 uses 2 bytes per pixel
-		uint8_t footer [sizeof(footer)];
-	};
+void
+ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	uint8_t *p = &dev->screen_blit;
 
+	memcpy(dev->screen_blit.header , header , sizeof(dev->screen_blit.header));
+	memcpy(dev->screen_blit.command, command, sizeof(dev->screen_blit.command));
+	memcpy(dev->screen_blit.footer , footer , sizeof(dev->screen_blit.footer));
 
-	/* TODO: Move this to the dev struct and provide a pointer to the
-	 * app where to blit the pixel data? (Cairo rending-> packed needs
-	 * to do a loop already...) */
-	struct d2_screen_blit blit;
-	memcpy(blit.header , header , sizeof(header));
-	memcpy(blit.command, command, sizeof(command));
-	memcpy(blit.footer , footer , sizeof(footer));
-	/* Copy the data from the app into the transfer. No avoiding this
-	 * as we need to add the header/command/footer around it */
-	memcpy(blit.pixels, screen_data, sizeof(blit.pixels));
-
-	/* screen write now */
+	for(int i = 0; i < 32; i++)
+		printf("%02x ", p[i]);
+	printf("\n");
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
 						USB_ENDPOINT_SCREEN_WRITE,
-						(uint8_t *)&blit, sizeof(blit));
+						(uint8_t *)&dev->screen_blit,
+						sizeof(dev->screen_blit));
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
-	else
-		printf("write to screen ok\n");
 }
 
 void
@@ -437,7 +445,6 @@ ni_kontrol_d2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
-	//memset(dev->lights, 0xff, LEDS_SIZE);
 
 	int ret = ctlra_dev_impl_usb_interrupt_write(&dev->base,
 	                USB_INTERFACE_BTNS,
@@ -445,9 +452,6 @@ ni_kontrol_d2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	                data, LEDS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
-
-	//printf("calling screen write now\n");
-	//ni_kontrol_d2_screen_flush(base);
 }
 
 static int32_t
@@ -503,6 +507,11 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 
 	memset(dev->lights, 0xff, sizeof(dev->lights));
 	ni_kontrol_d2_light_flush(&dev->base, 1);
+
+	/* Copy the screen update details into the embedded struct */
+	memcpy(dev->screen_blit.header , header , sizeof(dev->screen_blit.header));
+	memcpy(dev->screen_blit.command, command, sizeof(dev->screen_blit.command));
+	memcpy(dev->screen_blit.footer , footer , sizeof(dev->screen_blit.footer));
 
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;

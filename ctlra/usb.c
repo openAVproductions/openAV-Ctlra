@@ -162,14 +162,10 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 				  uint32_t endpoint, uint8_t *data,
 				  uint32_t size)
 {
-	const uint32_t timeout = 10000;
+	const uint32_t timeout = 1000;
 	int transferred;
-	for(int i = 0; i < 32; i++)
-		printf("%02x ", data[i]);
-	printf("\n");
 	int ret = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
 				       data, size, &transferred, timeout);
-	printf("bulk %d, transferred %d\n", ret, transferred);
 	if (ret < 0) {
 		fprintf(stderr, "%s intr error %d\n", __func__, ret);
 		return ret;
