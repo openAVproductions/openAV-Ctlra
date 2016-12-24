@@ -16,7 +16,6 @@ struct ctlra_dev_connect_func_t {
 
 #warning TODO: refactor this to be a tailq and have devices register themselves in the .c file instead of all here
 
-DECLARE_DEV_CONNECT_FUNC(simple_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_d2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
@@ -26,7 +25,6 @@ DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{CTLRA_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
 #if 0
-	{CTLRA_DEV_SIMPLE, simple_connect},
 	{CTLRA_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
 	{CTLRA_DEV_NI_KONTROL_F1, ni_kontrol_f1_connect},
 	{CTLRA_DEV_NI_KONTROL_X1_MK2, ni_kontrol_x1_mk2_connect},
