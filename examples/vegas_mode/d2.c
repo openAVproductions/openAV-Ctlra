@@ -79,7 +79,8 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 		for(int i = 0; i < WIDTH; i++) {
 			uint8_t *p = &data[(j * stride) + (i*4)];
 			int idx = (j * WIDTH) + (i);
-			pixel_convert_from_argb(p[2], p[1], p[0], &write_head[idx]);
+			pixel_convert_from_argb(p[2], p[1], p[0],
+						(uint8_t*)&write_head[idx]);
 		}
 	}
 
@@ -115,7 +116,7 @@ void kontrol_d2_func_remap(struct ctlra_dev_t* dev,
 			   struct ctlra_event_t** events,
 			   void *userdata)
 {
-	printf("%s handling events\n", __func__);
+	//printf("%s handling events\n", __func__);
 	// slider move returns to previous map
 	if(events[0]->type == CTLRA_EVENT_SLIDER) {
 		printf("returning to previous map\n");
@@ -128,7 +129,6 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 		     struct ctlra_event_t** events,
 		     void *userdata)
 {
-	printf("%s handling events\n", __func__);
 	struct dummy_data *d = (void *)userdata;
 	(void)dev;
 	(void)userdata;
@@ -146,7 +146,7 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 				       sizeof(struct dummy_data));
 			}
 			if(e->button.id == NI_KONTROL_D2_BTN_DECK && p) {
-				printf("deck presend\n");
+				printf("deck pressed, switching handle func\n");
 				ctlra_dev_set_event_func(dev, kontrol_d2_func_remap);
 			}
 			break;
