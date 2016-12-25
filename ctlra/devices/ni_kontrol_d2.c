@@ -368,7 +368,7 @@ uint8_t *
 ni_kontrol_d2_screen_get_pixels(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-	return &dev->screen_blit.pixels;
+	return (uint8_t *)&dev->screen_blit.pixels;
 }
 
 void

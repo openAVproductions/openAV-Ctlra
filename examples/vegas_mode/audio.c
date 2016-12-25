@@ -35,18 +35,15 @@ int audio_init(void *dummy)
 	sf = sf_open("sample.wav", SFM_READ, &info);
 	sample_size = info.frames;
 	sample = malloc(sample_size*sizeof(float));
-	int num = sf_read_float(sf, sample, sample_size);
+	uint32_t num = sf_read_float(sf, sample, sample_size);
 	if(num != sample_size)
 		printf("warning, load of sample returned %d, expected %d\n",
 		       num, sample_size);
 	sf_close(sf);
 
 	/* setup JACK */
-	client = jack_client_open("CtlraPlayer",
-	                        JackNullOption, 0, 0 );
-
+	client = jack_client_open("CtlraPlayer", JackNullOption, 0, 0 );
 	jack_set_process_callback(client, process , dummy);
-
 	outputPort = jack_port_register(client, "output",
 	                                JACK_DEFAULT_AUDIO_TYPE,
 	                                JackPortIsOutput, 0 );
