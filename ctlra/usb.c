@@ -17,8 +17,6 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 {
 	int ret;
 
-	printf("%s: %d\n", __func__, __LINE__);
-
 	if(!ctlra_libusb_initialized) {
 		ret = libusb_init (&ctx);
 		if (ret < 0) {
@@ -44,7 +42,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 			printf("failed to get device descriptor");
 			goto fail;
 		}
-#if 1
+#if 0
 		printf("%04x:%04x (bus %d, device %d)",
 		       desc.idVendor, desc.idProduct,
 		       libusb_get_bus_number(dev),
@@ -70,7 +68,6 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 	if(!dev)
 		goto fail;
 
-	printf("%s: usb device %p\n", __func__, dev);
 	ctlra_dev->usb_device = dev;
 	memset(ctlra_dev->usb_interface, 0, sizeof(ctlra_dev->usb_interface));
 
@@ -96,7 +93,6 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		printf("Error in claiming interface\n");
 		return -1;
 	}
-	//printf("%s: interface %d open from device OK\n", __func__, interface);
 
 	/* enable auto management of kernel claiming / unclaiming */
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
@@ -178,6 +174,9 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 		if(dev->usb_interface[i]) {
+#if 0
+			// Running this always seems to throw an error,
+			// and it has no negative side-effects to not?
 			int ret = libusb_release_interface(dev->usb_device, i);
 			if(ret == LIBUSB_ERROR_NOT_FOUND) {
 				// Seems to always happen? LibUSB bug?
@@ -188,6 +187,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 			else if(ret < 0) {
 				printf("%s:Ctrla Warning: release interface ret: %d\n", __func__, ret);
 			}
+#endif
 			libusb_close(dev->usb_interface[i]);
 		}
 	}
