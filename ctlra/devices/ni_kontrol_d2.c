@@ -375,15 +375,6 @@ void
 ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-	uint8_t *p = &dev->screen_blit;
-
-	memcpy(dev->screen_blit.header , header , sizeof(dev->screen_blit.header));
-	memcpy(dev->screen_blit.command, command, sizeof(dev->screen_blit.command));
-	memcpy(dev->screen_blit.footer , footer , sizeof(dev->screen_blit.footer));
-
-	for(int i = 0; i < 32; i++)
-		printf("%02x ", p[i]);
-	printf("\n");
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
 						USB_ENDPOINT_SCREEN_WRITE,
 						(uint8_t *)&dev->screen_blit,
@@ -399,11 +390,9 @@ ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *base,
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	dev->lights_dirty = 1;
-	// 69-94: 25 touchstrip leds blue left to right
-	// 94-+25: 25 touchstrip leds orange left to right
 	for(int i = 0; i < 25; i++) {
 		dev->lights[68+i] = blue[i];
-		dev->lights[93+i] = orange[i];//0x0;//blue[i];
+		dev->lights[93+i] = orange[i];
 	}
 }
 
@@ -420,7 +409,6 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-	//dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue
 	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
