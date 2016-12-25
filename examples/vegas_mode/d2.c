@@ -27,7 +27,7 @@ void d2_screen_init()
 }
 
 static inline
-void pixel_convert(int r, int g, int b, uint8_t *data)
+void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
 {
 	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
 	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
@@ -37,8 +37,6 @@ void pixel_convert(int r, int g, int b, uint8_t *data)
 	data[0] = combined >> 8;
 	data[1] = combined & 0xff;
 }
-
-
 
 void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 {
@@ -72,7 +70,6 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 		printf("error data == 0\n");
 	uint32_t data_idx = 0;
 
-
 	uint8_t *pixels = ni_kontrol_d2_screen_get_pixels(dev);
 	uint16_t *write_head = (uint16_t*)pixels;
 	/* Copy the Cairo pixels to the usb buffer, taking the
@@ -81,14 +78,8 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 	for(int j = 0; j < HEIGHT; j++) {
 		for(int i = 0; i < WIDTH; i++) {
 			uint8_t *p = &data[(j * stride) + (i*4)];
-#if 0
-			uint16_t r = ((*p) & 0b1111100000000000) >> 11;
-			uint16_t g = ((*p) & 0b0000011111100000);
-			uint16_t b = ((*p) & 0b0000000000011111) << 11;
-#endif
 			int idx = (j * WIDTH) + (i);
-			pixel_convert(p[2], p[1], p[0], &write_head[idx]);
-			//printf("%d %d %d, %d %d\n", p[0], p[1], p[2], pixels[idx], pixels[idx+1]);
+			pixel_convert_from_argb(p[2], p[1], p[0], &write_head[idx]);
 		}
 	}
 
