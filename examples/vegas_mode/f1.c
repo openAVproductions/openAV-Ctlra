@@ -33,7 +33,7 @@ void kontrol_f1_func(struct ctlra_dev_t* dev,
 			d->buttons[e->button.id] = e->button.pressed;
 			if(e->button.id == NI_KONTROL_F1_BTN_SHIFT) {
 				memset(&d->buttons, e->button.pressed,
-				       sizeof(struct dummy_data));
+				       sizeof(d->buttons));
 			}
 			break;
 
