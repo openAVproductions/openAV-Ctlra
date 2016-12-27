@@ -4,6 +4,7 @@
 #include <jack/jack.h>
 #include <sndfile.h>
 #include <stdlib.h>
+#include <string.h>
 
 jack_port_t* outputPort = 0;
 
@@ -16,14 +17,20 @@ static jack_client_t* client;
 
 int process(jack_nframes_t nframes, void* arg)
 {
-	struct dummy_data *d = arg;
 	float* outputBuffer= (float*)jack_port_get_buffer ( outputPort, nframes);
+	memset(outputBuffer, 0, nframes * sizeof(float));
+
+	if(!sample_size)
+		return 0;
+
+	struct dummy_data *d = arg;
 	for ( int i = 0; i < (int) nframes; i++) {
 		outputBuffer[i] = sample[playbackIndex % sample_size] * d->volume;
 		playbackIndex++;
 	}
 	/* 0 - 1 ranged progress */
-	d->progress = ((float)(playbackIndex % sample_size)) / sample_size;
+	float idx = playbackIndex % sample_size;
+	d->progress = ((float)idx) / sample_size;
 	return 0;
 }
 
