@@ -13,14 +13,16 @@
 static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
-int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
+int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
+			    int pid)
 {
 	int ret;
 
 	if(!ctlra_libusb_initialized) {
 		ret = libusb_init (&ctx);
 		if (ret < 0) {
-			printf("failed to initialise libusb: %s\n", libusb_error_name(ret));
+			printf("failed to initialise libusb: %s\n",
+			       libusb_error_name(ret));
 			goto fail;
 		}
 		ctlra_libusb_initialized = 1;
@@ -69,7 +71,8 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid, int pid)
 		goto fail;
 
 	ctlra_dev->usb_device = dev;
-	memset(ctlra_dev->usb_interface, 0, sizeof(ctlra_dev->usb_interface));
+	memset(ctlra_dev->usb_interface, 0,
+	       sizeof(ctlra_dev->usb_interface));
 
 	return 0;
 fail:
@@ -111,8 +114,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		int kernel_active = libusb_kernel_driver_active(handle,
 							interface);
 		if(kernel_active)
-			printf("=> Kernel has claimed the interface."
-			       "Stop other applications using this device and retry\n");
+			printf("=> Kernel has claimed the interface. Stop"
+			       "other applications using this device and retry\n");
 		return -1;
 	}
 
