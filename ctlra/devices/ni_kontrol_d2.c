@@ -473,7 +473,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	/* Open buttons / leds handle */
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_D2);
 	if(err) {
-		printf("%s: failed to open button usb interface\n", __func__);
+		//printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
 
@@ -481,7 +481,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	                                        USB_INTERFACE_BTNS,
 	                                        USB_INTERFACE_BTNS);
 	if(err) {
-		printf("%s: failed to open button usb interface\n", __func__);
+		//printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
 
@@ -489,7 +489,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	                                        USB_INTERFACE_SCREEN,
 	                                        USB_INTERFACE_SCREEN);
 	if(err) {
-		printf("%s: failed to open screen usb interface\n", __func__);
+		//printf("%s: failed to open screen usb interface\n", __func__);
 		goto fail;
 	}
 
