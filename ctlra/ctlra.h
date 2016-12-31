@@ -75,6 +75,16 @@ struct ctlra_create_opts_t {
  */
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
 
+/** Iterate backends and see if anything has changed - this enables hotplug
+ * detection and removal of devices.
+ */
+void ctlra_idle_iter(struct ctlra_t *ctlra);
+
+/** Cleanup any resources allocated internally in Ctlra. This function
+ * releases all resources attached to this context, but does NOT interfere
+ * with other cltra instances */
+void ctlra_exit(struct ctlra_t *ctlra);
+
 /** Connect to a controller device. */
 struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
 				    ctlra_event_func event_func,
@@ -168,11 +178,6 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
-
-/** Cleanup any resources allocated internally in Ctlra. This function
- * releases all resources attached to this context, but does NOT interfere
- * with other cltra instances */
-void ctlra_exit(struct ctlra_t *ctlra);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -25,8 +25,20 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Error getting device descriptor\n");
 		return -1;
 	}
-	printf("Device attached: %04x:%04x\n", desc.idVendor, desc.idProduct);
+	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
+		printf("Device attached: %04x:%04x\n",
+		       desc.idVendor, desc.idProduct);
+	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
+		printf("Device removed: %04x:%04x\n",
+		       desc.idVendor, desc.idProduct);
 	return 0;
+}
+
+
+void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
+{
+	/* TODO: fix context here */
+	libusb_handle_events(NULL);
 }
 
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,

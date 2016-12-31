@@ -7,6 +7,8 @@
 #include "devices.h"
 #include "device_impl.h"
 
+/* For polling hotplug / other events */
+void ctlra_impl_usb_idle_iter(struct ctlra_t *);
 /* For cleaning up the USB subsystem */
 extern void ctlra_impl_usb_shutdown();
 
@@ -124,6 +126,11 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	if(!c) return 0;
 
 	return c;
+}
+
+void ctlra_idle_iter(struct ctlra_t *ctlra)
+{
+	ctlra_impl_usb_idle_iter(ctlra);
 }
 
 void ctlra_exit(struct ctlra_t *cltra)
