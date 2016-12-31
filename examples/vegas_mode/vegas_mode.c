@@ -55,6 +55,8 @@ int main(int argc, char** argv)
 		dummy.print_events = 1;
 	}
 
+	struct cltra_t *ctrla = ctlra_create(NULL);
+
 	struct ctlra_list_t ctlra_list;
 	TAILQ_INIT(&ctlra_list);
 

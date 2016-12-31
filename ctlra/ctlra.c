@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "ctlra.h"
 #include "devices.h"
@@ -109,6 +110,20 @@ const char * ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 	if(dev && dev->control_get_name)
 		return dev->control_get_name(dev, type, control_id);
 	return 0;
+}
+
+struct cltra_t
+{
+	// App specific hotplug device arrived callback
+	uint32_t thingy;
+};
+
+struct cltra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
+{
+	struct ctlra_t *c = calloc(1, sizeof(struct cltra_t));
+	if(!c) return 0;
+
+	return c;
 }
 
 void ctlra_exit()

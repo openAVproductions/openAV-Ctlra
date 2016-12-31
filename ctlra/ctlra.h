@@ -52,6 +52,29 @@ extern "C" {
 #define CTLRA_DEV_NAME_MAX   32
 #define CTLRA_DEV_SERIAL_MAX 64
 
+/** Cltra context forward declaration. This struct is opaque to the user
+ * of the ctlra library. It provides a handle for cltra internals such as
+ * hotplug callbacks and backend details (libusb context for example). It
+ * also holds a handle to each ctlra_dev_t in use, allowing it to clean up
+ * resources if the application calls ctlra_exit() on the *ctlra_t*.
+ */
+struct ctlra_t;
+
+/** Struct for forward compatibility, allowing various options to be passed
+ * to cltra, without breaking all the function calls */
+struct ctlra_create_opts_t {
+	/* reserve lots of space */
+	uint8_t padding[64];
+};
+
+/** Create a new cltra context. This context holds state about the
+ * connected devices, hotplug callbacks and backends (usb, bluetooth, etc)
+ * for the controllers. The *opts* argument is a pointer to a struct
+ * allowing speicifc control over the ctlra context being created. For
+ * simple usage, pass NULL.
+ */
+struct cltra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
+
 /** Connect to a controller device. */
 struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
 				    ctlra_event_func event_func,
