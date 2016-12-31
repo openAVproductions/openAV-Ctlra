@@ -118,7 +118,7 @@ struct cltra_t
 	uint32_t thingy;
 };
 
-struct cltra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
+struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 {
 	struct ctlra_t *c = calloc(1, sizeof(struct cltra_t));
 	if(!c) return 0;
@@ -126,9 +126,11 @@ struct cltra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	return c;
 }
 
-void ctlra_exit()
+void ctlra_exit(struct ctlra_t *cltra)
 {
 	ctlra_impl_usb_shutdown();
+
+	free(cltra);
 }
 
 

@@ -73,7 +73,7 @@ struct ctlra_create_opts_t {
  * allowing speicifc control over the ctlra context being created. For
  * simple usage, pass NULL.
  */
-struct cltra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
+struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
 
 /** Connect to a controller device. */
 struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
@@ -169,10 +169,10 @@ const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
 
-/** Cleanup any resources allocated internally in Ctlra.
- * The application is expected to have called *ctlra_dev_disconnect*
- * on all open devices before calling this function. */
-void ctlra_exit();
+/** Cleanup any resources allocated internally in Ctlra. This function
+ * releases all resources attached to this context, but does NOT interfere
+ * with other cltra instances */
+void ctlra_exit(struct ctlra_t *ctlra);
 
 #ifdef __cplusplus
 } /* extern "C" */
