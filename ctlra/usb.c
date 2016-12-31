@@ -26,11 +26,11 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		return -1;
 	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
-		printf("Device attached: %04x:%04x\n",
-		       desc.idVendor, desc.idProduct);
+		printf("Device attached: %04x:%04x, serial %d\n",
+		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
-		printf("Device removed: %04x:%04x\n",
-		       desc.idVendor, desc.idProduct);
+		printf("Device removed: %04x:%04x, serial %d\n",
+		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
 	return 0;
 }
 
@@ -91,9 +91,9 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			printf("failed to get device descriptor");
 			goto fail;
 		}
-#if 0
-		printf("%04x:%04x (bus %d, device %d)",
-		       desc.idVendor, desc.idProduct,
+#if 1
+		printf("%04x:%04x (serial %d) (bus %d, device %d)",
+		       desc.idVendor, desc.idProduct, desc.iSerialNumber,
 		       libusb_get_bus_number(dev),
 		       libusb_get_device_address(dev));
 
