@@ -13,6 +13,22 @@
 static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
+static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
+				     libusb_device *dev,
+				     libusb_hotplug_event event,
+				     void *user_data)
+{
+	int ret;
+	struct libusb_device_descriptor desc;
+	ret = libusb_get_device_descriptor(dev, &desc);
+	if(ret != LIBUSB_SUCCESS) {
+		printf("Error getting device descriptor\n");
+		return -1;
+	}
+	printf("Device attached: %04x:%04x\n", desc.idVendor, desc.idProduct);
+	return 0;
+}
+
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			    int pid)
 {
@@ -26,6 +42,25 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			goto fail;
 		}
 		ctlra_libusb_initialized = 1;
+
+		if (!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
+			printf ("Ctlra: No Hotplug on this platform\n");
+		} else {
+
+			libusb_hotplug_callback_handle hp[2];
+			ret = libusb_hotplug_register_callback(NULL,
+				LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+				    LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+				0,
+				LIBUSB_HOTPLUG_MATCH_ANY,
+				LIBUSB_HOTPLUG_MATCH_ANY,
+				LIBUSB_HOTPLUG_MATCH_ANY,
+				ctlra_usb_impl_hotplug_cb,
+				NULL, &hp[0]);
+			if (LIBUSB_SUCCESS != ret) {
+				printf("hotplug register failure\n");
+			}
+		}
 	}
 
 	libusb_device **devs;

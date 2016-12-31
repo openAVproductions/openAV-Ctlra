@@ -97,6 +97,8 @@ int main(int argc, char** argv)
 			controller_revision = dummy.revision;
 		}
 		usleep(100);
+
+		libusb_handle_events(NULL);
 	}
 
 	audio_exit();
