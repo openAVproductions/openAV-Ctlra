@@ -7,6 +7,8 @@
 #include "devices.h"
 #include "device_impl.h"
 
+/* For USB initialization */
+int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);
 /* For polling hotplug / other events */
 void ctlra_impl_usb_idle_iter(struct ctlra_t *);
 /* For cleaning up the USB subsystem */
@@ -52,8 +54,8 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 		new_dev = devices[dev_id].connect(event_func,
 						  userdata,
 						  future);
-		printf("have new dev %p\n", new_dev);
 		if(new_dev) {
+			printf("have new dev %p\n", new_dev);
 			new_dev->ctlra_context = ctlra;
 			new_dev->dev_list_next = 0;
 
@@ -69,6 +71,8 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 			while(dev_iter->dev_list_next)
 				dev_iter = dev_iter->dev_list_next;
 			dev_iter->dev_list_next = new_dev;
+			printf("added new %p to existing %p\n", new_dev,
+			       dev_iter);
 			return new_dev;
 		}
 	}
@@ -149,6 +153,9 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	if(!c) return 0;
 
 	/* register USB hotplug etc */
+	int err = ctlra_dev_impl_usb_init(c);
+	if(err)
+		printf("%s: impl_usb_init() returned %d\n", __func__, err);
 
 	return c;
 }
@@ -156,10 +163,26 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
+
+	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+	while(dev_iter) {
+		ctlra_dev_poll(dev_iter);
+		dev_iter = dev_iter->dev_list_next;
+		if(dev_iter == 0)
+			return;
+	}
 }
 
 void ctlra_exit(struct ctlra_t *ctlra)
 {
+	/* Iter over devices, removing them */
+	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+	while(dev_iter->dev_list_next) {
+		struct ctlra_dev_t *dev_free = dev_iter;
+		dev_iter = dev_iter->dev_list_next;
+		ctlra_dev_disconnect(dev_free);
+	}
+
 	ctlra_impl_usb_shutdown();
 
 	free(ctlra);

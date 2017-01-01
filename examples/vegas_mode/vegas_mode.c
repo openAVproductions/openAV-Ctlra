@@ -56,6 +56,7 @@ int main(int argc, char** argv)
 	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
+	printf("ctlra %p\n", ctlra);
 
 	struct ctlra_list_t ctlra_list;
 	TAILQ_INIT(&ctlra_list);
@@ -88,10 +89,13 @@ int main(int argc, char** argv)
 	dummy.revision = 0;
 	uint64_t controller_revision = 0;
 	while(!done) {
-		/* Poll all controllers */
+		/* Poll all controllers
 		TAILQ_FOREACH(dev, &ctlra_list, list) {
 			ctlra_dev_poll(dev->ctlra);
 		}
+		*/
+		ctlra_idle_iter(ctlra);
+
 		/* If revision of state is new, update state of controllers */
 		if (dummy.revision != controller_revision) {
 			TAILQ_FOREACH(dev, &ctlra_list, list) {
@@ -100,7 +104,6 @@ int main(int argc, char** argv)
 			controller_revision = dummy.revision;
 		}
 
-		ctlra_idle_iter(ctlra);
 		usleep(100);
 	}
 

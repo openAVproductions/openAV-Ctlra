@@ -56,12 +56,13 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		ctlra_usb_impl_get_serial(handle, desc.iSerialNumber,
 					  buf, 255);
 
-		printf("Device attached: %04x:%04x, serial %s\n",
-		       desc.idVendor, desc.idProduct, buf);
+		printf("Device attached: %04x:%04x, serial %s, ctlra %p\n",
+		       desc.idVendor, desc.idProduct, buf, user_data);
 
 		// call application "hotplug accept" callback here,
 		// which provides the event func / ud pair
-
+		
+		printf("calling connect now\n");
 		ctlra_dev_connect((struct ctlra_t *)user_data,
 				  CTLRA_DEV_NI_KONTROL_X1_MK2,
 				  hotplug_func, 0x0, 0x0);
@@ -70,6 +71,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Device removed: %04x:%04x, serial %d\n",
 		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
 
+	printf("%s: done & return 0\n", __func__);
 	return 0;
 }
 
@@ -83,40 +85,52 @@ void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 	libusb_handle_events_timeout_completed(NULL, &tv, NULL);
 }
 
+
+int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
+{
+	int ret;
+	/* TODO: move this to a usb specific cltra_init() function */
+	if(ctlra_libusb_initialized)
+		return -1;
+
+	ret = libusb_init (&ctx);
+	if (ret < 0) {
+		printf("failed to initialise libusb: %s\n",
+		       libusb_error_name(ret));
+		return -1;
+	}
+	ctlra_libusb_initialized = 1;
+
+	if(!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
+		printf ("Ctlra: No Hotplug on this platform\n");
+		return -2;
+	}
+
+	/* setup hotplug callbacks */
+	libusb_hotplug_callback_handle hp[2];
+	ret = libusb_hotplug_register_callback(NULL,
+					       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED,
+					       /* TODO: do we want to gracefully
+						* remove? We should handle
+						* unexpected unplug anyway.. */
+					       /* | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, */
+					       0,
+					       LIBUSB_HOTPLUG_MATCH_ANY,
+					       LIBUSB_HOTPLUG_MATCH_ANY,
+					       LIBUSB_HOTPLUG_MATCH_ANY,
+					       ctlra_usb_impl_hotplug_cb,
+					       ctlra,
+					       &hp[0]);
+	if (ret != LIBUSB_SUCCESS) {
+		printf("hotplug register failure\n");
+	}
+	return 0;
+}
+
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
                             int pid)
 {
 	int ret;
-
-	/* TODO: move this to a usb specific cltra_init() function */
-	if(!ctlra_libusb_initialized) {
-		ret = libusb_init (&ctx);
-		if (ret < 0) {
-			printf("failed to initialise libusb: %s\n",
-			       libusb_error_name(ret));
-			goto fail;
-		}
-		ctlra_libusb_initialized = 1;
-
-		if (!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
-			printf ("Ctlra: No Hotplug on this platform\n");
-		} else {
-			libusb_hotplug_callback_handle hp[2];
-			ret = libusb_hotplug_register_callback(NULL,
-			                                       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-			                                       LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
-			                                       0,
-			                                       LIBUSB_HOTPLUG_MATCH_ANY,
-			                                       LIBUSB_HOTPLUG_MATCH_ANY,
-			                                       LIBUSB_HOTPLUG_MATCH_ANY,
-			                                       ctlra_usb_impl_hotplug_cb,
-			                                       ctlra_dev->ctlra_context,
-							       &hp[0]);
-			if (LIBUSB_SUCCESS != ret) {
-				printf("hotplug register failure\n");
-			}
-		}
-	}
 
 	libusb_device **devs;
 	libusb_device *dev;
@@ -135,7 +149,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			printf("failed to get device descriptor");
 			goto fail;
 		}
-#if 1
+#if 0
 		printf("%04x:%04x (serial %d) (bus %d, device %d)",
 		       desc.idVendor, desc.idProduct, desc.iSerialNumber,
 		       libusb_get_bus_number(dev),
