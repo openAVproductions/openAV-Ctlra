@@ -37,8 +37,11 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 {
-	/* TODO: fix context here */
-	libusb_handle_events(NULL);
+	struct timeval tv = {0};
+	/* 1st: NULL context
+	 * 2nd: timeval to wait - 0 returns as if non blocking
+	 * 3rd: int* to completed event - unused by Ctlra */
+	libusb_handle_events_timeout_completed(NULL, &tv, NULL);
 }
 
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
