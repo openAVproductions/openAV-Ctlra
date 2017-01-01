@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 	/* Disconnect all */
 	while ((dev = TAILQ_FIRST(&ctlra_list))) {
 		TAILQ_REMOVE(&ctlra_list, dev, list);
-		ctlra_dev_disconnect(dev->ctlra);
+		//ctlra_dev_disconnect(dev->ctlra);
 		free(dev);
 	}
 

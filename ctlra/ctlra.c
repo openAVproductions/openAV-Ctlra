@@ -94,8 +94,22 @@ void ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func ef)
 
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
-	if(dev && dev->disconnect)
-		return dev->disconnect(dev);
+	const struct ctlra_t *ctlra = dev->ctlra_context;
+	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+
+	if(dev && dev->disconnect) {
+		int ret = dev->disconnect(dev);
+		/* Remove the dev from the list */
+		while(dev_iter) {
+			if(dev_iter == dev) {
+				/* remove this item */
+				printf("found %p in the list, removing\n", dev);
+				break;
+			}
+			dev_iter = dev_iter->dev_list_next;
+		}
+		return ret;
+	}
 	return -ENOTSUP;
 }
 
@@ -169,7 +183,7 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		ctlra_dev_poll(dev_iter);
 		dev_iter = dev_iter->dev_list_next;
 		if(dev_iter == 0)
-			return;
+			break;
 	}
 }
 
@@ -177,10 +191,14 @@ void ctlra_exit(struct ctlra_t *ctlra)
 {
 	/* Iter over devices, removing them */
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
-	while(dev_iter->dev_list_next) {
+	while(dev_iter) {
 		struct ctlra_dev_t *dev_free = dev_iter;
+		printf("iter %p\n", dev_iter);
 		dev_iter = dev_iter->dev_list_next;
+		printf("iter next %p\n", dev_iter);
 		ctlra_dev_disconnect(dev_free);
+		if(dev_iter == 0)
+			break;
 	}
 
 	ctlra_impl_usb_shutdown();
