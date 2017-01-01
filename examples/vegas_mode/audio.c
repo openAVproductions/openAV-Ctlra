@@ -31,6 +31,8 @@ int process(jack_nframes_t nframes, void* arg)
 	/* 0 - 1 ranged progress */
 	float idx = playbackIndex % sample_size;
 	d->progress = ((float)idx) / sample_size;
+	/* mark dummy data updated, so controllers get updates */
+	d->revision++;
 	return 0;
 }
 
