@@ -109,6 +109,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 	libusb_device *dev;
 	int i = 0, j = 0;
 	uint8_t path[USB_PATH_MAX];
+	uint8_t i_serial = 0;
 
 	int cnt = libusb_get_device_list(NULL, &devs);
 	if (cnt < 0)
@@ -138,6 +139,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 
 		if(desc.idVendor  == vid &&
 		    desc.idProduct == pid) {
+			i_serial = desc.iSerialNumber;
 			break;
 		}
 	}
@@ -146,7 +148,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 
 	if(!dev)
 		goto fail;
-
+	ctlra_dev->info.serial_number = i_serial;
 	ctlra_dev->usb_device = dev;
 	memset(ctlra_dev->usb_interface, 0,
 	       sizeof(ctlra_dev->usb_interface));
@@ -174,6 +176,10 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		return -1;
 	}
 
+	ctlra_usb_impl_get_serial(handle, ctlra_dev->info.serial_number,
+				  (uint8_t*)ctlra_dev->info.serial,
+				  CTLRA_DEV_SERIAL_MAX);
+
 	/* enable auto management of kernel claiming / unclaiming */
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
 		ret = libusb_set_auto_detach_kernel_driver(handle, 1);
@@ -195,6 +201,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 			       "other applications using this device and retry\n");
 		return -1;
 	}
+
+	printf("usb iface open, serial %s\n", ctlra_dev->info.serial);
 
 	/* Commit to success: update handles in struct and return ok*/
 	ctlra_dev->usb_interface[handle_idx] = handle;
