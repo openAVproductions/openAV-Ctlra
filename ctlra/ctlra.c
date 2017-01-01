@@ -34,15 +34,43 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
-struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
-				    ctlra_event_func event_func,
-				    void *userdata,
-				    void *future)
+struct ctlra_t
 {
-	if(dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect)
-		return devices[dev_id].connect(event_func,
-					       userdata,
-					       future);
+	// App specific hotplug device arrived callback
+	uint32_t thingy;
+
+	struct ctlra_dev_t *dev_list;
+};
+
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
+				      enum ctlra_dev_id_t dev_id,
+				      ctlra_event_func event_func,
+				      void *userdata, void *future)
+{
+	if(dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect) {
+		struct ctlra_dev_t *new_dev = 0;
+		new_dev = devices[dev_id].connect(event_func,
+						  userdata,
+						  future);
+		printf("have new dev %p\n", new_dev);
+		if(new_dev) {
+			new_dev->dev_list_next = 0;
+
+			// if list empty, add as main ptr
+			if(ctlra->dev_list == 0) {
+				ctlra->dev_list = new_dev;
+				printf("have added new dev to start of list %p\n", new_dev);
+				return new_dev;
+			}
+
+			// skip to end of list, and append
+			struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+			while(dev_iter->dev_list_next)
+				dev_iter = dev_iter->dev_list_next;
+			dev_iter->dev_list_next = new_dev;
+			return new_dev;
+		}
+	}
 	return 0;
 }
 
@@ -114,15 +142,9 @@ const char * ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 	return 0;
 }
 
-struct cltra_t
-{
-	// App specific hotplug device arrived callback
-	uint32_t thingy;
-};
-
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 {
-	struct ctlra_t *c = calloc(1, sizeof(struct cltra_t));
+	struct ctlra_t *c = calloc(1, sizeof(struct ctlra_t));
 	if(!c) return 0;
 
 	return c;
@@ -133,11 +155,11 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	ctlra_impl_usb_idle_iter(ctlra);
 }
 
-void ctlra_exit(struct ctlra_t *cltra)
+void ctlra_exit(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_shutdown();
 
-	free(cltra);
+	free(ctlra);
 }
 
 

@@ -104,6 +104,9 @@ void sighndlr(int signal)
 
 int main()
 {
+	printf("fixme\n");
+	return 0;
+#if 0
 	signal(SIGINT, sighndlr);
 
 	midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "OpenAV Ctlr");
@@ -144,4 +147,5 @@ int main()
 	delete midiout;
 
 	return 0;
+#endif
 }

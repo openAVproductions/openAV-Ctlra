@@ -86,10 +86,10 @@ void ctlra_idle_iter(struct ctlra_t *ctlra);
 void ctlra_exit(struct ctlra_t *ctlra);
 
 /** Connect to a controller device. */
-struct ctlra_dev_t *ctlra_dev_connect(enum ctlra_dev_id_t dev_id,
-				    ctlra_event_func event_func,
-				    void *userdata,
-				    void *future);
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
+				      enum ctlra_dev_id_t dev_id,
+				      ctlra_event_func event_func,
+				      void *userdata, void *future);
 
 /** Poll device for events, causing an event to be emitted for each
  * event that has occured since the last poll.

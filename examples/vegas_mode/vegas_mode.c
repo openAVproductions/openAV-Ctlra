@@ -62,19 +62,20 @@ int main(int argc, char** argv)
 
 	for(uint32_t i = 0; i < CTLRA_SUPPORTED_SIZE; i++) {
 		const struct ctlra_supported_t* sup = &ctlra_supported[i];
-		struct ctlra_dev_t* ctlra = ctlra_dev_connect(sup->dev_id,
+		struct ctlra_dev_t* ctlra_dev = ctlra_dev_connect(ctlra,
+							      sup->dev_id,
 		                          sup->ctlra_poll,
 		                          &dummy,
 		                          future);
-		if(ctlra) {
+		if(ctlra_dev) {
 			struct ctlra_t *dev = calloc(1, sizeof(struct ctlra_t));
 			if(!dev) return -1;
-			dev->ctlra = ctlra;
+			dev->ctlra = ctlra_dev;
 			dev->update_state = sup->update_state;
 
 			struct ctlra_dev_info_t info;
 			ctlra_dev_get_info(dev->ctlra, &info);
-			printf("Vegas: connected to ctlra %s %s\n",
+			printf("Vegas: connected to ctlra_dev %s %s\n",
 			       info.vendor, info.device);
 
 			TAILQ_INSERT_TAIL(&ctlra_list, dev, list);
