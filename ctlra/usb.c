@@ -13,10 +13,25 @@
 static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
+static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
+				     uint8_t desc_serial, uint8_t *buffer,
+				     uint32_t buf_size)
+{
+	if (desc_serial > 0) {
+		int ret = libusb_get_string_descriptor_ascii(handle,
+							     desc_serial,
+							     buffer,
+							     buf_size);
+		if (ret < 0)
+			return -1;
+	}
+	return 0;
+}
+
 static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
-				     libusb_device *dev,
-				     libusb_hotplug_event event,
-				     void *user_data)
+                                     libusb_device *dev,
+                                     libusb_hotplug_event event,
+                                     void *user_data)
 {
 	int ret;
 	struct libusb_device_descriptor desc;
@@ -25,12 +40,23 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Error getting device descriptor\n");
 		return -1;
 	}
-	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
-		printf("Device attached: %04x:%04x, serial %d\n",
-		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
+	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
+
+		libusb_device_handle *handle = 0;
+		ret = libusb_open(dev, &handle);
+		if (ret != LIBUSB_SUCCESS)
+			return -1;
+		uint8_t buf[255];
+		ctlra_usb_impl_get_serial(handle, desc.iSerialNumber,
+					  buf, 255);
+
+		printf("Device attached: %04x:%04x, serial %s\n",
+		       desc.idVendor, desc.idProduct, buf);
+	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
 		printf("Device removed: %04x:%04x, serial %d\n",
 		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
+
 	return 0;
 }
 
@@ -45,10 +71,11 @@ void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 }
 
 int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
-			    int pid)
+                            int pid)
 {
 	int ret;
 
+	/* TODO: move this to a usb specific cltra_init() function */
 	if(!ctlra_libusb_initialized) {
 		ret = libusb_init (&ctx);
 		if (ret < 0) {
@@ -64,14 +91,14 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 
 			libusb_hotplug_callback_handle hp[2];
 			ret = libusb_hotplug_register_callback(NULL,
-				LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-				    LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
-				0,
-				LIBUSB_HOTPLUG_MATCH_ANY,
-				LIBUSB_HOTPLUG_MATCH_ANY,
-				LIBUSB_HOTPLUG_MATCH_ANY,
-				ctlra_usb_impl_hotplug_cb,
-				NULL, &hp[0]);
+			                                       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+			                                       LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+			                                       0,
+			                                       LIBUSB_HOTPLUG_MATCH_ANY,
+			                                       LIBUSB_HOTPLUG_MATCH_ANY,
+			                                       LIBUSB_HOTPLUG_MATCH_ANY,
+			                                       ctlra_usb_impl_hotplug_cb,
+			                                       NULL, &hp[0]);
 			if (LIBUSB_SUCCESS != ret) {
 				printf("hotplug register failure\n");
 			}
@@ -110,7 +137,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 #endif
 
 		if(desc.idVendor  == vid &&
-		   desc.idProduct == pid) {
+		    desc.idProduct == pid) {
 			break;
 		}
 	}
@@ -130,8 +157,8 @@ fail:
 }
 
 int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
-				      int interface,
-				      int handle_idx)
+                                      int interface,
+                                      int handle_idx)
 {
 	if(handle_idx >= CTLRA_USB_IFACE_PER_DEV) {
 		printf("request for handle beyond available iface per dev range\n");
@@ -162,7 +189,7 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	if(ret != LIBUSB_SUCCESS) {
 		printf("Error in claiming interface\n");
 		int kernel_active = libusb_kernel_driver_active(handle,
-							interface);
+		                    interface);
 		if(kernel_active)
 			printf("=> Kernel has claimed the interface. Stop"
 			       "other applications using this device and retry\n");
@@ -176,13 +203,13 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 }
 
 int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
-				      uint32_t endpoint, uint8_t *data,
-				      uint32_t size)
+                                      uint32_t endpoint, uint8_t *data,
+                                      uint32_t size)
 {
 	int transferred;
 	const uint32_t timeout = 10;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
-					  data, size, &transferred, timeout);
+	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
@@ -193,13 +220,13 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 }
 
 int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
-				       uint32_t endpoint, uint8_t *data,
-				       uint32_t size)
+                                       uint32_t endpoint, uint8_t *data,
+                                       uint32_t size)
 {
 	int transferred;
 	const uint32_t timeout = 100;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
-					  data, size, &transferred, timeout);
+	                                  data, size, &transferred, timeout);
 	if (r < 0) {
 		fprintf(stderr, "intr error %d\n", r);
 		return r;
@@ -208,13 +235,13 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 }
 
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
-				  uint32_t endpoint, uint8_t *data,
-				  uint32_t size)
+                                  uint32_t endpoint, uint8_t *data,
+                                  uint32_t size)
 {
 	const uint32_t timeout = 1000;
 	int transferred;
 	int ret = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
-				       data, size, &transferred, timeout);
+	                               data, size, &transferred, timeout);
 	if (ret < 0) {
 		fprintf(stderr, "%s intr error %d\n", __func__, ret);
 		return ret;
@@ -234,9 +261,8 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 			if(ret == LIBUSB_ERROR_NOT_FOUND) {
 				// Seems to always happen? LibUSB bug?
 				//printf("%s: release interface error: interface %d not found, continuing...\n", __func__, i);
-			}
-			else if (ret == LIBUSB_ERROR_NO_DEVICE)
-			      printf("%s: release interface error: no device, continuing...\n", __func__);
+			} else if (ret == LIBUSB_ERROR_NO_DEVICE)
+				printf("%s: release interface error: no device, continuing...\n", __func__);
 			else if(ret < 0) {
 				printf("%s:Ctrla Warning: release interface ret: %d\n", __func__, ret);
 			}
