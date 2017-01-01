@@ -54,6 +54,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 						  future);
 		printf("have new dev %p\n", new_dev);
 		if(new_dev) {
+			new_dev->ctlra_context = ctlra;
 			new_dev->dev_list_next = 0;
 
 			// if list empty, add as main ptr
@@ -146,6 +147,8 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 {
 	struct ctlra_t *c = calloc(1, sizeof(struct ctlra_t));
 	if(!c) return 0;
+
+	/* register USB hotplug etc */
 
 	return c;
 }

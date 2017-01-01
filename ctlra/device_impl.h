@@ -57,7 +57,8 @@ typedef const char* (*ctlra_dev_impl_control_get_name)
 #define CTLRA_USB_IFACE_PER_DEV 2
 
 struct ctlra_dev_t {
-	/* Next in list */
+	/* Instance and next in list */
+	struct ctlra_t     *ctlra_context;
 	struct ctlra_dev_t *dev_list_next;
 
 	/* Static Device Info  */

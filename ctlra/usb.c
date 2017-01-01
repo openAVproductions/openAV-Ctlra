@@ -28,6 +28,12 @@ static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 	return 0;
 }
 
+static void hotplug_func(struct ctlra_dev_t* dev, uint32_t num_events,
+		  struct ctlra_event_t** event, void *userdata)
+{
+	printf("%s\n", __func__);
+}
+
 static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
                                      libusb_device *dev,
                                      libusb_hotplug_event event,
@@ -52,6 +58,13 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 		printf("Device attached: %04x:%04x, serial %s\n",
 		       desc.idVendor, desc.idProduct, buf);
+
+		// call application "hotplug accept" callback here,
+		// which provides the event func / ud pair
+
+		ctlra_dev_connect((struct ctlra_t *)user_data,
+				  CTLRA_DEV_NI_KONTROL_X1_MK2,
+				  hotplug_func, 0x0, 0x0);
 	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
 		printf("Device removed: %04x:%04x, serial %d\n",
@@ -88,7 +101,6 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 		if (!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
 			printf ("Ctlra: No Hotplug on this platform\n");
 		} else {
-
 			libusb_hotplug_callback_handle hp[2];
 			ret = libusb_hotplug_register_callback(NULL,
 			                                       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
@@ -98,7 +110,8 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			                                       LIBUSB_HOTPLUG_MATCH_ANY,
 			                                       LIBUSB_HOTPLUG_MATCH_ANY,
 			                                       ctlra_usb_impl_hotplug_cb,
-			                                       NULL, &hp[0]);
+			                                       ctlra_dev->ctlra_context,
+							       &hp[0]);
 			if (LIBUSB_SUCCESS != ret) {
 				printf("hotplug register failure\n");
 			}
