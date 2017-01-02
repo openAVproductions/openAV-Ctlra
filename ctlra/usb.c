@@ -66,6 +66,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		//ctlra->accept_func(
 		//
 		printf("calling hotplug accept now\n");
+#warning TODO: DO VID PID lookup for device (HARDCODED NOW, FIXME!)
 		int accepted = ctlra_impl_accept_dev(ctlra,
 					CTLRA_DEV_NI_KONTROL_X1_MK2);
 		
@@ -289,7 +290,9 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if (r < 0) {
-		fprintf(stderr, "intr error %d\n", r);
+		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+			libusb_error_name(r), libusb_strerror(r));
+		ctlra_dev_impl_banish(dev);
 		return r;
 	}
 	return transferred;
@@ -301,11 +304,13 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	const uint32_t timeout = 1000;
 	int transferred;
-	int ret = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
+	int r = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
 	                               data, size, &transferred, timeout);
-	if (ret < 0) {
-		fprintf(stderr, "%s intr error %d\n", __func__, ret);
-		return ret;
+	if (r < 0) {
+		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+			libusb_error_name(r), libusb_strerror(r));
+		ctlra_dev_impl_banish(dev);
+		return r;
 	}
 	return transferred;
 

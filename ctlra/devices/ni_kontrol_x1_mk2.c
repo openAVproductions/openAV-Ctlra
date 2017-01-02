@@ -325,8 +325,8 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_X1_MK2_LED_COUNT);
 	dev->lights[0] = 0x80;
-#warning TODO: re-enable light flush on close after HOTPLUG-remove working
-	//ni_kontrol_x1_mk2_light_flush(base, 1);
+	if(!base->banished)
+		ni_kontrol_x1_mk2_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
