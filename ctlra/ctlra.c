@@ -140,12 +140,6 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		return;
 
 	memset(info, 0, sizeof(*info));
-
-	snprintf(info->vendor, sizeof(info->vendor), "%s", "Unknown");
-	snprintf(info->device, sizeof(info->device), "%s", "Unknown");
-	snprintf(info->serial, sizeof(info->serial), "%s", "Unknown");
-	info->serial_number = 0;
-
 	snprintf(info->vendor, sizeof(info->vendor), "%s", dev->info.vendor);
 	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
 	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);

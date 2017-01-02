@@ -209,7 +209,6 @@ static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-	dev->lights[0] = 0x80;
 
 	/* FX ON buttons have orange and blue */
 	if(light_id == NI_KONTROL_Z1_LED_FX_ON_LEFT ||
