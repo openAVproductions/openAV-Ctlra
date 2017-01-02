@@ -94,20 +94,30 @@ void ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func ef)
 
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
-	const struct ctlra_t *ctlra = dev->ctlra_context;
+	struct ctlra_t *ctlra = dev->ctlra_context;
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 
 	if(dev && dev->disconnect) {
-		int ret = dev->disconnect(dev);
+		if(dev_iter == dev) {
+			/* remove first in list */
+			ctlra->dev_list = dev_iter->dev_list_next;
+			int ret = dev->disconnect(dev);
+			return ret;
+		}
 		/* Remove the dev from the list */
 		while(dev_iter) {
-			if(dev_iter == dev) {
-				/* remove this item */
+			if(dev_iter->dev_list_next == dev) {
+				/* remove next item */
 				printf("found %p in the list, removing\n", dev);
+				dev_iter->dev_list_next =
+					dev_iter->dev_list_next->dev_list_next;
+				printf("dev_iter->dev_list_next now = %p\n",
+				       dev_iter->dev_list_next);
 				break;
 			}
 			dev_iter = dev_iter->dev_list_next;
 		}
+		int ret = dev->disconnect(dev);
 		return ret;
 	}
 	return -ENOTSUP;
