@@ -7,9 +7,6 @@
 #include <signal.h>
 #include <string.h>
 
-
-#include <sys/queue.h>
-
 #include "ctlra.h"
 #include "global.h"
 
@@ -36,14 +33,6 @@ static const struct ctlra_supported_t ctlra_supported[] = {
 };
 #define CTLRA_SUPPORTED_SIZE (sizeof(ctlra_supported) /\
 			     sizeof(ctlra_supported[0]))
-
-struct ctlra_t {
-	TAILQ_ENTRY(ctlra_t) list;
-	struct ctlra_dev_t* ctlra;
-	update_state_cb update_state;
-};
-TAILQ_HEAD(ctlra_list_t, ctlra_t);
-
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,
 		    ctlra_event_func *event_func,

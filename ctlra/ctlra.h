@@ -93,6 +93,9 @@ struct ctlra_dev_info_t {
 /** A callback function that the application implements, called by the
  * Ctlra library when probing for supported devices. The application must
  * accept the device, and provide *ctlra_event_func* and userdata to Ctlra.
+ * \retval 1 Accept the device - Ctlra will connect to the device
+ * \retval 0 Reject the device - Ctlra does not connect, and the device
+ *           is not used by this instance of Ctlra
  */
 typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
 				     ctlra_event_func *event_func,
@@ -112,9 +115,9 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
  * the opts argument to ctlra_create(). This function causes the
  * ctlra_accept_dev callback function to be called in the application, once
  * for each device that is understood by Ctlra.
+ * \retval The number of devices accepted and connected to successfully
  */
-int ctlra_probe(struct ctlra_t *ctlra,
-		ctlra_accept_dev_func accept_func,
+int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		void *userdata);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
@@ -199,7 +202,7 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
  * pointer.
  * @retval 0 Invalid control_id requested
  * @retval Ptr A pointer to a string representing the control name
- * */
+ */
 const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
