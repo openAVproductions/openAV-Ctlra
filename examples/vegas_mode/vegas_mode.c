@@ -27,7 +27,7 @@ struct ctlra_supported_t {
 static const struct ctlra_supported_t ctlra_supported[] = {
 	{0x17cc, 0x1400, kontrol_d2_func, kontrol_d2_update_state},
 	{0x17cc, 0x1210, kontrol_z1_func, kontrol_z1_update_state},
-	//{0x17cc, 0x12 TODO,kontrol_f1_func, kontrol_f1_update_state},
+	{0x17cc, 0x1120, kontrol_f1_func, kontrol_f1_update_state},
 	{0x17cc, 0x1220, kontrol_x1_func, kontrol_x1_update_state},
 	//{0x17cc, 0x12, mm_func, mm_update_state},
 };
