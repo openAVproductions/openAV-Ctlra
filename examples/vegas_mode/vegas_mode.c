@@ -21,17 +21,18 @@ void sighndlr(int signal)
 }
 
 struct ctlra_supported_t {
-	enum ctlra_dev_id_t dev_id;
+	uint32_t vendor_id;
+	uint32_t device_id;
 	ctlra_poll_func ctlra_poll;
 	update_state_cb update_state;
 };
 
 static const struct ctlra_supported_t ctlra_supported[] = {
-	{CTLRA_DEV_NI_KONTROL_D2, kontrol_d2_func, kontrol_d2_update_state},
-	{CTLRA_DEV_NI_KONTROL_Z1, kontrol_z1_func, kontrol_z1_update_state},
-	{CTLRA_DEV_NI_KONTROL_F1, kontrol_f1_func, kontrol_f1_update_state},
-	{CTLRA_DEV_NI_KONTROL_X1_MK2, kontrol_x1_func, kontrol_x1_update_state},
-	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, mm_func, mm_update_state},
+	{0x17cc, 0x1400, kontrol_d2_func, kontrol_d2_update_state},
+	{0x17cc, 0x1210, kontrol_z1_func, kontrol_z1_update_state},
+	//{0x17cc, 0x12 TODO,kontrol_f1_func, kontrol_f1_update_state},
+	{0x17cc, 0x1220, kontrol_x1_func, kontrol_x1_update_state},
+	//{0x17cc, 0x12, mm_func, mm_update_state},
 };
 #define CTLRA_SUPPORTED_SIZE (sizeof(ctlra_supported) /\
 			     sizeof(ctlra_supported[0]))
@@ -49,16 +50,23 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 		    void **userdata_for_event_func,
 		    void *userdata)
 {
-	printf("%s, vendor %s, dev %s, vid %d, pid %d\n", __func__,
-	       info->vendor, info->device, info->vendor_id, info->device_id);
-	if(info->vendor_id == 0x17cc && info->device_id == 0x1210) {
-		printf("setting z1 func; %p\n", kontrol_z1_func);
-		*event_func = kontrol_z1_func;
-		*userdata_for_event_func = 0x1234;
+	/* Application *MUST* handle each device that it knows - or provide
+	 * a generic function for handling events and writing feedback. */
+	for(unsigned i = 0; i < CTLRA_SUPPORTED_SIZE; i++) {
+		if(info->vendor_id == ctlra_supported[i].vendor_id &&
+		   info->device_id == ctlra_supported[i].device_id) {
+			*event_func = ctlra_supported[i].ctlra_poll;
+			*userdata_for_event_func = userdata;
+			printf("App: accepting %s %s (%x:%x)\n",
+			       info->vendor, info->device,
+			       info->vendor_id, info->device_id);
+			/* Accept */
+			return 1;
+		}
 	}
-	/* Accept */
-	return 1;
-
+	printf("App: Rejecting controller %s %s (%x:%x), no App for this device\n",
+	       info->vendor, info->device,
+	       info->vendor_id, info->device_id);
 	/* Deny */
 	return 0;
 }

@@ -194,8 +194,7 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 			void *app_event_func_userdata = 0x0;
 			int accepted = accept_func(&dev->info, &app_event_func,
 						&app_event_func_userdata, userdata);
-			printf("accept %d, ev %p, ud %p\n", accepted,
-			       app_event_func, app_event_func_userdata);
+			//printf("accept %d, ev %p, ud %p\n", accepted, app_event_func, app_event_func_userdata);
 			if(!accepted) {
 				ctlra_dev_disconnect(dev);
 				continue;
