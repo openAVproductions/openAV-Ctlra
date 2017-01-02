@@ -306,11 +306,11 @@ ni_kontrol_f1_disconnect(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 
-
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, sizeof(dev->lights));
 	dev->lights[0] = 0x80;
-	ni_kontrol_f1_light_flush(base, 1);
+	if(!base->banished)
+		ni_kontrol_f1_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);

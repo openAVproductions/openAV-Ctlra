@@ -449,7 +449,8 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 
 	/* Turn off all lights */
 	memset(dev->lights, 0x0, sizeof(dev->lights));
-	ni_kontrol_d2_light_flush(&dev->base, 1);
+	if(!base->banished)
+		ni_kontrol_d2_light_flush(&dev->base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);

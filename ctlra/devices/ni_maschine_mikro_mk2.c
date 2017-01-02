@@ -345,7 +345,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
-	ni_maschine_mikro_mk2_light_flush(base, 1);
+	if(!base->banished)
+		ni_maschine_mikro_mk2_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
