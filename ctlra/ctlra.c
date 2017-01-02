@@ -176,7 +176,8 @@ static void ctlra_dummy_event_func(struct ctlra_dev_t* dev,
 {
 }
 
-int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
+int ctlra_probe(struct ctlra_t *ctlra,
+		ctlra_accept_dev_func accept_func,
 		void *userdata)
 {
 	/* For each device that we have, iter, attempt to open, and
@@ -190,11 +191,18 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 							    0 /* userdata */,
 							    0x0);
 		if(dev) {
-			ctlra_event_func app_event_func = 0x0;
-			void *app_event_func_userdata = 0x0;
-			int accepted = accept_func(&dev->info, &app_event_func,
-						&app_event_func_userdata, userdata);
-			//printf("accept %d, ev %p, ud %p\n", accepted, app_event_func, app_event_func_userdata);
+			ctlra_event_func    app_event_func    = 0x0;
+			ctlra_feedback_func app_feedback_func = 0x0;
+			void *              app_func_userdata = 0x0;
+
+			int accepted = accept_func(&dev->info,
+						   &app_event_func,
+						   &app_feedback_func,
+						   &app_func_userdata,
+						   userdata);
+
+			printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
+			       app_event_func, app_feedback_func, app_func_userdata);
 			if(!accepted) {
 				ctlra_dev_disconnect(dev);
 				continue;

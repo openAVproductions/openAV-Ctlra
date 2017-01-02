@@ -103,10 +103,15 @@ struct ctlra_event_t {
 	};
 };
 
-/** Callback function that is called for each event */
+/** Callback function that is called for event(s) */
 typedef void (*ctlra_event_func)(struct ctlra_dev_t* dev,
 				uint32_t num_events,
 				struct ctlra_event_t** event,
 				void *userdata);
+
+/** Callback function that is called to update the feedback on the device,
+ * eg for leds, buttons and screens */
+typedef void (*ctlra_feedback_func)(struct ctlra_dev_t *dev,
+				    void *userdata);
 
 #endif /* OPENAV_CTLRA_EVENT */

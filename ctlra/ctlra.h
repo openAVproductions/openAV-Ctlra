@@ -99,6 +99,7 @@ struct ctlra_dev_info_t {
  */
 typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
 				     ctlra_event_func *event_func,
+				     ctlra_feedback_func *feedback_func,
 				     void **userdata_for_event_func,
 				     void *userdata_for_accept_func);
 
