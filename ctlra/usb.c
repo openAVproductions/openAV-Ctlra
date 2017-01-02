@@ -15,6 +15,7 @@ static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
 /* From cltra.c */
+extern enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
 extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, enum ctlra_dev_id_t dev_id);
 
 static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
@@ -65,8 +66,11 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 			ctlra_impl_get_id_by_vid_pid(desc.idVendor,
 						     desc.idProduct);
 		if(dev_id == CTLRA_DEV_INVALID) {
-			/* Device is not supported by Ctlra */
-			printf("hotplugged device not supported by Ctlra\n");
+			/* Device is not supported by Ctlra, so release
+			 * the libusb handle which was opened to retrieve
+			 * the serial from the device */
+			libusb_close(handle);
+			//printf("hotplugged device not supported by Ctlra\n");
 			return -1;
 		}
 
@@ -212,7 +216,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	/* now that we've found the device, open the handle */
 	int ret = libusb_open(usb_dev, &handle);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Error in claiming interface\n");
+		printf("Error in opening interface, dev %s\n",
+		       ctlra_dev->info.device);
 		return -1;
 	}
 
@@ -233,7 +238,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 
 	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Error in claiming interface\n");
+		printf("Error in claiming interface, dev %s\n",
+		       ctlra_dev->info.device);
 		int kernel_active = libusb_kernel_driver_active(handle,
 		                    interface);
 		if(kernel_active)

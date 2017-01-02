@@ -34,6 +34,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1400, ni_kontrol_d2_connect},
 	/* Hotplug of D2 shows up root device as new, not D2 subdev */
 	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1403, ni_kontrol_d2_connect},
+
 	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
 	{CTLRA_DEV_NI_KONTROL_F1, 0x17cc, 0x1120, ni_kontrol_f1_connect},
 	{CTLRA_DEV_NI_KONTROL_X1_MK2, 0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
@@ -119,7 +120,7 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 				dev_iter->dev_list_next =
 					dev_iter->dev_list_next->dev_list_next;
 
-#if 1
+#if 0
 		/* Debug prints */
 		dev_iter = ctlra->dev_list;
 		int i = 0;
@@ -136,7 +137,7 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 		printf("disconnect dev called now.. %p\n", dev);
 		int ret = dev->disconnect(dev);
 
-#if 1
+#if 0
 		printf("post disconnect() call, before return, dev list\n");
 		/* Debug prints */
 		dev_iter = ctlra->dev_list;
