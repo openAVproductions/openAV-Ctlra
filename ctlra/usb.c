@@ -136,7 +136,6 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 	libusb_device *dev;
 	int i = 0, j = 0;
 	uint8_t path[USB_PATH_MAX];
-	uint8_t i_serial = 0;
 
 	int cnt = libusb_get_device_list(NULL, &devs);
 	if (cnt < 0)
@@ -166,7 +165,9 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 
 		if(desc.idVendor  == vid &&
 		    desc.idProduct == pid) {
-			i_serial = desc.iSerialNumber;
+			ctlra_dev->info.serial_number = desc.iSerialNumber;
+			ctlra_dev->info.vendor_id     = desc.idVendor;
+			ctlra_dev->info.device_id     = desc.idProduct;
 			break;
 		}
 	}
@@ -175,8 +176,8 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 
 	if(!dev)
 		goto fail;
-	ctlra_dev->info.serial_number = i_serial;
 	ctlra_dev->usb_device = dev;
+
 	memset(ctlra_dev->usb_interface, 0,
 	       sizeof(ctlra_dev->usb_interface));
 

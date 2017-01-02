@@ -168,6 +168,41 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	return c;
 }
 
+
+static void ctlra_dummy_event_func(struct ctlra_dev_t* dev,
+				   uint32_t num_events,
+				   struct ctlra_event_t** events,
+				   void *userdata)
+{
+}
+
+int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
+		void *userdata)
+{
+	/* For each device that we have, iter, attempt to open, and
+	 * call the application supplied accept_func callback */
+
+
+	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
+		struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
+							    devices[i].id,
+							    ctlra_dummy_event_func,
+							    0 /* userdata */,
+							    0x0);
+		if(dev) {
+			ctlra_event_func app_event_func = 0x0;
+			void *app_event_func_userdata = 0x0;
+			int accept = accept_func(&dev->info, &app_event_func,
+						&app_event_func_userdata, userdata);
+			printf("accept %d, ev %p, ud %p\n", accept,
+			       app_event_func, app_event_func_userdata);
+		}
+	}
+
+	return 0;
+}
+
+
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);

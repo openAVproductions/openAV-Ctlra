@@ -95,8 +95,8 @@ struct ctlra_dev_info_t {
  * accept the device, and provide *ctlra_event_func* and userdata to Ctlra.
  */
 typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
-				     ctlra_event_func event_func,
-				     void *userdata_for_event_func,
+				     ctlra_event_func *event_func,
+				     void **userdata_for_event_func,
 				     void *userdata_for_accept_func);
 
 /** Create a new cltra context. This context holds state about the
@@ -113,7 +113,9 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
  * ctlra_accept_dev callback function to be called in the application, once
  * for each device that is understood by Ctlra.
  */
-int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func);
+int ctlra_probe(struct ctlra_t *ctlra,
+		ctlra_accept_dev_func accept_func,
+		void *userdata);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.

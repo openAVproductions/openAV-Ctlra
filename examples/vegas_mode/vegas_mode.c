@@ -43,6 +43,26 @@ struct ctlra_t {
 };
 TAILQ_HEAD(ctlra_list_t, ctlra_t);
 
+
+int accept_dev_func(const struct ctlra_dev_info_t *info,
+		    ctlra_event_func *event_func,
+		    void **userdata_for_event_func,
+		    void *userdata)
+{
+	printf("%s, vendor %s, dev %s, vid %d, pid %d\n", __func__,
+	       info->vendor, info->device, info->vendor_id, info->device_id);
+	if(info->vendor_id == 0x17cc && info->device_id == 0x1210) {
+		printf("setting z1 func; %p\n", kontrol_z1_func);
+		*event_func = kontrol_z1_func;
+		*userdata_for_event_func = 0x1234;
+	}
+	/* Accept */
+	return 1;
+
+	/* Deny */
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
 	signal(SIGINT, sighndlr);
@@ -57,9 +77,26 @@ int main(int argc, char** argv)
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 
+
+	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	printf("probe num_devs %d\n", num_devs);
+
+	audio_init(&dummy);
+
+	while(!done) {
+		ctlra_idle_iter(ctlra);
+		usleep(100);
+	}
+
+	audio_exit();
+
+	ctlra_exit(ctlra);
+
+	return 0;
+
+#if 0
 	struct ctlra_list_t ctlra_list;
 	TAILQ_INIT(&ctlra_list);
-
 	for(uint32_t i = 0; i < CTLRA_SUPPORTED_SIZE; i++) {
 		const struct ctlra_supported_t* sup = &ctlra_supported[i];
 		struct ctlra_dev_t* ctlra_dev = ctlra_dev_connect(ctlra,
@@ -106,16 +143,13 @@ int main(int argc, char** argv)
 		usleep(100);
 	}
 
-	audio_exit();
+	audio_init(&dummy);
 
-	/* Disconnect all */
-	while ((dev = TAILQ_FIRST(&ctlra_list))) {
-		TAILQ_REMOVE(&ctlra_list, dev, list);
-		//ctlra_dev_disconnect(dev->ctlra);
-		free(dev);
-	}
+	audio_exit();
 
 	ctlra_exit(ctlra);
 
 	return 0;
+#endif
+
 }
