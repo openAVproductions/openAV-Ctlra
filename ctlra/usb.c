@@ -229,8 +229,6 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 		return -1;
 	}
 
-	printf("usb iface open, serial %s\n", ctlra_dev->info.serial);
-
 	/* Commit to success: update handles in struct and return ok*/
 	ctlra_dev->usb_interface[handle_idx] = handle;
 

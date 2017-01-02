@@ -56,7 +56,6 @@ int main(int argc, char** argv)
 	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
-	printf("ctlra %p\n", ctlra);
 
 	struct ctlra_list_t ctlra_list;
 	TAILQ_INIT(&ctlra_list);
