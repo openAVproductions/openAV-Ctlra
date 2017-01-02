@@ -213,8 +213,12 @@ ni_kontrol_x1_mk2_poll(struct ctlra_dev_t *base)
 		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 							   USB_ENDPOINT_READ,
 							   buf, 1024);
-		if(nbytes == 0)
-			return 0;
+		if(nbytes <= 0) {
+			if(nbytes < 0)
+				printf("nbytes = %d, returning -1 from %s\n",
+				       nbytes, __func__);
+			return -1;
+		}
 
 		switch(nbytes) {
 		case 31: {
@@ -321,10 +325,12 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_X1_MK2_LED_COUNT);
 	dev->lights[0] = 0x80;
-	ni_kontrol_x1_mk2_light_flush(base, 1);
+#warning TODO: re-enable light flush on close after HOTPLUG-remove working
+	//ni_kontrol_x1_mk2_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
+	dev = 0x0;
 	return 0;
 }
 

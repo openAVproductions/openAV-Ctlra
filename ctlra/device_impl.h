@@ -84,6 +84,7 @@ struct ctlra_dev_t {
 	/* Function pointers to poll events from device */
 	ctlra_dev_impl_poll poll;
 	ctlra_dev_impl_disconnect disconnect;
+	uint8_t skip_poll;
 
 	/* Function pointers to write feedback to device */
 	ctlra_dev_impl_light_set light_set;

@@ -254,8 +254,18 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
+	//if(r == LIBUSB_ERROR_NO_DEVICE)
+	if(r == LIBUSB_ERROR_IO)
+	{
+		// This is an error we handle - IO error device disconnected
+		// (AKA, somebody tripped over the cable)
+		//ctlra_dev_disconnect(dev);
+		dev->skip_poll = 1;
+		return -1;
+	}
 	if (r < 0) {
-		fprintf(stderr, "intr error %d\n", r);
+		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+			libusb_error_name(r), libusb_strerror(r));
 		return r;
 	}
 	return transferred;

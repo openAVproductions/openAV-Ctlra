@@ -79,8 +79,9 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 
 uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 {
-	if(dev && dev->poll)
+	if(dev && dev->poll && !dev->skip_poll) {
 		return dev->poll(dev);
+	}
 	return 0;
 }
 
@@ -94,23 +95,52 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+	printf("disco %s, %p\n", dev->info.device, dev);
 
 	if(dev && dev->disconnect) {
 		if(dev_iter == dev) {
+			printf("%s: dev iter == first item, disco & return\n",
+			       __func__);
 			ctlra->dev_list = dev_iter->dev_list_next;
 			return dev->disconnect(dev);
 		}
 
 		while(dev_iter) {
 			if(dev_iter->dev_list_next == dev) {
+				printf("%s:%d dev iter == dev, remove dev's next = %p\n", __func__, __LINE__, dev->dev_list_next);
 				/* remove next item */
 				dev_iter->dev_list_next =
 					dev_iter->dev_list_next->dev_list_next;
+
+#if 1
+		/* Debug prints */
+		dev_iter = ctlra->dev_list;
+		int i = 0;
+		while(dev_iter) {
+			printf("%d: %s\n", i++, dev_iter->info.device);
+			dev_iter = dev_iter->dev_list_next;
+		}
+#endif
+
 				break;
 			}
 			dev_iter = dev_iter->dev_list_next;
 		}
-		return dev->disconnect(dev);
+		printf("disconnect dev called now.. %p\n", dev);
+		int ret = dev->disconnect(dev);
+
+#if 1
+		printf("post disconnect() call, before return, dev list\n");
+		/* Debug prints */
+		dev_iter = ctlra->dev_list;
+		int i = 0;
+		while(dev_iter) {
+			printf("%d: %s\n", i++, dev_iter->info.device);
+			dev_iter = dev_iter->dev_list_next;
+		}
+#endif
+
+		return ret;
 	}
 	return -ENOTSUP;
 }
@@ -226,12 +256,27 @@ int ctlra_probe(struct ctlra_t *ctlra,
 
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
+
 	ctlra_impl_usb_idle_iter(ctlra);
+#if 0
+	printf("%s, listing devs now\n", __func__); {
+		/* Debug prints */
+		struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+		int i = 0;
+		while(dev_iter) {
+			printf("%d: %s\n", i++, dev_iter->info.device);
+			dev_iter = dev_iter->dev_list_next;
+		}
+	}
+#endif
 
 	/* Poll events from all */
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		ctlra_dev_poll(dev_iter);
+		//printf("polling %p, %s\n", dev_iter, dev_iter->info.device);
+		int poll = ctlra_dev_poll(dev_iter);
+		if(poll > 0)
+			printf("poll returned %d, dev %s\n", poll, dev_iter->info.device);
 		dev_iter = dev_iter->dev_list_next;
 		if(dev_iter == 0)
 			break;
@@ -240,10 +285,10 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		dev_iter->feedback_func(dev_iter, dev_iter->event_func_userdata);
+		if(!dev_iter->skip_poll) {
+			dev_iter->feedback_func(dev_iter, dev_iter->event_func_userdata);
+		}
 		dev_iter = dev_iter->dev_list_next;
-		if(dev_iter == 0)
-			break;
 	}
 }
 
@@ -255,8 +300,6 @@ void ctlra_exit(struct ctlra_t *ctlra)
 		struct ctlra_dev_t *dev_free = dev_iter;
 		dev_iter = dev_iter->dev_list_next;
 		ctlra_dev_disconnect(dev_free);
-		if(dev_iter == 0)
-			break;
 	}
 
 	ctlra_impl_usb_shutdown();
