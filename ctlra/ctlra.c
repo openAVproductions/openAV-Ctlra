@@ -55,14 +55,12 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 						  userdata,
 						  future);
 		if(new_dev) {
-			printf("have new dev %p\n", new_dev);
 			new_dev->ctlra_context = ctlra;
 			new_dev->dev_list_next = 0;
 
 			// if list empty, add as main ptr
 			if(ctlra->dev_list == 0) {
 				ctlra->dev_list = new_dev;
-				printf("have added new dev to start of list %p\n", new_dev);
 				return new_dev;
 			}
 
@@ -71,8 +69,6 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 			while(dev_iter->dev_list_next)
 				dev_iter = dev_iter->dev_list_next;
 			dev_iter->dev_list_next = new_dev;
-			printf("added new %p to existing %p\n", new_dev,
-			       dev_iter);
 			return new_dev;
 		}
 	}
@@ -99,26 +95,20 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 
 	if(dev && dev->disconnect) {
 		if(dev_iter == dev) {
-			/* remove first in list */
 			ctlra->dev_list = dev_iter->dev_list_next;
-			int ret = dev->disconnect(dev);
-			return ret;
+			return dev->disconnect(dev);
 		}
-		/* Remove the dev from the list */
+
 		while(dev_iter) {
 			if(dev_iter->dev_list_next == dev) {
 				/* remove next item */
-				printf("found %p in the list, removing\n", dev);
 				dev_iter->dev_list_next =
 					dev_iter->dev_list_next->dev_list_next;
-				printf("dev_iter->dev_list_next now = %p\n",
-				       dev_iter->dev_list_next);
 				break;
 			}
 			dev_iter = dev_iter->dev_list_next;
 		}
-		int ret = dev->disconnect(dev);
-		return ret;
+		return dev->disconnect(dev);
 	}
 	return -ENOTSUP;
 }
@@ -203,9 +193,7 @@ void ctlra_exit(struct ctlra_t *ctlra)
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
 		struct ctlra_dev_t *dev_free = dev_iter;
-		printf("iter %p\n", dev_iter);
 		dev_iter = dev_iter->dev_list_next;
-		printf("iter next %p\n", dev_iter);
 		ctlra_dev_disconnect(dev_free);
 		if(dev_iter == 0)
 			break;
