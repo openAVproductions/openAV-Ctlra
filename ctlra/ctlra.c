@@ -192,9 +192,10 @@ int ctlra_probe(struct ctlra_t *ctlra,
 						   &app_feedback_func,
 						   &app_func_userdata,
 						   userdata);
-
+#if 0
 			printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
 			       app_event_func, app_feedback_func, app_func_userdata);
+#endif
 			dev->event_func    = app_event_func;
 			dev->feedback_func = app_feedback_func;
 			dev->event_func_userdata = app_func_userdata;
