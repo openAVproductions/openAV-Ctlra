@@ -38,9 +38,11 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 
 struct ctlra_t
 {
-	// App specific hotplug device arrived callback
-	uint32_t thingy;
+	/* Accept callback for application */
+	ctlra_accept_dev_func accept_dev_func;
+	void *accept_dev_func_userdata;
 
+	/* Linked list of devices currently in use */
 	struct ctlra_dev_t *dev_list;
 };
 
@@ -168,6 +170,42 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	return c;
 }
 
+int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
+			  enum ctlra_dev_id_t dev_id)
+{
+	struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
+						    dev_id,
+						    0x0,
+						    0 /* userdata */,
+						    0x0);
+	if(dev) {
+		/* TODO: can we not just pass &dev->func directly? */
+		ctlra_event_func    app_event_func    = 0x0;
+		ctlra_feedback_func app_feedback_func = 0x0;
+		void *              app_func_userdata = 0x0;
+
+		int accepted = ctlra->accept_dev_func(&dev->info,
+					&app_event_func,
+					&app_feedback_func,
+					&app_func_userdata,
+					ctlra->accept_dev_func_userdata);
+#if 0
+		printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
+		       app_event_func, app_feedback_func, app_func_userdata);
+#endif
+		dev->event_func    = app_event_func;
+		dev->feedback_func = app_feedback_func;
+		dev->event_func_userdata = app_func_userdata;
+
+		if(!accepted) {
+			ctlra_dev_disconnect(dev);
+			return 0;
+		}
+		return 1;
+	}
+	return 0;
+}
+
 int ctlra_probe(struct ctlra_t *ctlra,
 		ctlra_accept_dev_func accept_func,
 		void *userdata)
@@ -175,37 +213,11 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	/* For each device that we have, iter, attempt to open, and
 	 * call the application supplied accept_func callback */
 	int num_accepted = 0;
+	ctlra->accept_dev_func = accept_func;
+	ctlra->accept_dev_func_userdata = userdata;
 
 	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
-		struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
-							    devices[i].id,
-							    0x0,
-							    0 /* userdata */,
-							    0x0);
-		if(dev) {
-			ctlra_event_func    app_event_func    = 0x0;
-			ctlra_feedback_func app_feedback_func = 0x0;
-			void *              app_func_userdata = 0x0;
-
-			int accepted = accept_func(&dev->info,
-						   &app_event_func,
-						   &app_feedback_func,
-						   &app_func_userdata,
-						   userdata);
-#if 0
-			printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
-			       app_event_func, app_feedback_func, app_func_userdata);
-#endif
-			dev->event_func    = app_event_func;
-			dev->feedback_func = app_feedback_func;
-			dev->event_func_userdata = app_func_userdata;
-
-			if(!accepted) {
-				ctlra_dev_disconnect(dev);
-				continue;
-			}
-			num_accepted++;
-		}
+		int ret = ctlra_impl_accept_dev(ctlra, devices[i].id);
 	}
 
 	return num_accepted;

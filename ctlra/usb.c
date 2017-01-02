@@ -10,6 +10,7 @@
 
 #define USB_PATH_MAX 256
 
+#warning TODO: remove static libusb context, port to cltra instance
 static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
@@ -59,8 +60,12 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Device attached: %04x:%04x, serial %s, ctlra %p\n",
 		       desc.idVendor, desc.idProduct, buf, user_data);
 
+		// lookup the VID/PID pair, see if Ctlra supports it
+		// if so, lookup the dev-id and pass to Connect(), then
+		//
 		// call application "hotplug accept" callback here,
 		// which provides the event func / ud pair
+		//ctlra->accept_func(
 		
 		printf("calling connect now\n");
 		ctlra_dev_connect((struct ctlra_t *)user_data,
