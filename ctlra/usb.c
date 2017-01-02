@@ -244,6 +244,23 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	return 0;
 }
 
+/* Marks a device as failed, and adds it to the disconnect list. After
+ * having been banished, the device instance will not function again */
+void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
+{
+	struct ctlra_t *ctlra = dev->ctlra_context;
+	dev->banished = 1;
+	if(ctlra->banished_list == 0)
+		ctlra->banished_list = dev;
+	else {
+		struct ctlra_dev_t *dev_iter = ctlra->banished_list;
+		while(dev_iter)
+			dev_iter = dev_iter->banished_list_next;
+		dev_iter->banished_list_next = dev;
+		dev->banished_list_next = 0;
+	}
+}
+
 int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
                                       uint32_t endpoint, uint8_t *data,
                                       uint32_t size)
@@ -254,20 +271,10 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
-	//if(r == LIBUSB_ERROR_NO_DEVICE)
-	if(r == LIBUSB_ERROR_IO)
-	{
-		// This is an error we handle - IO error device disconnected
-		// (AKA, somebody tripped over the cable)
-		//ctlra_dev_disconnect(dev);
-		dev->skip_poll = 1;
-		dev->ctlra_context->dev_disco_list = dev;
-		dev->ctlra_context->dev_disco_iters = 1;
-		return -1;
-	}
 	if (r < 0) {
 		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
 			libusb_error_name(r), libusb_strerror(r));
+		ctlra_dev_impl_banish(dev);
 		return r;
 	}
 	return transferred;

@@ -60,11 +60,16 @@ struct ctlra_dev_t {
 	/* Instance and next in list */
 	struct ctlra_t     *ctlra_context;
 	struct ctlra_dev_t *dev_list_next;
+	struct ctlra_dev_t *banished_list_next;
 
 	/* Static Device Info  */
 	int vendor_id;
 	int product_id;
 	int class_id;
+
+	/* when set, the dev is not polled or fed feedback. The device is
+	 * usually banished as the cable is unplugged or due to IO error */
+	uint8_t banished;
 
 	/* usb handle for this hardware device. */
 	void *usb_device;
@@ -84,7 +89,6 @@ struct ctlra_dev_t {
 	/* Function pointers to poll events from device */
 	ctlra_dev_impl_poll poll;
 	ctlra_dev_impl_disconnect disconnect;
-	uint8_t skip_poll;
 
 	/* Function pointers to write feedback to device */
 	ctlra_dev_impl_light_set light_set;
@@ -152,9 +156,8 @@ struct ctlra_t
 
 	/* Linked list of devices currently in use */
 	struct ctlra_dev_t *dev_list;
-
-	struct ctlra_dev_t *dev_disco_list;
-	uint32_t dev_disco_iters;
+	/* List of devices that are banished */
+	struct ctlra_dev_t *banished_list;
 };
 
 /* Macro extern declaration for the connect function */

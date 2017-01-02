@@ -69,7 +69,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 
 uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 {
-	if(dev && dev->poll && !dev->skip_poll) {
+	if(dev && dev->poll && !dev->banished) {
 		return dev->poll(dev);
 	}
 	return 0;
@@ -265,8 +265,10 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	while(dev_iter) {
 		//printf("polling %p, %s\n", dev_iter, dev_iter->info.device);
 		int poll = ctlra_dev_poll(dev_iter);
-		if(poll > 0)
-			printf("poll returned %d, dev %s\n", poll, dev_iter->info.device);
+		if(poll > 0) {
+			printf("poll returned %d, dev %s\n", poll,
+			       dev_iter->info.device);
+		}
 		dev_iter = dev_iter->dev_list_next;
 		if(dev_iter == 0)
 			break;
@@ -275,17 +277,21 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		if(!dev_iter->skip_poll) {
-			dev_iter->feedback_func(dev_iter, dev_iter->event_func_userdata);
+		if(!dev_iter->banished) {
+			dev_iter->feedback_func(dev_iter,
+					dev_iter->event_func_userdata);
 		}
 		dev_iter = dev_iter->dev_list_next;
 	}
 
-	if(ctlra->dev_disco_list && ctlra->dev_disco_iters-- == 0) {
+	while(ctlra->banished_list) {
+		void *tmp = ctlra->banished_list->banished_list_next;
 		printf("disco of dev %p %s now\n",
-		       ctlra->dev_disco_list,
-		       ctlra->dev_disco_list->info.device);
-		ctlra_dev_disconnect(ctlra->dev_disco_list);
+		       ctlra->banished_list,
+		       ctlra->banished_list->info.device);
+		ctlra_dev_disconnect(ctlra->banished_list);
+		/* Forward to next dev (or null) */
+		ctlra->banished_list = tmp;
 	}
 }
 
