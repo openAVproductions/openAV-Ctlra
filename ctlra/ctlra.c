@@ -30,9 +30,8 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
-	/* Device when already plugged in */
+	/* D2 shows as 1400 when plugged in, 1403 on hotplug (due to hub) */
 	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1400, ni_kontrol_d2_connect},
-	/* Hotplug of D2 shows up root device as new, not D2 subdev */
 	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1403, ni_kontrol_d2_connect},
 
 	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
@@ -45,9 +44,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 {
 	for(unsigned i = 0; i < CTLRA_NUM_DEVS; i++) {
-		printf("checking dev %d, id %d\n", i, devices[i].id);
 		if(devices[i].vid == vid && devices[i].pid == pid) {
-			printf("found dev %d, id %d\n", i, devices[i].id);
 			return devices[i].id;
 		}
 	}
@@ -103,51 +100,23 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
-	printf("disco %s, %p\n", dev->info.device, dev);
 
 	if(dev && dev->disconnect) {
 		if(dev_iter == dev) {
-			printf("%s: dev iter == first item, disco & return\n",
-			       __func__);
 			ctlra->dev_list = dev_iter->dev_list_next;
 			return dev->disconnect(dev);
 		}
 
 		while(dev_iter) {
 			if(dev_iter->dev_list_next == dev) {
-				printf("%s:%d dev iter == dev, remove dev's next = %p\n", __func__, __LINE__, dev->dev_list_next);
 				/* remove next item */
 				dev_iter->dev_list_next =
 					dev_iter->dev_list_next->dev_list_next;
-
-#if 0
-		/* Debug prints */
-		dev_iter = ctlra->dev_list;
-		int i = 0;
-		while(dev_iter) {
-			printf("%d: %s\n", i++, dev_iter->info.device);
-			dev_iter = dev_iter->dev_list_next;
-		}
-#endif
-
 				break;
 			}
 			dev_iter = dev_iter->dev_list_next;
 		}
-		printf("disconnect dev called now.. %p\n", dev);
 		int ret = dev->disconnect(dev);
-
-#if 0
-		printf("post disconnect() call, before return, dev list\n");
-		/* Debug prints */
-		dev_iter = ctlra->dev_list;
-		int i = 0;
-		while(dev_iter) {
-			printf("%d: %s\n", i++, dev_iter->info.device);
-			dev_iter = dev_iter->dev_list_next;
-		}
-#endif
-
 		return ret;
 	}
 	return -ENOTSUP;
@@ -227,10 +196,6 @@ int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 					&app_feedback_func,
 					&app_func_userdata,
 					ctlra->accept_dev_func_userdata);
-#if 0
-		printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
-		       app_event_func, app_feedback_func, app_func_userdata);
-#endif
 		dev->event_func    = app_event_func;
 		dev->feedback_func = app_feedback_func;
 		dev->event_func_userdata = app_func_userdata;
@@ -264,29 +229,12 @@ int ctlra_probe(struct ctlra_t *ctlra,
 
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
-
 	ctlra_impl_usb_idle_iter(ctlra);
-#if 0
-	printf("%s, listing devs now\n", __func__); {
-		/* Debug prints */
-		struct ctlra_dev_t *dev_iter = ctlra->dev_list;
-		int i = 0;
-		while(dev_iter) {
-			printf("%d: %s\n", i++, dev_iter->info.device);
-			dev_iter = dev_iter->dev_list_next;
-		}
-	}
-#endif
 
 	/* Poll events from all */
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		//printf("polling %p, %s\n", dev_iter, dev_iter->info.device);
 		int poll = ctlra_dev_poll(dev_iter);
-		if(poll > 0) {
-			printf("poll returned %d, dev %s\n", poll,
-			       dev_iter->info.device);
-		}
 		dev_iter = dev_iter->dev_list_next;
 		if(dev_iter == 0)
 			break;
@@ -304,18 +252,13 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 
 	while(ctlra->banished_list) {
 		void *tmp = ctlra->banished_list->banished_list_next;
-		printf("disco of dev %p %s now\n",
-		       ctlra->banished_list,
-		       ctlra->banished_list->info.device);
 		ctlra_dev_disconnect(ctlra->banished_list);
-		/* Forward to next dev (or null) */
 		ctlra->banished_list = tmp;
 	}
 }
 
 void ctlra_exit(struct ctlra_t *ctlra)
 {
-	/* Iter over devices, removing them */
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
 		struct ctlra_dev_t *dev_free = dev_iter;

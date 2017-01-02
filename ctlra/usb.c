@@ -55,10 +55,10 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		uint8_t buf[255];
 		ctlra_usb_impl_get_serial(handle, desc.iSerialNumber,
 					  buf, 255);
-
+#if 0
 		printf("Device attached: %04x:%04x, serial %s, ctlra %p\n",
 		       desc.idVendor, desc.idProduct, buf, user_data);
-
+#endif
 		// lookup the VID/PID pair, see if Ctlra supports it
 		// if so, lookup the dev-id and pass to Connect(), then
 
@@ -74,14 +74,10 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 			return -1;
 		}
 
-		printf("calling hotplug accept now\n");
 		int accepted = ctlra_impl_accept_dev(ctlra, dev_id);
-		
-#if 0
-		ctlra_dev_connect((struct ctlra_t *)user_data,
-				  CTLRA_DEV_NI_KONTROL_X1_MK2,
-				  hotplug_func, 0x0, 0x0);
-#endif
+		if(!accepted)
+			libusb_close(handle);
+		return 0;
 	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
 		printf("Device removed: %04x:%04x, serial %d\n",
@@ -238,7 +234,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 
 	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Error in claiming interface, dev %s\n",
+		printf("Ctlra: Could not claim interface %d of dev %s,"
+		       "continuing...\n", interface,
 		       ctlra_dev->info.device);
 		int kernel_active = libusb_kernel_driver_active(handle,
 		                    interface);
@@ -282,7 +279,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
@@ -301,7 +298,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
@@ -320,7 +317,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
+		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
