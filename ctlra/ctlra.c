@@ -36,16 +36,6 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
-struct ctlra_t
-{
-	/* Accept callback for application */
-	ctlra_accept_dev_func accept_dev_func;
-	void *accept_dev_func_userdata;
-
-	/* Linked list of devices currently in use */
-	struct ctlra_dev_t *dev_list;
-};
-
 struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 				      enum ctlra_dev_id_t dev_id,
 				      ctlra_event_func event_func,
@@ -289,6 +279,13 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 			dev_iter->feedback_func(dev_iter, dev_iter->event_func_userdata);
 		}
 		dev_iter = dev_iter->dev_list_next;
+	}
+
+	if(ctlra->dev_disco_list && ctlra->dev_disco_iters-- == 0) {
+		printf("disco of dev %p %s now\n",
+		       ctlra->dev_disco_list,
+		       ctlra->dev_disco_list->info.device);
+		ctlra_dev_disconnect(ctlra->dev_disco_list);
 	}
 }
 

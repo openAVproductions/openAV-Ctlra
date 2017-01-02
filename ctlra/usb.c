@@ -261,6 +261,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		// (AKA, somebody tripped over the cable)
 		//ctlra_dev_disconnect(dev);
 		dev->skip_poll = 1;
+		dev->ctlra_context->dev_disco_list = dev;
+		dev->ctlra_context->dev_disco_iters = 1;
 		return -1;
 	}
 	if (r < 0) {

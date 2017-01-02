@@ -138,7 +138,24 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
+
+
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
+
+
+
+struct ctlra_t
+{
+	/* Accept callback for application */
+	ctlra_accept_dev_func accept_dev_func;
+	void *accept_dev_func_userdata;
+
+	/* Linked list of devices currently in use */
+	struct ctlra_dev_t *dev_list;
+
+	struct ctlra_dev_t *dev_disco_list;
+	uint32_t dev_disco_iters;
+};
 
 /* Macro extern declaration for the connect function */
 #define DECLARE_DEV_CONNECT_FUNC(name)					\
