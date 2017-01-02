@@ -67,6 +67,38 @@ struct ctlra_create_opts_t {
 	uint8_t padding[64];
 };
 
+/** Struct that provides info about the controller. Passed to the
+ * application on probe().
+ */
+struct ctlra_dev_info_t {
+	/** Name of the vendor/company */
+	char vendor[CTLRA_DEV_NAME_MAX];
+	/** Name of the device */
+	char device[CTLRA_DEV_NAME_MAX];
+	/** Serial as a string (if applicable) */
+	char serial[CTLRA_DEV_SERIAL_MAX];
+	/** USB Vendor ID */
+	uint32_t vendor_id;
+	/** USB device ID */
+	uint32_t device_id;
+	/** Serial as a number (if applicable) */
+	uint64_t serial_number;
+
+	/** Number of controls the device has of each type. Read eg number
+	 * buttons by accessing th array by *ctlra_event_type_t*
+	 * CTRLA_EVENT_BUTTON */
+	uint32_t control_count[CTLRA_EVENT_T_COUNT];
+};
+
+/** A callback function that the application implements, called by the
+ * Ctlra library when probing for supported devices. The application must
+ * accept the device, and provide *ctlra_event_func* and userdata to Ctlra.
+ */
+typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
+				     ctlra_event_func event_func,
+				     void *userdata_for_event_func,
+				     void *userdata_for_accept_func);
+
 /** Create a new cltra context. This context holds state about the
  * connected devices, hotplug callbacks and backends (usb, bluetooth, etc)
  * for the controllers. The *opts* argument is a pointer to a struct
@@ -74,6 +106,14 @@ struct ctlra_create_opts_t {
  * simple usage, pass NULL.
  */
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
+
+/** Probe for any devices that ctlra understands. This will depend on the
+ * version of the Ctlra library, what compile options were enabled, and
+ * the opts argument to ctlra_create(). This function causes the
+ * ctlra_accept_dev callback function to be called in the application, once
+ * for each device that is understood by Ctlra.
+ */
+int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
@@ -144,23 +184,6 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
 			     uint32_t grid_id,
 			     uint32_t light_id,
 			     uint32_t light_status);
-
-/** Struct that provides info about the controller */
-struct ctlra_dev_info_t {
-	/** Name of the vendor/company */
-	char vendor[CTLRA_DEV_NAME_MAX];
-	/** Name of the device */
-	char device[CTLRA_DEV_NAME_MAX];
-	/** Serial as a string (if applicable) */
-	char serial[CTLRA_DEV_SERIAL_MAX];
-	/** Serial as a number (if applicable) */
-	uint64_t serial_number;
-
-	/** Number of controls the device has of each type. Read eg number
-	 * buttons by accessing th array by *ctlra_event_type_t*
-	 * CTRLA_EVENT_BUTTON */
-	uint32_t control_count[CTLRA_EVENT_T_COUNT];
-};
 
 /** Get the human readable name for the device. The returned pointer is
  * still owned by the ctlra library, the application must not free it */
