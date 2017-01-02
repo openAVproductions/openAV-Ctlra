@@ -78,6 +78,7 @@ struct ctlra_dev_t {
 
 	/* Event callback function */
 	ctlra_event_func event_func;
+	ctlra_feedback_func feedback_func;
 	void* event_func_userdata;
 
 	/* Function pointers to poll events from device */

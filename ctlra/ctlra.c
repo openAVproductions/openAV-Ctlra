@@ -168,14 +168,6 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	return c;
 }
 
-
-static void ctlra_dummy_event_func(struct ctlra_dev_t* dev,
-				   uint32_t num_events,
-				   struct ctlra_event_t** events,
-				   void *userdata)
-{
-}
-
 int ctlra_probe(struct ctlra_t *ctlra,
 		ctlra_accept_dev_func accept_func,
 		void *userdata)
@@ -187,7 +179,7 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
 		struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
 							    devices[i].id,
-							    ctlra_dummy_event_func,
+							    0x0,
 							    0 /* userdata */,
 							    0x0);
 		if(dev) {
@@ -203,6 +195,10 @@ int ctlra_probe(struct ctlra_t *ctlra,
 
 			printf("accept %d, ev %p, fb %p, ud %p\n", accepted,
 			       app_event_func, app_feedback_func, app_func_userdata);
+			dev->event_func    = app_event_func;
+			dev->feedback_func = app_feedback_func;
+			dev->event_func_userdata = app_func_userdata;
+
 			if(!accepted) {
 				ctlra_dev_disconnect(dev);
 				continue;
@@ -219,9 +215,19 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
 
+	/* Poll events from all */
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
 		ctlra_dev_poll(dev_iter);
+		dev_iter = dev_iter->dev_list_next;
+		if(dev_iter == 0)
+			break;
+	}
+
+	/* Then update state of all */
+	dev_iter = ctlra->dev_list;
+	while(dev_iter) {
+		dev_iter->feedback_func(dev_iter, dev_iter->event_func_userdata);
 		dev_iter = dev_iter->dev_list_next;
 		if(dev_iter == 0)
 			break;

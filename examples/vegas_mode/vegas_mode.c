@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 
 
-	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	int num_devs = ctlra_probe(ctlra, accept_dev_func, &dummy);
 	printf("probe num_devs %d\n", num_devs);
 
 	audio_init(&dummy);
