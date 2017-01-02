@@ -76,7 +76,6 @@ int main(int argc, char** argv)
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 
-
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, &dummy);
 	printf("probe num_devs %d\n", num_devs);
 
@@ -92,63 +91,4 @@ int main(int argc, char** argv)
 	ctlra_exit(ctlra);
 
 	return 0;
-
-#if 0
-	struct ctlra_list_t ctlra_list;
-	TAILQ_INIT(&ctlra_list);
-	for(uint32_t i = 0; i < CTLRA_SUPPORTED_SIZE; i++) {
-		const struct ctlra_supported_t* sup = &ctlra_supported[i];
-		struct ctlra_dev_t* ctlra_dev = ctlra_dev_connect(ctlra,
-							      sup->dev_id,
-		                          sup->ctlra_poll,
-		                          &dummy,
-		                          future);
-		if(ctlra_dev) {
-			struct ctlra_t *dev = calloc(1, sizeof(struct ctlra_t));
-			if(!dev) return -1;
-			dev->ctlra = ctlra_dev;
-			dev->update_state = sup->update_state;
-
-			struct ctlra_dev_info_t info;
-			ctlra_dev_get_info(dev->ctlra, &info);
-			printf("Vegas: connected to ctlra_dev %s %s\n",
-			       info.vendor, info.device);
-
-			TAILQ_INSERT_TAIL(&ctlra_list, dev, list);
-		}
-	}
-
-	audio_init(&dummy);
-
-	struct ctlra_t* dev;
-	dummy.revision = 0;
-	uint64_t controller_revision = 0;
-	while(!done) {
-		/* Poll all controllers
-		TAILQ_FOREACH(dev, &ctlra_list, list) {
-			ctlra_dev_poll(dev->ctlra);
-		}
-		*/
-		ctlra_idle_iter(ctlra);
-
-		/* If revision of state is new, update state of controllers */
-		if (dummy.revision != controller_revision) {
-			TAILQ_FOREACH(dev, &ctlra_list, list) {
-				dev->update_state(dev->ctlra, &dummy);
-			}
-			controller_revision = dummy.revision;
-		}
-
-		usleep(100);
-	}
-
-	audio_init(&dummy);
-
-	audio_exit();
-
-	ctlra_exit(ctlra);
-
-	return 0;
-#endif
-
 }
