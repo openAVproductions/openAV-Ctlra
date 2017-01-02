@@ -14,6 +14,9 @@
 static int ctlra_libusb_initialized;
 static struct libusb_context *ctx = 0;
 
+/* From cltra.c */
+extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, enum ctlra_dev_id_t dev_id);
+
 static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 				     uint8_t desc_serial, uint8_t *buffer,
 				     uint32_t buf_size)
@@ -29,18 +32,13 @@ static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 	return 0;
 }
 
-static void hotplug_func(struct ctlra_dev_t* dev, uint32_t num_events,
-		  struct ctlra_event_t** event, void *userdata)
-{
-	printf("%s\n", __func__);
-}
-
 static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
                                      libusb_device *dev,
                                      libusb_hotplug_event event,
                                      void *user_data)
 {
 	int ret;
+	struct ctlra_t *ctlra = user_data;
 	struct libusb_device_descriptor desc;
 	ret = libusb_get_device_descriptor(dev, &desc);
 	if(ret != LIBUSB_SUCCESS) {
@@ -66,11 +64,16 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		// call application "hotplug accept" callback here,
 		// which provides the event func / ud pair
 		//ctlra->accept_func(
+		//
+		printf("calling hotplug accept now\n");
+		int accepted = ctlra_impl_accept_dev(ctlra,
+					CTLRA_DEV_NI_KONTROL_X1_MK2);
 		
-		printf("calling connect now\n");
+#if 0
 		ctlra_dev_connect((struct ctlra_t *)user_data,
 				  CTLRA_DEV_NI_KONTROL_X1_MK2,
 				  hotplug_func, 0x0, 0x0);
+#endif
 	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
 		printf("Device removed: %04x:%04x, serial %d\n",

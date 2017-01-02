@@ -217,7 +217,7 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	ctlra->accept_dev_func_userdata = userdata;
 
 	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
-		int ret = ctlra_impl_accept_dev(ctlra, devices[i].id);
+		num_accepted += ctlra_impl_accept_dev(ctlra, devices[i].id);
 	}
 
 	return num_accepted;
