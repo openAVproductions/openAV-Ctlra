@@ -4,8 +4,9 @@
 #include "ctlra/ctlra.h"
 #include "ctlra/devices/ni_kontrol_x1_mk2.h"
 
-void kontrol_x1_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
+void kontrol_x1_update_state(struct ctlra_dev_t *dev, void *ud)
 {
+	struct dummy_data *d = ud;
 	uint32_t i;
 	int v = d->volume > 0.5f;
 	ctlra_dev_light_set(dev, 15, v * UINT32_MAX);

@@ -23,23 +23,23 @@ int audio_init();
 void audio_exit();
 
 /* Functions to poll / push state to the devs */
-void kontrol_x1_update_state(struct ctlra_dev_t *dev, struct dummy_data *d);
+void kontrol_x1_update_state(struct ctlra_dev_t *dev, void *d);
 void kontrol_x1_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		     struct ctlra_event_t** events, void *userdata);
 
-void kontrol_z1_update_state(struct ctlra_dev_t *dev, struct dummy_data *d);
+void kontrol_z1_update_state(struct ctlra_dev_t *dev, void *d);
 void kontrol_z1_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		     struct ctlra_event_t** events, void *userdata);
 
-void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d);
+void kontrol_d2_update_state(struct ctlra_dev_t *dev, void *d);
 void kontrol_d2_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		     struct ctlra_event_t** events, void *userdata);
 
-void kontrol_f1_update_state(struct ctlra_dev_t *dev, struct dummy_data *d);
+void kontrol_f1_update_state(struct ctlra_dev_t *dev, void *d);
 void kontrol_f1_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		     struct ctlra_event_t** events, void *userdata);
 
-void mm_update_state(struct ctlra_dev_t *dev, struct dummy_data *d);
+void mm_update_state(struct ctlra_dev_t *dev, void *d);
 void mm_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	     struct ctlra_event_t** events, void *userdata);
 

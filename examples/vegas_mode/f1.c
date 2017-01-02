@@ -6,8 +6,9 @@
 #include "ctlra/ctlra.h"
 #include "ctlra/devices/ni_kontrol_f1.h"
 
-void kontrol_f1_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
+void kontrol_f1_update_state(struct ctlra_dev_t *dev, void *ud)
 {
+	struct dummy_data *d = ud;
 	uint32_t i;
 
 	for(i = 0; i < VEGAS_BTN_COUNT; i++)

@@ -87,8 +87,9 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 	ni_kontrol_d2_screen_blit(dev);
 }
 
-void kontrol_d2_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
+void kontrol_d2_update_state(struct ctlra_dev_t *dev, void *ud)
 {
+	struct dummy_data *d = ud;
 	uint32_t i;
 
 	for(i = 0; i < VEGAS_BTN_COUNT; i++)

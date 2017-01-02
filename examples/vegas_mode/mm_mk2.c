@@ -4,8 +4,9 @@
 #include "ctlra/ctlra.h"
 #include "ctlra/devices/ni_maschine_mikro_mk2.h"
 
-void mm_update_state(struct ctlra_dev_t *dev, struct dummy_data *d)
+void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 {
+	struct dummy_data *d = ud;
 	uint32_t i;
 	for(i = 0; i < VEGAS_BTN_COUNT; i++)
 		ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
