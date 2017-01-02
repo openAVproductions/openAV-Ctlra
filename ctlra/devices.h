@@ -33,6 +33,9 @@
 #define OPENAV_CTLRA_DEVICES
 
 enum ctlra_dev_id_t {
+	/* Used to signal device not found */
+	CTLRA_DEV_INVALID,
+
 	CTLRA_DEV_NI_KONTROL_D2,
 	CTLRA_DEV_NI_KONTROL_Z1,
 	CTLRA_DEV_NI_KONTROL_F1,

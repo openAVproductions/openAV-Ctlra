@@ -60,15 +60,18 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 		// lookup the VID/PID pair, see if Ctlra supports it
 		// if so, lookup the dev-id and pass to Connect(), then
-		//
-		// call application "hotplug accept" callback here,
-		// which provides the event func / ud pair
-		//ctlra->accept_func(
-		//
+
+		enum ctlra_dev_id_t dev_id =
+			ctlra_impl_get_id_by_vid_pid(desc.idVendor,
+						     desc.idProduct);
+		if(dev_id == CTLRA_DEV_INVALID) {
+			/* Device is not supported by Ctlra */
+			printf("hotplugged device not supported by Ctlra\n");
+			return -1;
+		}
+
 		printf("calling hotplug accept now\n");
-#warning TODO: DO VID PID lookup for device (HARDCODED NOW, FIXME!)
-		int accepted = ctlra_impl_accept_dev(ctlra,
-					CTLRA_DEV_NI_KONTROL_X1_MK2);
+		int accepted = ctlra_impl_accept_dev(ctlra, dev_id);
 		
 #if 0
 		ctlra_dev_connect((struct ctlra_t *)user_data,
@@ -255,7 +258,7 @@ void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
 		ctlra->banished_list = dev;
 	else {
 		struct ctlra_dev_t *dev_iter = ctlra->banished_list;
-		while(dev_iter)
+		while(dev_iter->banished_list_next)
 			dev_iter = dev_iter->banished_list_next;
 		dev_iter->banished_list_next = dev;
 		dev->banished_list_next = 0;
@@ -289,6 +292,8 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	const uint32_t timeout = 100;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
+	if(r == LIBUSB_ERROR_TIMEOUT)
+		return 0;
 	if (r < 0) {
 		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
 			libusb_error_name(r), libusb_strerror(r));
@@ -302,10 +307,12 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
                                   uint32_t endpoint, uint8_t *data,
                                   uint32_t size)
 {
-	const uint32_t timeout = 1000;
+	const uint32_t timeout = 100;
 	int transferred;
 	int r = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
 	                               data, size, &transferred, timeout);
+	if(r == LIBUSB_ERROR_TIMEOUT)
+		return 0;
 	if (r < 0) {
 		fprintf(stderr, "ctlra: usb error %d, %s, aka: %s\n", r,
 			libusb_error_name(r), libusb_strerror(r));

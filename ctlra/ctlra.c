@@ -16,6 +16,8 @@ extern void ctlra_impl_usb_shutdown();
 
 struct ctlra_dev_connect_func_t {
 	enum ctlra_dev_id_t id;
+	uint32_t vid;
+	uint32_t pid;
 	ctlra_dev_connect_func connect;
 };
 
@@ -28,13 +30,28 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
-	{CTLRA_DEV_NI_KONTROL_D2, ni_kontrol_d2_connect},
-	{CTLRA_DEV_NI_KONTROL_Z1, ni_kontrol_z1_connect},
-	{CTLRA_DEV_NI_KONTROL_F1, ni_kontrol_f1_connect},
-	{CTLRA_DEV_NI_KONTROL_X1_MK2, ni_kontrol_x1_mk2_connect},
-	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, ni_maschine_mikro_mk2_connect},
+	/* Device when already plugged in */
+	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1400, ni_kontrol_d2_connect},
+	/* Hotplug of D2 shows up root device as new, not D2 subdev */
+	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1403, ni_kontrol_d2_connect},
+	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
+	{CTLRA_DEV_NI_KONTROL_F1, 0x17cc, 0x1120, ni_kontrol_f1_connect},
+	{CTLRA_DEV_NI_KONTROL_X1_MK2, 0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
+	//{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, 0x0, 0x0, ni_maschine_mikro_mk2_connect},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
+
+enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
+{
+	for(unsigned i = 0; i < CTLRA_NUM_DEVS; i++) {
+		printf("checking dev %d, id %d\n", i, devices[i].id);
+		if(devices[i].vid == vid && devices[i].pid == pid) {
+			printf("found dev %d, id %d\n", i, devices[i].id);
+			return devices[i].id;
+		}
+	}
+	return CTLRA_DEV_INVALID;
+}
 
 struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 				      enum ctlra_dev_id_t dev_id,
