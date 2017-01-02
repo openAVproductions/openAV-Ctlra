@@ -181,7 +181,7 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 {
 	/* For each device that we have, iter, attempt to open, and
 	 * call the application supplied accept_func callback */
-
+	int num_accepted = 0;
 
 	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
 		struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
@@ -192,14 +192,19 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		if(dev) {
 			ctlra_event_func app_event_func = 0x0;
 			void *app_event_func_userdata = 0x0;
-			int accept = accept_func(&dev->info, &app_event_func,
+			int accepted = accept_func(&dev->info, &app_event_func,
 						&app_event_func_userdata, userdata);
-			printf("accept %d, ev %p, ud %p\n", accept,
+			printf("accept %d, ev %p, ud %p\n", accepted,
 			       app_event_func, app_event_func_userdata);
+			if(!accepted) {
+				ctlra_dev_disconnect(dev);
+				continue;
+			}
+			num_accepted++;
 		}
 	}
 
-	return 0;
+	return num_accepted;
 }
 
 
