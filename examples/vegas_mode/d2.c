@@ -143,7 +143,7 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 			//printf("btn %d : %d\n", e->button.id, p);
 			if(e->button.id == 3) {
 				memset(&d->buttons, e->button.pressed,
-				       sizeof(struct dummy_data));
+				       sizeof(d->buttons));
 			}
 			if(e->button.id == NI_KONTROL_D2_BTN_DECK && p) {
 				printf("deck pressed, switching handle func\n");
