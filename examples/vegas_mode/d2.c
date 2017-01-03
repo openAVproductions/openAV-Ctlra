@@ -44,21 +44,20 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 		d2_screen_init();
 
 	/* blank background */
-	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_set_source_rgb(cr, 8/255.,8/255.,8/255.);
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
 	/* draw on surface */
-	cairo_set_source_rgb(cr, 255, 0, 0);
-	cairo_rectangle(cr, d->progress * (480-10), 20, 40, 40);
+	cairo_set_source_rgb(cr, 0.01, 0.01, 0.01);
+	cairo_rectangle(cr, 0, 252, 480, 20);
 	cairo_fill(cr);
-
-	cairo_set_source_rgb(cr, 0, 255, 0);
-	cairo_rectangle(cr, d->progress * (480-10), 60, 40, 40);
+	cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+	cairo_rectangle(cr, 0, 252, 480, 2);
 	cairo_fill(cr);
 
 	cairo_set_source_rgb(cr, 0, 0, 255);
-	cairo_rectangle(cr, d->progress * (480-10),100, 40, 40);
+	cairo_rectangle(cr, 10 + d->progress * (480-20), 272-20, 4, 20);
 	cairo_fill(cr);
 
 	cairo_surface_flush(surface);

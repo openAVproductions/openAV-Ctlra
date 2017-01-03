@@ -494,7 +494,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 		goto fail;
 	}
 
-	memset(dev->lights, 0xff, sizeof(dev->lights));
+	memset(dev->lights, 0x0, sizeof(dev->lights));
 	ni_kontrol_d2_light_flush(&dev->base, 1);
 
 	/* Copy the screen update details into the embedded struct */
