@@ -438,23 +438,85 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	int ret;
 
-	if(!dev || light_id > LEDS_SIZE)
-		return;
-
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
+	uint8_t r = (light_status >> 16) & 0xff;
+	uint8_t g = (light_status >>  8) & 0xff;
+	uint8_t b = (light_status >>  0) & 0xff;
 
-	/* FX ON buttons have orange and blue
-	if(light_id == NI_KONTROL_D2_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_D2_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t g      = (light_status >>  8) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
+	int idx;
+
+	switch(light_id) {
+	case NI_KONTROL_D2_LED_PAD_1:
+	case NI_KONTROL_D2_LED_PAD_2:
+	case NI_KONTROL_D2_LED_PAD_3:
+	case NI_KONTROL_D2_LED_PAD_4:
+	case NI_KONTROL_D2_LED_PAD_5:
+	case NI_KONTROL_D2_LED_PAD_6:
+	case NI_KONTROL_D2_LED_PAD_7:
+	case NI_KONTROL_D2_LED_PAD_8:
+		/* handle RGB pads */
+		idx = (light_id-NI_KONTROL_D2_LED_PAD_1) * 3;
+		dev->lights[idx+0] = r;
+		dev->lights[idx+1] = g;
+		dev->lights[idx+2] = b;
+		break;
+	case NI_KONTROL_D2_LED_SCREEN_RIGHT_1:
+		dev->lights[33] = bright;
+		break;
+	case NI_KONTROL_D2_LED_SCREEN_LEFT_1:
+	case NI_KONTROL_D2_LED_SCREEN_LEFT_4:
+		break;
+	case NI_KONTROL_D2_LED_SCREEN_LEFT_2:
+	case NI_KONTROL_D2_LED_SCREEN_LEFT_3:
+		idx = light_id - NI_KONTROL_D2_LED_SCREEN_LEFT_1;
+		dev->lights[29+idx] = bright;
+		break;
+	case NI_KONTROL_D2_LED_FX_SELECT:
+	case NI_KONTROL_D2_LED_FX_1:
+	case NI_KONTROL_D2_LED_FX_2:
+	case NI_KONTROL_D2_LED_FX_3:
+		idx = light_id - NI_KONTROL_D2_LED_FX_SELECT;
+		dev->lights[24+idx] = bright;
+		break;
+	case NI_KONTROL_D2_LED_HOTCUE:
+		dev->lights[44] = bright;
+		dev->lights[45] = b;
+		break;
+	case NI_KONTROL_D2_LED_LOOP:
+		dev->lights[46] = bright;
+		dev->lights[47] = b;
+		break;
+	case NI_KONTROL_D2_LED_FREEZE:
+		dev->lights[48] = bright;
+		dev->lights[49] = b;
+		break;
+	case NI_KONTROL_D2_LED_REMIX:
+		dev->lights[50] = bright;
+		dev->lights[51] = b;
+		break;
+	case NI_KONTROL_D2_LED_FLUX:
+		dev->lights[52] = bright;
+		break;
+	case NI_KONTROL_D2_LED_DECK:
+		dev->lights[53] = bright;
+		dev->lights[54] = b;
+		break;
+	case NI_KONTROL_D2_LED_SHIFT:
+		dev->lights[55] = bright;
+		break;
+	case NI_KONTROL_D2_LED_SYNC:
+		dev->lights[56] = g;
+		dev->lights[57] = r;
+		break;
+	case NI_KONTROL_D2_LED_CUE:
+		dev->lights[58] = bright;
+		break;
+	case NI_KONTROL_D2_LED_PLAY:
+		dev->lights[59] = bright;
+		break;
+	default: break;
 	}
-	*/
 
 	dev->lights_dirty = 1;
 }
