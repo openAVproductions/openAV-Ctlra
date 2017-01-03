@@ -263,6 +263,12 @@ struct ni_kontrol_d2_t {
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
+
+	/* track the touch of the touchstrip seperatly, so we can send
+	 * a button-event when a the touch-strip is pressed/released. The
+	 * touchstrip movement itself is available as a slider */
+	uint8_t touchstrip_touch;
+
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
@@ -307,10 +313,10 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 
 		switch(nbytes) {
 		case 25: {
-			for(uint32_t i = 0; i < 4; i++) {
+			for(uint32_t i = 0; i < 25; i++) {
 				/* screen encoders here */
 				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
-				//printf("%04x ", val);
+				//printf("%d : %04x ", val);
 				//NI_KONTROL_D2_SLIDER_SCREEN_ENCODER_1 + i
 			}
 			for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
@@ -355,6 +361,35 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
+			}
+
+			/* Touchstrip */
+			uint16_t v = (buf[14] << 8) | buf[13];
+			if(dev->touchstrip_touch != (v > 0) ) {
+				dev->touchstrip_touch = v > 0;
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button = {
+						.id = NI_KONTROL_D2_BTN_TOUCHSTRIP_TOUCH,
+						.pressed = v > 0,
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+			/* Send touchstrip updates after button detection */
+			if(dev->touchstrip_touch) {
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_SLIDER,
+					.slider = {
+						.id = NI_KONTROL_D2_SLIDER_TOUCHSTRIP,
+						.value = v / 1024.f
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
 			break;
 		}
