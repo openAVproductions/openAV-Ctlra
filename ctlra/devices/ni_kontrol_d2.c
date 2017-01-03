@@ -406,6 +406,15 @@ ni_kontrol_d2_screen_get_pixels(struct ctlra_dev_t *base)
 	return (uint8_t *)&dev->screen_blit.pixels;
 }
 
+static void
+ni_kontrol_d2_screen_splash(struct ctlra_dev_t *base)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	memset(dev->screen_blit.pixels, 0x0,
+	       sizeof(dev->screen_blit.pixels));
+	ni_kontrol_d2_screen_blit(&dev->base);
+}
+
 void
 ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 {
@@ -554,8 +563,10 @@ ni_kontrol_d2_disconnect(struct ctlra_dev_t *base)
 
 	/* Turn off all lights */
 	memset(dev->lights, 0x0, sizeof(dev->lights));
-	if(!base->banished)
+	if(!base->banished) {
 		ni_kontrol_d2_light_flush(&dev->base, 1);
+		ni_kontrol_d2_screen_splash(base);
+	}
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
