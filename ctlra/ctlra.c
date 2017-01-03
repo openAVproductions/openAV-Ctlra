@@ -12,7 +12,7 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);
 /* For polling hotplug / other events */
 void ctlra_impl_usb_idle_iter(struct ctlra_t *);
 /* For cleaning up the USB subsystem */
-extern void ctlra_impl_usb_shutdown();
+void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
 
 struct ctlra_dev_connect_func_t {
 	enum ctlra_dev_id_t id;
@@ -266,7 +266,7 @@ void ctlra_exit(struct ctlra_t *ctlra)
 		ctlra_dev_disconnect(dev_free);
 	}
 
-	ctlra_impl_usb_shutdown();
+	ctlra_impl_usb_shutdown(ctlra);
 
 	free(ctlra);
 }

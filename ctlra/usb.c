@@ -10,10 +10,6 @@
 
 #define USB_PATH_MAX 256
 
-#warning TODO: remove static libusb context, port to cltra instance
-static int ctlra_libusb_initialized;
-static struct libusb_context *ctx = 0;
-
 /* From cltra.c */
 extern enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
 extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, enum ctlra_dev_id_t dev_id);
@@ -102,16 +98,16 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 {
 	int ret;
 	/* TODO: move this to a usb specific cltra_init() function */
-	if(ctlra_libusb_initialized)
+	if(ctlra->usb_initialized)
 		return -1;
 
-	ret = libusb_init (&ctx);
+	ret = libusb_init (&ctlra->ctx);
 	if (ret < 0) {
 		printf("failed to initialise libusb: %s\n",
 		       libusb_error_name(ret));
 		return -1;
 	}
-	ctlra_libusb_initialized = 1;
+	ctlra->usb_initialized = 1;
 
 	if(!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
 		printf ("Ctlra: No Hotplug on this platform\n");
@@ -348,8 +344,8 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 	}
 }
 
-void ctlra_impl_usb_shutdown()
+void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra)
 {
-	libusb_exit(ctx);
+	libusb_exit(ctlra->ctx);
 }
 

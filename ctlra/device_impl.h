@@ -154,6 +154,10 @@ struct ctlra_t
 	ctlra_accept_dev_func accept_dev_func;
 	void *accept_dev_func_userdata;
 
+	/* USB backend context */
+	struct libusb_context *ctx;
+	uint8_t usb_initialized;
+
 	/* Linked list of devices currently in use */
 	struct ctlra_dev_t *dev_list;
 	/* List of devices that are banished */
