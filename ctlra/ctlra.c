@@ -37,7 +37,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
 	{CTLRA_DEV_NI_KONTROL_F1, 0x17cc, 0x1120, ni_kontrol_f1_connect},
 	{CTLRA_DEV_NI_KONTROL_X1_MK2, 0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
-	//{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, 0x0, 0x0, ni_maschine_mikro_mk2_connect},
+	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, 0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
