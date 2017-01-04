@@ -178,6 +178,13 @@ ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
 	return 0;
 }
 
+static __inline__ unsigned long long rdtsc(void)
+{
+    unsigned long long int x;
+    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
+    return x;
+}
+
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
@@ -190,11 +197,18 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		                USB_ENDPOINT_READ,
 		                buf, 1024);
 		//printf("mm read %d\n", nbytes);
-		if(nbytes == 0)
+		if(nbytes == 0) {
+			printf("%s : 0 bytes read\n");
+			sleep(1);
 			return 0;
+		}
 
 		switch(nbytes) {
 		case 65: {
+			static long long last_tsc;
+			long long now = rdtsc();
+			//printf("last->now delta %lld\n", now - last_tsc);
+			last_tsc = now;
 			int changed = 0;
 			//uint16_t idx = dev->pad_idx++ & KERNEL_MASK;
 
@@ -306,7 +320,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		}
 		}
 		iter++;
-	} while (nbytes > 0 && iter < 2);
+	} while (nbytes > 0 && iter < 1);
 
 	return 0;
 }
