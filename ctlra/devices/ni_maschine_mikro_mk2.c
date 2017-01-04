@@ -141,9 +141,9 @@ static const struct ni_maschine_mikro_mk2_ctlra_t encoders[] = {
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
-#define KERNEL_LENGTH          (8)
+#define KERNEL_LENGTH          (16)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (250)
+#define PAD_SENSITIVITY        (150)
 #define PAD_PRESS_BRIGHTNESS   (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS (0.25f)
 
@@ -169,13 +169,60 @@ struct ni_maschine_mikro_mk2_t {
 
 static const char *
 ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+                                       enum ctlra_event_type_t type,
+                                       uint32_t control_id)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mikro_mk2_control_names[control_id];
 	return 0;
+}
+
+/* * The following code is public domain.  * Algorithm by Torben Mogensen, implementation
+by N. Devillard.  * This code in public domain.  */
+float torben(float m[], int n)
+{
+	int i, less, greater, equal;
+	float min, max, guess, maxltguess, mingtguess;
+	min = max = m[0];
+	for (i=1 ; i<n ; i++) {
+		if (m[i]<min)
+			min=m[i];
+		if (m[i]>max)
+			max=m[i];
+	}
+	while (1) {
+		guess = (min+max)/2;
+		less = 0;
+		greater = 0;
+		equal = 0;
+		maxltguess = min ;
+		mingtguess = max ;
+		for (i=0; i<n; i++) {
+			if (m[i]<guess) {
+				less++;
+				if (m[i]>maxltguess)
+					maxltguess = m[i];
+			} else if (m[i]>guess) {
+				greater++;
+				if (m[i]<mingtguess)
+					mingtguess = m[i] ;
+			} else
+				equal++;
+		}
+		if (less <= (n+1)/2 && greater <= (n+1)/2)
+			break;
+		else if (less>greater)
+			max = maxltguess;
+		else
+			min = mingtguess;
+	}
+	if (less >= (n+1)/2)
+		return maxltguess;
+	else if (less+equal >= (n+1)/2)
+		return guess;
+	else
+		return mingtguess;
 }
 
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
@@ -187,50 +234,49 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 	int iter = 0;
 	do {
 		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-							   USB_ENDPOINT_READ,
-							   buf, 1024);
+		                USB_ENDPOINT_READ,
+		                buf, 1024);
 		//printf("mm read %d\n", nbytes);
 		if(nbytes == 0)
 			return 0;
 
 		switch(nbytes) {
 		case 65: {
-				uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
-				int changed = 0;
-				for(int i = 0; i < NPADS; i++) {
-					uint16_t v = buf[0] | ((buf[1] & 0x0F) << 8);
-					if(i == 0) {
-						//printf("%04d\n", v);
-					}
-
-					uint16_t total = 0;
-					for(int j = 0; j < KERNEL_LENGTH; j++)
-						total += dev->pad_pressures[i*KERNEL_LENGTH + j];
-
-					dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
-
-					uint16_t avg = total / KERNEL_LENGTH;
-					dev->pad_avg[i] = avg;
-
-					if(avg > PAD_SENSITIVITY && dev->pads[i] == 0) {
-						//printf("%d pressed, avg = %d\n", i, avg);
-						dev->pads[i] = 1;
-						changed = 1;
-					}
-					else if(avg < PAD_SENSITIVITY && dev->pads[i] > 0) {
-						//printf("%d released, avg = %d\n", i, avg);
-						dev->pads[i] = 0;
-						changed = 1;
-					}
+			uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
+			int changed = 0;
+			for(int i = 0; i < NPADS; i++) {
+				uint16_t v = buf[0] | ((buf[1] & 0x0F) << 8);
+				if(i == 0) {
+					//printf("%04d\n", v);
 				}
-				if(changed) {
-					for(int i = 0; i < NPADS; i++) {
-						printf("%04d ", dev->pad_avg[i]);
-					}
-					printf("\n");
+
+				uint16_t total = 0;
+				for(int j = 0; j < KERNEL_LENGTH; j++)
+					total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+
+				dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
+
+				uint16_t avg = total / KERNEL_LENGTH;
+				dev->pad_avg[i] = avg;
+
+				if(avg > PAD_SENSITIVITY && dev->pads[i] == 0) {
+					printf("%d pressed, avg = %d\n", i, avg);
+					dev->pads[i] = 1;
+					changed = 1;
+				} else if(avg < PAD_SENSITIVITY && dev->pads[i] > 0) {
+					printf("%d released, avg = %d\n", i, avg);
+					dev->pads[i] = 0;
+					changed = 1;
 				}
 			}
-			break;
+			if(changed) {
+				for(int i = 0; i < NPADS; i++) {
+					printf("%04d ", dev->pad_avg[i]);
+				}
+				printf("\n");
+			}
+		}
+		break;
 		case 6: {
 			for(uint32_t i = 0; i < ENCODERS_SIZE; i++) {
 #if 0
@@ -245,11 +291,12 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 						.id = CTLRA_EVENT_SLIDER,
 						.slider  = {
 							.id = id,
-							.value = v / 4096.f},
+							.value = v / 4096.f
+						},
 					};
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
+					                     dev->base.event_func_userdata);
 				}
 #endif
 			}
@@ -259,25 +306,26 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 				int mask   = buttons[i].mask;
 
 				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-#warning check this is correct - removed SLIDER_SIZE
 				int value_idx = i;
 
 				if(dev->hw_values[value_idx] != v) {
+					//printf("%s %d\n", ni_maschine_mikro_mk2_control_names[i], i);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlra_event_t event = {
 						.type = CTLRA_EVENT_BUTTON,
 						.button  = {
 							.id = id,
-							.pressed = v > 0},
+							.pressed = v > 0
+						},
 					};
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
+					                     dev->base.event_func_userdata);
 				}
 			}
 			break;
-			}
+		}
 		}
 		iter++;
 	} while (nbytes > 0 && iter < 2);
@@ -286,8 +334,8 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 }
 
 static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status)
+                uint32_t light_id,
+                uint32_t light_status)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	int ret;
@@ -300,8 +348,7 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 	dev->lights[light_id] = bright;
 
 #if 0
-	switch(light_id)
-	{
+	switch(light_id) {
 	case 1 ... 8: /* fallthrough */
 	case 10 ... 30:
 		dev->light_buf[light_id] = (status >> 24) & 0x7F;
@@ -333,8 +380,8 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	dev->lights_endpoint = 0x80;
 
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data, LIGHTS_SIZE);
+	                USB_ENDPOINT_WRITE,
+	                data, LIGHTS_SIZE);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
@@ -355,7 +402,7 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 
 struct ctlra_dev_t *
 ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
-				  void *userdata, void *future)
+                              void *userdata, void *future)
 {
 	(void)future;
 	struct ni_maschine_mikro_mk2_t *dev = calloc(1, sizeof(struct ni_maschine_mikro_mk2_t));
@@ -363,19 +410,19 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		goto fail;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
+	         "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Maschine Mikro Mk2");
+	         "%s", "Maschine Mikro Mk2");
 
 	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-					  NI_VENDOR, NI_MASCHINE_MIKRO_MK2);
+	                                  NI_VENDOR, NI_MASCHINE_MIKRO_MK2);
 	if(err) {
 		free(dev);
 		return 0;
 	}
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
-						USB_INTERFACE_ID, USB_HANDLE_IDX);
+	                                        USB_INTERFACE_ID, USB_HANDLE_IDX);
 	if(err) {
 		free(dev);
 		return 0;
