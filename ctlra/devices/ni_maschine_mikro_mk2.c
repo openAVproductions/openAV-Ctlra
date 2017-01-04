@@ -201,13 +201,12 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		                buf, 1024);
 #endif
 		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
-			perror("read");
+			//perror("read");
 			break;
 		}
 
 		src = buf[0];
 		uint8_t *data = &buf[1];
-		//printf("mm read %d\n", nbytes);
 		if(nbytes == 0) {
 			printf("%s : 0 bytes read\n", __func__);
 			sleep(1);
@@ -315,7 +314,8 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		}
 		}
 		iter++;
-	} while (nbytes > 0 && iter < 1);
+	} while (nbytes > 0);// && iter < 30);
+	printf("macshine iters %d\n", iter);
 
 	return 0;
 }
@@ -328,35 +328,16 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 	int ret;
 
 #warning FIXME: overflow bug here caused overwriting of dev struct!!
-	memset(dev->lights, 0x0, sizeof(dev->lights));
-	dev->lights_dirty = 1;
-	return;
-
-	if(!dev || light_id > sizeof(dev->lights))
+	if(!dev)
 		return;
+	if(light_id > LIGHTS_SIZE) {
+		//printf("return, invlaid light id %d\n", light_id);
+		return;
+	}
 
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-
-#if 0
-	switch(light_id) {
-	case 1 ... 8: /* fallthrough */
-	case 10 ... 30:
-		dev->light_buf[light_id] = (status >> 24) & 0x7F;
-		break;
-	case 9:
-		dev->light_buf[light_id  ] = ((status >> 16) & 0xFF) / 2;
-		dev->light_buf[light_id+1] = ((status >>  8) & 0xFF) / 2;
-		dev->light_buf[light_id+2] = ((status >>  0) & 0xFF) / 2;
-		break;
-	case 31 ... 47:
-		dev->light_buf[light_id  ] = ((status >> 16) & 0xFF) / 2;
-		dev->light_buf[light_id+1] = ((status >>  8) & 0xFF) / 2;
-		dev->light_buf[light_id+2] = ((status >>  0) & 0xFF) / 2;
-		break;
-	}
-#endif
 
 	dev->lights_dirty = 1;
 }
@@ -415,7 +396,7 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	for(i = 0; i < 64; i++) {
 		const char *device = "/dev/hidraw";
 		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR); // |O_NONBLOCK
+		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
 		if(fd < 0)
 			continue;
 
