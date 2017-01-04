@@ -141,9 +141,9 @@ static const struct ni_maschine_mikro_mk2_ctlra_t encoders[] = {
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
-#define KERNEL_LENGTH          (64)
+#define KERNEL_LENGTH          (16)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (1200)
+#define PAD_SENSITIVITY        (150)
 #define PAD_PRESS_BRIGHTNESS   (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS (0.25f)
 
@@ -161,9 +161,10 @@ struct ni_maschine_mikro_mk2_t {
 	uint8_t lights[LIGHTS_SIZE];
 
 	/* Pressure filtering for note-onset detection */
-	uint16_t pad_idx;
-	uint16_t pads[NPADS]; /* current state */
-	float pad_pressures[NPADS*KERNEL_LENGTH]; /* values history */
+	uint8_t pad_idx[NPADS];
+	uint16_t pads[NPADS];
+	uint16_t pad_avg[NPADS];
+	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 };
 
 static const char *
@@ -175,53 +176,6 @@ ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mikro_mk2_control_names[control_id];
 	return 0;
-}
-
-static inline float torben(float m[], int n, float *min_out)
-{
-	int i, less, greater, equal;
-	float min, max, guess, maxltguess, mingtguess;
-	min = max = m[0];
-	for (i=1 ; i<n ; i++) {
-		if (m[i]<min)
-			min=m[i];
-		if (m[i]>max)
-			max=m[i];
-	}
-	*min_out = min;
-	//printf("min %f, max %f\n", min, max);
-	while (1) {
-		guess = (min+max)/2;
-		less = 0;
-		greater = 0;
-		equal = 0;
-		maxltguess = min ;
-		mingtguess = max ;
-		for (i=0; i<n; i++) {
-			if (m[i]<guess) {
-				less++;
-				if (m[i]>maxltguess)
-					maxltguess = m[i];
-			} else if (m[i]>guess) {
-				greater++;
-				if (m[i]<mingtguess)
-					mingtguess = m[i] ;
-			} else
-				equal++;
-		}
-		if (less <= (n+1)/2 && greater <= (n+1)/2)
-			break;
-		else if (less>greater)
-			max = maxltguess;
-		else
-			min = mingtguess;
-	}
-	if (less >= (n+1)/2)
-		return maxltguess;
-	else if (less+equal >= (n+1)/2)
-		return guess;
-	else
-		return mingtguess;
 }
 
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
@@ -242,29 +196,63 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		switch(nbytes) {
 		case 65: {
 			int changed = 0;
-			uint16_t idx = dev->pad_idx++ & KERNEL_MASK;
+			//uint16_t idx = dev->pad_idx++ & KERNEL_MASK;
+
+			uint8_t *data = buf;
+			int i;
+			for (i = 0; i < NPADS; i++) {
+				uint16_t data1_mask = (data[1] & 0x0F);
+				uint16_t new = data[0] | ( data1_mask << 8);
+				data += 2;
+
+				uint8_t idx = dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
+
+				uint16_t total = 0;
+				for(int j = 0; j < KERNEL_LENGTH; j++) {
+					total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+				}
+				dev->pad_avg[i] = total / KERNEL_LENGTH;
+
+				dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
+
+				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
+					printf("%d pressed\n", i);
+					dev->pads[i] = 2000;
+					changed = 1;
+				} else if(dev->pad_avg[i] < 150 && dev->pads[i] > 0) {
+					printf("%d release\n", i);
+					dev->pads[i] = 0;
+					changed = 1;
+				}
+			}
+
+#if 0
 			for(int i = 0; i < 16; i++) {
-				uint16_t v = buf[i*2] | ((buf[i*2+1] & 0x0F) << 8);
+				uint16_t v = /*buf[i*2]*/ 0 | ((buf[i*2+1] & 0x0F) << 8);
 				dev->pad_pressures[i*KERNEL_LENGTH + idx] = (float)v;
 
 				float min;
 				float median = torben(&dev->pad_pressures[i*KERNEL_LENGTH],
-						      KERNEL_MASK, &min);
+				                      KERNEL_MASK, &min);
 #if 1
 				if(i == 15) {
 					//printf("idx %d:\t%03.02f\t-> %03.02f\n", idx, (float)v, median);
 				}
 #endif
-				if(median > min + PAD_SENSITIVITY && dev->pads[i] == 0) {
-					printf("%d pressed, median = %f, min %f\n", i, median, min);
+				if(median > PAD_SENSITIVITY && median > min + 1500 && dev->pads[i] == 0) {
+					printf("%d\tpressed, median = %f, min %f\n", i, median, min);
 					dev->pads[i] = 1;
 					changed = 1;
-				} else if(median < min + PAD_SENSITIVITY && dev->pads[i] > 0) {
-					printf("%d released, median = %f\n", i, median);
+				} else if(median < PAD_SENSITIVITY && dev->pads[i] > 0) {
+					printf("%d released, median = %f, min %f\n", i, median, min);
 					dev->pads[i] = 0;
+					memset(&dev->pad_pressures[i*KERNEL_LENGTH],
+					       255, KERNEL_LENGTH);
 					changed = 1;
 				}
 			}
+			//printf("\n");
+#endif
 		}
 		break;
 		case 6: {
