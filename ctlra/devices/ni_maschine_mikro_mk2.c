@@ -238,44 +238,29 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 
 				dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
 
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_GRID,
+					.grid  = {
+						.id = 0,
+						.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+						.pos = i,
+						.pressed = 1
+					},
+				};
+				struct ctlra_event_t *e = {&event};
 				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
-					printf("%d pressed\n", i);
+					dev->base.event_func(&dev->base, 1, &e,
+					                     dev->base.event_func_userdata);
+					//printf("%d pressed\n", i);
 					dev->pads[i] = 2000;
-					changed = 1;
 				} else if(dev->pad_avg[i] < 150 && dev->pads[i] > 0) {
-					printf("%d release\n", i);
+					//printf("%d release\n", i);
 					dev->pads[i] = 0;
-					changed = 1;
+					event.grid.pressed = 0;
+					dev->base.event_func(&dev->base, 1, &e,
+					                     dev->base.event_func_userdata);
 				}
 			}
-
-#if 0
-			for(int i = 0; i < 16; i++) {
-				uint16_t v = /*buf[i*2]*/ 0 | ((buf[i*2+1] & 0x0F) << 8);
-				dev->pad_pressures[i*KERNEL_LENGTH + idx] = (float)v;
-
-				float min;
-				float median = torben(&dev->pad_pressures[i*KERNEL_LENGTH],
-				                      KERNEL_MASK, &min);
-#if 1
-				if(i == 15) {
-					//printf("idx %d:\t%03.02f\t-> %03.02f\n", idx, (float)v, median);
-				}
-#endif
-				if(median > PAD_SENSITIVITY && median > min + 1500 && dev->pads[i] == 0) {
-					printf("%d\tpressed, median = %f, min %f\n", i, median, min);
-					dev->pads[i] = 1;
-					changed = 1;
-				} else if(median < PAD_SENSITIVITY && dev->pads[i] > 0) {
-					printf("%d released, median = %f, min %f\n", i, median, min);
-					dev->pads[i] = 0;
-					memset(&dev->pad_pressures[i*KERNEL_LENGTH],
-					       255, KERNEL_LENGTH);
-					changed = 1;
-				}
-			}
-			//printf("\n");
-#endif
 		}
 		break;
 		case 6: {
@@ -310,7 +295,8 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 				int value_idx = i;
 
 				if(dev->hw_values[value_idx] != v) {
-					//printf("%s %d\n", ni_maschine_mikro_mk2_control_names[i], i);
+					//printf("%s %d\n",
+					//ni_maschine_mikro_mk2_control_names[i], i);
 					dev->hw_values[value_idx] = v;
 
 					struct ctlra_event_t event = {
@@ -385,13 +371,7 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
-#if 0
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-	                USB_ENDPOINT_WRITE,
-	                data, LIGHTS_SIZE);
-	if(ret < 0)
-		printf("%s write failed!\n", __func__);
-#endif
+	write(dev->fd, data, LIGHTS_SIZE);
 }
 
 static int32_t
@@ -403,7 +383,6 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		ni_maschine_mikro_mk2_light_flush(base, 1);
 
-	//ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -421,22 +400,6 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	         "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 	         "%s", "Maschine Mikro Mk2");
-
-#if 0
-	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
-	                                  NI_VENDOR, NI_MASCHINE_MIKRO_MK2);
-	if(err) {
-		free(dev);
-		return 0;
-	}
-
-	err = ctlra_dev_impl_usb_open_interface(&dev->base,
-	                                        USB_INTERFACE_ID, USB_HANDLE_IDX);
-	if(err) {
-		free(dev);
-		return 0;
-	}
-#endif
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -476,7 +439,7 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		printf("found Mikro @ %s\n", buf);
 	else {
 		printf("no NI Maschine Mikro detected\n");
-#warning  leaky here
+		free(dev);
 		return 0;
 	}
 
