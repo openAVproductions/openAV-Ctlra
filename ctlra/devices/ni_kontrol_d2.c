@@ -268,6 +268,9 @@ struct ni_kontrol_d2_t {
 	 * a button-event when a the touch-strip is pressed/released. The
 	 * touchstrip movement itself is available as a slider */
 	uint8_t touchstrip_touch;
+	/* Encoders */
+	uint8_t encoder_browse;
+	uint8_t encoder_loop;
 
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
@@ -361,6 +364,36 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
+			}
+			/* Browse / Loop Encoders */
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder = {
+					.id = NI_KONTROL_D2_ENCODER_BROWSE,
+					.delta = 0,
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			int8_t browse = ((buf[1] & 0xf0) >> 4) & 0xf;
+			int8_t loop   = ((buf[1] & 0x0f)     ) & 0xf;
+			/* Browse encoder turn event */
+			if(browse != dev->encoder_browse) {
+				int dir = ctlra_dev_encoder_wrap_16(browse,
+								    dev->encoder_browse);
+				event.encoder.delta = dir;
+				dev->encoder_browse = browse;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+			/* Loop encoder turn event */
+			if(loop != dev->encoder_loop) {
+				int dir = ctlra_dev_encoder_wrap_16(loop,
+								    dev->encoder_loop);
+				event.encoder.id = NI_KONTROL_D2_ENCODER_LOOP;
+				event.encoder.delta = dir;
+				dev->encoder_loop = loop;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
 
 			/* Touchstrip */

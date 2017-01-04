@@ -169,5 +169,22 @@ struct ctlra_t
 extern struct ctlra_dev_t *name(ctlra_event_func event_func,		\
 			    void *userdata, void *future)
 
+/* Helper function for dealing with wrapped encoders */
+static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
+{
+	/* direction */
+	uint8_t ngt = newer > older;
+	/* backwards mask */
+	uint8_t bm = (newer == 0xf && older == 0x0) - 1;
+	/* forward wrap mask */
+	uint8_t fm = (newer == 0x0 && older == 0xf) - 1;
+	/* Mask into direction */
+	int8_t dir = ngt;
+	dir = (dir & bm) | (0 &(~bm));
+	dir = (dir & fm) | (1 &(~fm));
+	/* Scale to -1 or 1 */
+	return (dir * 2) - 1;
+}
+
 #endif /* OPENAV_CTLRA_DEVICE_IMPL */
 
