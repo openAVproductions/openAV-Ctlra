@@ -193,34 +193,16 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024], src;
 	int32_t nbytes;
 
-	int iter = 0;
 	do {
-#if 0
-		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-		                USB_ENDPOINT_READ,
-		                buf, 1024);
-#endif
 		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
-			//perror("read");
 			break;
 		}
 
 		src = buf[0];
 		uint8_t *data = &buf[1];
-		if(nbytes == 0) {
-			printf("%s : 0 bytes read\n", __func__);
-			sleep(1);
-			return 0;
-		}
 
 		switch(nbytes) {
 		case 65: {
-			static long long last_tsc;
-			long long now = rdtsc();
-			//printf("last->now delta %lld\n", now - last_tsc);
-			last_tsc = now;
-			int changed = 0;
-
 			int i;
 			for (i = 0; i < NPADS; i++) {
 				uint16_t data1_mask = (data[1] & 0x0F);
@@ -313,9 +295,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 			break;
 		}
 		}
-		iter++;
-	} while (nbytes > 0);// && iter < 30);
-	printf("macshine iters %d\n", iter);
+	} while (nbytes > 0);
 
 	return 0;
 }
