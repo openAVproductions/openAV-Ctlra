@@ -141,9 +141,9 @@ static const struct ni_maschine_mikro_mk2_ctlra_t encoders[] = {
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
-#define KERNEL_LENGTH          (16)
+#define KERNEL_LENGTH          (64)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (150)
+#define PAD_SENSITIVITY        (1200)
 #define PAD_PRESS_BRIGHTNESS   (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS (0.25f)
 
@@ -161,10 +161,9 @@ struct ni_maschine_mikro_mk2_t {
 	uint8_t lights[LIGHTS_SIZE];
 
 	/* Pressure filtering for note-onset detection */
-	uint8_t  pad_idx;
+	uint16_t pad_idx;
 	uint16_t pads[NPADS]; /* current state */
-	uint16_t pad_avg[NPADS]; /* average */
-	uint16_t pad_pressures[NPADS*KERNEL_LENGTH]; /* values history */
+	float pad_pressures[NPADS*KERNEL_LENGTH]; /* values history */
 };
 
 static const char *
@@ -178,9 +177,7 @@ ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
 	return 0;
 }
 
-/* * The following code is public domain.  * Algorithm by Torben Mogensen, implementation
-by N. Devillard.  * This code in public domain.  */
-float torben(float m[], int n)
+static inline float torben(float m[], int n, float *min_out)
 {
 	int i, less, greater, equal;
 	float min, max, guess, maxltguess, mingtguess;
@@ -191,6 +188,8 @@ float torben(float m[], int n)
 		if (m[i]>max)
 			max=m[i];
 	}
+	*min_out = min;
+	//printf("min %f, max %f\n", min, max);
 	while (1) {
 		guess = (min+max)/2;
 		less = 0;
@@ -242,38 +241,29 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 
 		switch(nbytes) {
 		case 65: {
-			uint8_t idx = dev->pad_idx++ & KERNEL_MASK;
 			int changed = 0;
-			for(int i = 0; i < NPADS; i++) {
-				uint16_t v = buf[0] | ((buf[1] & 0x0F) << 8);
-				if(i == 0) {
-					//printf("%04d\n", v);
+			uint16_t idx = dev->pad_idx++ & KERNEL_MASK;
+			for(int i = 0; i < 16; i++) {
+				uint16_t v = buf[i*2] | ((buf[i*2+1] & 0x0F) << 8);
+				dev->pad_pressures[i*KERNEL_LENGTH + idx] = (float)v;
+
+				float min;
+				float median = torben(&dev->pad_pressures[i*KERNEL_LENGTH],
+						      KERNEL_MASK, &min);
+#if 1
+				if(i == 15) {
+					//printf("idx %d:\t%03.02f\t-> %03.02f\n", idx, (float)v, median);
 				}
-
-				uint16_t total = 0;
-				for(int j = 0; j < KERNEL_LENGTH; j++)
-					total += dev->pad_pressures[i*KERNEL_LENGTH + j];
-
-				dev->pad_pressures[i*KERNEL_LENGTH + idx] = v;
-
-				uint16_t avg = total / KERNEL_LENGTH;
-				dev->pad_avg[i] = avg;
-
-				if(avg > PAD_SENSITIVITY && dev->pads[i] == 0) {
-					printf("%d pressed, avg = %d\n", i, avg);
+#endif
+				if(median > min + PAD_SENSITIVITY && dev->pads[i] == 0) {
+					printf("%d pressed, median = %f, min %f\n", i, median, min);
 					dev->pads[i] = 1;
 					changed = 1;
-				} else if(avg < PAD_SENSITIVITY && dev->pads[i] > 0) {
-					printf("%d released, avg = %d\n", i, avg);
+				} else if(median < min + PAD_SENSITIVITY && dev->pads[i] > 0) {
+					printf("%d released, median = %f\n", i, median);
 					dev->pads[i] = 0;
 					changed = 1;
 				}
-			}
-			if(changed) {
-				for(int i = 0; i < NPADS; i++) {
-					printf("%04d ", dev->pad_avg[i]);
-				}
-				printf("\n");
 			}
 		}
 		break;
@@ -339,6 +329,11 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	int ret;
+
+#warning FIXME: overflow bug here caused overwriting of dev struct!!
+	memset(dev->lights, 0x0, sizeof(dev->lights));
+	dev->lights_dirty = 1;
+	return;
 
 	if(!dev || light_id > sizeof(dev->lights))
 		return;
@@ -430,6 +425,7 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 
 	memset(dev->lights, 0xff, sizeof(dev->lights));
 	ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
+	usleep(300);
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
