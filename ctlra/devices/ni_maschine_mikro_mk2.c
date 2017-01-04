@@ -165,6 +165,8 @@ struct ni_maschine_mikro_mk2_t {
 	uint16_t pads[NPADS];
 	uint16_t pad_avg[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
+
+	int fd;
 };
 
 static const char *
@@ -188,17 +190,26 @@ static __inline__ unsigned long long rdtsc(void)
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
-	uint8_t buf[1024];
+	uint8_t buf[1024], src;
 	int32_t nbytes;
 
 	int iter = 0;
 	do {
+#if 0
 		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 		                USB_ENDPOINT_READ,
 		                buf, 1024);
+#endif
+		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
+			perror("read");
+			break;
+		}
+
+		src = buf[0];
+		uint8_t *data = &buf[1];
 		//printf("mm read %d\n", nbytes);
 		if(nbytes == 0) {
-			printf("%s : 0 bytes read\n");
+			printf("%s : 0 bytes read\n", __func__);
 			sleep(1);
 			return 0;
 		}
@@ -210,9 +221,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 			//printf("last->now delta %lld\n", now - last_tsc);
 			last_tsc = now;
 			int changed = 0;
-			//uint16_t idx = dev->pad_idx++ & KERNEL_MASK;
 
-			uint8_t *data = buf;
 			int i;
 			for (i = 0; i < NPADS; i++) {
 				uint16_t data1_mask = (data[1] & 0x0F);
@@ -376,11 +385,13 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
+#if 0
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 	                USB_ENDPOINT_WRITE,
 	                data, LIGHTS_SIZE);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
+#endif
 }
 
 static int32_t
@@ -392,7 +403,7 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		ni_maschine_mikro_mk2_light_flush(base, 1);
 
-	ctlra_dev_impl_usb_close(base);
+	//ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -411,6 +422,7 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 	         "%s", "Maschine Mikro Mk2");
 
+#if 0
 	int err = ctlra_dev_impl_usb_open((struct ctlra_dev_t *)dev,
 	                                  NI_VENDOR, NI_MASCHINE_MIKRO_MK2);
 	if(err) {
@@ -424,6 +436,54 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		free(dev);
 		return 0;
 	}
+#endif
+
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
+
+	int fd, i, res, found = 0;
+	char buf[256];
+	struct hidraw_devinfo info;
+
+	for(i = 0; i < 64; i++) {
+		const char *device = "/dev/hidraw";
+		snprintf(buf, sizeof(buf), "%s%d", device, i);
+		fd = open(buf, O_RDWR); // |O_NONBLOCK
+		if(fd < 0)
+			continue;
+
+		memset(&info, 0x0, sizeof(info));
+		res = ioctl(fd, HIDIOCGRAWINFO, &info);
+
+		if (res < 0) {
+			perror("HIDIOCGRAWINFO");
+		} else {
+			if(info.vendor  == NI_VENDOR &&
+			   info.product == NI_MASCHINE_MIKRO_MK2) {
+				found = 1;
+				break;
+			}
+		}
+		close(fd);
+		/* continue searching next HID dev */
+	}
+
+	if(found)
+		printf("found Mikro @ %s\n", buf);
+	else {
+		printf("no NI Maschine Mikro detected\n");
+#warning  leaky here
+		return 0;
+	}
+
+	dev->fd = fd;
+
+	dev->base.info.vendor_id = NI_VENDOR;
+	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
 	memset(dev->lights, 0xff, sizeof(dev->lights));
 	ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
