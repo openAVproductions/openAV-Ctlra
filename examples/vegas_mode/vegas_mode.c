@@ -39,7 +39,8 @@ int vegas_remove_dev_func(struct ctlra_dev_t *dev, int reason, void *ud)
 {
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
-	printf("%s: %s\n", __func__, info.device);
+	printf("%s: %s %s, reason: %d\n", __func__, info.vendor_id,
+	       info.device, reason);
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,
