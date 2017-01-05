@@ -56,17 +56,6 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
-			if(e->slider.id == 11) {
-				uint32_t iter = (int)((e->slider.value+0.05) * 7.f);
-				for(i = 0; i < iter; i++) {
-					//ctlra_dev_light_set(dev, 1 + i, UINT32_MAX);
-					//ctlra_dev_light_set(dev, 8 + i, UINT32_MAX);
-				}
-				for(; i < 7.0; i++) {
-					//ctlra_dev_light_set(dev, 1 + i, 0);
-					//ctlra_dev_light_set(dev, 8 + i, 0);
-				}
-			}
 			message[0] = 0xb0;
 			message[1] = e->slider.id;
 			message[2] = int(e->slider.value * 127.f);
@@ -75,7 +64,8 @@ void demo_event_func(struct ctlra_dev_t* dev,
 
 		case CTLRA_EVENT_GRID:
 			static const char* grid_pressed[] = { " X ", "   " };
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID, e->button.id);
+			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID,
+			                                  e->button.id);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];
 			} else {
@@ -105,10 +95,10 @@ void sighndlr(int signal)
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,
-		    ctlra_event_func *event_func,
-		    ctlra_feedback_func *feedback_func,
-		    void **userdata_for_event_func,
-		    void *userdata)
+                    ctlra_event_func *event_func,
+                    ctlra_feedback_func *feedback_func,
+                    void **userdata_for_event_func,
+                    void *userdata)
 {
 	printf("daemon: accepting %s %s\n", info->vendor, info->device);
 
