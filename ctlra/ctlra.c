@@ -27,7 +27,6 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
-#warning TODO: remove the enum from here, match VID/PID, and get func then
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
 	{0x17cc, 0x1400, ni_kontrol_d2_connect},
@@ -52,7 +51,10 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)
 {
-	if(dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect) {
+	if(dev_id < 0)
+		return 0;
+
+	if((unsigned)dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect) {
 		struct ctlra_dev_t *new_dev = 0;
 		new_dev = devices[dev_id].connect(event_func,
 						  userdata,

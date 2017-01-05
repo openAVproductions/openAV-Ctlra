@@ -35,12 +35,12 @@ static const struct ctlra_supported_t ctlra_supported[] = {
 #define CTLRA_SUPPORTED_SIZE (sizeof(ctlra_supported) /\
 			     sizeof(ctlra_supported[0]))
 
-int vegas_remove_dev_func(struct ctlra_dev_t *dev, int reason, void *ud)
+void vegas_remove_dev_func(struct ctlra_dev_t *dev, int unexpected, void *ud)
 {
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
-	printf("%s: %s %s, reason: %d\n", __func__, info.vendor_id,
-	       info.device, reason);
+	printf("App: %s %s, unexpected removal: %s\n", info.vendor,
+	       info.device, unexpected ? "yes" : "no");
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,

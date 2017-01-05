@@ -92,9 +92,12 @@ struct ctlra_dev_info_t {
 /** Callback function that gets invoked just before a device is removed,
  * or disconnected, by Ctlra. This allows the application to notify the
  * user of a disconnection, or free memory that was used by this instance.
+ * The *unexpected_removal* parameter is set when eg: a cable is unplugged
+ * unexpectedly, it is 0 on a clean shutdown.
  */
-typedef int (*ctlra_remove_dev_func)(struct ctlra_dev_t *dev,
-				     int reason, void *userdata);
+typedef void (*ctlra_remove_dev_func)(struct ctlra_dev_t *dev,
+				      int unexpected_removal,
+				      void *userdata);
 
 /** A callback function that the application implements, called by the
  * Ctlra library when probing for supported devices. The application must
