@@ -29,11 +29,10 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
+#warning TODO: remove the enum from here, match VID/PID, and get func then
 static const struct ctlra_dev_connect_func_t devices[] = {
-	/* D2 shows as 1400 when plugged in, 1403 on hotplug (due to hub) */
+	{0, 0, 0, 0},
 	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1400, ni_kontrol_d2_connect},
-	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1403, ni_kontrol_d2_connect},
-
 	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
 	{CTLRA_DEV_NI_KONTROL_F1, 0x17cc, 0x1120, ni_kontrol_f1_connect},
 	{CTLRA_DEV_NI_KONTROL_X1_MK2, 0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},

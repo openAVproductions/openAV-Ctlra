@@ -55,12 +55,27 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Device attached: %04x:%04x, serial %s, ctlra %p\n",
 		       desc.idVendor, desc.idProduct, buf, user_data);
 #endif
-		// lookup the VID/PID pair, see if Ctlra supports it
-		// if so, lookup the dev-id and pass to Connect(), then
+		/* Quirks:
+		 * Here we can handle strange hotplug issues. For example,
+		 * controllers that have a USB hub integrated show as the
+		 * hub first (so the hotplug picks up that VID/PID pair,
+		 * not the device itself for some reason). Here we can
+		 * modify the VID/PID pair based on known corner cases:
+		 */
+		uint32_t quirk_vid = desc.idVendor;
+		uint32_t quirk_pid = desc.idProduct;
+		switch(quirk_vid) {
+		case 0x17cc:
+			/* NI Kontrol D2, change PID from 0x1403 (hub) back
+			 * to the normal PID of 0x1400 */
+			if(quirk_pid == 0x1403)
+				quirk_pid = 0x1400;
+			break;
+		default: break;
+		};
 
 		enum ctlra_dev_id_t dev_id =
-			ctlra_impl_get_id_by_vid_pid(desc.idVendor,
-						     desc.idProduct);
+			ctlra_impl_get_id_by_vid_pid(quirk_vid, quirk_pid);
 		if(dev_id == CTLRA_DEV_INVALID) {
 			/* Device is not supported by Ctlra, so release
 			 * the libusb handle which was opened to retrieve
