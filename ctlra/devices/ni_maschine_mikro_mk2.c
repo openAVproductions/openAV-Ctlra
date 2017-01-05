@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 #include "ni_maschine_mikro_mk2.h"
-#include "../device_impl.h"
+#include "impl.h"
 
 #define NI_VENDOR             (0x17cc)
 #define NI_MASCHINE_MIKRO_MK2 (0x1200)

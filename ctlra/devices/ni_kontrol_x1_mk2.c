@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 #include "ni_kontrol_x1_mk2.h"
-#include "../device_impl.h"
+#include "impl.h"
 
 #define NI_VENDOR          (0x17cc)
 #define NI_KONTROL_X1_MK2  (0x1220)

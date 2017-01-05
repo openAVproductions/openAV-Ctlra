@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "ctlra.h"
-#include "device_impl.h"
+#include "impl.h"
 
 /* For USB initialization */
 int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);

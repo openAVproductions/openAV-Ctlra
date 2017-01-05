@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ctlra.h"
-#include "device_impl.h"
+#include "impl.h"
 
 #include "libusb.h"
 
