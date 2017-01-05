@@ -33,6 +33,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
@@ -190,7 +192,7 @@ static __inline__ unsigned long long rdtsc(void)
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
-	uint8_t buf[1024], src;
+	uint8_t buf[1024];
 	int32_t nbytes;
 
 	do {
@@ -198,7 +200,6 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 			break;
 		}
 
-		src = buf[0];
 		uint8_t *data = &buf[1];
 
 		switch(nbytes) {
@@ -307,11 +308,9 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	int ret;
 
-#warning FIXME: overflow bug here caused overwriting of dev struct!!
 	if(!dev)
 		return;
 	if(light_id > LIGHTS_SIZE) {
-		//printf("return, invlaid light id %d\n", light_id);
 		return;
 	}
 
@@ -406,9 +405,8 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
-	memset(dev->lights, 0xff, sizeof(dev->lights));
+	memset(dev->lights, 0x0, sizeof(dev->lights));
 	ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
-	usleep(300);
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
