@@ -15,6 +15,7 @@ static volatile uint32_t done;
 void sighndlr(int signal)
 {
 	done = 1;
+	printf("\n");
 }
 
 struct ctlra_supported_t {

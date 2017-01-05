@@ -187,22 +187,13 @@ int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 						    0 /* userdata */,
 						    0x0);
 	if(dev) {
-		/* TODO: can we not just pass &dev->func directly? */
-		ctlra_event_func      app_event_func    = 0x0;
-		ctlra_feedback_func   app_feedback_func = 0x0;
-		ctlra_remove_dev_func app_remove_func   = 0x0;
-		void *                app_func_userdata = 0x0;
-
+		/* Application sets function pointers directly to device */
 		int accepted = ctlra->accept_dev_func(&dev->info,
-					&app_event_func,
-					&app_feedback_func,
-					&app_remove_func,
-					&app_func_userdata,
+					&dev->event_func,
+					&dev->feedback_func,
+					&dev->remove_func,
+					&dev->event_func_userdata,
 					ctlra->accept_dev_func_userdata);
-		dev->event_func    = app_event_func;
-		dev->feedback_func = app_feedback_func;
-		dev->remove_func   = app_remove_func;
-		dev->event_func_userdata = app_func_userdata;
 
 		if(!accepted) {
 			ctlra_dev_disconnect(dev);
