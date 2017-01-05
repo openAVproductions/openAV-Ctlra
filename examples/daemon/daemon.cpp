@@ -13,8 +13,11 @@
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;
 
-void demo_update_state(struct ctlra_dev_t *dev, void *d)
+void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
+	/* feedback like LEDs and Screen drawing based on application
+	 * state goes here. No events should be sent to the application
+	 * from this function - one-way App->Ctlra updates only */
 }
 
 void demo_event_func(struct ctlra_dev_t* dev,
@@ -22,9 +25,15 @@ void demo_event_func(struct ctlra_dev_t* dev,
                      struct ctlra_event_t** events,
                      void *userdata)
 {
+	/* Events from the Ctlra device are handled here. They should be
+	 * decoded, and events sent to the application. Note that this
+	 * function must *NOT* send feedback to the device. Instead, the
+	 * feedback_func() above should be used to send feedback */
+
+	/* See below, a RtMidiOut instance is passed as the device's
+	 * userdata pointer when registering the event_func */
 	RtMidiOut *midiout = (RtMidiOut *)userdata;
 
-	/* reserve 3 bytes */
 	std::vector<unsigned char> message(3);
 
 	for(uint32_t i = 0; i < num_events; i++) {
@@ -37,9 +46,8 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
-			//ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			message[0] = e->button.pressed ? 0x90 : 0x80;
-			message[1] = e->button.id;
+			message[1] = 60 + e->button.id;
 			message[2] = e->button.pressed ? 0x70 : 0;
 			midiout->sendMessage( &message );
 			break;
@@ -76,7 +84,8 @@ void demo_event_func(struct ctlra_dev_t* dev,
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
 			message[0] = e->grid.pressed ? 0x90 : 0x80;
-			message[1] = e->grid.pos + 60;
+			message[1] = e->grid.pos + 36; /* default GM drum
+							  mapping */
 			message[2] = e->grid.pressed ? 0x70 : 0;
 			midiout->sendMessage( &message );
 			break;
@@ -103,7 +112,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	printf("daemon: accepting %s %s\n", info->vendor, info->device);
 
 	*event_func = demo_event_func;
-	*feedback_func = demo_update_state;
+	*feedback_func = demo_feedback_func;
 
 	/* MIDI output */
 	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");
