@@ -94,7 +94,7 @@ struct ctlra_event_t {
 	/** The type of this event */
 	enum ctlra_event_type_t type;
 
-	/** The event data: see demo.c for example on how to unpack */
+	/** The event data: see examples/ dir for examples of usage */
 	union {
 		struct ctlra_event_button_t button;
 		struct ctlra_event_encoder_t encoder;
