@@ -12,15 +12,17 @@
 
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;
-static RtMidiOut *midiout;
+
+void demo_update_state(struct ctlra_dev_t *dev, void *d)
+{
+}
 
 void demo_event_func(struct ctlra_dev_t* dev,
                      uint32_t num_events,
                      struct ctlra_event_t** events,
                      void *userdata)
 {
-	(void)dev;
-	(void)userdata;
+	RtMidiOut *midiout = (RtMidiOut *)userdata;
 
 	/* reserve 3 bytes */
 	std::vector<unsigned char> message(3);
@@ -102,50 +104,49 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
-int main()
+int accept_dev_func(const struct ctlra_dev_info_t *info,
+		    ctlra_event_func *event_func,
+		    ctlra_feedback_func *feedback_func,
+		    void **userdata_for_event_func,
+		    void *userdata)
 {
-	printf("fixme\n");
-	return 0;
-#if 0
-	signal(SIGINT, sighndlr);
+	printf("daemon: accepting %s %s\n", info->vendor, info->device);
 
-	midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "OpenAV Ctlr");
+	*event_func = demo_event_func;
+	*feedback_func = demo_update_state;
+
+	/* MIDI output */
+	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");
 	unsigned int nPorts = midiout->getPortCount();
 	if ( nPorts == 0 ) {
 		std::cout << "No ports available!\n";
 		return 0;
 	}
 
-	//int dev_id = CTLRA_DEV_SIMPLE;
-	enum ctlra_dev_id_t dev_id = CTLRA_DEV_NI_KONTROL_F1;
-	//enum ctlra_dev_id_t dev_id = CTLRA_DEV_NI_KONTROL_Z1;
-	//enum ctlra_dev_id_t dev_id = CTLRA_DEV_NI_KONTROL_X1_MK2;
-	//int dev_id = CTLRA_DEV_NI_MASCHINE_MIKRO_MK2;
-	void *userdata = 0x0;
-	void *future = 0x0;
-	dev = ctlra_dev_connect(dev_id, demo_event_func, userdata, future);
-	if(!dev) {
-		printf("CtlrError: failed to connect to device\n");
-		return -1;
-	}
-
-	struct ctlra_dev_info_t info;
-	ctlra_dev_get_info(dev, &info);
 	try {
-		midiout->openVirtualPort(info.device);
+		midiout->openVirtualPort(info->device);
 	} catch (...) {
 		printf("CtlrError: failed to open virtual midi port\n");
 		return -1;
 	}
+	*userdata_for_event_func = midiout;
+
+	return 1;
+}
+
+int main()
+{
+	signal(SIGINT, sighndlr);
+
+	struct ctlra_t *ctlra = ctlra_create(NULL);
+	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
 	while(!done) {
-		ctlra_dev_poll(dev);
-		usleep(1);
+		ctlra_idle_iter(ctlra);
+		usleep(100);
 	}
 
-	ctlra_dev_disconnect(dev);
-	delete midiout;
+	ctlra_exit(ctlra);
 
 	return 0;
-#endif
 }
