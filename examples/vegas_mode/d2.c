@@ -152,7 +152,7 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			printf("id %d, dir %d\n", e->encoder.id, e->encoder.delta);
+			//printf("id %d, dir %d\n", e->encoder.id, e->encoder.delta);
 			break;
 
 		case CTLRA_EVENT_SLIDER:

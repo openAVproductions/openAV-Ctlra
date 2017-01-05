@@ -396,10 +396,7 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		/* continue searching next HID dev */
 	}
 
-	if(found)
-		printf("found Mikro @ %s\n", buf);
-	else {
-		printf("no NI Maschine Mikro detected\n");
+	if(!found) {
 		free(dev);
 		return 0;
 	}
