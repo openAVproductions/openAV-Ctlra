@@ -34,6 +34,13 @@ static const struct ctlra_supported_t ctlra_supported[] = {
 #define CTLRA_SUPPORTED_SIZE (sizeof(ctlra_supported) /\
 			     sizeof(ctlra_supported[0]))
 
+int vegas_remove_dev_func(struct ctlra_dev_t *dev, int reason, void *ud)
+{
+	struct ctlra_dev_info_t info;
+	ctlra_dev_get_info(dev, &info);
+	printf("%s: %s\n", __func__, info.device);
+}
+
 int accept_dev_func(const struct ctlra_dev_info_t *info,
 		    ctlra_event_func *event_func,
 		    ctlra_feedback_func *feedback_func,
@@ -48,7 +55,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 		   info->device_id == ctlra_supported[i].device_id) {
 			*event_func = ctlra_supported[i].ctlra_poll;
 			*feedback_func = ctlra_supported[i].update_state;
-			*remove_func = 0;
+			*remove_func = vegas_remove_dev_func;
 			*userdata_for_event_func = userdata;
 			printf("App: accepting %s %s (%x:%x)\n",
 			       info->vendor, info->device,
