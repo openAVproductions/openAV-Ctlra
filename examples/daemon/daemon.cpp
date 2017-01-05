@@ -103,6 +103,13 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
+void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
+		     void *userdata)
+{
+	RtMidiOut *midiout = (RtMidiOut *)userdata;
+	delete midiout;
+}
+
 int accept_dev_func(const struct ctlra_dev_info_t *info,
                     ctlra_event_func *event_func,
                     ctlra_feedback_func *feedback_func,
@@ -114,7 +121,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	*event_func = demo_event_func;
 	*feedback_func = demo_feedback_func;
-	*remove_func = 0x0;
+	*remove_func = remove_dev_func;
 
 	/* MIDI output */
 	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");
