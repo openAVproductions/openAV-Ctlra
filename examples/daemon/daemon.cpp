@@ -106,6 +106,7 @@ void sighndlr(int signal)
 int accept_dev_func(const struct ctlra_dev_info_t *info,
                     ctlra_event_func *event_func,
                     ctlra_feedback_func *feedback_func,
+                    ctlra_remove_dev_func *remove_func,
                     void **userdata_for_event_func,
                     void *userdata)
 {
@@ -113,6 +114,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	*event_func = demo_event_func;
 	*feedback_func = demo_feedback_func;
+	*remove_func = 0x0;
 
 	/* MIDI output */
 	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");

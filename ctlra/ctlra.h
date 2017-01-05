@@ -89,6 +89,13 @@ struct ctlra_dev_info_t {
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
 };
 
+/** Callback function that gets invoked just before a device is removed,
+ * or disconnected, by Ctlra. This allows the application to notify the
+ * user of a disconnection, or free memory that was used by this instance.
+ */
+typedef int (*ctlra_remove_dev_func)(struct ctlra_dev_t *dev,
+				     int reason, void *userdata);
+
 /** A callback function that the application implements, called by the
  * Ctlra library when probing for supported devices. The application must
  * accept the device, and provide *ctlra_event_func* and userdata to Ctlra.
@@ -99,6 +106,7 @@ struct ctlra_dev_info_t {
 typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
 				     ctlra_event_func *event_func,
 				     ctlra_feedback_func *feedback_func,
+				     ctlra_remove_dev_func *remove_func,
 				     void **userdata_for_event_func,
 				     void *userdata_for_accept_func);
 
