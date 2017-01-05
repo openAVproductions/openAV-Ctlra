@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #include "ctlra.h"
-#include "devices.h"
 #include "device_impl.h"
 
 /* For USB initialization */
@@ -15,7 +14,6 @@ void ctlra_impl_usb_idle_iter(struct ctlra_t *);
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
 
 struct ctlra_dev_connect_func_t {
-	enum ctlra_dev_id_t id;
 	uint32_t vid;
 	uint32_t pid;
 	ctlra_dev_connect_func connect;
@@ -31,27 +29,26 @@ DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 
 #warning TODO: remove the enum from here, match VID/PID, and get func then
 static const struct ctlra_dev_connect_func_t devices[] = {
-	{0, 0, 0, 0},
-	{CTLRA_DEV_NI_KONTROL_D2, 0x17cc, 0x1400, ni_kontrol_d2_connect},
-	{CTLRA_DEV_NI_KONTROL_Z1, 0x17cc, 0x1210, ni_kontrol_z1_connect},
-	{CTLRA_DEV_NI_KONTROL_F1, 0x17cc, 0x1120, ni_kontrol_f1_connect},
-	{CTLRA_DEV_NI_KONTROL_X1_MK2, 0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
-	{CTLRA_DEV_NI_MASCHINE_MIKRO_MK2, 0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
+	{0, 0, 0},
+	{0x17cc, 0x1400, ni_kontrol_d2_connect},
+	{0x17cc, 0x1210, ni_kontrol_z1_connect},
+	{0x17cc, 0x1120, ni_kontrol_f1_connect},
+	{0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
+	{0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
-enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
+int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 {
 	for(unsigned i = 0; i < CTLRA_NUM_DEVS; i++) {
 		if(devices[i].vid == vid && devices[i].pid == pid) {
-			return devices[i].id;
+			return i;
 		}
 	}
-	return CTLRA_DEV_INVALID;
+	return -1;
 }
 
-struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
-				      enum ctlra_dev_id_t dev_id,
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)
 {
@@ -177,10 +174,10 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 }
 
 int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
-			  enum ctlra_dev_id_t dev_id)
+			  int id)
 {
 	struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
-						    dev_id,
+						    id,
 						    0x0,
 						    0 /* userdata */,
 						    0x0);
@@ -219,7 +216,7 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	ctlra->accept_dev_func_userdata = userdata;
 
 	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
-		num_accepted += ctlra_impl_accept_dev(ctlra, devices[i].id);
+		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
 
 	return num_accepted;

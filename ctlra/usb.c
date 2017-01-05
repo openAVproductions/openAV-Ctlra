@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "ctlra.h"
-#include "devices.h"
 #include "device_impl.h"
 
 #include "libusb.h"
@@ -11,8 +10,8 @@
 #define USB_PATH_MAX 256
 
 /* From cltra.c */
-extern enum ctlra_dev_id_t ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
-extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, enum ctlra_dev_id_t dev_id);
+extern int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
+extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
 
 static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 				     uint8_t desc_serial, uint8_t *buffer,
@@ -74,9 +73,8 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		default: break;
 		};
 
-		enum ctlra_dev_id_t dev_id =
-			ctlra_impl_get_id_by_vid_pid(quirk_vid, quirk_pid);
-		if(dev_id == CTLRA_DEV_INVALID) {
+		int id = ctlra_impl_get_id_by_vid_pid(quirk_vid, quirk_pid);
+		if(id < 0) {
 			/* Device is not supported by Ctlra, so release
 			 * the libusb handle which was opened to retrieve
 			 * the serial from the device */
@@ -85,7 +83,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 			return -1;
 		}
 
-		int accepted = ctlra_impl_accept_dev(ctlra, dev_id);
+		int accepted = ctlra_impl_accept_dev(ctlra, id);
 		if(!accepted)
 			libusb_close(handle);
 		return 0;

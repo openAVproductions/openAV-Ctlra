@@ -47,7 +47,6 @@ extern "C" {
  */
 
 #include "event.h"
-#include "devices.h"
 
 #define CTLRA_DEV_NAME_MAX   32
 #define CTLRA_DEV_SERIAL_MAX 64
@@ -132,8 +131,7 @@ void ctlra_idle_iter(struct ctlra_t *ctlra);
 void ctlra_exit(struct ctlra_t *ctlra);
 
 /** Connect to a controller device. */
-struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
-				      enum ctlra_dev_id_t dev_id,
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int id,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future);
 
