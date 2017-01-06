@@ -42,7 +42,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 	}
 #warning TODO: Make the library detect removals too, and if the removal\
 	is of a device that uses HIDRAW (instead of libusb) then cleanup\
-	aka: maschine, since write fail etc won't cause banishing/removal.
+	aka: maschine, since write fail etc wont cause banishing/removal.
 
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
 
@@ -291,8 +291,10 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
+		/*
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
+		*/
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
@@ -310,8 +312,10 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
+		/*
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
+		*/
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
@@ -329,8 +333,10 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
+		/*
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
+		*/
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
