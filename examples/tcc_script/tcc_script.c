@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/stat.h>
 
 /* Ctlra header */
 #include "ctlra/ctlra.h"
@@ -25,6 +26,19 @@ static void error(const char *msg)
 	printf("%s\n", msg);
 }
 
+static int file_modify_time(const char *path, time_t *new_time)
+{
+	if(new_time == 0)
+		return -1;
+	struct stat file_stat;
+	int err = stat(path, &file_stat);
+	if (err != 0) {
+		return -2;
+	}
+	*new_time = file_stat.st_mtime;
+	return 0;
+}
+
 struct script_t {
 	/* A pointer to memory malloced for the generated code */
 	void *program;
@@ -33,6 +47,8 @@ struct script_t {
 	/* TCC should recompile the recompile and update when set */
 	uint8_t recompile;
 	uint8_t compile_failed;
+	/* Time the script file was last modified */
+	time_t time_modified;
 
 	/* Function pointer to get the USB device this script supports */
 	script_get_vid_pid get_vid_pid;
@@ -49,9 +65,17 @@ void script_free(struct script_t *s)
 	free(s);
 }
 
+void script_reset(struct script_t *s)
+{
+	s->event_func = 0x0;
+	s->get_vid_pid = 0x0;
+	if(s->program)
+		free(s->program);
+}
+
 int script_compile_file(struct script_t *script)
 {
-#warning TODO: cleanup existing program if script already exists
+	script_reset(script);
 
 	TCCState *s;
 	script->compile_failed = 1;
@@ -66,6 +90,7 @@ int script_compile_file(struct script_t *script)
 	tcc_set_options(s, "-g");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
+	printf("compiling %s\n", script->filepath);
 	int ret = tcc_add_file(s, script->filepath);
 	if(ret < 0) {
 		printf("gracefully handling error now... \n");
@@ -89,19 +114,14 @@ int script_compile_file(struct script_t *script)
 	if(!script->event_func)
 		error("failed to find script_event_func function\n");
 
-	printf("compiled ok\n");
-
 	tcc_delete(s);
 
-	/*
-	uint32_t iter = 0;
-	iter = poll(iter);
-
-	struct event_t ev = { 0, 1 };
-	if(iter == 1)
-		ev.type = 1;
-	handle(&ev);
-	*/
+	int err = file_modify_time(script->filepath,
+				   &script->time_modified);
+	if(err) {
+		printf("%s: error getting file modified time\n", __func__);
+		return -1;
+	}
 
 	script->compile_failed = 0;
 	return 0;
@@ -127,6 +147,22 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * has, it can swap the pointer for the event-func here, and then
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
+
+	/* Check if we need to recompile script based on modified time of
+	 * the script file, comparing with the compiled modified time */
+	time_t new_time;
+	int err = file_modify_time(script->filepath,
+				   &new_time);
+	if(err) {
+		printf("%s: error getting file modified time\n", __func__);
+	}
+	if(new_time > script->time_modified) {
+		printf("tcc: recompiling script %s\n", script->filepath);
+		// trigger recompile, which will update modified timestamp
+		script_compile_file(script);
+	}
+
+	/* Handle events */
 	if(script->event_func)
 		script->event_func(dev, num_events, events, userdata);
 }
@@ -165,8 +201,23 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	script_compile_file(script);
 	if(script->compile_failed) {
-		printf("tcc: warning, compilation of script failed"
+		printf("tcc: warning, compilation of script failed "
 		       "refusing %s %s\n", info->vendor, info->device);
+		script_free(script);
+		return 0;
+	}
+
+#if 0
+	/* For testing re-compile after initial - causing issues */
+	printf("compile 2nd time\n");
+	script_compile_file(script);
+	if(script->compile_failed) {
+		printf("compile 2nd time failed\n");
+		return 0;
+	}
+#endif
+
+	if(!script->get_vid_pid) {
 		script_free(script);
 		return 0;
 	}
@@ -195,6 +246,7 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
+#if 0
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
@@ -204,6 +256,25 @@ int main()
 	}
 
 	ctlra_exit(ctlra);
+#else
+	struct script_t script = {0};
+
+	script.filepath = strdup("/tmp/ni_d2_script.c");
+
+	int vid = 0x17cc;
+	int pid = 0x1400;
+	script_compile_file(&script);
+	if(script.compile_failed) {
+		printf("tcc: warning, compilation of script failed "
+		       "refusing %s %s\n", &vid, &pid);
+		return 0;
+	}
+
+	script_compile_file(&script);
+	if(script.compile_failed) {
+		printf("failed 2nd time\n");
+	}
+#endif
 
 	return 0;
 }

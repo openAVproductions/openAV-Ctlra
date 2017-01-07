@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+
 #include "ctlra.h"
 
 /* Tell the host application what USB device this script is for */
@@ -16,3 +17,4 @@ void script_event_func(struct ctlra_dev_t* dev,
 {
 	printf("script event func\n");
 }
+
