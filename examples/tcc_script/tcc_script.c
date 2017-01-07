@@ -34,7 +34,10 @@ struct script_t {
 	uint8_t recompile;
 	uint8_t compile_failed;
 
+	/* Function pointer to get the USB device this script supports */
 	script_get_vid_pid get_vid_pid;
+	/* Function pointer to the scripts event handling function */
+	script_event_func event_func;
 };
 
 void script_free(struct script_t *s)
@@ -48,6 +51,8 @@ void script_free(struct script_t *s)
 
 int script_compile_file(struct script_t *script)
 {
+#warning TODO: cleanup existing program if script already exists
+
 	TCCState *s;
 	script->compile_failed = 1;
 
@@ -78,15 +83,12 @@ int script_compile_file(struct script_t *script)
 	                      tcc_get_symbol(s, "script_get_vid_pid");
 	if(!script->get_vid_pid)
 		error("failed to find script_get_vid_pid function\n");
-	/*
-	poll = (ctlr_poll)tcc_get_symbol(s, "d2_poll");
-	if(!poll)
-		error("failed to get de poll\n");
 
-	handle = (void (*)(void*))tcc_get_symbol(s, "d2_handle");
-	if(!handle)
-		error("failed to get d2 handle\n");
-	*/
+	script->event_func = (script_event_func)
+	                      tcc_get_symbol(s, "script_event_func");
+	if(!script->event_func)
+		error("failed to find script_event_func function\n");
+
 	printf("compiled ok\n");
 
 	tcc_delete(s);
@@ -125,6 +127,8 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * has, it can swap the pointer for the event-func here, and then
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
+	if(script->event_func)
+		script->event_func(dev, num_events, events, userdata);
 }
 
 void sighndlr(int signal)
