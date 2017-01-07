@@ -405,9 +405,6 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
-	memset(dev->lights, 0x0, sizeof(dev->lights));
-	ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
-
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
