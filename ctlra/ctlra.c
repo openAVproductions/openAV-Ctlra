@@ -47,6 +47,29 @@ int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 	return -1;
 }
 
+/* Search trough existing instances, and match against first VID/PID */
+int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
+				  int32_t pid, struct ctlra_dev_t **out_dev)
+{
+	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+	*out_dev = 0x0;
+	while(dev_iter) {
+#if 0
+		printf("%s, checking %04x %04x\n", __func__,
+		       dev_iter->info.vendor_id,
+		       dev_iter->info.device_id);
+#endif
+		if(dev_iter->info.vendor_id == vid &&
+		   dev_iter->info.device_id == pid) {
+			*out_dev = dev_iter;
+			return 0;
+		}
+		dev_iter = dev_iter->dev_list_next;
+	}
+	return -1;
+}
+
+
 struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)

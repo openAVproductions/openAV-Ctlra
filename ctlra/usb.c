@@ -11,6 +11,8 @@
 /* From cltra.c */
 extern int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
 extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
+extern int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
+					 int32_t pid, struct ctlra_dev_t **out_dev);
 
 static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 				     uint8_t desc_serial, uint8_t *buffer,
@@ -43,6 +45,34 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 #warning TODO: Make the library detect removals too, and if the removal\
 	is of a device that uses HIDRAW (instead of libusb) then cleanup\
 	aka: maschine, since write fail etc wont cause banishing/removal.
+	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
+		/* Quirks:
+		 * If a device is unplugged, usually the libusb read/write
+		 * will fail, causing the device to be banished, and then
+		 * cleaned up and removed automatically by Ctlra. The
+		 * exception is devices that read /dev/hidrawX manually,
+		 * because they return -1 if no data is available or there
+		 * is an error reading the file descriptor.
+		 *
+		 * The solution used here it to use libusb to detect the
+		 * removal of the device, and then banish the ctlra_dev_t
+		 * instance if it matches the device */
+#if 0
+		printf("Device removed: %04x:%04x, ctlra %p\n",
+		       desc.idVendor, desc.idProduct, user_data);
+#endif
+		/* NI Maschine Mikro MK2 */
+		if(desc.idVendor == 0x17cc && desc.idProduct == 0x1200) {
+			struct ctlra_dev_t *ni_mm;
+			int err = ctlra_impl_dev_get_by_vid_pid(ctlra,
+								0x17cc,
+								0x1200,
+								&ni_mm);
+			//printf("search = %d, ni_mm = %p\n", err, ni_mm);
+			ctlra_dev_disconnect(ni_mm);
+		}
+		return 0;
+	}
 
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
 
@@ -91,9 +121,6 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 			libusb_close(handle);
 		return 0;
 	}
-	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
-		printf("Device removed: %04x:%04x, serial %d\n",
-		       desc.idVendor, desc.idProduct, desc.iSerialNumber);
 
 	printf("%s: done & return 0\n", __func__);
 	return 0;
@@ -133,11 +160,9 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 	/* setup hotplug callbacks */
 	libusb_hotplug_callback_handle hp[2];
 	ret = libusb_hotplug_register_callback(NULL,
-					       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED,
-					       /* TODO: do we want to gracefully
-						* remove? We should handle
-						* unexpected unplug anyway.. */
-					       /* | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, */
+					       /* Register arrive and leave */
+					       LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+					       LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
 					       0,
 					       LIBUSB_HOTPLUG_MATCH_ANY,
 					       LIBUSB_HOTPLUG_MATCH_ANY,
