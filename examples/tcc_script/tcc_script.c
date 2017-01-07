@@ -1,12 +1,16 @@
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
+/* Ctlra header */
 #include "ctlra/ctlra.h"
-
+/* TCC header */
 #include "libtcc.h"
+/* Application scripting API header */
+#include "application_api.h"
 
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;
@@ -22,13 +26,30 @@ static void error(const char *msg)
 }
 
 struct script_t {
+	/* A pointer to memory malloced for the generated code */
 	void *program;
-	const char *path;
+	/* The path of the script file */
+	char *filepath;
+	/* TCC should recompile the recompile and update when set */
+	uint8_t recompile;
+	uint8_t compile_failed;
+
+	script_get_vid_pid get_vid_pid;
 };
 
-int script_compile_file(const char *file, struct script_t *script)
+void script_free(struct script_t *s)
+{
+	if(s->program)
+		free(s->program);
+	if(s->filepath)
+		free(s->filepath);
+	free(s);
+}
+
+int script_compile_file(struct script_t *script)
 {
 	TCCState *s;
+	script->compile_failed = 1;
 
 	s = tcc_new();
 	if(!s) {
@@ -40,7 +61,7 @@ int script_compile_file(const char *file, struct script_t *script)
 	tcc_set_options(s, "-g");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
-	int ret = tcc_add_file(s, file);
+	int ret = tcc_add_file(s, script->filepath);
 	if(ret < 0) {
 		printf("gracefully handling error now... \n");
 		return -1;
@@ -53,6 +74,10 @@ int script_compile_file(const char *file, struct script_t *script)
 	if(ret < 0)
 		error("failed to relocate code to program memory\n");
 
+	script->get_vid_pid = (script_get_vid_pid)
+	                      tcc_get_symbol(s, "script_get_vid_pid");
+	if(!script->get_vid_pid)
+		error("failed to find script_get_vid_pid function\n");
 	/*
 	poll = (ctlr_poll)tcc_get_symbol(s, "d2_poll");
 	if(!poll)
@@ -62,6 +87,7 @@ int script_compile_file(const char *file, struct script_t *script)
 	if(!handle)
 		error("failed to get d2 handle\n");
 	*/
+	printf("compiled ok\n");
 
 	tcc_delete(s);
 
@@ -75,72 +101,30 @@ int script_compile_file(const char *file, struct script_t *script)
 	handle(&ev);
 	*/
 
+	script->compile_failed = 0;
 	return 0;
 }
 
-void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
+void tcc_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* feedback like LEDs and Screen drawing based on application
 	 * state goes here. No events should be sent to the application
 	 * from this function - one-way App->Ctlra updates only */
 }
 
-void demo_event_func(struct ctlra_dev_t* dev,
+void tcc_event_proxy(struct ctlra_dev_t* dev,
                      uint32_t num_events,
                      struct ctlra_event_t** events,
                      void *userdata)
 {
-	/* Events from the Ctlra device are handled here. They should be
-	 * decoded, and events sent to the application. Note that this
-	 * function must *NOT* send feedback to the device. Instead, the
-	 * feedback_func() above should be used to send feedback */
-
-	for(uint32_t i = 0; i < num_events; i++) {
-		const char *pressed = 0;
-		struct ctlra_event_t *e = events[i];
-		const char *name = 0;
-		static const char* grid_pressed[] = { " X ", "   " };
-		switch(e->type) {
-		case CTLRA_EVENT_BUTTON:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_BUTTON, e->button.id);
-			printf("[%s] button %s (%d)\n",
-			       e->button.pressed ? " X " : "   ",
-			       name, e->button.id);
-			break;
-
-		case CTLRA_EVENT_ENCODER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_ENCODER,  e->button.id);
-			printf("[%s] encoder %s (%d)\n",
-			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
-			break;
-
-		case CTLRA_EVENT_SLIDER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_SLIDER, e->button.id);
-			printf("[%03d] slider %s (%d)\n",
-			       (int)(e->slider.value * 100.f),
-			       name, e->slider.id);
-			break;
-
-		case CTLRA_EVENT_GRID:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID,
-			                                  e->button.id);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
-				pressed = grid_pressed[e->grid.pressed];
-			} else {
-				pressed = "---";
-			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
-				printf(", pressure %1.3f", e->grid.pressure);
-			printf("\n");
-			break;
-		default:
-			break;
-		};
-	}
-
-	ctlra_dev_light_flush(dev, 0);
+	/* This is advanced usage of the event func - if you have not
+	 * already looked at the daemon example, please do so first!
+	 *
+	 * This function acts as a proxy for TCC to re-route the calls,
+	 * but also be able to check if a script has been updated. If it
+	 * has, it can swap the pointer for the event-func here, and then
+	 * neither Ctlra or the App need to know what happend */
+	struct script_t *script = userdata;
 }
 
 void sighndlr(int signal)
@@ -150,9 +134,11 @@ void sighndlr(int signal)
 }
 
 void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
-		     void *userdata)
+                     void *userdata)
 {
-	printf("%s\n", __func__);
+	struct script_t *script = userdata;
+	printf("%s, script = %p\n", __func__, script);
+	script_free(script);
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,
@@ -162,12 +148,41 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
                     void **userdata_for_event_func,
                     void *userdata)
 {
-	printf("daemon: accepting %s %s\n", info->vendor, info->device);
+	static int accepted;
 
-	*event_func = demo_event_func;
-	*feedback_func = demo_feedback_func;
+	/* Just one ctlra for now */
+	if(accepted)
+		return 0;
+
+	struct script_t *script = calloc(1, sizeof(struct script_t));
+	if(!script) return 0;
+
+	script->filepath = strdup("/tmp/ni_d2_script.c");
+
+	script_compile_file(script);
+	if(script->compile_failed) {
+		printf("tcc: warning, compilation of script failed"
+		       "refusing %s %s\n", info->vendor, info->device);
+		script_free(script);
+		return 0;
+	}
+
+	int vid = -1;
+	int pid = -1;
+	script->get_vid_pid(&vid, &pid);
+	if(vid != info->vendor_id || pid != info->device_id) {
+		script_free(script);
+		return 0;
+	}
+
+	printf("tcc: accepting %s %s, script = %p\n",
+	       info->vendor, info->device, script);
+	*event_func = tcc_event_proxy;
+	*feedback_func = tcc_feedback_func;
 	*remove_func = remove_dev_func;
-	*userdata_for_event_func = 0x0;
+	*userdata_for_event_func = script;
+
+	accepted = 1;
 
 	return 1;
 }

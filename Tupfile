@@ -7,7 +7,7 @@ LDFLAGS+=-lusb-1.0 -ljack -lsndfile -pthread
 
 : examples/daemon/*.o ctlra/libctlra.a |> $(CXX) %f -o %o $(LDFLAGS) -ljack -lasound -lpthread |> daemon
 
-: examples/tcc_script/*.o ctlra/libctlra.a |> $(CC) %f -o %o $(LDFLAGS) -ltcc -ldl -lasound -lpthread |> tcc_script
+: examples/tcc_script/tcc_script.o ctlra/libctlra.a |> $(CC) %f -o %o $(LDFLAGS) -ltcc -ldl -lasound -lpthread |> tcc_script
 
 # Vegas compiling with Cairo
 VEGAS_IN=examples/vegas_mode/vegas_mode.o examples/vegas_mode/libvegas_mode.a ctlra/libctlra.a
