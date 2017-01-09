@@ -32,93 +32,7 @@
 #ifndef OPENAV_CTLRA_NI_KONTROL_D2_H
 #define OPENAV_CTLRA_NI_KONTROL_D2_H
 
-#if 0
 enum NI_KONTROL_D2_LEDS {
-	NI_KONTROL_D2_LED_FX_SELECT = 0,
-	NI_KONTROL_D2_LED_FX_BTN_1,
-	NI_KONTROL_D2_LED_FX_BTN_2,
-	NI_KONTROL_D2_LED_FX_BTN_3,
-	NI_KONTROL_D2_LED_FX_BTN_4,
-	NI_KONTROL_D2_LED_SCREEN_LEFT_1,
-	NI_KONTROL_D2_LED_SCREEN_LEFT_2,
-	NI_KONTROL_D2_LED_SCREEN_LEFT_3,
-	NI_KONTROL_D2_LED_SCREEN_LEFT_4,
-	NI_KONTROL_D2_LED_SCREEN_RIGHT_1,
-	NI_KONTROL_D2_LED_SCREEN_RIGHT_2,
-	NI_KONTROL_D2_LED_SCREEN_RIGHT_3,
-	NI_KONTROL_D2_LED_SCREEN_RIGHT_4,
-	NI_KONTROL_D2_LED_BACK,
-	NI_KONTROL_D2_LED_CAPTURE,
-	NI_KONTROL_D2_LED_EDIT,
-	NI_KONTROL_D2_LED_TRACK_ON_1,
-	NI_KONTROL_D2_LED_TRACK_ON_2,
-	NI_KONTROL_D2_LED_TRACK_ON_3,
-	NI_KONTROL_D2_LED_TRACK_ON_4,
-	NI_KONTROL_D2_LED_HOTQUEUE,
-	NI_KONTROL_D2_LED_LOOP,
-	NI_KONTROL_D2_LED_FREEZE,
-	NI_KONTROL_D2_LED_REMIX,
-	NI_KONTROL_D2_LED_FLUX,
-	NI_KONTROL_D2_LED_DECK,
-	NI_KONTROL_D2_LED_SHIFT,
-	NI_KONTROL_D2_LED_SYNC,
-	NI_KONTROL_D2_LED_CUE,
-	NI_KONTROL_D2_LED_PLAY,
-};
-
-enum NI_KONTROL_D2_CONTROLS {
-	NI_KONTROL_FX_BTN_UPPER_1 = 0, /* Left */
-	NI_KONTROL_FX_BTN_UPPER_2 = 1,
-	NI_KONTROL_FX_BTN_UPPER_3 = 2,
-	NI_KONTROL_FX_BTN_UPPER_4 = 3,
-	NI_KONTROL_FX_BTN_LOWER_1 = 4, /* Left */
-	NI_KONTROL_FX_BTN_LOWER_2 = 5,
-	NI_KONTROL_FX_BTN_LOWER_3 = 6,
-	NI_KONTROL_FX_BTN_LOWER_4 = 7,
-	NI_KONTROL_FX_BTN_COUNT,
-	NI_KONTROL_D2_CONTROLS,
-};
-
-+	// GRID light system
-+	1-24   pads
-+
-+	// individual lights
-+	25     fx select
-+	26-29  fx btn 1 to 4
-+	30-33  screen left 1 to 4
-+	34-37  screen right 1 to 4
-+	38 back
-+	39 cap
-+	40 edit
-+	41-44 track on 1 to 4
-+
-+	45 hotque(white)
-+	46     (blue)
-+	47,48 loop w/b
-+	49 50 freeze w/b
-+	51 52 Remix
-+	53 Flux
-+	54 55 Deck
-+	56 Shift
-+	57 sync (green)
-+	58 sync (red)
-+	59 cue
-+	60 play
-+
-+	61-64 loop surround white
-+	65-68 loop surround blue
-+
-+	// Grid system two
-+	69-94: 25 touchstrip leds blue left to right
-+	94-+25: 25 touchstrip leds orange left to right
-+
-+	119 - 122 decks a b c d
-+	*/
-
-#endif
-
-enum NI_KONTROL_D2_LEDS {
-	/* Left vol LEDs, first 5 blue, last 2 orange */
 	NI_KONTROL_D2_LED_PAD_1,
 	NI_KONTROL_D2_LED_PAD_2,
 	NI_KONTROL_D2_LED_PAD_3,
@@ -131,7 +45,7 @@ enum NI_KONTROL_D2_LEDS {
 	NI_KONTROL_D2_LED_FX_1,
 	NI_KONTROL_D2_LED_FX_2,
 	NI_KONTROL_D2_LED_FX_3,
-	NI_KONTROL_D2_LED_FX_4, //*warning */
+	NI_KONTROL_D2_LED_FX_4,
 	NI_KONTROL_D2_LED_SCREEN_LEFT_1,
 	NI_KONTROL_D2_LED_SCREEN_LEFT_2,
 	NI_KONTROL_D2_LED_SCREEN_LEFT_3,
@@ -165,7 +79,8 @@ enum NI_KONTROL_D2_LEDS {
 	NI_KONTROL_D2_LED_LOOP_CIRCLE_2,
 	NI_KONTROL_D2_LED_LOOP_CIRCLE_3,
 	NI_KONTROL_D2_LED_LOOP_CIRCLE_4,
-	/* Touchstrip LEDs: 25 bi-color leds, blue or orange */
+	/* Touchstrip LEDs: 25 bi-color leds, blue or orange. See helper
+	 * function below: ni_kontrol_d2_light_touchstrip() */
 	NI_KONTROL_D2_LED_TOUCHSTRIP,
 	NI_KONTROL_D2_LED_COUNT,
 };
