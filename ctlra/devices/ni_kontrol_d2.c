@@ -329,7 +329,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 						.type =
 							CTLRA_EVENT_ENCODER,
 						.encoder  = {
-							.id = i,
+							.id = NI_KONTROL_D2_ENCODER_SCREEN_1 + i,
 							.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
 							.delta_float = delta / 999.f,
 						}
