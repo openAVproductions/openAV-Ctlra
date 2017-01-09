@@ -152,11 +152,15 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			//printf("id %d, dir %d\n", e->encoder.id, e->encoder.delta);
+			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT)
+				printf("id %d, float delta %f\n", e->encoder.id, e->encoder.delta_float);
+			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_INT)
+				printf("id %d, int delta %d\n", e->encoder.id, e->encoder.delta);
 			break;
 
 		case CTLRA_EVENT_SLIDER:
 			d->volume = e->slider.value;
+			printf("%d, %f\n", e->slider.id, e->slider.value);
 			if(e->slider.id == 5) {
 				uint32_t iter = (int)((d->volume+0.05) * 7.f);
 				for(i = 0; i < iter; i++) {

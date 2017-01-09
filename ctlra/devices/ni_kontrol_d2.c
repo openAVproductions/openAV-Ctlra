@@ -275,6 +275,8 @@ struct ni_kontrol_d2_t {
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
+	float screen_encoders[4];
+
 	/* bit hacky, but allows sending of endpoint address as the
 	 * usb transfer, as hidapi encodes endpoint by first byte of
 	 * transfer. */
@@ -316,11 +318,28 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 
 		switch(nbytes) {
 		case 25: {
-			for(uint32_t i = 0; i < 25; i++) {
+			for(uint32_t i = 0; i < 4; i++) {
 				/* screen encoders here */
 				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
-				//printf("%d : %04x ", val);
-				//NI_KONTROL_D2_SLIDER_SCREEN_ENCODER_1 + i
+				//printf("%d : %04x\n", i, val);
+				if(dev->screen_encoders[i] != val) {
+					float delta = val - dev->screen_encoders[i];
+					dev->screen_encoders[i] = val;
+					struct ctlra_event_t event = {
+						.type =
+							CTLRA_EVENT_ENCODER,
+						.encoder  = {
+							.id = i,
+							.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
+							.delta_float = delta / 999.f,
+						}
+					};
+					struct ctlra_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+					                     dev->base.event_func_userdata);
+					//printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
+					dev->screen_encoders[i] = val;
+				}
 			}
 			for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
 				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
@@ -370,6 +389,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 				.type = CTLRA_EVENT_ENCODER,
 				.encoder = {
 					.id = NI_KONTROL_D2_ENCODER_BROWSE,
+					.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
 					.delta = 0,
 				},
 			};
@@ -378,6 +398,8 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 			int8_t loop   = ((buf[1] & 0x0f)     ) & 0xf;
 			/* Browse encoder turn event */
 			if(browse != dev->encoder_browse) {
+#warning TODO: check if this wrap16 code is dealing with values > 1 OK - aka\
+	if we turn very fast, does it deal with sending a delta of eg: 4
 				int dir = ctlra_dev_encoder_wrap_16(browse,
 								    dev->encoder_browse);
 				event.encoder.delta = dir;

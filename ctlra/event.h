@@ -54,12 +54,36 @@ struct ctlra_event_button_t {
 	uint8_t pressed;
 };
 
+#define CTLRA_EVENT_ENCODER_FLAG_INT   (1<<0)
+#define CTLRA_EVENT_ENCODER_FLAG_FLOAT (1<<1)
+
 /** Represents an endless stepped controller. */
 struct ctlra_event_encoder_t {
 	/** The id of the encoder */
 	uint32_t id;
-	/** Positive values indicate clockwise rotation, and vice-versa */
-	int32_t delta;
+	/** This flag indicates if the encoder is sending an integer or
+	 * floating point delta increment.
+	 *
+	 * "Stepped" rotary encoders (such as those used to navigate
+	 * song libraries etc) will use the integer delta, with a single
+	 * step being the smallest delta.
+	 *
+	 * Endless encoders (without notches) use the floating point delta
+	 * and the application may interpret the range of the delta as
+	 *  1.0f : maximum amount of clockwise rotation possible in one turn (approx 270 deg)
+	 * -1.0f : maximum amount of anti-clockwise rotation possible in one turn (approx 270 deg)
+	 *
+	 * When explicitly scripting support for a controller, the actual
+	 * encoder ID itself will already know which type it is - but for
+	 * generic handling of any controller, this int/float metadata is
+	 * required for correct handling of the values.
+	 */
+	uint8_t flags;
+	union {
+		/** Positive values indicate clockwise rotation, and vice-versa */
+		int32_t delta;
+		float   delta_float;
+	};
 };
 
 /** Represents a fader or dial with a fixed range of movement. */
