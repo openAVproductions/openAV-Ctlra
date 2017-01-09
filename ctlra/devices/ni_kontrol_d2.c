@@ -543,6 +543,13 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 		idx = light_id - NI_KONTROL_D2_LED_FX_SELECT;
 		dev->lights[24+idx] = bright;
 		break;
+	case NI_KONTROL_D2_LED_DECK_A:
+	case NI_KONTROL_D2_LED_DECK_B:
+	case NI_KONTROL_D2_LED_DECK_C:
+	case NI_KONTROL_D2_LED_DECK_D:
+		idx = light_id - NI_KONTROL_D2_LED_DECK_A;
+		dev->lights[118+idx] = bright;
+		break;
 	case NI_KONTROL_D2_LED_HOTCUE:
 		dev->lights[44] = bright;
 		dev->lights[45] = b;
