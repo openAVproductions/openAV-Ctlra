@@ -521,9 +521,9 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	case NI_KONTROL_D2_LED_PAD_8:
 		/* handle RGB pads */
 		idx = (light_id-NI_KONTROL_D2_LED_PAD_1) * 3;
-		dev->lights[idx+0] = r;
+		dev->lights[idx+0] = b;
 		dev->lights[idx+1] = g;
-		dev->lights[idx+2] = b;
+		dev->lights[idx+2] = r;
 		break;
 	case NI_KONTROL_D2_LED_SCREEN_RIGHT_1:
 		dev->lights[33] = bright;
