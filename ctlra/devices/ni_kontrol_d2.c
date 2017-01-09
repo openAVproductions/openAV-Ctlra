@@ -529,10 +529,9 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 		dev->lights[33] = bright;
 		break;
 	case NI_KONTROL_D2_LED_SCREEN_LEFT_1:
-	case NI_KONTROL_D2_LED_SCREEN_LEFT_4:
-		break;
 	case NI_KONTROL_D2_LED_SCREEN_LEFT_2:
 	case NI_KONTROL_D2_LED_SCREEN_LEFT_3:
+	case NI_KONTROL_D2_LED_SCREEN_LEFT_4:
 		idx = light_id - NI_KONTROL_D2_LED_SCREEN_LEFT_1;
 		dev->lights[29+idx] = bright;
 		break;
