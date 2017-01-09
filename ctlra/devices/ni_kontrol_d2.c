@@ -540,8 +540,16 @@ ni_kontrol_d2_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	case NI_KONTROL_D2_LED_FX_1:
 	case NI_KONTROL_D2_LED_FX_2:
 	case NI_KONTROL_D2_LED_FX_3:
+	case NI_KONTROL_D2_LED_FX_4:
 		idx = light_id - NI_KONTROL_D2_LED_FX_SELECT;
 		dev->lights[24+idx] = bright;
+		break;
+	case NI_KONTROL_D2_LED_ON_1:
+	case NI_KONTROL_D2_LED_ON_2:
+	case NI_KONTROL_D2_LED_ON_3:
+	case NI_KONTROL_D2_LED_ON_4:
+		idx = light_id - NI_KONTROL_D2_LED_ON_1;
+		dev->lights[40+idx] = bright;
 		break;
 	case NI_KONTROL_D2_LED_DECK_A:
 	case NI_KONTROL_D2_LED_DECK_B:
