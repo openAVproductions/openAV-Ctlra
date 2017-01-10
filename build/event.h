@@ -32,7 +32,14 @@
 #ifndef OPENAV_CTLRA_EVENT
 #define OPENAV_CTLRA_EVENT
 
+#if  0
 #include <stdint.h>
+#else
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+typedef unsigned int uint16_t;
+typedef int int32_t;
+#endif
 
 /* Types of events */
 enum ctlra_event_type_t {

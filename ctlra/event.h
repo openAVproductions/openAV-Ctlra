@@ -32,7 +32,7 @@
 #ifndef OPENAV_CTLRA_EVENT
 #define OPENAV_CTLRA_EVENT
 
-//#include <stdint.h>
+#include <stdint.h>
 
 /* Types of events */
 enum ctlra_event_type_t {
@@ -119,15 +119,14 @@ struct ctlra_event_t {
 	enum ctlra_event_type_t type;
 
 	/** The event data: see examples/ dir for examples of usage */
-	//union {
+	union {
 		struct ctlra_event_button_t button;
 		struct ctlra_event_encoder_t encoder;
 		struct ctlra_event_slider_t slider;
 		struct ctlra_event_grid_t grid;
-	//};
+	};
 };
 
-#if 1
 /** Callback function that is called for event(s) */
 typedef void (*ctlra_event_func)(struct ctlra_dev_t* dev,
 				uint32_t num_events,
@@ -138,6 +137,5 @@ typedef void (*ctlra_event_func)(struct ctlra_dev_t* dev,
  * eg for leds, buttons and screens */
 typedef void (*ctlra_feedback_func)(struct ctlra_dev_t *dev,
 				    void *userdata);
-#endif
 
 #endif /* OPENAV_CTLRA_EVENT */
