@@ -1,4 +1,4 @@
-#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -87,7 +87,7 @@ int script_compile_file(struct script_t *script)
 	}
 
 	tcc_set_error_func(s, 0x0, error_func);
-	tcc_set_options(s, "-g");
+	tcc_set_options(s, "-g -mno-sse");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
 	printf("compiling %s\n", script->filepath);
@@ -148,6 +148,17 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
 
+	for(uint32_t i = 0; i < num_events; i++) {
+		const char *pressed = 0;
+		struct ctlra_event_t *e = events[i];
+		const char *name = 0;
+		switch(e->type) {
+		case CTLRA_EVENT_BUTTON:
+			printf("tcc proxy : button %d\n", e->button.id);
+			break;
+		}
+	}
+
 	/* Check if we need to recompile script based on modified time of
 	 * the script file, comparing with the compiled modified time */
 	time_t new_time;
@@ -197,7 +208,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	struct script_t *script = calloc(1, sizeof(struct script_t));
 	if(!script) return 0;
 
-	script->filepath = strdup("/tmp/ni_d2_script.c");
+	script->filepath = strdup("ni_d2_script.c");
 
 	script_compile_file(script);
 	if(script->compile_failed) {
@@ -246,7 +257,7 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-#if 0
+#if 1
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
@@ -259,7 +270,7 @@ int main()
 #else
 	struct script_t script = {0};
 
-	script.filepath = strdup("/tmp/ni_d2_script.c");
+	script.filepath = strdup("ni_d2_script.c");
 
 	int vid = 0x17cc;
 	int pid = 0x1400;

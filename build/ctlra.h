@@ -217,7 +217,6 @@ const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
 
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
