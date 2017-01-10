@@ -18,16 +18,13 @@ void script_event_func(struct ctlra_dev_t* dev,
 {
 	printf("script func, num events %d\n", num_events);
 	for(uint32_t i = 0; i < num_events; i++) {
-		printf("i = %d\n", i);
 		struct ctlra_event_t *e = events[i];
-		printf("event %p\n", e);
-		uint32_t t = *(uint32_t*)e;
-		printf("event as uint32 %d\n", t);
 		printf("event type deref %d\n", e->type);
-		if(t == 0) { // button 
-			uint32_t b = *(((uint32_t*)e)+1);
-			printf("script button  %d\n", b);
+		if(e->type == 0) { // button 
 			printf("scrpt: button id %d\n", e->button.id);
+			if(e->button.id == 53) {
+				//printf("scrpt: deck pressed %d\n", e->button.pressed);
+			}
 		}
 	}
 #if 0
