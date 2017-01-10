@@ -32,8 +32,6 @@
 #ifndef OPENAV_CTLRA_EVENT
 #define OPENAV_CTLRA_EVENT
 
-#include <stdint.h>
-
 /* Types of events */
 enum ctlra_event_type_t {
 	CTLRA_EVENT_BUTTON = 0,

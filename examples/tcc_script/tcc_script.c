@@ -77,6 +77,7 @@ int script_compile_file(struct script_t *script)
 {
 	script_reset(script);
 
+	printf("tcc_script example: compiling %s\n", script->filepath);
 	TCCState *s;
 	script->compile_failed = 1;
 
@@ -90,7 +91,6 @@ int script_compile_file(struct script_t *script)
 	tcc_set_options(s, "-g -mno-sse");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
-	printf("compiling %s\n", script->filepath);
 	int ret = tcc_add_file(s, script->filepath);
 	if(ret < 0) {
 		printf("gracefully handling error now... \n");
@@ -147,17 +147,6 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * has, it can swap the pointer for the event-func here, and then
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
-
-	for(uint32_t i = 0; i < num_events; i++) {
-		const char *pressed = 0;
-		struct ctlra_event_t *e = events[i];
-		const char *name = 0;
-		switch(e->type) {
-		case CTLRA_EVENT_BUTTON:
-			printf("tcc proxy : button %d\n", e->button.id);
-			break;
-		}
-	}
 
 	/* Check if we need to recompile script based on modified time of
 	 * the script file, comparing with the compiled modified time */

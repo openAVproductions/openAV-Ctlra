@@ -1,4 +1,9 @@
-//#include <stdint.h>
+/* hack for TCC to not need stdint.h, which causes a segfault on compile
+ * the second time the script is compiled */
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+typedef unsigned int uint16_t;
+typedef int int32_t;
 
 #include "event.h"
 
@@ -17,18 +22,15 @@ void script_event_func(struct ctlra_dev_t* dev,
 	//printf("script func, num events %d\n", num_events);
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
-		if(e->type == 0) { // button 
-			printf("scrpt: button id %d\n", e->button.id);
-			if(e->button.id == 53) printf("script DECK\n");
-			if(e->button.id == 57) printf("script PLAY\n");
-			if(e->button.id == 56) printf("script CUE\n");
-		}
-	}
-#if 0
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
+			switch(e->button.id) {
+			case 52: printf("Flux\n"); break;
+			case 53: printf("Deck\n"); break;
+			default: printf("button %d\n", e->button.id); break;
+			}
 			break;
+		default: break;
 		}
 	}
-#endif
 }
