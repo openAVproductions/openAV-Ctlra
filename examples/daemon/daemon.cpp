@@ -8,7 +8,7 @@
 
 #include "RtMidi.h"
 
-#include "ctlra/ctlra.h"
+#include "ctlra.h"
 
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;

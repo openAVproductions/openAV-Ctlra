@@ -3,8 +3,8 @@
 
 #include <string.h>
 
-#include "ctlra/ctlra.h"
-#include "ctlra/devices/ni_kontrol_d2.h"
+#include "ctlra.h"
+#include "devices/ni_kontrol_d2.h"
 
 /* for drawing graphics to screen */
 #include <cairo/cairo.h>

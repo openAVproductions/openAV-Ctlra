@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 /* Ctlra header */
-#include "ctlra/ctlra.h"
+#include "ctlra.h"
 /* TCC header */
 #include "libtcc.h"
 /* Application scripting API header */

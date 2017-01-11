@@ -1,8 +1,8 @@
 
 #include "global.h"
 
-#include "ctlra/ctlra.h"
-#include "ctlra/devices/ni_maschine_mikro_mk2.h"
+#include "ctlra.h"
+#include "devices/ni_maschine_mikro_mk2.h"
 
 void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 {

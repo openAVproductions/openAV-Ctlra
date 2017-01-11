@@ -3,8 +3,8 @@
 
 #include <string.h>
 
-#include "ctlra/ctlra.h"
-#include "ctlra/devices/ni_kontrol_f1.h"
+#include "ctlra.h"
+#include "devices/ni_kontrol_f1.h"
 
 void kontrol_f1_update_state(struct ctlra_dev_t *dev, void *ud)
 {
