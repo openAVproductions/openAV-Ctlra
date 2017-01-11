@@ -30,6 +30,7 @@ void mm_func(struct ctlra_dev_t* dev,
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 		case CTLRA_EVENT_ENCODER:
+			//printf("enc %d, %d\n", e->encoder.id, e->encoder.delta);
 			break;
 		case CTLRA_EVENT_SLIDER:
 			if(e->slider.id == 11) {

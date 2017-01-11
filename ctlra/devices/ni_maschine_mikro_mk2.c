@@ -162,6 +162,8 @@ struct ni_maschine_mikro_mk2_t {
 	uint8_t lights_endpoint;
 	uint8_t lights[LIGHTS_SIZE];
 
+	/* Store the current encoder value */
+	uint8_t encoder_value;
 	/* Pressure filtering for note-onset detection */
 	uint8_t pad_idx[NPADS];
 	uint16_t pads[NPADS];
@@ -246,28 +248,26 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 		}
 		break;
 		case 6: {
-			for(uint32_t i = 0; i < ENCODERS_SIZE; i++) {
-#if 0
-				int id     = sliders[i].event_id;
-				int offset = sliders[i].buf_byte_offset;
-				int mask   = sliders[i].mask;
-
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				if(dev->hw_values[i] != v) {
-					dev->hw_values[i] = v;
-					struct ctlra_event_t event = {
-						.id = CTLRA_EVENT_SLIDER,
-						.slider  = {
-							.id = id,
-							.value = v / 4096.f
-						},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-					                     dev->base.event_func_userdata);
-				}
-#endif
+			/* Encoder */
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder = {
+					.id = NI_MASCHINE_MIKRO_MK2_BTN_ENCODER_ROTATE,
+					.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+					.delta = 0,
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			int8_t enc   = ((buf[5] & 0x0f)     ) & 0xf;
+			if(enc != dev->encoder_value) {
+				int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+				event.encoder.delta = dir;
+				dev->encoder_value = enc;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
+
+			/* Buttons */
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
