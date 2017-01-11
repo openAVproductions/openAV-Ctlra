@@ -173,7 +173,6 @@ enum NI_KONTROL_D2_CONTROLS {
 	NI_KONTROL_D2_CONTROLS_COUNT
 };
 
-#include <stdint.h>
 /* forward declaration only */
 struct ctlra_dev_t;
 
