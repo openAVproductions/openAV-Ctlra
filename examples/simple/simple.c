@@ -5,15 +5,27 @@
 #include <signal.h>
 
 #include "ctlra.h"
+#include "devices/ni_maschine_mikro_mk2.h"
 
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;
+
+static uint32_t led;
+static uint32_t led_set;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* feedback like LEDs and Screen drawing based on application
 	 * state goes here. See the vegas_mode/ example for an example of
-	 * how to turn on LEDs on the controllers */
+	 * how to turn on LEDs on the controllers.
+	 *
+	 * Alternatively re-run the simple example with an integer
+	 * parameter and that light number will be lit: ./simple 5
+	 */
+	if(led_set) {
+		ctlra_dev_light_set(dev, led, 0xffffffff);
+		ctlra_dev_light_flush(dev, 1);
+	}
 }
 
 void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
@@ -107,8 +119,13 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	return 1;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+	if(argc > 1) {
+		led = atoi(argv[1]);
+		led_set = 1;
+	}
+
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
