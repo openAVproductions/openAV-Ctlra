@@ -314,9 +314,36 @@ static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
 		return;
 	}
 
-	/* write brighness to all LEDs */
-	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
+	/* TODO: can we clean up the light_id handling somehow?
+	 * There's a lot of branching / strange math per LED here */
+	int idx = light_id;
+
+	/* Group takes up 3 bytes, so add 2 if we're past the group */
+	idx += 2 * (light_id > NI_MASCHINE_MIKRO_MK2_LED_GROUP);
+	uint32_t r = (light_status >> 16) & 0x7F;
+	uint32_t g = (light_status >>  8) & 0x7F;
+	uint32_t b = (light_status >>  0) & 0x7F;
+
+	/* Group btn and all pads */
+	if(light_id == NI_MASCHINE_MIKRO_MK2_LED_GROUP) {
+		dev->lights[ 8] = r;
+		dev->lights[ 9] = g;
+		dev->lights[10] = b;
+	}
+	else if (light_id >= NI_MASCHINE_MIKRO_MK2_LED_PAD_1 &&
+		 light_id < NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16) {
+		int pad_id = light_id - NI_MASCHINE_MIKRO_MK2_LED_PAD_1;
+		int p = NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + (pad_id*3) + 2;
+		dev->lights[p+0] = r;
+		dev->lights[p+1] = g;
+		dev->lights[p+2] = b;
+	} else {
+		 if(light_id > NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16)
+			return;
+		/* write brighness to all LEDs */
+		uint32_t bright = (light_status >> 24) & 0x7F;
+		dev->lights[idx] = bright;
+	}
 
 	dev->lights_dirty = 1;
 }
