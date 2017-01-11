@@ -308,6 +308,15 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 	int failed = 0;
 	switch(xfr->status) {
 	case LIBUSB_TRANSFER_COMPLETED:
+		printf("%p : data len = %d\n", xfr->user_data, xfr->actual_length);
+		struct ctlra_dev_t *dev = xfr->user_data;
+		if(!dev->usb_read_cb) {
+			printf("CTLRA DRIVER ERROR: no USB READ CB implemented!\n");
+			break;
+		}
+		printf("calling usb_read_cb(), %d\n", xfr->actual_length);
+		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
+				 xfr->actual_length);
 		break;
 	case LIBUSB_TRANSFER_CANCELLED:
 		printf("FAILED in cancelled %s\n", __func__);
@@ -318,8 +327,8 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		failed = 1;
 		break;
 	case LIBUSB_TRANSFER_TIMED_OUT:
-		printf("FAILED in timed out %s\n", __func__);
-		failed = 1;
+		//printf("FAILED in timed out %s\n", __func__);
+		//failed = 1;
 		break;
 	case LIBUSB_TRANSFER_ERROR:
 		printf("FAILED in error %s\n", __func__);
@@ -331,6 +340,10 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		break;
 	case LIBUSB_TRANSFER_OVERFLOW:
 		printf("FAILED in overflow %s\n", __func__);
+		failed = 1;
+		break;
+	default:
+		printf("%s: USB transaction return unknown.\n", __func__);
 		failed = 1;
 		break;
 	}
@@ -363,6 +376,12 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          dev, /* userdata - pass dev so we can banish
 					  it if required */
 	                          200 /* timeout */);
+	if(libusb_submit_transfer(xfr) < 0) {
+		libusb_free_transfer(xfr);
+		free(data);
+		printf("error submitting data!!\n");
+		return -1;
+	}
 
 	/*
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,

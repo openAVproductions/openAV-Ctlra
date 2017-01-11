@@ -45,6 +45,10 @@ typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,
 					   uint32_t light_status);
 typedef void (*ctlra_dev_impl_light_flush)(struct ctlra_dev_t *dev,
 					  uint32_t force);
+typedef void (*ctlra_dev_impl_usb_read_cb)(struct ctlra_dev_t *dev,
+					   uint32_t endpoint,
+					   uint8_t *data,
+					   uint32_t size);
 typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,
@@ -94,6 +98,7 @@ struct ctlra_dev_t {
 	ctlra_dev_impl_light_set light_set;
 	ctlra_dev_impl_grid_light_set grid_light_set;
 	ctlra_dev_impl_light_flush light_flush;
+	ctlra_dev_impl_usb_read_cb usb_read_cb;
 
 	/* Function pointer to retrive info about a particular control */
 	ctlra_dev_impl_control_get_name control_get_name;

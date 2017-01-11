@@ -316,151 +316,154 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 
 	int32_t nbytes;
 
-	do {
-		int handle_idx = 0;
-		/* USB_ENDPOINT_BTNS_READ, */
-		nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
-		                USB_ENDPOINT_BTNS_READ,
-		                buf, 1024);
-		if(nbytes == 0)
-			return 0;
+	int handle_idx = 0;
+	/* USB_ENDPOINT_BTNS_READ, */
+	nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
+			USB_ENDPOINT_BTNS_READ,
+			buf, 1024);
+	printf("interrupt read %d\n", nbytes);
 
-		switch(nbytes) {
-		case 25: {
-			for(uint32_t i = 0; i < 4; i++) {
-				/* screen encoders here */
-				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
-				//printf("%d : %04x\n", i, val);
-				if(dev->screen_encoders[i] != val) {
-					float delta = val - dev->screen_encoders[i];
-					dev->screen_encoders[i] = val;
-					struct ctlra_event_t event = {
-						.type =
-							CTLRA_EVENT_ENCODER,
-						.encoder  = {
-							.id = NI_KONTROL_D2_ENCODER_SCREEN_1 + i,
-							.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
-							.delta_float = delta / 999.f,
-						}
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-					                     dev->base.event_func_userdata);
-					//printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
-					dev->screen_encoders[i] = val;
-				}
+	return 0;
+}
+
+void ni_kontrol_d2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+				uint8_t *data, uint32_t size)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	uint8_t *buf = data;
+	switch(size) {
+	case 25: {
+		for(uint32_t i = 0; i < 4; i++) {
+			/* screen encoders here */
+			uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
+			//printf("%d : %04x\n", i, val);
+			if(dev->screen_encoders[i] != val) {
+				float delta = val - dev->screen_encoders[i];
+				dev->screen_encoders[i] = val;
+				struct ctlra_event_t event = {
+					.type =
+						CTLRA_EVENT_ENCODER,
+					.encoder  = {
+						.id = NI_KONTROL_D2_ENCODER_SCREEN_1 + i,
+						.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
+						.delta_float = delta / 999.f,
+					}
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				//printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
+				dev->screen_encoders[i] = val;
 			}
-			for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
-				uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
-				float v = ((float)val) / 0xfee;
-				if(dev->hw_values[i] != val) {
-					dev->hw_values[i] = val;
-					int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 4);
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_SLIDER,
-						.slider  = {
-							.id = id,
-							.value = v
-						},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-					                     dev->base.event_func_userdata);
-				}
+		}
+		for(uint32_t i = 4; i < SLIDERS_SIZE; i++) {
+			uint16_t val = (buf[(i*2)+2] << 8) | (buf[i*2+1]);
+			float v = ((float)val) / 0xfee;
+			if(dev->hw_values[i] != val) {
+				dev->hw_values[i] = val;
+				int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 4);
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_SLIDER,
+					.slider  = {
+						.id = id,
+						.value = v
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
-			break;
+		}
+		break;
+	}
+
+	case 17: {
+		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+			int id     = buttons[i].event_id;
+			int offset = buttons[i].buf_byte_offset;
+			int mask   = buttons[i].mask;
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			int value_idx = SLIDERS_SIZE + i;
+
+			if(dev->hw_values[value_idx] != v) {
+				dev->hw_values[value_idx] = v;
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button  = {
+						.id = id,
+						.pressed = v > 0
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
+		/* Browse / Loop Encoders */
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_ENCODER,
+			.encoder = {
+				.id = NI_KONTROL_D2_ENCODER_BROWSE,
+				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+				.delta = 0,
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+		int8_t browse = ((buf[1] & 0xf0) >> 4) & 0xf;
+		int8_t loop   = ((buf[1] & 0x0f)     ) & 0xf;
+		/* Browse encoder turn event */
+		if(browse != dev->encoder_browse) {
+#warning TODO: check if this wrap16 code is dealing with values > 1 OK - aka\
+if we turn very fast, does it deal with sending a delta of eg: 4
+			int dir = ctlra_dev_encoder_wrap_16(browse,
+							    dev->encoder_browse);
+			event.encoder.delta = dir;
+			dev->encoder_browse = browse;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
+		/* Loop encoder turn event */
+		if(loop != dev->encoder_loop) {
+			int dir = ctlra_dev_encoder_wrap_16(loop,
+							    dev->encoder_loop);
+			event.encoder.id = NI_KONTROL_D2_ENCODER_LOOP;
+			event.encoder.delta = dir;
+			dev->encoder_loop = loop;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 
-		case 17: {
-			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-				int id     = buttons[i].event_id;
-				int offset = buttons[i].buf_byte_offset;
-				int mask   = buttons[i].mask;
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				int value_idx = SLIDERS_SIZE + i;
-
-				if(dev->hw_values[value_idx] != v) {
-					dev->hw_values[value_idx] = v;
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_BUTTON,
-						.button  = {
-							.id = id,
-							.pressed = v > 0
-						},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-					                     dev->base.event_func_userdata);
-				}
-			}
-			/* Browse / Loop Encoders */
+		/* Touchstrip */
+		uint16_t v = (buf[14] << 8) | buf[13];
+		if(dev->touchstrip_touch != (v > 0) ) {
+			dev->touchstrip_touch = v > 0;
 			struct ctlra_event_t event = {
-				.type = CTLRA_EVENT_ENCODER,
-				.encoder = {
-					.id = NI_KONTROL_D2_ENCODER_BROWSE,
-					.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
-					.delta = 0,
+				.type = CTLRA_EVENT_BUTTON,
+				.button = {
+					.id = NI_KONTROL_D2_BTN_TOUCHSTRIP_TOUCH,
+					.pressed = v > 0,
 				},
 			};
 			struct ctlra_event_t *e = {&event};
-			int8_t browse = ((buf[1] & 0xf0) >> 4) & 0xf;
-			int8_t loop   = ((buf[1] & 0x0f)     ) & 0xf;
-			/* Browse encoder turn event */
-			if(browse != dev->encoder_browse) {
-#warning TODO: check if this wrap16 code is dealing with values > 1 OK - aka\
-	if we turn very fast, does it deal with sending a delta of eg: 4
-				int dir = ctlra_dev_encoder_wrap_16(browse,
-								    dev->encoder_browse);
-				event.encoder.delta = dir;
-				dev->encoder_browse = browse;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-			/* Loop encoder turn event */
-			if(loop != dev->encoder_loop) {
-				int dir = ctlra_dev_encoder_wrap_16(loop,
-								    dev->encoder_loop);
-				event.encoder.id = NI_KONTROL_D2_ENCODER_LOOP;
-				event.encoder.delta = dir;
-				dev->encoder_loop = loop;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-
-			/* Touchstrip */
-			uint16_t v = (buf[14] << 8) | buf[13];
-			if(dev->touchstrip_touch != (v > 0) ) {
-				dev->touchstrip_touch = v > 0;
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_BUTTON,
-					.button = {
-						.id = NI_KONTROL_D2_BTN_TOUCHSTRIP_TOUCH,
-						.pressed = v > 0,
-					},
-				};
-				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-			/* Send touchstrip updates after button detection */
-			if(dev->touchstrip_touch) {
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_SLIDER,
-					.slider = {
-						.id = NI_KONTROL_D2_SLIDER_TOUCHSTRIP,
-						.value = v / 1024.f
-					},
-				};
-				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-			break;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
-		} /* switch */
-	} while (nbytes > 0);
-
-	return 0;
+		/* Send touchstrip updates after button detection */
+		if(dev->touchstrip_touch) {
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_SLIDER,
+				.slider = {
+					.id = NI_KONTROL_D2_SLIDER_TOUCHSTRIP,
+					.value = v / 1024.f
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
+		break;
+	} /* case 17 */
+	} /* switch */
 }
 
 uint8_t *
@@ -723,6 +726,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_kontrol_d2_light_set;
 	dev->base.control_get_name = ni_kontrol_d2_control_get_name;
 	dev->base.light_flush = ni_kontrol_d2_light_flush;
+	dev->base.usb_read_cb = ni_kontrol_d2_usb_read_cb;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
