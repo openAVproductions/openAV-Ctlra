@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "impl.h"
 
@@ -302,25 +303,86 @@ void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
 	}
 }
 
+static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
+{
+	int failed = 0;
+	switch(xfr->status) {
+	case LIBUSB_TRANSFER_COMPLETED:
+		break;
+	case LIBUSB_TRANSFER_CANCELLED:
+		printf("FAILED in cancelled %s\n", __func__);
+		failed = 1;
+		break;
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		printf("FAILED in no dev %s\n", __func__);
+		failed = 1;
+		break;
+	case LIBUSB_TRANSFER_TIMED_OUT:
+		printf("FAILED in timed out %s\n", __func__);
+		failed = 1;
+		break;
+	case LIBUSB_TRANSFER_ERROR:
+		printf("FAILED in error %s\n", __func__);
+		failed = 1;
+		break;
+	case LIBUSB_TRANSFER_STALL:
+		printf("FAILED in stall %s\n", __func__);
+		failed = 1;
+		break;
+	case LIBUSB_TRANSFER_OVERFLOW:
+		printf("FAILED in overflow %s\n", __func__);
+		failed = 1;
+		break;
+	}
+	free(xfr->buffer);
+	libusb_free_transfer(xfr);
+}
+
 int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
                                       uint32_t endpoint, uint8_t *data,
                                       uint32_t size)
 {
 	int transferred;
 	const uint32_t timeout = 10;
+
+	struct libusb_transfer *xfr;
+	xfr = libusb_alloc_transfer(0);
+
+	/* Malloc space for the USB transaction - not ideal, but we have
+	 * to pass ownership of the data to the USB library, and we can't
+	 * pass the actual dev_t owned data, since the application may
+	 * update it again before the USB transaction completes. */
+	void *usb_data = malloc(size);
+
+	libusb_fill_bulk_transfer(xfr,
+				  dev->usb_interface[idx], /* dev handle */
+	                          endpoint,
+	                          usb_data,
+	                          size,
+	                          ctlra_usb_xfr_done_cb,
+	                          dev, /* userdata - pass dev so we can banish
+					  it if required */
+	                          200 /* timeout */);
+
+	/*
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		/*
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
-		*/
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
-	return transferred;
+	*/
+
+	/* do we want to return the size here? */
+	/* This read op is async - there *IS* no data to read right now.
+	 * We need a ring to store the data in an async way, so the xfer
+	 * done callback can queue data to be returned here. AKA: we need
+	 * to read data from the ring here now */
+	return 0;
 }
 
 int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
