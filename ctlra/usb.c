@@ -42,9 +42,6 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		printf("Error getting device descriptor\n");
 		return -1;
 	}
-#warning TODO: Make the library detect removals too, and if the removal\
-	is of a device that uses HIDRAW (instead of libusb) then cleanup\
-	aka: maschine, since write fail etc wont cause banishing/removal.
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
 		/* Quirks:
 		 * If a device is unplugged, usually the libusb read/write
