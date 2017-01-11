@@ -27,7 +27,14 @@ void script_event_func(struct ctlra_dev_t* dev,
 			switch(e->button.id) {
 			case 52: printf("Flux\n"); break;
 			case 53: printf("Deck\n"); break;
+			case 54: printf("Shift\n"); break;
 			default: printf("button %d\n", e->button.id); break;
+			}
+			break;
+		case CTLRA_EVENT_SLIDER:
+			switch(e->slider.id) {
+			case 62: printf("slider 1 event %f\n", e->slider.value); break;
+			default: printf("slider %d\n", e->slider.id); break;
 			}
 			break;
 		default: break;

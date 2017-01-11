@@ -88,7 +88,7 @@ int script_compile_file(struct script_t *script)
 	}
 
 	tcc_set_error_func(s, 0x0, error_func);
-	tcc_set_options(s, "-g -mno-sse");
+	tcc_set_options(s, "-g");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
 	int ret = tcc_add_file(s, script->filepath);
