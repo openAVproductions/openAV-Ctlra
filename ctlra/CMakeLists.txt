@@ -14,6 +14,8 @@ IF(RELEASE_BUILD)
   SET(CMAKE_C_FLAGS " -g -Wall -W -Wno-unused-variable ")
 ENDIF(RELEASE_BUILD)
 
+SET(CMAKE_C_FLAGS " -g -fPIC -Wall -Wno-unused-variable ")
+
 if( ${ARCHITECTURE} STREQUAL "x86_64" )
   set(CMAKE_C_FLAGS   ${CMAKE_C_FLAGS}"-msse2" )
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}"-msse2" )
