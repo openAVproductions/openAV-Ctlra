@@ -346,7 +346,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
-					printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
+					//printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
 					dev->screen_encoders[i] = val;
 				}
 			}
