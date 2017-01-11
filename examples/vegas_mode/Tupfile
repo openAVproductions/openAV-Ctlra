@@ -1,9 +1,0 @@
-include_rules
-
-CFLAGS += "-I../../ctlra/"
-CFLAGS += "-I../../"
-CFLAGS += "-I."
-
-: foreach *.c   |> $(CC) $(CFLAGS) -c %f -o %o |> %B.o
-
-: *.o |> ar crs %o %f |> libvegas_mode.a
