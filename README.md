@@ -20,15 +20,28 @@ web-browser because you can...
 Usage
 -----
 
-Download the source-code, and statically link against this library.
+Download the source-code, compile using cmake:
+```
+mkdir build
+cd build
+cmake ..
+make
+./examples/simple
+./examples/daemon
+```
+
+Your application can now statically link against this library.
 
 Supported Devices
 -----------------
 
 This library currently supports the following devices:
 
-- Simple (A software device for testing the library and applications)
-- NativeInstruments Maschine Mikro MK2 (awesome drum-pad USB HID device)
+- Native Instruments Traktor D2
+- Native Instruments Traktor F1
+- Native Instruments Traktor X1 (Mk2)
+- Native Instruments Traktor Z1
+- Native Instruments Maschine Mikro (Mk2)
 
 Contact
 -------

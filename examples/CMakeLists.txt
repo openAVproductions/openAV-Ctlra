@@ -65,15 +65,17 @@ target_link_libraries( vegas_mode ${JACK_LIBRARIES}       )
 target_link_libraries( vegas_mode ${CAIRO_LIBRARIES}      )
 target_link_libraries( vegas_mode ${SNDFILE_LIBRARIES}    )
 
-#####################################
-### TCC Scripting 
-#####################################
-FILE(GLOB src_tcc tcc_script/*.c )
-add_executable (tcc_script ${src_tcc} )
-add_dependencies(tcc_script ctlra)
-target_link_libraries( tcc_script "-lctlra"               )
-target_link_libraries( tcc_script ${USB_LIBRARIES}        )
-target_link_libraries( tcc_script "-ltcc -ldl"            )
+IF(BUILD_TCC_SCRIPTING)
+  #####################################
+  ### TCC Scripting 
+  #####################################
+  FILE(GLOB src_tcc tcc_script/*.c )
+  add_executable (tcc_script ${src_tcc} )
+  add_dependencies(tcc_script ctlra)
+  target_link_libraries( tcc_script "-lctlra"               )
+  target_link_libraries( tcc_script ${USB_LIBRARIES}        )
+  target_link_libraries( tcc_script "-ltcc -ldl"            )
+ENDIF()
 
 
 #####################################
