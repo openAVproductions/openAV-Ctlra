@@ -113,6 +113,8 @@ static const char *ni_kontrol_d2_control_names[] = {
 	"Sync",
 	"Cue",
 	"Play",
+	/* Touchstrip */
+	"Touchstrip Touch",
 	/* Sliders */
 	"Screen Encoder 1",
 	"Screen Encoder 2",
@@ -126,6 +128,10 @@ static const char *ni_kontrol_d2_control_names[] = {
 	"FX Dial 2",
 	"FX Dial 3",
 	"FX Dial 4",
+	/* Touchstrip slide */
+	"Touchstrip Movement",
+	"Browse Encoder Turn",
+	"Loop Encoder Turn",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
 			    sizeof(ni_kontrol_d2_control_names[0]))
@@ -295,6 +301,9 @@ ni_kontrol_d2_control_get_name(const struct ctlra_dev_t *base,
                                uint32_t control_id)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	if(CONTROL_NAMES_SIZE != NI_KONTROL_D2_CONTROLS_COUNT) {
+		printf("warning, strings != controls count\n");
+	}
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_d2_control_names[control_id];
 	return 0;
@@ -337,7 +346,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
-					//printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
+					printf("encoder %d: value = %f\n", i, event.encoder.delta_float);
 					dev->screen_encoders[i] = val;
 				}
 			}
@@ -346,7 +355,7 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 				float v = ((float)val) / 0xfee;
 				if(dev->hw_values[i] != val) {
 					dev->hw_values[i] = val;
-					int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 5);
+					int id = NI_KONTROL_D2_SLIDER_FADER_1 + (i - 4);
 					struct ctlra_event_t event = {
 						.type = CTLRA_EVENT_SLIDER,
 						.slider  = {
