@@ -1,8 +1,11 @@
-//#include <stdint.h>
+/* hack for TCC to not need stdint.h, which causes a segfault on compile
+ * the second time the script is compiled */
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+typedef unsigned int uint16_t;
+typedef int int32_t;
 
 #include "event.h"
-
-typedef unsigned int uint32_t;
 
 /* Tell the host application what USB device this script is for */
 void script_get_vid_pid(int *out_vid, int *out_pid)
@@ -16,25 +19,25 @@ void script_event_func(struct ctlra_dev_t* dev,
                        struct ctlra_event_t** events,
                        void *userdata)
 {
-	printf("script func, num events %d\n", num_events);
+	//printf("script func, num events %d\n", num_events);
 	for(uint32_t i = 0; i < num_events; i++) {
-		printf("i = %d\n", i);
 		struct ctlra_event_t *e = events[i];
-		printf("event %p\n", e);
-		uint32_t t = *(uint32_t*)e;
-		printf("event as uint32 %d\n", t);
-		printf("event type deref %d\n", e->type);
-		if(t == 0) { // button 
-			uint32_t b = *(((uint32_t*)e)+1);
-			printf("script button  %d\n", b);
-			printf("scrpt: button id %d\n", e->button.id);
-		}
-	}
-#if 0
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
+			switch(e->button.id) {
+			case 52: printf("Flux\n"); break;
+			case 53: printf("Deck\n"); break;
+			case 54: printf("Shift\n"); break;
+			default: printf("button %d\n", e->button.id); break;
+			}
 			break;
+		case CTLRA_EVENT_SLIDER:
+			switch(e->slider.id) {
+			case 62: printf("slider 1 event %f\n", e->slider.value); break;
+			default: printf("slider %d\n", e->slider.id); break;
+			}
+			break;
+		default: break;
 		}
 	}
-#endif
 }
