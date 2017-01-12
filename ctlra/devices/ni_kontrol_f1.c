@@ -144,105 +144,107 @@ static uint32_t ni_kontrol_f1_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024];
 	int32_t nbytes;
 
-	do {
-		int handle_idx = 0;
-		nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-							   USB_ENDPOINT_READ,
-							   buf, 1024);
-		if(nbytes == 0)
-			return 0;
+	int handle_idx = 0;
+	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+						   USB_ENDPOINT_READ,
+						   buf, 1024);
+	return 0;
+}
 
+
+void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+				uint8_t *data, uint32_t size)
+{
+	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
+	uint8_t *buf = data;
 #if 0
-		static uint8_t old[22];
-		for(int i = 0; i < nbytes; i++) {
-			if(old[i] != buf[i]) {
-				old[i] = buf[i];
-				printf("\033[31m%02x\033[0m ", buf[i]);
-			}
-			else
-				printf("%02x ", buf[i]);
+	static uint8_t old[22];
+	for(int i = 0; i < nbytes; i++) {
+		if(old[i] != buf[i]) {
+			old[i] = buf[i];
+			printf("\033[31m%02x\033[0m ", buf[i]);
 		}
-		printf("\n");
+		else
+			printf("%02x ", buf[i]);
+	}
+	printf("\n");
 #endif
 
-		switch(nbytes) {
-		case 22: {
-			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-				int id     = sliders[i].event_id;
-				int offset = sliders[i].buf_byte_offset;
-				int mask   = sliders[i].mask;
+	switch(size) {
+	case 22: {
+		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
+			int id     = sliders[i].event_id;
+			int offset = sliders[i].buf_byte_offset;
+			int mask   = sliders[i].mask;
 
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				if(dev->hw_values[i] != v) {
-					dev->hw_values[i] = v;
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_SLIDER,
-						.slider  = {
-							.id = id,
-							.value = v / 4096.f},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-			}
-
-			/* Grid */
-			static uint8_t grid_masks[] = {
-				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
-				0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-			};
-			for(uint32_t i = 0; i < GRID_SIZE; i++) {
-				int offset = 1 + i / 8;
-				int mask   = grid_masks[i];
-
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				int value_idx = SLIDERS_SIZE + BUTTONS_SIZE + i;
-				if(dev->hw_values[value_idx] != v) {
-					dev->hw_values[value_idx] = v;
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_GRID,
-						.grid  = {
-							.id = 0,
-							.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
-							.pos = i,
-							.pressed = v
-						},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-			}
-
-			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-				int id     = buttons[i].event_id;
-				int offset = buttons[i].buf_byte_offset;
-				int mask   = buttons[i].mask;
-
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				int value_idx = SLIDERS_SIZE + i;
-
-				if(dev->hw_values[value_idx] != v) {
-					dev->hw_values[value_idx] = v;
-
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_BUTTON,
-						.button  = {
-							.id = id,
-							.pressed = v > 0},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-			}
-			break;
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			if(dev->hw_values[i] != v) {
+				dev->hw_values[i] = v;
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_SLIDER,
+					.slider  = {
+						.id = id,
+						.value = v / 4096.f},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
 		}
-	} while (nbytes > 0);
 
-	return 0;
+		/* Grid */
+		static uint8_t grid_masks[] = {
+			0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
+			0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+		};
+		for(uint32_t i = 0; i < GRID_SIZE; i++) {
+			int offset = 1 + i / 8;
+			int mask   = grid_masks[i];
+
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			int value_idx = SLIDERS_SIZE + BUTTONS_SIZE + i;
+			if(dev->hw_values[value_idx] != v) {
+				dev->hw_values[value_idx] = v;
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_GRID,
+					.grid  = {
+						.id = 0,
+						.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+						.pos = i,
+						.pressed = v
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
+
+		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+			int id     = buttons[i].event_id;
+			int offset = buttons[i].buf_byte_offset;
+			int mask   = buttons[i].mask;
+
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			int value_idx = SLIDERS_SIZE + i;
+
+			if(dev->hw_values[value_idx] != v) {
+				dev->hw_values[value_idx] = v;
+
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button  = {
+						.id = id,
+						.pressed = v > 0},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
+		break;
+		}
+	}
 }
 
 static void ni_kontrol_f1_light_set(struct ctlra_dev_t *base,
@@ -348,6 +350,7 @@ ni_kontrol_f1_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_kontrol_f1_light_set;
 	dev->base.control_get_name = ni_kontrol_f1_control_get_name;
 	dev->base.light_flush = ni_kontrol_f1_light_flush;
+	dev->base.usb_read_cb = ni_kontrol_f1_usb_read_cb;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
