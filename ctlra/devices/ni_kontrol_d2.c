@@ -480,32 +480,16 @@ ni_kontrol_d2_screen_splash(struct ctlra_dev_t *base)
 	ni_kontrol_d2_screen_blit(&dev->base);
 }
 
-static __inline__ unsigned long long rdtsc(void)
-{
-    unsigned long long int x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-    return x;
-}
-
 void
 ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
 	static uint32_t counter;
-	static uint64_t tsc_total;
-	uint64_t now = rdtsc();
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
 						USB_ENDPOINT_SCREEN_WRITE,
 						(uint8_t *)&dev->screen_blit,
 						sizeof(dev->screen_blit));
-	uint64_t after = rdtsc();
-	counter++;
-	uint64_t duration = after - now;
-	tsc_total += duration;
-
-	printf("duration %ld\t avg: %ld\n", duration, tsc_total / counter);
-
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
 }
