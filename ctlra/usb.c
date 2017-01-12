@@ -307,17 +307,15 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 {
 	int failed = 0;
 	switch(xfr->status) {
-	case LIBUSB_TRANSFER_COMPLETED:
-		printf("%p : data len = %d\n", xfr->user_data, xfr->actual_length);
+	case LIBUSB_TRANSFER_COMPLETED: {
 		struct ctlra_dev_t *dev = xfr->user_data;
 		if(!dev->usb_read_cb) {
 			printf("CTLRA DRIVER ERROR: no USB READ CB implemented!\n");
 			break;
 		}
-		printf("calling usb_read_cb(), %d\n", xfr->actual_length);
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
-		break;
+		} break;
 	case LIBUSB_TRANSFER_CANCELLED:
 		printf("FAILED in cancelled %s\n", __func__);
 		failed = 1;

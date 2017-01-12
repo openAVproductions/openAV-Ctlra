@@ -321,8 +321,6 @@ static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 	nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
 			USB_ENDPOINT_BTNS_READ,
 			buf, 1024);
-	printf("interrupt read %d\n", nbytes);
-
 	return 0;
 }
 
