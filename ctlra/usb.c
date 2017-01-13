@@ -131,6 +131,7 @@ void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 	/* 1st: NULL context
 	 * 2nd: timeval to wait - 0 returns as if non blocking
 	 * 3rd: int* to completed event - unused by Ctlra */
+#warning TODO: fix the context here, and perhaps in other places too
 	libusb_handle_events_timeout_completed(NULL, &tv, NULL);
 }
 
