@@ -158,6 +158,9 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
 struct ctlra_t
 {
+	/* Options this instance was created with */
+	struct ctlra_create_opts_t opts;
+
 	/* Accept callback for application */
 	ctlra_accept_dev_func accept_dev_func;
 	void *accept_dev_func_userdata;

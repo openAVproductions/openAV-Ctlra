@@ -59,11 +59,17 @@ extern "C" {
  */
 struct ctlra_t;
 
+
+
 /** Struct for forward compatibility, allowing various options to be passed
  * to cltra, without breaking all the function calls */
 struct ctlra_create_opts_t {
+	/* creation time flags */
+	uint8_t flags_usb_no_own_context : 1;
+	uint8_t flags_usb_unsued : 7;
+
 	/* reserve lots of space */
-	uint8_t padding[64];
+	uint8_t padding[63];
 };
 
 /** Struct that provides info about the controller. Passed to the

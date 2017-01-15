@@ -139,7 +139,12 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 	if(ctlra->usb_initialized)
 		return -1;
 
-	ret = libusb_init (&ctlra->ctx);
+	/* Do not create a new USB context if we're flagged not to */
+	if(ctlra->opts.flags_usb_no_own_context)
+		ret = libusb_init(NULL);
+	else
+		ret = libusb_init(&ctlra->ctx);
+
 	if (ret < 0) {
 		printf("failed to initialise libusb: %s\n",
 		       libusb_error_name(ret));

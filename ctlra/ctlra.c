@@ -197,6 +197,10 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	struct ctlra_t *c = calloc(1, sizeof(struct ctlra_t));
 	if(!c) return 0;
 
+	/* If options were passed, copy them to the instance */
+	if(opts)
+		c->opts = *opts;
+
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
 	if(err)
