@@ -1,4 +1,4 @@
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,7 +40,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
-		char *pressed = 0;
+		const char *pressed = 0;
 		const char *name = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
@@ -72,7 +72,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			} else {
 				pressed = "---";
 			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
+			printf("[%s] grid %d", pressed ? " X " : "   ", e->grid.pos);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");

@@ -19,8 +19,6 @@ struct ctlra_dev_connect_func_t {
 	ctlra_dev_connect_func connect;
 };
 
-#warning TODO: refactor this to be a tailq and have devices register themselves in the .c file instead of all here
-
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_d2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);

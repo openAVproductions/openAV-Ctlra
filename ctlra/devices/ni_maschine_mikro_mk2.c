@@ -132,10 +132,7 @@ static const struct ni_maschine_mikro_mk2_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
-static const struct ni_maschine_mikro_mk2_ctlra_t encoders[] = {
-	{NI_MASCHINE_MIKRO_MK2_BTN_ENCODER_ROTATE, 5, 0x0F},
-};
-#define ENCODERS_SIZE (sizeof(encoders) / sizeof(encoders[0]))
+#define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
@@ -182,13 +179,6 @@ ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mikro_mk2_control_names[control_id];
 	return 0;
-}
-
-static __inline__ unsigned long long rdtsc(void)
-{
-    unsigned long long int x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-    return x;
 }
 
 static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
