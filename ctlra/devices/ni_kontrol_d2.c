@@ -412,7 +412,7 @@ void ni_kontrol_d2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		/* Browse encoder turn event */
 		if(browse != dev->encoder_browse) {
 #warning TODO: check if this wrap16 code is dealing with values > 1 OK - aka\
-if we turn very fast, does it deal with sending a delta of eg: 4
+ if we turn very fast, does it deal with sending a delta of eg: 4
 			int dir = ctlra_dev_encoder_wrap_16(browse,
 							    dev->encoder_browse);
 			event.encoder.delta = dir;
