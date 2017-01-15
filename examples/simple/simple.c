@@ -5,11 +5,8 @@
 #include <signal.h>
 
 #include "ctlra.h"
-#include "devices/ni_maschine_mikro_mk2.h"
 
 static volatile uint32_t done;
-static struct ctlra_dev_t* dev;
-
 static uint32_t led;
 static uint32_t led_set;
 
@@ -34,7 +31,9 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	/* Events from the Ctlra device are handled here. They should be
 	 * decoded, and events sent to the application. Note that this
 	 * function must *NOT* send feedback to the device. Instead, the
-	 * feedback_func() above should be used to send feedback */
+	 * feedback_func() above should be used to send feedback. For a
+	 * proper demo on how to do feedback, see examples/vegas/
+	 */
 
 	static const char* grid_pressed[] = { " X ", "   " };
 
@@ -95,6 +94,10 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	/* Notifies application of device removal, also allows cleanup
 	 * of any device specific structures. See daemon/ example, where
 	 * the MIDI I/O is cleaned up in the remove() function */
+	struct ctlra_dev_info_t info;
+	ctlra_dev_get_info(dev, &info);
+	printf("simple: removing %s %s\n", info.vendor, info.device);
+
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,
