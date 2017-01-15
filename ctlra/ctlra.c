@@ -266,12 +266,17 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
 		if(!dev_iter->banished) {
-			dev_iter->feedback_func(dev_iter,
+			if(dev_iter->feedback_func) {
+				dev_iter->feedback_func(dev_iter,
 					dev_iter->event_func_userdata);
+			}
 		}
 		dev_iter = dev_iter->dev_list_next;
 	}
 
+	/* if any devices were banished (I/O Error, malfunctioned etc)
+	 * then we disconnect them here. The dev_disconnect() call will
+	 * inform the application if it registered a remove() callback */
 	while(ctlra->banished_list) {
 		void *tmp = ctlra->banished_list->banished_list_next;
 		ctlra_dev_disconnect(ctlra->banished_list);

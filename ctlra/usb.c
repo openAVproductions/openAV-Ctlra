@@ -66,7 +66,6 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 								0x17cc,
 								0x1200,
 								&ni_mm);
-			//printf("search = %d, ni_mm = %p\n", err, ni_mm);
 			ctlra_dev_disconnect(ni_mm);
 		}
 		return 0;
