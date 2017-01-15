@@ -39,13 +39,8 @@ void demo_event_func(struct ctlra_dev_t* dev,
 	for(uint32_t i = 0; i < num_events; i++) {
 		const char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
-		const char *name = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_BUTTON, e->button.id);
-			printf("[%s] button %s (%d)\n",
-			       e->button.pressed ? " X " : "   ",
-			       name, e->button.id);
 			message[0] = e->button.pressed ? 0x90 : 0x80;
 			message[1] = 60 + e->button.id;
 			message[2] = e->button.pressed ? 0x70 : 0;
@@ -53,17 +48,9 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_ENCODER,  e->button.id);
-			printf("[%s] encoder %s (%d)\n",
-			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
 			break;
 
 		case CTLRA_EVENT_SLIDER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_SLIDER, e->button.id);
-			printf("[%03d] slider %s (%d)\n",
-			       (int)(e->slider.value * 100.f),
-			       name, e->slider.id);
 			message[0] = 0xb0;
 			message[1] = e->slider.id;
 			message[2] = int(e->slider.value * 127.f);
@@ -71,21 +58,9 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_GRID:
-			static const char* grid_pressed[] = { " X ", "   " };
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID,
-			                                  e->button.id);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
-				pressed = grid_pressed[e->grid.pressed];
-			} else {
-				pressed = "---";
-			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
-				printf(", pressure %1.3f", e->grid.pressure);
-			printf("\n");
 			message[0] = e->grid.pressed ? 0x90 : 0x80;
-			message[1] = e->grid.pos + 36; /* default GM drum
-							  mapping */
+			message[1] = e->grid.pos + 36; /* GM drum mapping
+							  kick drum note */
 			message[2] = e->grid.pressed ? 0x70 : 0;
 			midiout->sendMessage( &message );
 			break;
