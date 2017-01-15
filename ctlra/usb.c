@@ -124,17 +124,14 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 	return 0;
 }
 
-
 void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 {
 	struct timeval tv = {0};
 	/* 1st: NULL context
 	 * 2nd: timeval to wait - 0 returns as if non blocking
 	 * 3rd: int* to completed event - unused by Ctlra */
-#warning TODO: fix the context here, and perhaps in other places too
-	libusb_handle_events_timeout_completed(NULL, &tv, NULL);
+	libusb_handle_events_timeout_completed(ctlra->ctx, &tv, NULL);
 }
-
 
 int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 {
@@ -170,7 +167,7 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 					       ctlra,
 					       &hp[0]);
 	if (ret != LIBUSB_SUCCESS) {
-		printf("hotplug register failure\n");
+		printf("ctlra: hotplug register failure\n");
 	}
 	return 0;
 }
