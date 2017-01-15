@@ -19,6 +19,10 @@ struct ctlra_dev_connect_func_t {
 	ctlra_dev_connect_func connect;
 };
 
+/* TODO: Cleanup this registration method to be in the .c files of each
+ * implementation, instead of centrally located here. This allows drivers
+ * to be "dropped in" to the source, and then automatically register up
+ * without library code changes */
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_d2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
