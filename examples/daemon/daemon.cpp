@@ -151,7 +151,7 @@ int main()
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
-		usleep(100);
+		usleep(10 * 1000);
 	}
 
 	ctlra_exit(ctlra);
