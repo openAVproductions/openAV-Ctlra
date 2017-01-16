@@ -54,6 +54,9 @@ struct script_t {
 	script_get_vid_pid get_vid_pid;
 	/* Function pointer to the scripts event handling function */
 	script_event_func event_func;
+
+	/* The malloc() / free() memory from the script */
+	void *script_ud;
 };
 
 void script_free(struct script_t *s)
@@ -127,11 +130,15 @@ int script_compile_file(struct script_t *script)
 	return 0;
 }
 
-void tcc_feedback_func(struct ctlra_dev_t *dev, void *d)
+void tcc_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 {
 	/* feedback like LEDs and Screen drawing based on application
 	 * state goes here. No events should be sent to the application
 	 * from this function - one-way App->Ctlra updates only */
+
+	struct script_t *script = userdata;
+	if(script->feedback_func)
+		script->feedback_func(dev, userdata);
 }
 
 void tcc_event_proxy(struct ctlra_dev_t* dev,

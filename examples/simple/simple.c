@@ -136,7 +136,8 @@ int main(int argc, char **argv)
 	struct ctlra_t *ctlra = ctlra_create(&opts);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
-	while(!done) {
+	int i = 0;
+	while(i < 4 && !done) {
 		ctlra_idle_iter(ctlra);
 		usleep(10 * 1000);
 	}

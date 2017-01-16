@@ -322,6 +322,7 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 
 	/* Timeouts *can* happen, but are rare. */
 	case LIBUSB_TRANSFER_TIMED_OUT:
+		//printf("timeout... ctlra dev %p\n", xfr->user_data);
 		break;
 
 	/* Anything here is an error, and the device will be banished */
@@ -341,6 +342,7 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		failed = 1;
 		break;
 	}
+
 	free(xfr->buffer);
 	libusb_free_transfer(xfr);
 }
@@ -352,8 +354,11 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	int transferred;
 	const uint32_t timeout = 10;
 
+#if 1
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
+	if(xfr == 0)
+		printf("WARNING: xfr == NULL!!\n");
 
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
@@ -369,7 +374,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          ctlra_usb_xfr_done_cb,
 	                          dev, /* userdata - pass dev so we can banish
 					  it if required */
-	                          200 /* timeout */);
+	                          1000 /* timeout */);
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
 		free(data);
@@ -377,7 +382,13 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		return -1;
 	}
 
-	/*
+	/* do we want to return the size here? */
+	/* This read op is async - there *IS* no data to read right now.
+	 * We need a ring to store the data in an async way, so the xfer
+	 * done callback can queue data to be returned here. AKA: we need
+	 * to read data from the ring here now */
+	return 0;
+#else
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
@@ -388,14 +399,9 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
-	*/
+	return r;
+#endif
 
-	/* do we want to return the size here? */
-	/* This read op is async - there *IS* no data to read right now.
-	 * We need a ring to store the data in an async way, so the xfer
-	 * done callback can queue data to be returned here. AKA: we need
-	 * to read data from the ring here now */
-	return 0;
 }
 
 int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
@@ -445,7 +451,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 		if(dev->usb_interface[i]) {
-#if 0
+#if 1
 			// Running this always seems to throw an error,
 			// and it has no negative side-effects to not?
 			int ret = libusb_release_interface(dev->usb_device, i);
@@ -465,6 +471,9 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra)
 {
-	libusb_exit(ctlra->ctx);
+	if(ctlra->opts.flags_usb_no_own_context)
+		libusb_exit(NULL);
+	else
+		libusb_exit(ctlra->ctx);
 }
 
