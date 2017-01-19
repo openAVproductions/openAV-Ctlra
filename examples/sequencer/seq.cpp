@@ -66,25 +66,34 @@ static struct mm_t
 	 */
 	uint8_t mode;
 	uint8_t mode_prev;
+	uint8_t shift_pressed;
 
 	/* GROUP */
 	uint8_t grp_id; /* 0 - 7, selected group */
+
+	/* Pads */
+	uint8_t pads_pressed[16];
+
+	/* Pattern */
+	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
 } mm_static;
 
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* group, pads, sequencer modes */
 	struct mm_t *mm = &mm_static;
+	const struct col_t *col = &grp_col[mm->grp_id];
 	switch(mm->mode) {
 	case MODE_PATTERN: {
 		for(int i = 0; i < 16; i++) {
 			int on = sequencer_get_step(sequencer, i);
 			ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + i,
-					    0x0000000f * on);
+					    col_dim(col, on ? 1.0 : 0.00));
 		}
 		int step = sequencer_get_current_step( sequencer );
 		int on = sequencer_get_step(sequencer, step % 16);
-		ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + step, on ? 0x003f7f7f : 0x00003f00);
+		ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + step,
+				    on ?  0x007f7f7f : 0x000f0f0f );
 		break;
 		}
 	case MODE_GROUP:
@@ -94,7 +103,22 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 						    i == mm->grp_id ? 1.0 : 0.05));
 		}
 		break;
+	case MODE_PADS:
+		for(int i = 0; i < 16; i++) {
+			ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + i,
+					    col_dim(&grp_col[mm->grp_id],
+						    mm->pads_pressed[i] ? 1.0 : 0.02));
+		}
+		break;
 	}
+
+	ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_MODE,
+			    mm->mode == MODE_PADS ? 0xffffffff : 0x3);
+	ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PATTERN,
+			    mm->mode == MODE_PATTERN ? 0xffffffff : 0x3);
+
+
+
 	ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_GROUP,
 			    col_dim(&grp_col[mm->grp_id], 1.0));
 
@@ -127,6 +151,9 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			printf("button %d\n", e->button.id);
 			pr = e->button.pressed;
 			switch(e->button.id) {
+			case  7: mm->shift_pressed = pr; break;
+			case 22: mm->mode = MODE_PATTERN; break;
+			case 23: mm->mode = MODE_PADS; break;
 			case 8: /* Group */
 				if(pr) {
 					mm->mode_prev = mm->mode;
@@ -149,17 +176,20 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_GRID:
+			pr = e->grid.pressed;
 			if(mm->mode == MODE_GROUP) {
 				/* select new group here */
 				if(e->grid.pressed && e->grid.pos < 8) {
 					mm->grp_id = e->grid.pos;
 				}
 			}
-			message[0] = e->grid.pressed ? 0x90 : 0x80;
-			message[1] = e->grid.pos + 36; /* GM drum mapping
-							  kick drum note */
-			message[2] = e->grid.pressed ? 0x70 : 0;
-			midiout->sendMessage( &message );
+			if(mm->mode == MODE_PATTERN && pr) {
+				if(mm->shift_pressed)
+					mm->pattern_pad_id = e->grid.pos;
+				else
+					sequencer_toggle_step(sequencer, e->grid.pos);
+			}
+			mm->pads_pressed[e->grid.pos] = e->grid.pressed;
 			break;
 		default:
 			break;
@@ -216,6 +246,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 void seqEventCb(int frame, int note, int velocity, void* user_data )
 {
+	printf("%s: %d, %d : %d\n", __func__, frame, note, velocity);
 }
 
 #define SR 48000
