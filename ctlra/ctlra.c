@@ -28,6 +28,7 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
+DECLARE_DEV_CONNECT_FUNC(ni_maschine_jam_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
@@ -36,6 +37,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0x17cc, 0x1120, ni_kontrol_f1_connect},
 	{0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
 	{0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
+	{0x17cc, 0x1500, ni_maschine_jam_connect},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
