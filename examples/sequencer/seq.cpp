@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #include <iostream>
 #include <cstdlib>
@@ -15,11 +16,13 @@
 static volatile uint32_t done;
 static struct ctlra_dev_t* dev;
 
-static Sequencer *sequencer;
+static Sequencer *sequencers[16];
 
 #define MODE_GROUP   0
 #define MODE_PADS    1
 #define MODE_PATTERN 2
+
+void *midi_out_void;
 
 struct col_t
 {
@@ -73,6 +76,7 @@ static struct mm_t
 
 	/* Pads */
 	uint8_t pads_pressed[16];
+	uint8_t pads_seq_play[16];
 
 	/* Pattern */
 	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
@@ -83,6 +87,8 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 	/* group, pads, sequencer modes */
 	struct mm_t *mm = &mm_static;
 	const struct col_t *col = &grp_col[mm->grp_id];
+	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
+
 	switch(mm->mode) {
 	case MODE_PATTERN: {
 		for(int i = 0; i < 16; i++) {
@@ -94,6 +100,10 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 		int on = sequencer_get_step(sequencer, step % 16);
 		ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + step,
 				    on ?  0x007f7f7f : 0x000f0f0f );
+		if(mm->shift_pressed) {
+		ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 +
+				    mm->pattern_pad_id, 0x00ffffff);
+		}
 		break;
 		}
 	case MODE_GROUP:
@@ -104,10 +114,16 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 		}
 		break;
 	case MODE_PADS:
+		/* pressed pads (manually - hence overrides */
 		for(int i = 0; i < 16; i++) {
 			ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + i,
 					    col_dim(&grp_col[mm->grp_id],
 						    mm->pads_pressed[i] ? 1.0 : 0.02));
+		}
+		/* sequencer playbacks */
+		for(int i = 0; i < 16; i++) {
+			if(mm->pads_seq_play[i])
+				ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + i, 0xffffffff);
 		}
 		break;
 	}
@@ -135,6 +151,7 @@ void demo_event_func(struct ctlra_dev_t* dev,
 	/* See below, a RtMidiOut instance is passed as the device's
 	 * userdata pointer when registering the event_func */
 	RtMidiOut *midiout = (RtMidiOut *)userdata;
+	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
 
 	std::vector<unsigned char> message(3);
 
@@ -184,10 +201,18 @@ void demo_event_func(struct ctlra_dev_t* dev,
 				}
 			}
 			if(mm->mode == MODE_PATTERN && pr) {
-				if(mm->shift_pressed)
+				if(mm->shift_pressed) {
 					mm->pattern_pad_id = e->grid.pos;
+					//printf("new pattern pad id %d\n", mm->pattern_pad_id);
+				}
 				else
 					sequencer_toggle_step(sequencer, e->grid.pos);
+			}
+			if(mm->mode == MODE_PADS && pr) {
+				message[0] = 0x90;
+				message[1] = 36 + 16 - e->grid.pos;
+				message[2] = int(e->grid.pressed * 107.f);
+				midiout->sendMessage( &message );
 			}
 			mm->pads_pressed[e->grid.pos] = e->grid.pressed;
 			break;
@@ -241,12 +266,23 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	}
 	*userdata_for_event_func = midiout;
 
+	midi_out_void = midiout;
+
 	return 1;
 }
 
 void seqEventCb(int frame, int note, int velocity, void* user_data )
 {
 	printf("%s: %d, %d : %d\n", __func__, frame, note, velocity);
+	memset(mm_static.pads_seq_play, 0, sizeof(mm_static.pads_seq_play));
+	mm_static.pads_seq_play[note] = velocity;
+
+	RtMidiOut *midiout = (RtMidiOut *)midi_out_void;
+	std::vector<unsigned char> message(3);
+	message[0] = 0x90;
+	message[1] = 36 + note;
+	message[2] = velocity;
+	midiout->sendMessage( &message );
 }
 
 #define SR 48000
@@ -255,14 +291,14 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-	sequencer = sequencer_new(SR);
-	sequencer_set_callback(sequencer, seqEventCb, 0x0);
-	sequencer_set_length(sequencer, SR * 1.2);
-	sequencer_set_num_steps(sequencer, 16);
-	sequencer_toggle_step(sequencer, 0);
-	sequencer_toggle_step(sequencer, 4);
-	sequencer_toggle_step(sequencer, 10);
-	sequencer_toggle_step(sequencer, 12);
+	for(int i = 0; i < 16; i++) {
+		struct Sequencer *sequencer = sequencer_new(SR);
+		sequencer_set_callback(sequencer, seqEventCb, 0x0);
+		sequencer_set_length(sequencer, SR * 1.2);
+		sequencer_set_num_steps(sequencer, 16);
+		sequencer_set_note(sequencer, i);
+		sequencers[i] = sequencer;
+	}
 
 	mm_static.mode = MODE_PATTERN;
 
@@ -273,7 +309,10 @@ int main()
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
-		sequencer_process( sequencer, 128 );
+		for(int i = 0; i < 16; i++) {
+			struct Sequencer *sequencer = sequencers[i];
+			sequencer_process( sequencer, 128 );
+		}
 		usleep(1000 * 1000 / sleep);
 	}
 
