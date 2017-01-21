@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 //#include "ni_maschine_jam.h"
 #include "impl.h"
@@ -71,12 +72,22 @@ static const struct ni_maschine_jam_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-#define NI_MASCHINE_JAM_LED_COUNT 1000
+
+#define NI_MASCHINE_JAM_LED_COUNT \
+	(15 /* left pane */ +\
+	 24 /* center non-grid */ +\
+	 11 /* right */ +\
+	 16 /* vu */ +\
+	 64 /* grid */)
 
 /* Represents the the hardware device */
 struct ni_maschine_jam_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
+
+	/* the hidraw file descriptor */
+	int fd;
+
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
@@ -97,123 +108,112 @@ ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
 	return 0;
 }
 
+static void
+ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force);
+
 static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
 	uint8_t buf[1024];
 	int32_t nbytes;
 
-	int handle_idx = 0;
-	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-						   USB_ENDPOINT_READ,
-						   buf, 1024);
-	return 0;
-}
-
-static void
-ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force);
-static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status);
-
-void ni_maschine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
-				uint8_t *data, uint32_t size)
-{
-	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
-	uint8_t *buf = data;
-
-	ni_maschine_jam_light_set(base, 0, 0xf);
-	//ni_maschine_jam_light_flush(base, 1);
-
-	switch(size) {
-	case 49: {
-		static uint8_t old[49];
-		int i = 49;
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
+	do {
+		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
+			break;
 		}
-		printf("\n");
 
-		break;
-	}
-	case 17: {
-		static uint8_t old[17];
-		int i = 17;
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
+		uint8_t *data = buf;
+
+		switch(nbytes) {
+		case 49: {
+			static uint8_t old[49];
+			int i = 49;
+			while(i --> 0) {
+				printf("%02x ", data[i]);
+				old[i] = data[i];
+			}
+			printf("\n");
+
+			break;
 		}
-		printf("\n");
+		case 17: {
+			static uint8_t old[17];
+			int i = 17;
+			while(i --> 0) {
+				printf("%02x ", data[i]);
+				old[i] = data[i];
+			}
+			printf("\n");
 
-		uint64_t pressed = 0;
+			uint64_t pressed = 0;
 
-		static uint16_t col_mask[] = {
-			/* todo: maskes for col 7 and 8 not working */
-			0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x1000, 0xff00,
-		};
+			static uint16_t col_mask[] = {
+				/* todo: maskes for col 7 and 8 not working */
+				0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x1000, 0xff00,
+			};
 
-		/* rows */
-		for(int r = 0; r < 8; r++) {
-			uint16_t d = *(uint16_t *)&data[4+r];// & 0x3fc;
-			/* columns */
-			for(int c = 0; c < 6; c++) {
-				uint8_t p = d & col_mask[c];
+			/* rows */
+			for(int r = 0; r < 8; r++) {
+				uint16_t d = *(uint16_t *)&data[4+r];// & 0x3fc;
+				/* columns */
+				for(int c = 0; c < 6; c++) {
+					uint8_t p = d & col_mask[c];
+					if(p)
+						printf("%d %d = %d\n", r, c, p > 0);
+				}
+				uint8_t p = data[4+1+r] & 0x1;
 				if(p)
-					printf("%d %d = %d\n", r, c, p > 0);
+					printf("%d %d = %d\n", r, 6, p);
+				p = data[4+1+r] & 0x2;
+				if(p)
+					printf("%d %d = %d\n", r, 7, p);
 			}
-			uint8_t p = data[4+1+r] & 0x1;
-			if(p)
-				printf("%d %d = %d\n", r, 6, p);
-			p = data[4+1+r] & 0x2;
-			if(p)
-				printf("%d %d = %d\n", r, 7, p);
-		}
 #if 0
-		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-			int id     = sliders[i].event_id;
-			int offset = sliders[i].buf_byte_offset;
-			int mask   = sliders[i].mask;
+			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
+				int id     = sliders[i].event_id;
+				int offset = sliders[i].buf_byte_offset;
+				int mask   = sliders[i].mask;
 
-			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-			if(dev->hw_values[i] != v) {
-				dev->hw_values[i] = v;
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_SLIDER,
-					.slider  = {
-						.id = id,
-						.value = v / 4096.f},
-				};
-				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
+				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+				if(dev->hw_values[i] != v) {
+					dev->hw_values[i] = v;
+					struct ctlra_event_t event = {
+						.type = CTLRA_EVENT_SLIDER,
+						.slider  = {
+							.id = id,
+							.value = v / 4096.f},
+					};
+					struct ctlra_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
 			}
-		}
-		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-			int id     = buttons[i].event_id;
-			int offset = buttons[i].buf_byte_offset;
-			int mask   = buttons[i].mask;
+			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+				int id     = buttons[i].event_id;
+				int offset = buttons[i].buf_byte_offset;
+				int mask   = buttons[i].mask;
 
-			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-			int value_idx = SLIDERS_SIZE + i;
+				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+				int value_idx = SLIDERS_SIZE + i;
 
-			if(dev->hw_values[value_idx] != v) {
-				dev->hw_values[value_idx] = v;
+				if(dev->hw_values[value_idx] != v) {
+					dev->hw_values[value_idx] = v;
 
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_BUTTON,
-					.button  = {
-						.id = id,
-						.pressed = v > 0},
-				};
-				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
+					struct ctlra_event_t event = {
+						.type = CTLRA_EVENT_BUTTON,
+						.button  = {
+							.id = id,
+							.pressed = v > 0},
+					};
+					struct ctlra_event_t *e = {&event};
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
 			}
-		}
 #endif
-	} /* case 17 */
-	}
+		} /* case 17 */
+		} /* switch */
+	} while (nbytes > 0);
 }
 
 static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
@@ -229,8 +229,6 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
-
-	memset(&dev->lights[4], 0xfe, 50);
 
 	/* FX ON buttons have orange and blue */
 #if 0
@@ -276,13 +274,20 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	static uint8_t col;
 
-	int i = 1;
-
-	int start = i;
-	for(; i < start + 64 * 10; i++) {
-		data[i] = 0xff;// col++;/// rand() % 255;//col++;
+	for(int i = 0; i <NI_MASCHINE_JAM_LED_COUNT; i++) {
+		data[i] = 0xff;
 	}
 
+	data[0] = 0x80;
+	write(dev->fd, data, 65);
+	data[0] = 0x81;
+	write(dev->fd, data, 8*10);
+	data[0] = 0x82;
+	write(dev->fd, data, 64);
+	write(dev->fd, data, 2);
+
+	usleep(100 * 1000);
+#if 0
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
@@ -304,6 +309,7 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						     640+1);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
+#endif
 }
 
 static int32_t
@@ -312,11 +318,11 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_MASCHINE_JAM_LED_COUNT);
+	//memset(dev->lights, 0, NI_MASCHINE_JAM_LED_COUNT);
 	if(!base->banished)
 		ni_maschine_jam_light_flush(base, 1);
 
-	ctlra_dev_impl_usb_close(base);
+	printf("dev disco %p\n", base);
 	free(dev);
 	return 0;
 }
@@ -329,12 +335,55 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 	struct ni_maschine_jam_t *dev = calloc(1, sizeof(struct ni_maschine_jam_t));
 	if(!dev)
 		goto fail;
+	printf("dev alloc %p\n", dev);
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Maschine Jam");
 
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
+
+	int fd, i, res, found = 0;
+	char buf[256];
+	struct hidraw_devinfo info;
+
+	for(i = 0; i < 64; i++) {
+		const char *device = "/dev/hidraw";
+		snprintf(buf, sizeof(buf), "%s%d", device, i);
+		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
+		if(fd < 0)
+			continue;
+
+		memset(&info, 0x0, sizeof(info));
+		res = ioctl(fd, HIDIOCGRAWINFO, &info);
+
+		if (res < 0) {
+			perror("HIDIOCGRAWINFO");
+		} else {
+			if(info.vendor  == NI_VENDOR &&
+			   info.product == NI_MASCHINE_JAM) {
+				found = 1;
+				break;
+			}
+		}
+		close(fd);
+		/* continue searching next HID dev */
+	}
+
+	if(!found) {
+		free(dev);
+		return 0;
+	}
+
+	dev->fd = fd;
+
+#if 0
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					 NI_VENDOR, NI_MASCHINE_JAM);
 	if(err) {
@@ -348,13 +397,15 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 		free(dev);
 		return 0;
 	}
+#endif
+	dev->base.info.vendor_id = NI_VENDOR;
+	dev->base.info.device_id = NI_MASCHINE_JAM;
 
 	dev->base.poll = ni_maschine_jam_poll;
 	dev->base.disconnect = ni_maschine_jam_disconnect;
 	dev->base.light_set = ni_maschine_jam_light_set;
 	dev->base.control_get_name = ni_maschine_jam_control_get_name;
 	dev->base.light_flush = ni_maschine_jam_light_flush;
-	dev->base.usb_read_cb = ni_maschine_jam_usb_read_cb;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
