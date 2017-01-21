@@ -153,20 +153,42 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 			};
 
 			/* rows */
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_GRID,
+				.grid  = {
+					.id = 0,
+					.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+					.pos = 0,
+					.pressed = 1
+				},
+			};
+			struct ctlra_event_t *e = {&event};
 			for(int r = 0; r < 8; r++) {
 				uint16_t d = *(uint16_t *)&data[4+r];// & 0x3fc;
 				/* columns */
 				for(int c = 0; c < 6; c++) {
 					uint8_t p = d & col_mask[c];
-					if(p)
+					if(p) {
+						e->grid.pos = (r * 8) + c;
 						printf("%d %d = %d\n", r, c, p > 0);
+						dev->base.event_func(&dev->base, 1, &e,
+								     dev->base.event_func_userdata);
+					}
 				}
 				uint8_t p = data[4+1+r] & 0x1;
-				if(p)
+				if(p) {
+					e->grid.pos = (r * 8) + 6;
 					printf("%d %d = %d\n", r, 6, p);
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
 				p = data[4+1+r] & 0x2;
-				if(p)
+				if(p) {
 					printf("%d %d = %d\n", r, 7, p);
+					e->grid.pos = (r * 8) + 7;
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
 			}
 #if 0
 			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
