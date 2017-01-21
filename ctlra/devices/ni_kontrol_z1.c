@@ -247,7 +247,7 @@ ni_kontrol_z1_disconnect(struct ctlra_dev_t *base)
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_KONTROL_Z1_LED_COUNT);
+	memset(dev->lights, 0, NI_KONTROL_Z1_LED_COUNT);
 	if(!base->banished)
 		ni_kontrol_z1_light_flush(base, 1);
 
