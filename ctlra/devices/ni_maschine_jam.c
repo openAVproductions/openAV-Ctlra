@@ -54,7 +54,59 @@ struct ni_maschine_jam_ctlra_t {
 
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
-	"todo",
+	"Song",
+	"Step",
+	"Pad Mode",
+	"Clear",
+	"Duplicate",
+	"DPad Up",
+	"DPad Left",
+	"DPad Right",
+	"DPad Down",
+	"Note Repeat",
+	"Macro",
+	"Level",
+	"Aux",
+	"Control",
+	"Auto",
+	"Shift",
+	"Play",
+	"Rec",
+	"Left",
+	"Right",
+	"Tempo",
+	"Grid",
+	"Solo",
+	"Mute",
+	"Select",
+	"Swing",
+	"Tune",
+	"Lock",
+	"Notes",
+	"Perform",
+	"Browse",
+	"Encoder Touch",
+	"Encoder Press",
+	"In",
+	"Headphones",
+	"Master (MST)",
+	"Group (GRP)",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"A",
+	"B",
+	"C",
+	"D",
+	"E",
+	"F",
+	"G",
+	"H",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
@@ -65,8 +117,129 @@ static const struct ni_maschine_jam_ctlra_t sliders[] = {
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
+enum BTN_T {
+	NI_MASCHINE_JAM_BTN_SONG,
+	NI_MASCHINE_JAM_BTN_STEP,
+	NI_MASCHINE_JAM_BTN_PAD_MODE,
+	NI_MASCHINE_JAM_BTN_CLEAR,
+	NI_MASCHINE_JAM_BTN_DUPLICATE,
+	NI_MASCHINE_JAM_BTN_DPAD_UP,
+	NI_MASCHINE_JAM_BTN_DPAD_LEFT,
+	NI_MASCHINE_JAM_BTN_DPAD_RIGHT,
+	NI_MASCHINE_JAM_BTN_DPAD_DOWN,
+	NI_MASCHINE_JAM_BTN_NOTE_REPEAT,
+	NI_MASCHINE_JAM_BTN_MACRO,
+	NI_MASCHINE_JAM_BTN_LEVEL,
+	NI_MASCHINE_JAM_BTN_AUX,
+	NI_MASCHINE_JAM_BTN_CONTROL,
+	NI_MASCHINE_JAM_BTN_AUTO,
+	NI_MASCHINE_JAM_BTN_SHIFT,
+	/* Below touchstrip */
+	NI_MASCHINE_JAM_BTN_PLAY,
+	NI_MASCHINE_JAM_BTN_REC,
+	NI_MASCHINE_JAM_BTN_LEFT,
+	NI_MASCHINE_JAM_BTN_RIGHT,
+	NI_MASCHINE_JAM_BTN_TEMPO,
+	NI_MASCHINE_JAM_BTN_GRID,
+	NI_MASCHINE_JAM_BTN_SOLO,
+	NI_MASCHINE_JAM_BTN_MUTE,
+	/* Right */
+	NI_MASCHINE_JAM_BTN_SELECT,
+	NI_MASCHINE_JAM_BTN_SWING,
+	NI_MASCHINE_JAM_BTN_TUNE,
+	NI_MASCHINE_JAM_BTN_LOCK,
+	NI_MASCHINE_JAM_BTN_NOTES,
+	NI_MASCHINE_JAM_BTN_PERFORM,
+	NI_MASCHINE_JAM_BTN_BROWSE,
+	NI_MASCHINE_JAM_BTN_ENCODER_TOUCH,
+	NI_MASCHINE_JAM_BTN_ENCODER_PRESS,
+	NI_MASCHINE_JAM_BTN_IN,
+	NI_MASCHINE_JAM_BTN_HEADPHONES,
+	NI_MASCHINE_JAM_BTN_MASTER,
+	NI_MASCHINE_JAM_BTN_GROUP,
+	/* Numbered buttons above grid */
+	NI_MASCHINE_JAM_BTN_1,
+	NI_MASCHINE_JAM_BTN_2,
+	NI_MASCHINE_JAM_BTN_3,
+	NI_MASCHINE_JAM_BTN_4,
+	NI_MASCHINE_JAM_BTN_5,
+	NI_MASCHINE_JAM_BTN_6,
+	NI_MASCHINE_JAM_BTN_7,
+	NI_MASCHINE_JAM_BTN_8,
+	/* Group buttons between grid and touchstrip */
+	NI_MASCHINE_JAM_BTN_A,
+	NI_MASCHINE_JAM_BTN_B,
+	NI_MASCHINE_JAM_BTN_C,
+	NI_MASCHINE_JAM_BTN_D,
+	NI_MASCHINE_JAM_BTN_E,
+	NI_MASCHINE_JAM_BTN_F,
+	NI_MASCHINE_JAM_BTN_G,
+	NI_MASCHINE_JAM_BTN_H,
+	/* Misc */
+	NI_MASCHINE_JAM_BTN_FOOTSWITCH,
+	NI_MASCHINE_JAM_BTN_
+};
+
 static const struct ni_maschine_jam_ctlra_t buttons[] = {
-	{0  , 29, 0x10},
+	{NI_MASCHINE_JAM_BTN_SONG       , 2, 0x01},
+	{NI_MASCHINE_JAM_BTN_STEP       , 3, 0x02},
+	{NI_MASCHINE_JAM_BTN_PAD_MODE   , 3, 0x04},
+	{NI_MASCHINE_JAM_BTN_CLEAR      , 3, 0x08},
+	{NI_MASCHINE_JAM_BTN_DUPLICATE  , 3, 0x10},
+	{NI_MASCHINE_JAM_BTN_DPAD_UP    , 3, 0x20},
+	{NI_MASCHINE_JAM_BTN_DPAD_LEFT  , 3, 0x40},
+	{NI_MASCHINE_JAM_BTN_DPAD_RIGHT , 3, 0x80},
+	{NI_MASCHINE_JAM_BTN_DPAD_DOWN  , 4, 0x01},
+	{NI_MASCHINE_JAM_BTN_NOTE_REPEAT, 4, 0x02},
+	{NI_MASCHINE_JAM_BTN_MACRO      , 13, 0x80},
+	{NI_MASCHINE_JAM_BTN_LEVEL      , 14, 0x01},
+	{NI_MASCHINE_JAM_BTN_AUX        , 14, 0x02},
+	{NI_MASCHINE_JAM_BTN_CONTROL    , 14, 0x04},
+	{NI_MASCHINE_JAM_BTN_AUTO       , 14, 0x08},
+	{NI_MASCHINE_JAM_BTN_SHIFT      , 15, 0x02},
+	/* Below touchstrips */
+	{NI_MASCHINE_JAM_BTN_PLAY       , 15, 0x04},
+	{NI_MASCHINE_JAM_BTN_REC        , 15, 0x08},
+	{NI_MASCHINE_JAM_BTN_LEFT       , 15, 0x10},
+	{NI_MASCHINE_JAM_BTN_RIGHT      , 15, 0x20},
+	{NI_MASCHINE_JAM_BTN_TEMPO      , 15, 0x40},
+	{NI_MASCHINE_JAM_BTN_GRID       , 15, 0x80},
+	{NI_MASCHINE_JAM_BTN_SOLO       , 16, 0x01},
+	{NI_MASCHINE_JAM_BTN_MUTE       , 16, 0x02},
+	{NI_MASCHINE_JAM_BTN_SELECT     , 16, 0x04},
+	//{NI_MASCHINE_JAM_BTN_, , 0x0},
+	{NI_MASCHINE_JAM_BTN_SWING      , 15, 0x01},
+	{NI_MASCHINE_JAM_BTN_TUNE       , 14, 0x80},
+	{NI_MASCHINE_JAM_BTN_LOCK       , 14, 0x40},
+	{NI_MASCHINE_JAM_BTN_NOTES      , 14, 0x20},
+	{NI_MASCHINE_JAM_BTN_PERFORM    , 14, 0x10},
+	{NI_MASCHINE_JAM_BTN_BROWSE     , 13, 0x40},
+	{NI_MASCHINE_JAM_BTN_ENCODER_TOUCH, 16, 0x08},
+	{NI_MASCHINE_JAM_BTN_ENCODER_PRESS, 16, 0x10},
+	{NI_MASCHINE_JAM_BTN_IN         , 13, 0x10},
+	{NI_MASCHINE_JAM_BTN_HEADPHONES , 13, 0x20},
+	{NI_MASCHINE_JAM_BTN_MASTER     , 13, 0x04},
+	{NI_MASCHINE_JAM_BTN_GROUP      , 13, 0x08},
+	/* top buttons */
+	{NI_MASCHINE_JAM_BTN_1          ,  2, 0x02},
+	{NI_MASCHINE_JAM_BTN_2          ,  2, 0x04},
+	{NI_MASCHINE_JAM_BTN_3          ,  2, 0x08},
+	{NI_MASCHINE_JAM_BTN_4          ,  2, 0x10},
+	{NI_MASCHINE_JAM_BTN_5          ,  2, 0x20},
+	{NI_MASCHINE_JAM_BTN_6          ,  2, 0x40},
+	{NI_MASCHINE_JAM_BTN_7          ,  2, 0x80},
+	{NI_MASCHINE_JAM_BTN_8          ,  3, 0x01},
+	/* group buttons */
+	{NI_MASCHINE_JAM_BTN_A          , 12, 0x04},
+	{NI_MASCHINE_JAM_BTN_B          , 12, 0x08},
+	{NI_MASCHINE_JAM_BTN_C          , 12, 0x10},
+	{NI_MASCHINE_JAM_BTN_D          , 12, 0x20},
+	{NI_MASCHINE_JAM_BTN_E          , 12, 0x40},
+	{NI_MASCHINE_JAM_BTN_F          , 12, 0x80},
+	{NI_MASCHINE_JAM_BTN_G          , 13, 0x01},
+	{NI_MASCHINE_JAM_BTN_H          , 13, 0x02},
+	/* Misc */
+	{NI_MASCHINE_JAM_BTN_FOOTSWITCH , 16, 0x20},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -190,26 +363,7 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
-#if 0
-			for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-				int id     = sliders[i].event_id;
-				int offset = sliders[i].buf_byte_offset;
-				int mask   = sliders[i].mask;
 
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				if(dev->hw_values[i] != v) {
-					dev->hw_values[i] = v;
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_SLIDER,
-						.slider  = {
-							.id = id,
-							.value = v / 4096.f},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-			}
 			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 				int id     = buttons[i].event_id;
 				int offset = buttons[i].buf_byte_offset;
@@ -232,7 +386,6 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 							     dev->base.event_func_userdata);
 				}
 			}
-#endif
 		} /* case 17 */
 		} /* switch */
 	} while (nbytes > 0);
