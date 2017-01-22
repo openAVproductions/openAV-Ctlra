@@ -267,7 +267,7 @@ struct ni_maschine_jam_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
-	uint8_t lights[NI_MASCHINE_JAM_LED_COUNT];
+	uint8_t lights[NI_MASCHINE_JAM_LED_COUNT*2];
 };
 
 static const char *
@@ -450,18 +450,22 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	static uint8_t col;
 
 	for(int i = 0; i <NI_MASCHINE_JAM_LED_COUNT; i++) {
-		data[i] = 0xff;
+		data[i] = 0xa0;
 	}
+	memset(data, 0, sizeof(dev->lights));
 
 	data[0] = 0x80;
-	write(dev->fd, data, 65);
-	data[0] = 0x81;
-	write(dev->fd, data, 8*10);
-	data[0] = 0x82;
-	write(dev->fd, data, 64);
-	write(dev->fd, data, 2);
+	int ret = write(dev->fd, data, 65);
+	printf("write 1: ret %d\n", ret);
 
-	usleep(100 * 1000);
+	data[0] = 0x81;
+	ret = write(dev->fd, data, 8*10+1);
+	printf("write 2: ret %d\n", ret);
+
+	data[0] = 0x82;
+	ret = write(dev->fd, data, 64+1);
+	printf("write 3: ret %d\n", ret);
+	//write(dev->fd, data, 2);
 #if 0
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
