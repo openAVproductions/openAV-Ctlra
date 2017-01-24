@@ -52,6 +52,9 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
+#warning REMOVE SMTH PRESSED
+static int something_presssed;
+
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
 	"Song",
@@ -301,6 +304,7 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 		case 49: {
 			static uint8_t old[49];
 			int i = 49;
+			int do_lights = 0;
 			while(i --> 0) {
 				printf("%02x ", data[i]);
 				old[i] = data[i];
@@ -384,6 +388,14 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 					struct ctlra_event_t *e = {&event};
 					dev->base.event_func(&dev->base, 1, &e,
 							     dev->base.event_func_userdata);
+
+					something_presssed = !something_presssed;
+					int col = 0x30 * something_presssed;
+					if(value_idx == 0)
+						col = 0xe;
+					for(int i = 0; i < 86; i++)
+						dev->lights[i] = col;
+					ni_maschine_jam_light_flush(base, 1);
 				}
 			}
 		} /* case 17 */
@@ -450,12 +462,14 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	static uint8_t col;
 
 	for(int i = 0; i <NI_MASCHINE_JAM_LED_COUNT; i++) {
-		data[i] = 0xa0;
+		//data[i] = 0x06;// 0b11110 * something_presssed;
 	}
-	memset(data, 0, sizeof(dev->lights));
+	//memset(data, 0, sizeof(dev->lights));
 
+#if 0
 	data[0] = 0x80;
 	int ret = write(dev->fd, data, 65);
+	ret = write(dev->fd, data, 65+16);
 	printf("write 1: ret %d\n", ret);
 
 	data[0] = 0x81;
@@ -466,6 +480,18 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	ret = write(dev->fd, data, 64+1);
 	printf("write 3: ret %d\n", ret);
 	//write(dev->fd, data, 2);
+	
+#else
+	/* try sending one huge message */
+
+	data[0] = 0x82;
+	int ret = write(dev->fd, data, 81);
+	write(dev->fd, data, 81);
+	printf("write huge: ret %d\n", ret);
+#endif
+
+
+
 #if 0
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
