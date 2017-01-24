@@ -250,13 +250,15 @@ static const struct ni_maschine_jam_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+/* usb endpoint, 8*8 grid, 1..8 and A..H */
+#define GRID_SIZE (1+64+8*2)
+#define TOUCHSTRIP_LEDS_SIZE (1 + 11 * 8)
 
 #define NI_MASCHINE_JAM_LED_COUNT \
 	(15 /* left pane */ +\
-	 24 /* center non-grid */ +\
 	 11 /* right */ +\
 	 16 /* vu */ +\
-	 64 /* grid */)
+	 GRID_SIZE)
 
 /* Represents the the hardware device */
 struct ni_maschine_jam_t {
@@ -273,6 +275,9 @@ struct ni_maschine_jam_t {
 
 	uint8_t lights_interface;
 	uint8_t lights[NI_MASCHINE_JAM_LED_COUNT*2];
+
+	uint8_t grid[GRID_SIZE];
+	uint8_t touchstrips[TOUCHSTRIP_LEDS_SIZE];
 };
 
 static const char *
@@ -450,6 +455,14 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 #endif
 
 	dev->lights_dirty = 1;
+}
+
+static uint8_t *
+ni_maschine_jam_grid_get_data(struct ctlra_dev_t *base)
+{
+	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
+	/* 1st is usb endpoint, next 8 are top lights */
+	return dev->grid[9];
 }
 
 static void
