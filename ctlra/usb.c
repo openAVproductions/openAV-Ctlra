@@ -318,7 +318,8 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		}
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
-		} break;
+		}
+		break;
 
 	/* Timeouts *can* happen, but are rare. */
 	case LIBUSB_TRANSFER_TIMED_OUT:
@@ -414,11 +415,11 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
+	else if(r == LIBUSB_ERROR_BUSY)
+		return 0;
 	if (r < 0) {
-		/*
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
-		*/
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}

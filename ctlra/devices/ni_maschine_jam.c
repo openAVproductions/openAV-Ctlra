@@ -52,6 +52,8 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
+//#define USE_LIBUSB 1
+
 #warning REMOVE SMTH PRESSED
 static int something_presssed;
 
@@ -287,120 +289,139 @@ ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
 static void
 ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force);
 
+void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+				uint8_t *data, uint32_t size);
+
 static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
 	uint8_t buf[1024];
 	int32_t nbytes;
 
+#ifdef USE_LIBUSB
+	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+						   USB_ENDPOINT_READ,
+						   buf, 1024);
+#else
 	do {
 		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
 			break;
 		}
-
-		uint8_t *data = buf;
-
-		switch(nbytes) {
-		case 49: {
-			static uint8_t old[49];
-			int i = 49;
-			int do_lights = 0;
-			while(i --> 0) {
-				printf("%02x ", data[i]);
-				old[i] = data[i];
-			}
-			printf("\n");
-
-			break;
-		}
-		case 17: {
-			static uint8_t old[17];
-			int i = 17;
-			while(i --> 0) {
-				printf("%02x ", data[i]);
-				old[i] = data[i];
-			}
-			printf("\n");
-
-			uint64_t pressed = 0;
-
-			static uint16_t col_mask[] = {
-				/* todo: maskes for col 7 and 8 not working */
-				0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x1000, 0xff00,
-			};
-
-			/* rows */
-			struct ctlra_event_t event = {
-				.type = CTLRA_EVENT_GRID,
-				.grid  = {
-					.id = 0,
-					.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
-					.pos = 0,
-					.pressed = 1
-				},
-			};
-			struct ctlra_event_t *e = {&event};
-			for(int r = 0; r < 8; r++) {
-				uint16_t d = *(uint16_t *)&data[4+r];// & 0x3fc;
-				/* columns */
-				for(int c = 0; c < 6; c++) {
-					uint8_t p = d & col_mask[c];
-					if(p) {
-						e->grid.pos = (r * 8) + c;
-						printf("%d %d = %d\n", r, c, p > 0);
-						dev->base.event_func(&dev->base, 1, &e,
-								     dev->base.event_func_userdata);
-					}
-				}
-				uint8_t p = data[4+1+r] & 0x1;
-				if(p) {
-					e->grid.pos = (r * 8) + 6;
-					printf("%d %d = %d\n", r, 6, p);
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-				p = data[4+1+r] & 0x2;
-				if(p) {
-					printf("%d %d = %d\n", r, 7, p);
-					e->grid.pos = (r * 8) + 7;
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-				}
-			}
-
-			for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-				int id     = buttons[i].event_id;
-				int offset = buttons[i].buf_byte_offset;
-				int mask   = buttons[i].mask;
-
-				uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-				int value_idx = SLIDERS_SIZE + i;
-
-				if(dev->hw_values[value_idx] != v) {
-					dev->hw_values[value_idx] = v;
-
-					struct ctlra_event_t event = {
-						.type = CTLRA_EVENT_BUTTON,
-						.button  = {
-							.id = id,
-							.pressed = v > 0},
-					};
-					struct ctlra_event_t *e = {&event};
-					dev->base.event_func(&dev->base, 1, &e,
-							     dev->base.event_func_userdata);
-
-					something_presssed = !something_presssed;
-					int col = 0x30 * something_presssed;
-					if(value_idx == 0)
-						col = 0xe;
-					for(int i = 0; i < 86; i++)
-						dev->lights[i] = col;
-					ni_maschine_jam_light_flush(base, 1);
-				}
-			}
-		} /* case 17 */
-		} /* switch */
+		/* call read cb directly */
+		printf("got %d\n", nbytes);
+		ni_machine_jam_usb_read_cb(base, USB_ENDPOINT_READ,
+					   buf, nbytes);
 	} while (nbytes > 0);
+#endif
+	return 0;
+}
+
+void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+				uint8_t *data, uint32_t size)
+{
+	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
+	switch(size) {
+	case 49: {
+		static uint8_t old[49];
+		int i = 49;
+		int do_lights = 0;
+		while(i --> 0) {
+			printf("%02x ", data[i]);
+			old[i] = data[i];
+		}
+		printf("\n");
+
+		break;
+	}
+	case 17: {
+		static uint8_t old[17];
+		int i = 17;
+#if 1
+		while(i --> 0) {
+			printf("%02x ", data[i]);
+			old[i] = data[i];
+		}
+		printf("\n");
+#endif
+
+		uint64_t pressed = 0;
+
+		static uint16_t col_mask[] = {
+			/* todo: maskes for col 7 and 8 not working */
+			0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x1000, 0xff00,
+		};
+
+		/* rows */
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_GRID,
+			.grid  = {
+				.id = 0,
+				.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+				.pos = 0,
+				.pressed = 1
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+		for(int r = 0; r < 8; r++) {
+			uint16_t d = *(uint16_t *)&data[4+r];// & 0x3fc;
+			/* columns */
+			for(int c = 0; c < 6; c++) {
+				uint8_t p = d & col_mask[c];
+				if(p) {
+					e->grid.pos = (r * 8) + c;
+					printf("%d %d = %d\n", r, c, p > 0);
+					dev->base.event_func(&dev->base, 1, &e,
+							     dev->base.event_func_userdata);
+				}
+			}
+			uint8_t p = data[4+1+r] & 0x1;
+			if(p) {
+				e->grid.pos = (r * 8) + 6;
+				printf("%d %d = %d\n", r, 6, p);
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+			p = data[4+1+r] & 0x2;
+			if(p) {
+				printf("%d %d = %d\n", r, 7, p);
+				e->grid.pos = (r * 8) + 7;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
+
+		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+			int id     = buttons[i].event_id;
+			int offset = buttons[i].buf_byte_offset;
+			int mask   = buttons[i].mask;
+
+			uint16_t v = *((uint16_t *)&data[offset]) & mask;
+			int value_idx = SLIDERS_SIZE + i;
+
+			if(dev->hw_values[value_idx] != v) {
+				dev->hw_values[value_idx] = v;
+
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button  = {
+						.id = id,
+						.pressed = v > 0},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+
+				something_presssed = !something_presssed;
+				int col = 0x30 * something_presssed;
+				if(value_idx == 0)
+					col = 0xe;
+				for(int i = 0; i < 86; i++)
+					dev->lights[i] = col;
+				ni_maschine_jam_light_flush(base, 1);
+			}
+		}
+	} /* case 17 */
+	} /* switch */
 }
 
 static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
@@ -466,6 +487,29 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	}
 	//memset(data, 0, sizeof(dev->lights));
 
+#ifdef USE_LIBUSB
+	data[0] = 0x80;
+	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     640+1);
+	if(ret < 0)
+		printf("%s write failed, ret %d\n", __func__, ret);
+	data[0] = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     640+1);
+	if(ret < 0)
+		printf("%s write failed, ret %d\n", __func__, ret);
+	data[0] = 0x82;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     640+1);
+	if(ret < 0)
+		printf("%s write failed, ret %d\n", __func__, ret);
+#else
 #if 0
 	data[0] = 0x80;
 	int ret = write(dev->fd, data, 65);
@@ -490,30 +534,6 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	printf("write huge: ret %d\n", ret);
 #endif
 
-
-
-#if 0
-	data[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data,
-						     640+1);
-	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x81;
-	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data,
-						     640+1);
-	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x82;
-	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data,
-						     640+1);
-	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
 #endif
 }
 
@@ -546,6 +566,23 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Maschine Jam");
+
+
+#ifdef USE_LIBUSB
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					 NI_VENDOR, NI_MASCHINE_JAM);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+					 USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+#else
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -587,21 +624,7 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 	}
 
 	dev->fd = fd;
-
-#if 0
-	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_MASCHINE_JAM);
-	if(err) {
-		free(dev);
-		return 0;
-	}
-
-	err = ctlra_dev_impl_usb_open_interface(&dev->base,
-					 USB_INTERFACE_ID, USB_HANDLE_IDX);
-	if(err) {
-		free(dev);
-		return 0;
-	}
+	printf("jam on fd %d\n", fd);
 #endif
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_JAM;
@@ -611,6 +634,7 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_maschine_jam_light_set;
 	dev->base.control_get_name = ni_maschine_jam_control_get_name;
 	dev->base.light_flush = ni_maschine_jam_light_flush;
+	dev->base.usb_read_cb = ni_machine_jam_usb_read_cb;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
