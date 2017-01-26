@@ -37,6 +37,7 @@
 
 //#include "ni_maschine_jam.h"
 #include "impl.h"
+#include "ni_maschine_jam.h"
 
 #define NI_VENDOR          (0x17cc)
 #define NI_MASCHINE_JAM    (0x1500)
@@ -112,6 +113,7 @@ static const char *ni_maschine_jam_control_names[] = {
 	"F",
 	"G",
 	"H",
+	"Footswitch",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
@@ -457,12 +459,12 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 	dev->lights_dirty = 1;
 }
 
-static uint8_t *
+uint8_t *
 ni_maschine_jam_grid_get_data(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
 	/* 1st is usb endpoint, next 8 are top lights */
-	return dev->grid[9];
+	return &dev->grid[9];
 }
 
 static void
@@ -541,10 +543,9 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 #else
 	/* try sending one huge message */
 
-	data[0] = 0x82;
-	int ret = write(dev->fd, data, 81);
+	dev->grid[0] = 0x81;
+	int ret = write(dev->fd, dev->grid, 81);
 	write(dev->fd, data, 81);
-	printf("write huge: ret %d\n", ret);
 #endif
 
 #endif
