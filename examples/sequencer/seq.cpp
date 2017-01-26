@@ -11,6 +11,7 @@
 
 #include "ctlra.h"
 #include "devices/ni_maschine_mikro_mk2.h"
+#include "devices/ni_maschine_jam.h"
 #include "sequencer.h"
 
 static volatile uint32_t done;
@@ -81,6 +82,32 @@ static struct mm_t
 	/* Pattern */
 	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
 } mm_static;
+
+void jam_feedback_func(struct ctlra_dev_t *dev, void *d)
+{
+	struct mm_t *mm = &mm_static;
+	const struct col_t *col = &grp_col[mm->grp_id];
+	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
+
+	uint8_t *grid_data = ni_maschine_jam_grid_get_data(dev);
+
+	for(int i = 0; i < 16; i++) {
+		int on = sequencer_get_step(sequencer, i);
+		grid_data[i] = on * 30;
+		if(on)
+			printf("%d on\n", i);
+	}
+
+	if(mm->mode == MODE_PADS) {
+		static uint8_t offset[] = {0, 4, 8, 12};
+		for(int i = 0; i < 16; i++) {
+			int idx = 36 + offset[i/4] + i;
+			grid_data[idx] = mm->pads_pressed[i] * 15;
+		}
+	}
+
+	ctlra_dev_light_flush(dev, 1);
+}
 
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -249,6 +276,11 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	*event_func = demo_event_func;
 	*feedback_func = demo_feedback_func;
 	*remove_func = remove_dev_func;
+
+	if(info->device_id == 0x1500) {
+		/* jam */
+		*feedback_func = jam_feedback_func;
+	}
 
 	/* MIDI output */
 	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");
