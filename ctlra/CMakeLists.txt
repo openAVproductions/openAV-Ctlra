@@ -32,3 +32,7 @@ ADD_LIBRARY(ctlra  STATIC ${sources} )
 
 target_include_directories(ctlra PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries( ctlra ${USB_LIBRARIES}        )
+
+install(FILES ctlra.h       DESTINATION include)
+install(FILES event.h       DESTINATION include)
+install(TARGETS ctlra       DESTINATION lib)
