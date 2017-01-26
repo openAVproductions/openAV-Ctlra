@@ -335,6 +335,17 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
+/* 11 values per touchstrip */
+static void
+ni_maschine_jam_touchstrip_led(struct ctlra_dev_t *base,
+			       uint8_t touchstrip_id, /* 0 to 7 */
+			       uint8_t *values)
+{
+	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
+	for(int i = 0; i < 11; i++)
+		dev->touchstrips[1+touchstrip_id*11+i] = values[i];
+}
+
 void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
 {
@@ -377,15 +388,23 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				printf("%d\t%d\t%d\n", ts, t1, t2);
 				e->slider.id    = i;
 				e->slider.value = t1 / 1023.f;
+				float f2 = t2 / 1023.f;
 				dev->hw_values[offset  ] = ts;
 				dev->hw_values[offset+1] = t1;
 				dev->hw_values[offset+2] = t2;
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
+
+				uint8_t lights[11] = {0};
+				for(int i = 0; i < 11; i++)
+					lights[i] = (11 * e->slider.value > i) * 30;
+				for(int i = 11 * e->slider.value; i < 11; i++)
+					lights[i] = (11 * f2 > i) * 20;
+				ni_maschine_jam_touchstrip_led(base, i, lights);
 			}
 		}
 		printf("\n");
-
+		ni_maschine_jam_light_flush(base, 1);
 		break;
 	}
 	case 17: {
@@ -595,6 +614,18 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	dev->grid[0] = 0x81;
 	int ret = write(dev->fd, dev->grid, 81);
 	write(dev->fd, data, 81);
+
+	/*
+	uint8_t lights[11];
+	for(int i = 0; i < 11; i++)
+		lights[i] = 30 * i > (11 * dev->hw_values[1]);
+	lights[10] = 20;
+	ni_maschine_jam_touchstrip_led(base, 3, lights);
+	*/
+
+	dev->touchstrips[0] = 0x82;
+	ret = write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
+	write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
 #endif
 
 #endif
