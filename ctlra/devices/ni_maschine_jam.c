@@ -114,6 +114,14 @@ static const char *ni_maschine_jam_control_names[] = {
 	"G",
 	"H",
 	"Footswitch",
+	"Touchstrip 1",
+	"Touchstrip 2",
+	"Touchstrip 3",
+	"Touchstrip 4",
+	"Touchstrip 5",
+	"Touchstrip 6",
+	"Touchstrip 7",
+	"Touchstrip 8",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
@@ -178,7 +186,7 @@ enum BTN_T {
 	NI_MASCHINE_JAM_BTN_H,
 	/* Misc */
 	NI_MASCHINE_JAM_BTN_FOOTSWITCH,
-	NI_MASCHINE_JAM_BTN_
+	NI_MASCHINE_JAM_BTN_COUNT
 };
 
 static const struct ni_maschine_jam_ctlra_t buttons[] = {
@@ -285,8 +293,15 @@ ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
 			       uint32_t control_id)
 {
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
+
+	switch(type) {
+	case CTLRA_EVENT_SLIDER:
+		control_id += NI_MASCHINE_JAM_BTN_COUNT;
+	}
+
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_jam_control_names[control_id];
+
 	return 0;
 }
 
@@ -335,6 +350,15 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		}
 		printf("\n");
 
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_SLIDER,
+			.slider  = {
+				.id = 0,
+				.value = 0.f,
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+
 		/* touchstrips: 16 timestamp, 16 single-touch, 16 double */
 		for(uint32_t i = 0; i < SLIDERS_SIZE / 3; i++) {
 			/* first byte is 0x2 indicating touchstrips,
@@ -347,11 +371,17 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			uint16_t t1 = *((uint16_t *)&data[offset+2]);
 			uint16_t t2 = *((uint16_t *)&data[offset+4]);
 
-			if(dev->hw_values[offset] != ts) {
+			if(dev->hw_values[offset  ] != ts ||
+			   dev->hw_values[offset+1] != t1 ||
+			   dev->hw_values[offset+2] != t2) {
+				printf("%d\t%d\t%d\n", ts, t1, t2);
+				e->slider.id    = i;
+				e->slider.value = t1 / 1023.f;
 				dev->hw_values[offset  ] = ts;
 				dev->hw_values[offset+1] = t1;
 				dev->hw_values[offset+2] = t2;
-				printf("%d\t%d\t%d\n", ts, t1, t2);
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
 			}
 		}
 		printf("\n");
