@@ -118,12 +118,6 @@ static const char *ni_maschine_jam_control_names[] = {
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
 
-static const struct ni_maschine_jam_ctlra_t sliders[] = {
-	/* Left */
-	{0    ,  1, UINT32_MAX},
-};
-#define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
-
 enum BTN_T {
 	NI_MASCHINE_JAM_BTN_SONG,
 	NI_MASCHINE_JAM_BTN_STEP,
@@ -250,6 +244,9 @@ static const struct ni_maschine_jam_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
+/* Touchstrips * 3 : timestamp, single-touch, double touch */
+#define SLIDERS_SIZE (8 * 3)
+
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
 /* usb endpoint, 8*8 grid, 1..8 and A..H */
@@ -338,6 +335,27 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		}
 		printf("\n");
 
+		/* touchstrips: 16 timestamp, 16 single-touch, 16 double */
+		for(uint32_t i = 0; i < SLIDERS_SIZE / 3; i++) {
+			/* first byte is 0x2 indicating touchstrips,
+			 * 2 bytes last-used-timestamp,
+			 * 2 bytes single-touch,
+			 * 2 bytes double-touch, 2nd number always higher!
+			 */
+			int offset = 1 + i * 6;
+			uint16_t ts = *((uint16_t *)&data[offset]);
+			uint16_t t1 = *((uint16_t *)&data[offset+2]);
+			uint16_t t2 = *((uint16_t *)&data[offset+4]);
+
+			if(dev->hw_values[offset] != ts) {
+				dev->hw_values[offset  ] = ts;
+				dev->hw_values[offset+1] = t1;
+				dev->hw_values[offset+2] = t2;
+				printf("%d\t%d\t%d\n", ts, t1, t2);
+			}
+		}
+		printf("\n");
+
 		break;
 	}
 	case 17: {
@@ -397,6 +415,7 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			}
 		}
 
+		/* buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 			int id     = buttons[i].event_id;
 			int offset = buttons[i].buf_byte_offset;
