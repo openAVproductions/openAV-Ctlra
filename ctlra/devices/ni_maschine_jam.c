@@ -417,7 +417,6 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		}
 		printf("\n");
 #endif
-
 		uint64_t pressed = 0;
 
 		static uint16_t col_mask[] = {

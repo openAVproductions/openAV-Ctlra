@@ -131,9 +131,7 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
-	struct ctlra_create_opts_t opts;
-	opts.flags_usb_no_own_context = 1;
-	struct ctlra_t *ctlra = ctlra_create(&opts);
+	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
 	int i = 0;
