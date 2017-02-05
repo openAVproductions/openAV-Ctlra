@@ -305,6 +305,20 @@ void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
 	}
 }
 
+static void ctlra_usb_xfr_write_done_cb(struct libusb_transfer *xfr)
+{
+	int failed = 0;
+	switch(xfr->status) {
+	/* Success */
+	case LIBUSB_TRANSFER_COMPLETED: {
+		}
+		break;
+	default:
+		printf("write completed OK\n");
+		break;
+	}
+}
+
 static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 {
 	int failed = 0;
@@ -411,6 +425,41 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	int transferred;
 	const uint32_t timeout = 100;
+
+#if 1
+	struct libusb_transfer *xfr;
+	xfr = libusb_alloc_transfer(0);
+	if(xfr == 0)
+		printf("WARNING: write xfr == NULL!!\n");
+
+	/* Malloc space for the USB transaction - not ideal, but we have
+	 * to pass ownership of the data to the USB library, and we can't
+	 * pass the actual dev_t owned data, since the application may
+	 * update it again before the USB transaction completes. */
+	void *usb_data = malloc(size);
+
+	memcpy(usb_data, data, size);
+
+	libusb_fill_interrupt_transfer(xfr,
+				  dev->usb_interface[idx], /* dev handle */
+	                          endpoint,
+	                          usb_data,
+	                          size,
+	                          ctlra_usb_xfr_write_done_cb,
+	                          dev, /* userdata - pass dev so we can banish
+					  it if required */
+	                          1000 /* timeout */);
+	if(libusb_submit_transfer(xfr) < 0) {
+		libusb_free_transfer(xfr);
+		free(data);
+		printf("error submitting data!!\n");
+		return -1;
+	}
+
+	/* do we want to return the size here? */
+	/* This read op is async - there *IS* no data written yet */
+	return size;
+#else
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
@@ -424,6 +473,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 		return r;
 	}
 	return transferred;
+#endif
 }
 
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
