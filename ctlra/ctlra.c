@@ -29,6 +29,7 @@ DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
 DECLARE_DEV_CONNECT_FUNC(ni_maschine_jam_connect);
+DECLARE_DEV_CONNECT_FUNC(akai_apc_connect);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
@@ -38,6 +39,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
 	{0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
 	{0x17cc, 0x1500, ni_maschine_jam_connect},
+	{0x09e8, 0x0073, akai_apc_connect},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
@@ -243,13 +245,16 @@ int ctlra_probe(struct ctlra_t *ctlra,
 {
 	/* For each device that we have, iter, attempt to open, and
 	 * call the application supplied accept_func callback */
+	uint32_t i = 0;
 	int num_accepted = 0;
+
 	ctlra->accept_dev_func = accept_func;
 	ctlra->accept_dev_func_userdata = userdata;
-
-	for(uint32_t i = 0; i < CTLRA_NUM_DEVS; i++) {
+	for(; i < CTLRA_NUM_DEVS; i++) {
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
+
+	/* probe midi devices here? */
 
 	return num_accepted;
 }

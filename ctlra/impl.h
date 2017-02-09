@@ -32,6 +32,10 @@
 #ifndef OPENAV_CTLRA_DEVICE_IMPL
 #define OPENAV_CTLRA_DEVICE_IMPL
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ctlra.h"
 #include "event.h"
 
@@ -84,6 +88,10 @@ struct ctlra_dev_t {
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
 	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
+
+	/* MIDI I/O pointer */
+	void *midi_in;
+	void *midi_out;
 
 	/* Event callback function */
 	ctlra_event_func event_func;
@@ -151,9 +159,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
 
-
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
-
 
 
 struct ctlra_t
@@ -196,6 +202,10 @@ static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
 	/* Scale to -1 or 1 */
 	return (dir * 2) - 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OPENAV_CTLRA_DEVICE_IMPL */
 
