@@ -66,6 +66,29 @@ static uint32_t akai_apc_poll(struct ctlra_dev_t *base)
 int akai_apc_midi_input_cb(uint8_t nbytes, uint8_t * buf, void *ud)
 {
 	struct akai_apc_t *dev = (struct akai_apc_t *)ud;
+
+	switch(buf[0] & 0xf0) {
+	case 0xb0:
+		switch(buf[1]) {
+		case 7: /* volumes */ {
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_SLIDER,
+				.slider  = {
+					.id = buf[0] - 0xb0,
+					.value = buf[2] / 127.f
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			}
+			break;
+		case 0xf: /* master volume */
+			break;
+		}
+		break;
+	};
+
 	printf("%d : %02x %02x %02x\n", nbytes, buf[0], buf[1], buf[2]);
 	if(buf[1] == 0x37) {
 		uint8_t out[] = {0x90, 0x37, 1 + 2 * (buf[0] == 0x80)};
