@@ -176,7 +176,7 @@ static const struct ni_kontrol_x1_mk2_ctlra_t buttons[] = {
 
 /* Multi-colour lights take multiple bytes for colour, but only one
  * enum value - hence lights size is > led count */
-#define LIGHTS_SIZE (NI_KONTROL_X1_MK2_LED_COUNT+8)
+#define LIGHTS_SIZE (NI_KONTROL_X1_MK2_LED_COUNT+16)
 
 struct ni_kontrol_x1_mk2_t {
 	/* base handles usb i/o etc */
@@ -271,18 +271,19 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 
 static void
 ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status)
+			    uint32_t light_id,
+			    uint32_t light_status)
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_KONTROL_X1_MK2_LED_COUNT)
+	if(!dev || light_id >= NI_KONTROL_X1_MK2_LED_COUNT)
 		return;
 
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
+
+	uint32_t idx = light_id;
 
 	/* Range of lights here support RGB */
 	if(light_id >= NI_KONTROL_X1_MK2_LED_LEFT_HOTCUE_1 &&
@@ -290,9 +291,20 @@ ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
 		uint32_t r      = (light_status >> 16) & 0xFF;
 		uint32_t g      = (light_status >>  8) & 0xFF;
 		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = g;
-		dev->lights[light_id+2] = b;
+
+		int ngt = idx - NI_KONTROL_X1_MK2_LED_LEFT_HOTCUE_1;
+		idx += ngt * 2;
+
+		dev->lights[idx  ] = r;
+		dev->lights[idx+1] = g;
+		dev->lights[idx+2] = b;
+		printf("id %d, ngt = %d, idx = %d\n", light_id, ngt, idx);
+
+	} else {
+		uint32_t inc = (light_id >= NI_KONTROL_X1_MK2_LED_LEFT_FLUX) * 16;
+		idx += inc;
+		printf("id %d, inc = %d, final idx = %d\n", light_id, inc, idx);
+		dev->lights[idx] = bright;
 	}
 
 	dev->lights_dirty = 1;
