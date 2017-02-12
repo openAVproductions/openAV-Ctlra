@@ -298,12 +298,9 @@ ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
 		dev->lights[idx  ] = r;
 		dev->lights[idx+1] = g;
 		dev->lights[idx+2] = b;
-		printf("id %d, ngt = %d, idx = %d\n", light_id, ngt, idx);
-
 	} else {
 		uint32_t inc = (light_id >= NI_KONTROL_X1_MK2_LED_LEFT_FLUX) * 16;
 		idx += inc;
-		printf("id %d, inc = %d, final idx = %d\n", light_id, inc, idx);
 		dev->lights[idx] = bright;
 	}
 
