@@ -501,7 +501,7 @@ ni_kontrol_d2_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	/* fill in out params */
 	*pixels = ni_kontrol_d2_screen_get_pixels(base);
-	*bytes = ni_kontrol_d2_screen_get_pixels(base);
+	*bytes = sizeof(dev->screen_blit.pixels);
 
 	if(flush)
 		ni_kontrol_d2_screen_blit(base);
