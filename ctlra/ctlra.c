@@ -174,6 +174,16 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev, uint32_t grid_id,
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
 
+int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
+				 uint8_t **pixels,
+				 uint32_t *bytes,
+				 uint8_t flush)
+{
+	if(dev && dev->screen_get_data)
+		return dev->screen_get_data(dev, pixels, bytes, flush);
+	return -ENOTSUP;
+}
+
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info)
 {
