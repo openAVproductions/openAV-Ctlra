@@ -616,9 +616,15 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 #else
 	/* try sending one huge message */
 
-	dev->grid[0] = 0x81;
-	int ret = write(dev->fd, dev->grid, 81);
-	write(dev->fd, data, 81);
+	dev->lights[0] = 0x80;
+	int ret = write(dev->fd, dev->lights, 81);
+	write(dev->fd, dev->lights, 81);
+	//write(dev->fd, data, 81);
+
+	dev->lights[0] = 0x81;
+	ret = write(dev->fd, dev->lights, 81);
+	//write(dev->fd, data, 81);
+	write(dev->fd, dev->lights, 81);
 
 	/*
 	uint8_t lights[11];
@@ -628,9 +634,13 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	ni_maschine_jam_touchstrip_led(base, 3, lights);
 	*/
 
-	dev->touchstrips[0] = 0x82;
+	dev->lights[0] = 0x82;
+	/*
 	ret = write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
 	write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
+	*/
+	ret = write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
+	write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
 #endif
 
 #endif
