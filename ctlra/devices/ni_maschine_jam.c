@@ -327,7 +327,7 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 			break;
 		}
 		/* call read cb directly */
-		printf("got %d\n", nbytes);
+		//printf("got %d\n", nbytes);
 		ni_machine_jam_usb_read_cb(base, USB_ENDPOINT_READ,
 					   buf, nbytes);
 	} while (nbytes > 0);
@@ -355,11 +355,14 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		static uint8_t old[49];
 		int i = 49;
 		int do_lights = 0;
+#if 0
+		/* print incoming bytes */
 		while(i --> 0) {
 			printf("%02x ", data[i]);
 			old[i] = data[i];
 		}
 		printf("\n");
+#endif 
 
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_SLIDER,
@@ -385,7 +388,7 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			if(dev->hw_values[offset  ] != ts ||
 			   dev->hw_values[offset+1] != t1 ||
 			   dev->hw_values[offset+2] != t2) {
-				printf("%d\t%d\t%d\n", ts, t1, t2);
+				//printf("%d\t%d\t%d\n", ts, t1, t2);
 				e->slider.id    = i;
 				e->slider.value = t1 / 1023.f;
 				float f2 = t2 / 1023.f;
@@ -403,14 +406,14 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				ni_maschine_jam_touchstrip_led(base, i, lights);
 			}
 		}
-		printf("\n");
-		ni_maschine_jam_light_flush(base, 1);
+		//printf("\n");
+		//ni_maschine_jam_light_flush(base, 1);
 		break;
 	}
 	case 17: {
 		static uint8_t old[17];
 		int i = 17;
-#if 1
+#if 0
 		while(i --> 0) {
 			printf("%02x ", data[i]);
 			old[i] = data[i];
@@ -485,6 +488,8 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 
+#if 0
+				/* debug surrounding lights */
 				something_presssed = !something_presssed;
 				int col = 0x30 * something_presssed;
 				if(value_idx == 0)
@@ -492,6 +497,7 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				for(int i = 0; i < 86; i++)
 					dev->lights[i] = col;
 				ni_maschine_jam_light_flush(base, 1);
+#endif
 			}
 		}
 	} /* case 17 */
