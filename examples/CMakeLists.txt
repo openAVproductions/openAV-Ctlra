@@ -62,6 +62,7 @@ add_executable (simple ${src_simple} )
 add_dependencies(simple ctlra)
 target_link_libraries( simple "-lctlra"               )
 target_link_libraries( simple ${USB_LIBRARIES}        )
+target_link_libraries( simple ${ALSA_LIBRARIES}       )
 
 #####################################
 ### Vegas Mode
@@ -73,6 +74,7 @@ add_dependencies(vegas_mode ctlra)
 target_link_libraries( vegas_mode "-lctlra"               )
 target_link_libraries( vegas_mode ${USB_LIBRARIES}        )
 target_link_libraries( vegas_mode ${JACK_LIBRARIES}       )
+target_link_libraries( vegas_mode ${ALSA_LIBRARIES}       )
 target_link_libraries( vegas_mode ${CAIRO_LIBRARIES}      )
 target_link_libraries( vegas_mode ${SNDFILE_LIBRARIES}    )
 
@@ -96,6 +98,7 @@ ENDIF()
 ADD_DEFINITIONS( "-D__UNIX_JACK__"  )
 ADD_DEFINITIONS( "-D__LINUX_ALSA__" )
 FILE(GLOB src_daemon daemon/*.cpp )
+
 add_executable (daemon ${src_daemon} )
 add_dependencies(daemon ctlra)
 target_link_libraries( daemon "-lctlra"               )

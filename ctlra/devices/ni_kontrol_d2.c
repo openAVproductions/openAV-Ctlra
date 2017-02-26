@@ -494,6 +494,21 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 		printf("%s write failed!\n", __func__);
 }
 
+int32_t
+ni_kontrol_d2_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
+			      uint32_t *bytes, uint8_t flush)
+{
+	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
+	/* fill in out params */
+	*pixels = ni_kontrol_d2_screen_get_pixels(base);
+	*bytes = sizeof(dev->screen_blit.pixels);
+
+	if(flush)
+		ni_kontrol_d2_screen_blit(base);
+
+	return 0;
+}
+
 void
 ni_kontrol_d2_light_touchstrip(struct ctlra_dev_t *base,
                                uint8_t *orange,
@@ -709,6 +724,7 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	dev->base.control_get_name = ni_kontrol_d2_control_get_name;
 	dev->base.light_flush = ni_kontrol_d2_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_d2_usb_read_cb;
+	dev->base.screen_get_data = ni_kontrol_d2_screen_get_data;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;

@@ -206,6 +206,24 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
+/** This function serves a dual purpose of getting the pixel data pointer
+ * of the driver, and allows flushing the data to the device itself.
+ * The function returns 0 on success, -ENOTSUP if the device doesn't
+ * have a screen, or it is not yet supported.
+ *
+ * The *pixel_data* a pointer to where pixel data should be written,
+ * where up to *bytes* may be written. Writing past *bytes* characters is
+ * an error, and may cause memory corruption - don't do it. It is assumed
+ * that the application writing the data knows the format to write.
+ *
+ * When *flush* is non-zero, the driver will flush the pixel data
+ * from the driver to the device */
+int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
+					 uint8_t **pixel_data,
+					 uint32_t *bytes,
+					 uint8_t flush);
+
+
 /** Get the human readable name for the device. The returned pointer is
  * still owned by the ctlra library, the application must not free it */
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,

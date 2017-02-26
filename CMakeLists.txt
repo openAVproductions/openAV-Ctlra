@@ -1,7 +1,7 @@
 
 cmake_minimum_required (VERSION 2.6)
 
-project (CTLRA)
+project (CTLRA C)
 
 set(CTLRA_VERSION_MAJOR "0")
 set(CTLRA_VERSION_MINOR "0")
@@ -14,6 +14,8 @@ set(CTLRA_VERSION "${CTLRA_VERSION_MAJOR}.${CTLRA_VERSION_MINOR}.${CTLRA_VERSION
 # script files to be found. It is not easy to do, so currently its disabled
 option(BUILD_TCC_SCRIPTING "Build TCC scripting example"        OFF)
 option(BUILD_ASAN          "Build with Clang Address Sanitizer" OFF)
+option(MIDI_IO_ENABLED     "Build with MIDI I/O using RtMIDI"   ON)
+
 
 execute_process(COMMAND git log --oneline -n1
     OUTPUT_VARIABLE _output OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -32,6 +32,10 @@
 #ifndef OPENAV_CTLRA_DEVICE_IMPL
 #define OPENAV_CTLRA_DEVICE_IMPL
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ctlra.h"
 #include "event.h"
 
@@ -49,6 +53,10 @@ typedef void (*ctlra_dev_impl_usb_read_cb)(struct ctlra_dev_t *dev,
 					   uint32_t endpoint,
 					   uint8_t *data,
 					   uint32_t size);
+typedef int32_t (*ctlra_dev_impl_screen_get_data)(struct ctlra_dev_t *dev,
+					   uint8_t **pixels,
+					   uint32_t *bytes,
+					   uint8_t flush);
 typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,
@@ -85,6 +93,10 @@ struct ctlra_dev_t {
 	 * functions */
 	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
 
+	/* MIDI I/O pointer */
+	void *midi_in;
+	void *midi_out;
+
 	/* Event callback function */
 	ctlra_event_func event_func;
 	ctlra_feedback_func feedback_func;
@@ -99,6 +111,9 @@ struct ctlra_dev_t {
 	ctlra_dev_impl_grid_light_set grid_light_set;
 	ctlra_dev_impl_light_flush light_flush;
 	ctlra_dev_impl_usb_read_cb usb_read_cb;
+
+	/* Screen related functions */
+	ctlra_dev_impl_screen_get_data screen_get_data;
 
 	/* Function pointer to retrive info about a particular control */
 	ctlra_dev_impl_control_get_name control_get_name;
@@ -151,9 +166,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
 
-
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
-
 
 
 struct ctlra_t
@@ -196,6 +209,10 @@ static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
 	/* Scale to -1 or 1 */
 	return (dir * 2) - 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OPENAV_CTLRA_DEVICE_IMPL */
 

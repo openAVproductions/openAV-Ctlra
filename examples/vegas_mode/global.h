@@ -43,4 +43,8 @@ void mm_update_state(struct ctlra_dev_t *dev, void *d);
 void mm_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	     struct ctlra_event_t** events, void *userdata);
 
+void jam_update_state(struct ctlra_dev_t *dev, void *d);
+void jam_func(struct ctlra_dev_t* dev, uint32_t num_events,
+	     struct ctlra_event_t** events, void *userdata);
+
 #endif /* VEGAS_MODE_GLOBAL_H */

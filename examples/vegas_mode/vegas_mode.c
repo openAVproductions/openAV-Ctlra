@@ -30,6 +30,7 @@ static const struct ctlra_supported_t ctlra_supported[] = {
 	{0x17cc, 0x1210, kontrol_z1_func, kontrol_z1_update_state},
 	{0x17cc, 0x1120, kontrol_f1_func, kontrol_f1_update_state},
 	{0x17cc, 0x1220, kontrol_x1_func, kontrol_x1_update_state},
+	{0x17cc, 0x1500, jam_func, jam_update_state},
 	{0x17cc, 0x1200, mm_func, mm_update_state},
 };
 #define CTLRA_SUPPORTED_SIZE (sizeof(ctlra_supported) /\
