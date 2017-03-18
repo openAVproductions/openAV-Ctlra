@@ -216,16 +216,6 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 		return 0;
 	}
 
-#if 0
-	/* For testing re-compile after initial - causing issues */
-	printf("compile 2nd time\n");
-	script_compile_file(script);
-	if(script->compile_failed) {
-		printf("compile 2nd time failed\n");
-		return 0;
-	}
-#endif
-
 	if(!script->get_vid_pid) {
 		script_free(script);
 		return 0;
@@ -255,7 +245,6 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-#if 1
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 
@@ -265,25 +254,6 @@ int main()
 	}
 
 	ctlra_exit(ctlra);
-#else
-	struct script_t script = {0};
-
-	script.filepath = strdup("ni_d2_script.c");
-
-	int vid = 0x17cc;
-	int pid = 0x1400;
-	script_compile_file(&script);
-	if(script.compile_failed) {
-		printf("tcc: warning, compilation of script failed "
-		       "refusing %s %s\n", &vid, &pid);
-		return 0;
-	}
-
-	script_compile_file(&script);
-	if(script.compile_failed) {
-		printf("failed 2nd time\n");
-	}
-#endif
 
 	return 0;
 }
