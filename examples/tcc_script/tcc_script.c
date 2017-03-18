@@ -54,6 +54,8 @@ struct script_t {
 	script_get_vid_pid get_vid_pid;
 	/* Function pointer to the scripts event handling function */
 	script_event_func event_func;
+	/* Function pointer to the scripts feedback handling function */
+	script_feedback_func feedback_func;
 
 	/* The malloc() / free() memory from the script */
 	void *script_ud;

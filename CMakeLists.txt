@@ -12,7 +12,7 @@ set(CTLRA_VERSION "${CTLRA_VERSION_MAJOR}.${CTLRA_VERSION_MINOR}.${CTLRA_VERSION
 # The TCC scripting example requires libtcc-dev, which is not packaged by
 # all distros, and requires some more manual moving of files to enable the
 # script files to be found. It is not easy to do, so currently its disabled
-option(BUILD_TCC_SCRIPTING "Build TCC scripting example"        OFF)
+option(BUILD_TCC_SCRIPTING "Build TCC scripting example"        ON)
 option(BUILD_ASAN          "Build with Clang Address Sanitizer" OFF)
 option(MIDI_IO_ENABLED     "Build with MIDI I/O using RtMIDI"   ON)
 
