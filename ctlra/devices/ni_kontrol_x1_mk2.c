@@ -187,6 +187,7 @@ struct ni_kontrol_x1_mk2_t {
 
 	/* Encoders */
 	uint8_t encoder_values[3];
+	uint32_t touchstrip_value;
 
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
@@ -306,8 +307,11 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				.value = v / 1023.f},
 		};
 		struct ctlra_event_t *te2 = {&te};
-		dev->base.event_func(&dev->base, 1, &te2,
-				     dev->base.event_func_userdata);
+		if(dev->touchstrip_value != v) {
+			dev->base.event_func(&dev->base, 1, &te2,
+					     dev->base.event_func_userdata);
+			dev->touchstrip_value = v;
+		}
 
 		break;
 		}
