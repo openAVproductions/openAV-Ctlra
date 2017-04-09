@@ -183,6 +183,10 @@ struct ni_kontrol_x1_mk2_t {
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
+
+	/* Encoders */
+	uint8_t encoder_values[3];
+
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
@@ -220,6 +224,11 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	uint8_t *buf = data;
+#if 0
+	for(int i = 0; i < size; i++)
+		printf("%02x ", data[i]);
+	printf("\n");
+#endif
 	switch(size) {
 	case 31: {
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
@@ -239,6 +248,33 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
+			}
+		}
+
+		/* Handle Encoders */
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_ENCODER,
+			.encoder = {
+				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+				.delta = 0,
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+		int8_t enc[3];
+		enc[0] = ((data[17] & 0x0f)     ) & 0xf;
+		enc[1] = ((data[17] & 0xf0) >> 4) & 0xf;
+		enc[2] =  (data[18] & 0x0f);
+		for(int i = 0; i < 3; i++) {
+			int8_t cur = dev->encoder_values[i];
+			if(enc[i] != cur) {
+				int dir = ctlra_dev_encoder_wrap_16(enc[i], cur);
+				event.encoder.delta = dir;
+				event.encoder.id =
+					NI_KONTROL_X1_MK2_BTN_ENCODER_MID_ROTATE + i;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				/* update cached value */
+				dev->encoder_values[i] = enc[i];
 			}
 		}
 
