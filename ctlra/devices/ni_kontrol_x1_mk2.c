@@ -103,6 +103,7 @@ static const char *ni_kontrol_x1_mk2_control_names[] = {
 	"Encoder Touch (Left)",
 	"Encoder Press (Middle)",
 	"Encoder Press (Left)",
+	"Touchstrip",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_x1_mk2_control_names) /\
 			    sizeof(ni_kontrol_x1_mk2_control_names[0]))
@@ -224,11 +225,6 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	uint8_t *buf = data;
-#if 0
-	for(int i = 0; i < size; i++)
-		printf("%02x ", data[i]);
-	printf("\n");
-#endif
 	switch(size) {
 	case 31: {
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
@@ -300,6 +296,19 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 						     dev->base.event_func_userdata);
 			}
 		}
+
+		/* Handle touchstrip */
+		uint16_t v = (buf[28] << 8) | buf[27];
+		struct ctlra_event_t te = {
+			.type = CTLRA_EVENT_SLIDER,
+			.slider  = {
+				.id = NI_KONTROL_X1_MK2_SLIDER_TOUCHSTRIP,
+				.value = v / 1023.f},
+		};
+		struct ctlra_event_t *te2 = {&te};
+		dev->base.event_func(&dev->base, 1, &te2,
+				     dev->base.event_func_userdata);
+
 		break;
 		}
 	}
