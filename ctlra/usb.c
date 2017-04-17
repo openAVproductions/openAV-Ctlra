@@ -310,11 +310,14 @@ static void ctlra_usb_xfr_write_done_cb(struct libusb_transfer *xfr)
 	int failed = 0;
 	switch(xfr->status) {
 	/* Success */
-	case LIBUSB_TRANSFER_COMPLETED: {
-		}
+	case LIBUSB_TRANSFER_COMPLETED:
+		//printf("write completed OK\n");
+		break;
+	case LIBUSB_TRANSFER_TIMED_OUT:
+		//printf("write timed out\n");
 		break;
 	default:
-		printf("write completed OK\n");
+		//printf("write hit default error condition\n");
 		break;
 	}
 }
@@ -392,7 +395,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          1000 /* timeout */);
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
-		free(data);
+		free(usb_data);
 		printf("error submitting data!!\n");
 		return -1;
 	}
@@ -451,7 +454,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	                          1000 /* timeout */);
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
-		free(data);
+		free(usb_data);
 		printf("error submitting data!!\n");
 		return -1;
 	}
