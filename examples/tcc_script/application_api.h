@@ -12,3 +12,6 @@ typedef void (*script_event_func)(struct ctlra_dev_t* dev,
                                   struct ctlra_event_t** events,
                                   void *userdata);
 
+/* The script function that handles feedback to the device. */
+typedef void (*script_feedback_func)(struct ctlra_dev_t *dev,
+				    void *userdata);
