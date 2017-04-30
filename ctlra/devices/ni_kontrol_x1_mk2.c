@@ -208,8 +208,6 @@ static const char *
 ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
 				   uint32_t control)
 {
-	uint16_t id;
-
 	uint16_t num_of_type[CTLRA_EVENT_T_COUNT];
 	num_of_type[CTLRA_EVENT_SLIDER]  = CONTROL_SLIDER_SIZE;
 	num_of_type[CTLRA_EVENT_BUTTON]  = CONTROL_BUTTON_SIZE;
@@ -219,7 +217,7 @@ ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
 	if(control >= n)
 		return 0;
 
-	char **name_by_type[CTLRA_EVENT_T_COUNT];
+	const char **name_by_type[CTLRA_EVENT_T_COUNT];
 	name_by_type[CTLRA_EVENT_SLIDER]  = ni_kontrol_x1_mk2_slider_names;
 	name_by_type[CTLRA_EVENT_BUTTON]  = ni_kontrol_x1_mk2_button_names;
 	name_by_type[CTLRA_EVENT_ENCODER] = ni_kontrol_x1_mk2_encoder_names;
@@ -232,12 +230,12 @@ ni_kontrol_x1_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	uint8_t buf[1024];
-	int32_t nbytes;
-
 	int handle_idx = 0;
-	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-						   USB_ENDPOINT_READ,
-						   buf, 1024);
+
+	/* calls into usb_read_cb below if data is available */
+	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+					  USB_ENDPOINT_READ, buf, 1024);
+
 	return 0;
 }
 
