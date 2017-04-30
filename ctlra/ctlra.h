@@ -59,8 +59,6 @@ extern "C" {
  */
 struct ctlra_t;
 
-
-
 /** Struct for forward compatibility, allowing various options to be passed
  * to cltra, without breaking all the function calls */
 struct ctlra_create_opts_t {
@@ -71,6 +69,18 @@ struct ctlra_create_opts_t {
 	/* reserve lots of space */
 	uint8_t padding[63];
 };
+
+/** Get the human readable name for *control_id* from *dev*. The
+ * control id is passed in eg: event.button.id, or can be any of the
+ * DEVICE_NAME_CONTROLS enumeration. Ownership of the string *remains* in
+ * the driver, so the application *must not* attempt to free the returned
+ * pointer.
+ * @retval 0 Invalid control_id requested
+ * @retval Ptr A pointer to a string representing the control name
+ */
+typedef const char *(*ctlra_info_get_name)(const struct ctlra_dev_t *dev,
+				       enum ctlra_event_type_t type,
+				       uint32_t control_id);
 
 /** Struct that provides info about the controller. Passed to the
  * application on probe().
@@ -93,6 +103,7 @@ struct ctlra_dev_info_t {
 	 * buttons by accessing th array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
+	ctlra_info_get_name get_name;
 };
 
 /** Callback function that gets invoked just before a device is removed,
@@ -229,6 +240,7 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info);
 
+// TODO remov this func?
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the
  * DEVICE_NAME_CONTROLS enumeration. Ownership of the string *remains* in
@@ -237,10 +249,9 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
  * @retval 0 Invalid control_id requested
  * @retval Ptr A pointer to a string representing the control name
  */
-const char *ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
+typedef const char *(*ctlra_info_get_name)(const struct ctlra_dev_t *dev,
 				       enum ctlra_event_type_t type,
 				       uint32_t control_id);
-
 
 #ifdef __cplusplus
 } /* extern "C" */
