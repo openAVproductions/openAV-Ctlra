@@ -58,7 +58,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 		case CTLRA_EVENT_ENCODER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
-						   e->button.id);
+						   e->encoder.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
@@ -66,7 +66,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 		case CTLRA_EVENT_SLIDER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
-						   e->button.id);
+						   e->slider.id);
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
@@ -74,7 +74,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 		case CTLRA_EVENT_GRID:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_GRID,
-			                                  e->button.id);
+			                                  e->grid.id);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];
 			} else {
