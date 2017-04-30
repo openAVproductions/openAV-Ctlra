@@ -195,6 +195,7 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
 	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
 	info->serial_number = dev->info.serial_number;
+	info->get_name = dev->info.get_name;
 }
 
 const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
