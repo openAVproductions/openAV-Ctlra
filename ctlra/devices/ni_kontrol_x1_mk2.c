@@ -120,11 +120,6 @@ static const struct ni_kontrol_x1_mk2_ctlra_t sliders[] = {
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
-static const struct ni_kontrol_x1_mk2_ctlra_t encoders[] = {
-	{NI_KONTROL_X1_MK2_BTN_ENCODER_MID_ROTATE  , 29, 0x10},
-};
-#define ENCODERS_SIZE (sizeof(encoders) / sizeof(encoders[0]))
-
 static const struct ni_kontrol_x1_mk2_ctlra_t buttons[] = {
 	/* Top left buttons */
 	{NI_KONTROL_X1_MK2_BTN_LEFT_FX_1 , 19, 0x80},
@@ -197,11 +192,9 @@ struct ni_kontrol_x1_mk2_t {
 };
 
 static const char *
-ni_kontrol_x1_mk2_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
+				   uint32_t control_id)
 {
-	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_x1_mk2_control_names[control_id];
 	return 0;
@@ -402,6 +395,10 @@ struct ctlra_dev_t *ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol X2 Mk2");
 
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = 3;
+	dev->base.info.get_name = ni_kontrol_x1_mk2_control_get_name;
+
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_X1_MK2);
 	if(err) {
 		free(dev);
@@ -417,7 +414,6 @@ struct ctlra_dev_t *ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	dev->base.poll = ni_kontrol_x1_mk2_poll;
 	dev->base.disconnect = ni_kontrol_x1_mk2_disconnect;
 	dev->base.light_set = ni_kontrol_x1_mk2_light_set;
-	dev->base.control_get_name = ni_kontrol_x1_mk2_control_get_name;
 	dev->base.light_flush = ni_kontrol_x1_mk2_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_x1_mk2_usb_read_cb;
 
