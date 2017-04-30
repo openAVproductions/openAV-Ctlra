@@ -37,34 +37,43 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 	static const char* grid_pressed[] = { " X ", "   " };
 
+	/* Retrieve info, so we can look up names. Note this is not
+	 * expected to be used in production code - the names should be
+	 * cached in the UI, and not retrieved on every event */
+	struct ctlra_dev_info_t info;
+	ctlra_dev_get_info(dev, &info);
+
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		const char *pressed = 0;
 		const char *name = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_BUTTON, e->button.id);
+			name = ctlra_info_get_name(&info, CTLRA_EVENT_BUTTON,
+						   e->button.id);
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
 			       name, e->button.id);
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_ENCODER,  e->button.id);
+			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
+						   e->button.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			break;
 
 		case CTLRA_EVENT_SLIDER:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_SLIDER, e->button.id);
+			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
+						   e->button.id);
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
 			break;
 
 		case CTLRA_EVENT_GRID:
-			name = ctlra_dev_control_get_name(dev, CTLRA_EVENT_GRID,
+			name = ctlra_info_get_name(&info, CTLRA_EVENT_GRID,
 			                                  e->button.id);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				pressed = grid_pressed[e->grid.pressed];

@@ -197,12 +197,15 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	info->serial_number = dev->info.serial_number;
 }
 
-const char * ctlra_dev_control_get_name(const struct ctlra_dev_t *dev,
-					enum ctlra_event_type_t type,
-					uint32_t control_id)
+const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
+				enum ctlra_event_type_t type,
+				uint32_t control_id)
 {
-	if(dev && dev->control_get_name)
-		return dev->control_get_name(dev, type, control_id);
+	/* the info parameter already has the appropriate function pointer
+	 * set by the driver, so we don't need the device instance to be
+	 * passed to the get_name() function */
+	if(info && info->get_name)
+		return info->get_name(type, control_id);
 	return 0;
 }
 
