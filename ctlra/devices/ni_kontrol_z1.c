@@ -121,11 +121,9 @@ struct ni_kontrol_z1_t {
 };
 
 static const char *
-ni_kontrol_z1_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
+ni_kontrol_z1_control_get_name(enum ctlra_event_type_t type,
 			       uint32_t control_id)
 {
-	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_kontrol_z1_control_names[control_id];
 	return 0;
@@ -269,6 +267,11 @@ ni_kontrol_z1_connect(ctlra_event_func event_func,
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol Z1");
+
+
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
+	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					 NI_VENDOR, NI_KONTROL_Z1);
