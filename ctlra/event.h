@@ -42,6 +42,13 @@ enum ctlra_event_type_t {
 	CTLRA_EVENT_T_COUNT,
 };
 
+static const char *ctlra_event_type_names[] = {
+	"Button",
+	"Encoder",
+	"Slider",
+	"Grid",
+};
+
 struct ctlra_dev_t;
 
 /** Represents a button. */
