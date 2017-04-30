@@ -16,11 +16,5 @@ option(BUILD_TCC_SCRIPTING "Build TCC scripting example"        ON)
 option(BUILD_ASAN          "Build with Clang Address Sanitizer" OFF)
 option(MIDI_IO_ENABLED     "Build with MIDI I/O using RtMIDI"   ON)
 
-
-execute_process(COMMAND git log --oneline -n1
-    OUTPUT_VARIABLE _output OUTPUT_STRIP_TRAILING_WHITESPACE)
-    file(WRITE ctlra/version.hxx "#define GIT_VERSION \"${_output}\"")
-
-
 add_subdirectory (ctlra)
 add_subdirectory (examples)
