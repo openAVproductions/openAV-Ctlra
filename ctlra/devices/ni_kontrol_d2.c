@@ -54,7 +54,7 @@ struct ni_kontrol_d2_ctlra_t {
 	uint32_t mask;
 };
 
-static const char *ni_kontrol_d2_control_names[] = {
+static const char *ni_kontrol_d2_button_names[] = {
 	"Deck A",
 	"Deck B",
 	"Deck C",
@@ -113,13 +113,18 @@ static const char *ni_kontrol_d2_control_names[] = {
 	"Sync",
 	"Cue",
 	"Play",
-	/* Touchstrip */
 	"Touchstrip Touch",
-	/* Sliders */
+};
+#define CONTROL_NAMES_BUTTON_SIZE (sizeof(ni_kontrol_d2_button_names) /\
+				   sizeof(ni_kontrol_d2_button_names[0]))
+
+static const char *ni_kontrol_d2_slider_names[] = {
+	/* unbounded (endless) encoder sliders */
 	"Screen Encoder 1",
 	"Screen Encoder 2",
 	"Screen Encoder 3",
 	"Screen Encoder 4",
+	/* bounded sliders */
 	"Fader 1",
 	"Fader 2",
 	"Fader 3",
@@ -128,15 +133,23 @@ static const char *ni_kontrol_d2_control_names[] = {
 	"FX Dial 2",
 	"FX Dial 3",
 	"FX Dial 4",
-	/* Touchstrip slide */
 	"Touchstrip Movement",
+};
+#define CONTROL_NAMES_SLIDER_SIZE (sizeof(ni_kontrol_d2_slider_names) /\
+				   sizeof(ni_kontrol_d2_slider_names[0]))
+
+static const char *ni_kontrol_d2_encoder_names[] = {
 	"Browse Encoder Turn",
 	"Loop Encoder Turn",
 };
-#define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_d2_control_names) /\
-			    sizeof(ni_kontrol_d2_control_names[0]))
+#define CONTROL_NAMES_ENCODER_SIZE (sizeof(ni_kontrol_d2_encoder_names) /\
+				    sizeof(ni_kontrol_d2_encoder_names[0]))
 
-/* Sliders are calulated on the fly */
+#define CONTROL_NAMES_SIZE (CONTROL_NAMES_BUTTON_SIZE + \
+			    CONTROL_NAMES_SLIDER_SIZE + \
+			    CONTROL_NAMES_ENCODER_SIZE)
+
+/* Sliders are calulated on the fly, not using pre-set bitmasks */
 #define SLIDERS_SIZE (12)
 
 static const struct ni_kontrol_d2_ctlra_t buttons[] = {
@@ -296,16 +309,26 @@ struct ni_kontrol_d2_t {
 };
 
 static const char *
-ni_kontrol_d2_control_get_name(const struct ctlra_dev_t *base,
-                               enum ctlra_event_type_t type,
-                               uint32_t control_id)
+ni_kontrol_d2_control_get_name(enum ctlra_event_type_t type,
+                               uint32_t control)
 {
-	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-	if(CONTROL_NAMES_SIZE != NI_KONTROL_D2_CONTROLS_COUNT) {
-		printf("warning, strings != controls count\n");
-	}
-	if(control_id < CONTROL_NAMES_SIZE)
-		return ni_kontrol_d2_control_names[control_id];
+	switch(type) {
+	case CTLRA_EVENT_SLIDER:
+		if(control >= CONTROL_NAMES_SLIDER_SIZE)
+			return 0;
+		return ni_kontrol_d2_slider_names[control];
+	case CTLRA_EVENT_BUTTON:
+		if(control >= CONTROL_NAMES_BUTTON_SIZE)
+			return 0;
+		return ni_kontrol_d2_button_names[control];
+	case CTLRA_EVENT_ENCODER:
+		if(control >= CONTROL_NAMES_ENCODER_SIZE)
+			return 0;
+		return ni_kontrol_d2_encoder_names[control];
+	default:
+		break;
+	};
+
 	return 0;
 }
 
@@ -713,6 +736,14 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 		goto fail;
 	}
 
+	dev->base.info.control_count[CTLRA_EVENT_SLIDER] =
+		CONTROL_NAMES_SLIDER_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
+		CONTROL_NAMES_BUTTON_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] =
+		CONTROL_NAMES_ENCODER_SIZE;
+	dev->base.info.get_name = ni_kontrol_d2_control_get_name;
+
 	/* Copy the screen update details into the embedded struct */
 	memcpy(dev->screen_blit.header , header , sizeof(dev->screen_blit.header));
 	memcpy(dev->screen_blit.command, command, sizeof(dev->screen_blit.command));
@@ -721,7 +752,6 @@ ni_kontrol_d2_connect(ctlra_event_func event_func,
 	dev->base.poll = ni_kontrol_d2_poll;
 	dev->base.disconnect = ni_kontrol_d2_disconnect;
 	dev->base.light_set = ni_kontrol_d2_light_set;
-	dev->base.control_get_name = ni_kontrol_d2_control_get_name;
 	dev->base.light_flush = ni_kontrol_d2_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_d2_usb_read_cb;
 	dev->base.screen_get_data = ni_kontrol_d2_screen_get_data;
