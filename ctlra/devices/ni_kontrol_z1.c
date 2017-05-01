@@ -148,13 +148,13 @@ ni_kontrol_z1_control_get_name(enum ctlra_event_type_t type,
 static uint32_t ni_kontrol_z1_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
-	uint8_t buf[1024];
-	int32_t nbytes;
+#define BUF_SIZE 1024
+	uint8_t buf[BUF_SIZE];
 
 	int handle_idx = 0;
-	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
-						   USB_ENDPOINT_READ,
-						   buf, 1024);
+	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+					  USB_ENDPOINT_READ,
+					  buf, BUF_SIZE);
 	return 0;
 }
 
