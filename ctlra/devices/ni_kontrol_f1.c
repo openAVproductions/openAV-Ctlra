@@ -51,8 +51,7 @@ struct ni_kontrol_f1_ctlra_t {
 	uint32_t mask;
 };
 
-static const char *ni_kontrol_f1_control_names[] = {
-	/* Faders / Dials */
+static const char *ni_kontrol_f1_names_sliders[] = {
 	"Filter 1",
 	"Filter 2",
 	"Filter 3",
@@ -61,7 +60,11 @@ static const char *ni_kontrol_f1_control_names[] = {
 	"Fader 2",
 	"Fader 3",
 	"Fader 4",
-	/* Buttons */
+};
+#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_f1_names_sliders) /\
+				    sizeof(ni_kontrol_f1_names_sliders[0]))
+
+static const char *ni_kontrol_f1_names_buttons[] = {
 	"Shift",
 	"Reverse",
 	"Type",
@@ -76,8 +79,10 @@ static const char *ni_kontrol_f1_control_names[] = {
 	"Quantize",
 	"Capture",
 };
-#define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_f1_control_names) /\
-			    sizeof(ni_kontrol_f1_control_names[0]))
+#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_f1_names_buttons) /\
+				    sizeof(ni_kontrol_f1_names_buttons[0]))
+#define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
+			    CONTROL_NAMES_BUTTONS_SIZE)
 
 static const struct ni_kontrol_f1_ctlra_t sliders[] = {
 	/* Left */
@@ -128,13 +133,21 @@ struct ni_kontrol_f1_t {
 };
 
 static const char *
-ni_kontrol_f1_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+ni_kontrol_f1_control_get_name(enum ctlra_event_type_t type,
+			       uint32_t control)
 {
-	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
-	if(control_id < CONTROL_NAMES_SIZE)
-		return ni_kontrol_f1_control_names[control_id];
+	switch(type) {
+	case CTLRA_EVENT_SLIDER:
+		if(control >= CONTROL_NAMES_SLIDERS_SIZE)
+			return 0;
+		return ni_kontrol_f1_names_sliders[control];
+	case CTLRA_EVENT_BUTTON:
+		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
+			return 0;
+		return ni_kontrol_f1_names_buttons[control];
+	default:
+		break;
+	}
 	return 0;
 }
 
@@ -333,6 +346,10 @@ ni_kontrol_f1_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol F1");
 
+	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
+	dev->base.info.get_name = ni_kontrol_f1_control_get_name;
+
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_F1);
 	if(err) {
 		free(dev);
@@ -348,7 +365,6 @@ ni_kontrol_f1_connect(ctlra_event_func event_func,
 	dev->base.poll = ni_kontrol_f1_poll;
 	dev->base.disconnect = ni_kontrol_f1_disconnect;
 	dev->base.light_set = ni_kontrol_f1_light_set;
-	dev->base.control_get_name = ni_kontrol_f1_control_get_name;
 	dev->base.light_flush = ni_kontrol_f1_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_f1_usb_read_cb;
 
