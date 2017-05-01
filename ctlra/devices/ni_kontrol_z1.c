@@ -51,8 +51,7 @@ struct ni_kontrol_z1_ctlra_t {
 	uint32_t mask;
 };
 
-static const char *ni_kontrol_z1_control_names[] = {
-	/* Faders / Dials */
+static const char *ni_kontrol_z1_names_sliders[] = {
 	"Gain (Left)",
 	"Eq High (Left)",
 	"Eq Mid (Left)",
@@ -67,15 +66,21 @@ static const char *ni_kontrol_z1_control_names[] = {
 	"Fader (Left)",
 	"Fader (Right)",
 	"Crossfader",
-	/* Buttons */
+};
+#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_z1_names_sliders) /\
+				    sizeof(ni_kontrol_z1_names_sliders[0]))
+
+static const char *ni_kontrol_z1_names_buttons[] = {
 	"Headphones Cue A",
 	"Headphones Cue B",
 	"Mode",
 	"Filter On (Left)",
 	"Filter On (Right)",
 };
-#define CONTROL_NAMES_SIZE (sizeof(ni_kontrol_z1_control_names) /\
-			    sizeof(ni_kontrol_z1_control_names[0]))
+#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_z1_names_buttons) /\
+				    sizeof(ni_kontrol_z1_names_buttons[0]))
+#define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
+			    CONTROL_NAMES_BUTTONS_SIZE)
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
 	/* Left */
@@ -122,10 +127,21 @@ struct ni_kontrol_z1_t {
 
 static const char *
 ni_kontrol_z1_control_get_name(enum ctlra_event_type_t type,
-			       uint32_t control_id)
+			       uint32_t control)
 {
-	if(control_id < CONTROL_NAMES_SIZE)
-		return ni_kontrol_z1_control_names[control_id];
+	switch(type) {
+	case CTLRA_EVENT_SLIDER:
+		if(control >= CONTROL_NAMES_SLIDERS_SIZE)
+			return 0;
+		return ni_kontrol_z1_names_sliders[control];
+	case CTLRA_EVENT_BUTTON:
+		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
+			return 0;
+		return ni_kontrol_z1_names_buttons[control];
+	default:
+		break;
+	}
+
 	return 0;
 }
 
@@ -150,7 +166,7 @@ void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 	switch(size) {
 	case 30: {
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
-			int id     = sliders[i].event_id;
+			int id     = i;
 			int offset = sliders[i].buf_byte_offset;
 			int mask   = sliders[i].mask;
 
@@ -169,7 +185,7 @@ void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			}
 		}
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-			int id     = buttons[i].event_id;
+			int id     = i;
 			int offset = buttons[i].buf_byte_offset;
 			int mask   = buttons[i].mask;
 
@@ -290,7 +306,6 @@ ni_kontrol_z1_connect(ctlra_event_func event_func,
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
 	dev->base.light_set = ni_kontrol_z1_light_set;
-	dev->base.control_get_name = ni_kontrol_z1_control_get_name;
 	dev->base.light_flush = ni_kontrol_z1_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_z1_usb_read_cb;
 
