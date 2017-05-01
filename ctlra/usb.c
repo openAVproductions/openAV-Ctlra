@@ -349,14 +349,16 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 	case LIBUSB_TRANSFER_ERROR:
 	case LIBUSB_TRANSFER_STALL:
 	case LIBUSB_TRANSFER_OVERFLOW:
+#if 0
 		printf("Ctlra: USB transfer error %s\n",
 		       libusb_error_name(xfr->status));
+#endif
 		failed = 1;
 		struct ctlra_dev_t *dev = xfr->user_data;
 		dev->banished = 1;
 		break;
 	default:
-		printf("%s: USB transaction return unknown.\n", __func__);
+		//printf("%s: USB transaction return unknown.\n", __func__);
 		failed = 1;
 		break;
 	}
@@ -370,9 +372,19 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
                                       uint32_t size)
 {
 	int transferred;
-	const uint32_t timeout = 10;
 
+/* we can use synchronous reads too, but the latency builds up of the
+ * timeout. AKA: with 6 devices, at 100 ms each, 600ms between a re-poll
+ * of the USB device - totally unacceptable.
+ * The ASYNC method allows having reads outstanding on devices at the same
+ * time, so should be preferred, unless there is a good reason to use the
+ * sync method.
+ */
 #if 1
+
+	/* timeout of zero means no timeout. For ASync case, this means
+	 * the buffer will wait until data becomes available - good! */
+	const uint32_t timeout = 0;
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0)
@@ -384,7 +396,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	 * update it again before the USB transaction completes. */
 	void *usb_data = malloc(size);
 
-	libusb_fill_bulk_transfer(xfr,
+	libusb_fill_interrupt_transfer(xfr,
+	//libusb_fill_bulk_transfer(xfr,
 				  dev->usb_interface[idx], /* dev handle */
 	                          endpoint,
 	                          usb_data,
@@ -392,11 +405,23 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          ctlra_usb_xfr_done_cb,
 	                          dev, /* userdata - pass dev so we can banish
 					  it if required */
-	                          1000 /* timeout */);
-	if(libusb_submit_transfer(xfr) < 0) {
+	                          timeout);
+	int res = libusb_submit_transfer(xfr);
+
+	/* Only error experienced while developing was ERROR_IO, which was
+	 * caused by stress testing the reading of multiple devices over
+	 * time. The _IO error would show after (almost exactly) 1 minute
+	 * of read requests. All button presses are still captured, and
+	 * writes to LEDs are serviced correctly. There is no negative
+	 * impact of these IO errors - so just free buffers and next iter
+	 * of reads will catch any data if available */
+	if(res) {
 		libusb_free_transfer(xfr);
 		free(usb_data);
-		printf("error submitting data!!\n");
+		if(res == LIBUSB_ERROR_IO)
+			return 0;
+
+		//printf("error submitting data: %s\n", libusb_error_name(res));
 		return -1;
 	}
 
@@ -407,16 +432,33 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	 * to read data from the ring here now */
 	return 0;
 #else
+	/* SYNC case, timeout is a balance between causing lag in the
+	 * polling of the next device, and USB reads returning ERROR_TIMEOUT
+	 * instead of actual data. This depends on the host system - laptops
+	 * are significantly slower in servicing USB times than desktops */
+	const uint32_t timeout = 100;
 	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
+	/* buffer too small, indicates data available. Could be used as
+	 * canary to check if data available without reading it.
+	if(r == LIBUSB_ERROR_OVERFLOW)
+		return 0;
+	*/
 	if (r < 0) {
 		fprintf(stderr, "ctlra: usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
+
+	if(!dev->usb_read_cb) {
+		printf("CTLRA DRIVER ERROR: no USB READ CB implemented!\n");
+		return 0;
+	}
+	dev->usb_read_cb(dev, endpoint, data, transferred);
+
 	return r;
 #endif
 
