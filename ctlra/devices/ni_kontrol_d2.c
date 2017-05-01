@@ -119,11 +119,6 @@ static const char *ni_kontrol_d2_button_names[] = {
 				   sizeof(ni_kontrol_d2_button_names[0]))
 
 static const char *ni_kontrol_d2_slider_names[] = {
-	/* unbounded (endless) encoder sliders */
-	"Screen Encoder 1",
-	"Screen Encoder 2",
-	"Screen Encoder 3",
-	"Screen Encoder 4",
 	/* bounded sliders */
 	"Fader 1",
 	"Fader 2",
@@ -139,6 +134,12 @@ static const char *ni_kontrol_d2_slider_names[] = {
 				   sizeof(ni_kontrol_d2_slider_names[0]))
 
 static const char *ni_kontrol_d2_encoder_names[] = {
+	/* unbounded (endless) encoder sliders */
+	"Screen Encoder 1",
+	"Screen Encoder 2",
+	"Screen Encoder 3",
+	"Screen Encoder 4",
+	/* encoders with notches */
 	"Browse Encoder Turn",
 	"Loop Encoder Turn",
 };
