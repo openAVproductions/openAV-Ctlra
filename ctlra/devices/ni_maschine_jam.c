@@ -53,10 +53,8 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
+// WIP: we can use HIDRAW or LibUSB backends
 //#define USE_LIBUSB 1
-
-#warning REMOVE SMTH PRESSED
-static int something_presssed;
 
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
@@ -297,6 +295,8 @@ ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		control_id += NI_MASCHINE_JAM_BTN_COUNT;
+	default:
+		break;
 	}
 
 	if(control_id < CONTROL_NAMES_SIZE)
