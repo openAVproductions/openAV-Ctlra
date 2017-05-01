@@ -336,15 +336,13 @@ ni_kontrol_d2_control_get_name(enum ctlra_event_type_t type,
 static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
-	uint8_t buf[1024];
-
-	int32_t nbytes;
-
+#define BUF_SIZE 1024
+	uint8_t buf[BUF_SIZE];
 	int handle_idx = 0;
-	/* USB_ENDPOINT_BTNS_READ, */
-	nbytes = ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
-			USB_ENDPOINT_BTNS_READ,
-			buf, 1024);
+
+	ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
+					  USB_ENDPOINT_BTNS_READ,
+					  buf, BUF_SIZE);
 	return 0;
 }
 
@@ -435,8 +433,6 @@ void ni_kontrol_d2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		int8_t loop   = ((buf[1] & 0x0f)     ) & 0xf;
 		/* Browse encoder turn event */
 		if(browse != dev->encoder_browse) {
-#warning TODO: check if this wrap16 code is dealing with values > 1 OK - aka\
- if we turn very fast, does it deal with sending a delta of eg: 4
 			int dir = ctlra_dev_encoder_wrap_16(browse,
 							    dev->encoder_browse);
 			event.encoder.delta = dir;
