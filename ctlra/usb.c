@@ -324,7 +324,8 @@ static void ctlra_usb_xfr_write_done_cb(struct libusb_transfer *xfr)
 
 static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 {
-	int failed = 0;
+	struct ctlra_dev_t *dev;
+
 	switch(xfr->status) {
 	/* Success */
 	case LIBUSB_TRANSFER_COMPLETED: {
@@ -353,13 +354,11 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		printf("Ctlra: USB transfer error %s\n",
 		       libusb_error_name(xfr->status));
 #endif
-		failed = 1;
-		struct ctlra_dev_t *dev = xfr->user_data;
+		dev = xfr->user_data;
 		dev->banished = 1;
 		break;
 	default:
 		//printf("%s: USB transaction return unknown.\n", __func__);
-		failed = 1;
 		break;
 	}
 
