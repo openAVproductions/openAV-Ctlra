@@ -13,11 +13,6 @@ pkg_check_modules(ALSA alsa REQUIRED)
 include_directories( ${ALSA_INCLUDE_DIRS}  )
 link_directories   ( ${ALSA_LIBRARY_DIRS}  )
 
-IF(RELEASE_BUILD)
-  SET(CMAKE_CXX_FLAGS " -g -Wall -Wno-unused-variable ")
-  SET(CMAKE_C_FLAGS " -g -Wall -W -Wno-unused-variable ")
-ENDIF(RELEASE_BUILD)
-
 SET(CMAKE_C_FLAGS " -g -fPIC -Wall -Wno-unused-variable ")
 
 if( ${ARCHITECTURE} STREQUAL "x86_64" )
