@@ -27,21 +27,24 @@ cd build
 cmake ..
 make
 ./examples/simple
-./examples/daemon
 ```
 
-Your application can now statically link against this library.
+Your application can now statically link against this library. Providing
+a shared-library and backwards ABI compatilbility to enable new devices
+without recompilation of the application are long-term goals, which can be
+discussed when the initial API has been reviewed and used in a few serious
+applications.
 
 Supported Devices
 -----------------
 
 This library currently supports the following devices:
 
+- Native Instruments Maschine Mikro (Mk2)
 - Native Instruments Traktor D2
 - Native Instruments Traktor F1
 - Native Instruments Traktor X1 (Mk2)
 - Native Instruments Traktor Z1
-- Native Instruments Maschine Mikro (Mk2)
 
 Contact
 -------
