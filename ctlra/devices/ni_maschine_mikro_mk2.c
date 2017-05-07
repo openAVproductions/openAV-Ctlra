@@ -419,7 +419,15 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
 		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
 	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = 1;
+	dev->base.info.control_count[CTLRA_EVENT_GRID] = 1;
 	dev->base.info.get_name = ni_maschine_mikro_mk2_control_get_name;
+
+	struct ctlra_grid_info_t *grid = &dev->base.info.grid_info[0];
+	grid->rgb = 1;
+	grid->velocity = 1;
+	grid->pressure = 1;
+	grid->x = 4;
+	grid->y = 4;
 
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
