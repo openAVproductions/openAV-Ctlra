@@ -54,7 +54,6 @@ struct ni_maschine_mikro_mk2_ctlra_t {
 };
 
 static const char *ni_maschine_mikro_mk2_control_names[] = {
-	/* Buttons */
 	"Restart",
 	"Arrow (Left)",
 	"Arrow (Right)",
@@ -171,11 +170,9 @@ struct ni_maschine_mikro_mk2_t {
 };
 
 static const char *
-ni_maschine_mikro_mk2_control_get_name(const struct ctlra_dev_t *base,
-                                       enum ctlra_event_type_t type,
+ni_maschine_mikro_mk2_control_get_name(enum ctlra_event_type_t type,
                                        uint32_t control_id)
 {
-	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	if(control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mikro_mk2_control_names[control_id];
 	return 0;
@@ -419,13 +416,17 @@ ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 
 	dev->fd = fd;
 
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
+		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = 1;
+	dev->base.info.get_name = ni_maschine_mikro_mk2_control_get_name;
+
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
-	dev->base.control_get_name = ni_maschine_mikro_mk2_control_get_name;
 	dev->base.light_flush = ni_maschine_mikro_mk2_light_flush;
 
 	dev->base.event_func = event_func;
