@@ -50,6 +50,7 @@ extern "C" {
 
 #define CTLRA_DEV_NAME_MAX   32
 #define CTLRA_DEV_SERIAL_MAX 64
+#define CTLRA_MAX_GRIDS 8
 
 /** Cltra context forward declaration. This struct is opaque to the user
  * of the ctlra library. It provides a handle for cltra internals such as
@@ -81,6 +82,17 @@ struct ctlra_create_opts_t {
 typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 						uint32_t control_id);
 
+/** A struct describing the properties of a grid */
+struct ctlra_grid_info_t {
+	/* capabilities of each pad */
+	uint8_t rgb;
+	uint8_t velocity;
+	uint8_t pressure;
+	/* number of pads in x and y direction */
+	uint32_t x;
+	uint32_t y;
+};
+
 /** Struct that provides info about the controller. Passed to the
  * application on probe().
  */
@@ -102,6 +114,7 @@ struct ctlra_dev_info_t {
 	 * buttons by accessing th array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
+	struct ctlra_grid_info_t grid_info[CTLRA_MAX_GRIDS];
 
 	/** @internal function to get name from device. Application must
 	 * use *ctlra_info_get_name* function. */
