@@ -251,8 +251,9 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						     USB_ENDPOINT_WRITE,
 						     data,
 						     NI_KONTROL_Z1_LED_COUNT+1);
-	if(ret < 0)
-		printf("%s write failed!\n", __func__);
+	if(ret < 0) {
+		//printf("%s write failed!\n", __func__);
+	}
 }
 
 static int32_t

@@ -119,7 +119,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		return 0;
 	}
 
-	printf("%s: done & return 0\n", __func__);
+	//printf("%s: done & return 0\n", __func__);
 	return 0;
 }
 
@@ -496,7 +496,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
 		free(usb_data);
-		printf("error submitting data!!\n");
+		//printf("error submitting data!!\n");
 		return -1;
 	}
 
