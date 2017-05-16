@@ -261,7 +261,7 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		     void *userdata)
 {
 	RtMidiOut *midiout = (RtMidiOut *)userdata;
-	delete midiout;
+	//delete midiout;
 }
 
 int accept_dev_func(const struct ctlra_dev_info_t *info,

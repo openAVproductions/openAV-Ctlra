@@ -44,7 +44,7 @@ struct Sequencer {
 
 Sequencer* sequencer_new( int sr )
 {
-	Sequencer* s = calloc( 1, sizeof(Sequencer) );
+	Sequencer* s = (Sequencer *)calloc( 1, sizeof(Sequencer) );
 	if( !s ) return 0x0;
 
 	s->sr = sr;
