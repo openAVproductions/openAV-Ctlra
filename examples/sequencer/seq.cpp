@@ -279,7 +279,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
                     void **userdata_for_event_func,
                     void *userdata)
 {
-	printf("daemon: accepting %s %s\n", info->vendor, info->device);
+	printf("sequencer: accepting %s %s\n", info->vendor, info->device);
 
 	*event_func = demo_event_func;
 	*feedback_func = demo_feedback_func;
@@ -342,7 +342,7 @@ int main()
 		sequencers[i] = sequencer;
 	}
 
-	mm_static.mode = MODE_PATTERN;
+	mm_static.mode = MODE_PADS;
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
