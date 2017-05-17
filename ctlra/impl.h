@@ -41,7 +41,7 @@ extern "C" {
 
 struct ctlra_dev_t;
 
-/* Functions each device must implement */
+/* Functions each device can implement */
 typedef uint32_t (*ctlra_dev_impl_poll)(struct ctlra_dev_t *dev);
 typedef int32_t (*ctlra_dev_impl_disconnect)(struct ctlra_dev_t *dev);
 typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,

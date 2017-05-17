@@ -32,7 +32,15 @@
 #ifndef OPENAV_CTLRA_EVENT
 #define OPENAV_CTLRA_EVENT
 
-/* Types of events */
+/** @file
+ * Event header of the Ctlra library. These events provide a generic
+ * interface which is used to send events from hardware devices to the
+ * software application. These events describe any action - if a device
+ * has an action that cannot be currently described, please contact OpenAV
+ * or send a patch to propose a solution. Thanks!
+ */
+
+/** Types of events */
 enum ctlra_event_type_t {
 	CTLRA_EVENT_BUTTON = 0,
 	CTLRA_EVENT_ENCODER,

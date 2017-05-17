@@ -47,7 +47,7 @@ This library currently supports the following devices:
 - Native Instruments Traktor Z1
 
 Prototyping for several other devices is in progress, but not complete.
-These devies include:
+These devices include:
 
 - Nintend WiiMote (Original)
 - Generic MIDI

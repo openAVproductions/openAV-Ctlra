@@ -32,11 +32,26 @@
 #ifndef OPENAV_CTLRA_H
 #define OPENAV_CTLRA_H
 
+/* Tell Doxygen to ignore this header */
+/**  \cond */
+#include <stdint.h>
+/** \endcond */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
+/*! \mainpage Ctlra - A plain C library to program with hardware controllers.
+ *
+ * Official Codebase, please file any issues with Ctlra against this repo:
+ *  https://github.com/openAVproductions/openAV-ctlra
+ *
+ * The README.md file has instructions on building.
+ *
+ * General questions / comments:
+ * Harry van Haaren <harryhaaren@gmail.com>
+ * OpenAV Productions
+ */
 
 /** @file
  * Ctlra is a lightweight C library for accessing controllers, to
@@ -177,13 +192,6 @@ void ctlra_exit(struct ctlra_t *ctlra);
 struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int id,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future);
-
-/** Poll device for events, causing an event to be emitted for each
- * event that has occured since the last poll.
- * @param dev The Device to poll.
- * @returns Number of events read from device.
- */
-uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev);
 
 /** Disconnect from controller device, resetting to a neutral state.
  * @param dev The device to be disconnected
