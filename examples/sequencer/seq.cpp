@@ -24,6 +24,8 @@ static Sequencer *sequencers[16];
 #define MODE_PATTERN 2
 
 void *midi_out_void;
+/* When muted, no sequencer events get played */
+static uint8_t static_mute;
 
 struct col_t
 {
@@ -149,11 +151,14 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 		}
 		/* sequencer playbacks */
 		for(int i = 0; i < 16; i++) {
-			if(mm->pads_seq_play[i])
+			if(mm->pads_seq_play[i] && !static_mute)
 				ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + i, 0xffffffff);
 		}
 		break;
 	}
+
+	ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_MUTE,
+			    static_mute ? 0xffffffff : 0x3);
 
 	ctlra_dev_light_set(dev, NI_MASCHINE_MIKRO_MK2_LED_PAD_MODE,
 			    mm->mode == MODE_PADS ? 0xffffffff : 0x3);
@@ -198,6 +203,9 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			case  7: mm->shift_pressed = pr; break;
 			case 22: mm->mode = MODE_PATTERN; break;
 			case 23: mm->mode = MODE_PADS; break;
+			case 28: if(pr)
+					 static_mute = !static_mute;
+				 break;
 			case 8: /* Group */
 				if(pr) {
 					mm->mode_prev = mm->mode;
@@ -283,7 +291,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	}
 
 	/* MIDI output */
-	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "Ctlra");
+	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "CtlraSeq");
 	unsigned int nPorts = midiout->getPortCount();
 	if ( nPorts == 0 ) {
 		std::cout << "No ports available!\n";
@@ -306,6 +314,8 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 void seqEventCb(int frame, int note, int velocity, void* user_data )
 {
 	printf("%s: %d, %d : %d\n", __func__, frame, note, velocity);
+	if(static_mute)
+		return;
 	memset(mm_static.pads_seq_play, 0, sizeof(mm_static.pads_seq_play));
 	mm_static.pads_seq_play[note] = velocity;
 
@@ -326,7 +336,7 @@ int main()
 	for(int i = 0; i < 16; i++) {
 		struct Sequencer *sequencer = sequencer_new(SR);
 		sequencer_set_callback(sequencer, seqEventCb, 0x0);
-		sequencer_set_length(sequencer, SR * 1.2);
+		sequencer_set_length(sequencer, SR * 0.8);
 		sequencer_set_num_steps(sequencer, 16);
 		sequencer_set_note(sequencer, i);
 		sequencers[i] = sequencer;
