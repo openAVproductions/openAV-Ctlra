@@ -1,7 +1,7 @@
 Ctlra - A C Library for Controller Support
 ==========================================
 
-LibCtlra is a plain C library that supports easily programming with
+Ctlra is a plain C library that supports easily programming with
 hardware controllers like USB HID devices. Recently controllers have
 become much more powerful and feature-rich devices, resulting in tight
 integration between software and hardware controllers. This places a
@@ -45,6 +45,21 @@ This library currently supports the following devices:
 - Native Instruments Traktor F1
 - Native Instruments Traktor X1 (Mk2)
 - Native Instruments Traktor Z1
+
+Prototyping for several other devices is in progress, but not complete.
+These devies include:
+
+- Nintend WiiMote (Original)
+- Generic MIDI
+- Generic OSC
+- Arduino Serial
+
+Device Manufacturers
+--------------------
+
+If you are or represent a manufacturer of a device, and wish to have your
+device supported by Ctlra, please contact OpenAV for information on how to
+best upstream support for your device to Ctlra.
 
 Contact
 -------
