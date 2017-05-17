@@ -674,7 +674,6 @@ ni_maschine_jam_connect(ctlra_event_func event_func,
 	struct ni_maschine_jam_t *dev = calloc(1, sizeof(struct ni_maschine_jam_t));
 	if(!dev)
 		goto fail;
-	printf("dev alloc %p\n", dev);
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
