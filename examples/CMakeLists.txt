@@ -40,13 +40,8 @@ endif()
 
 
 if(BUILD_ASAN)
-  #  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer" )
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer" )
-endif()
-
-if(BUILD_ASAN)
-  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O1 -g -fsanitize-memory-track-origins -fsanitize=address -fno-omit-frame-pointer" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fsanitize-memory-track-origins -fsanitize=memory -fno-omit-frame-pointer" )
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O1 -g -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
 include_directories( "../ctlra/" )
