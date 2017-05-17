@@ -99,10 +99,11 @@ int script_compile_file(struct script_t *script)
 	int ret = tcc_add_file(s, script->filepath);
 	if(ret < 0) {
 		printf("gracefully handling error now... \n");
+		tcc_delete(s);
 		return -1;
 	}
 
-	script->program = malloc(tcc_relocate(s, NULL));
+	script->program = calloc(1, tcc_relocate(s, NULL));
 	if(!script->program)
 		error("failed to alloc mem for program\n");
 	ret = tcc_relocate(s, script->program);
@@ -168,7 +169,9 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	if(new_time > script->time_modified) {
 		printf("tcc: recompiling script %s\n", script->filepath);
 		// trigger recompile, which will update modified timestamp
-		script_compile_file(script);
+		int ret = script_compile_file(script);
+		if(ret < 0)
+			return;
 	}
 
 	/* Handle events */
