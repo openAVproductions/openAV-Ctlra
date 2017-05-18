@@ -28,7 +28,9 @@ link_directories   ( ${X11_LIBRARY_DIRS}  )
 
 IF(RELEASE_BUILD)
   SET(CMAKE_CXX_FLAGS " -g -Wall -Wno-unused-variable ")
-  SET(CMAKE_C_FLAGS " -g -Wall -W -Wno-unused-variable ")
+  SET(CMAKE_C_FLAGS " -std=c99 -g -Wall -W -Wno-unused-variable ")
+else()
+  SET(CMAKE_C_FLAGS " -std=c99 ")
 ENDIF(RELEASE_BUILD)
 
 if( ${ARCHITECTURE} STREQUAL "x86_64" )
