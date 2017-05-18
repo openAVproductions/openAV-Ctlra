@@ -113,11 +113,11 @@ struct ctlra_event_slider_t {
 /** Represents a grid of buttons */
 struct ctlra_event_grid_t {
 	/** The ID of the grid */
-	uint16_t id;
+	uint32_t id;
 	/** Flags: set if pressure or button, see defines above */
 	uint16_t flags;
 	/** The position of the square in the grid */
-	uint32_t pos;
+	uint16_t pos;
 	/** The pressure component of the grid, range from 0.f to 1.f */
 	float pressure;
 	/** The state of the button component of the square. Pressed
