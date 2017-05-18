@@ -9,6 +9,19 @@
 
 #define USB_PATH_MAX 256
 
+#ifndef LIBUSB_HOTPLUG_MATCH_ANY
+#define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xdeadbeef
+#define LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED 0xdeadbeef
+#define LIBUSB_HOTPLUG_MATCH_ANY 0xdeadbeef
+#define LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER 0xdeadbeef
+#define LIBUSB_CAP_HAS_HOTPLUG 0xdeadbeef
+#warning "Please update your very old libusb version"
+#define libusb_hotplug_event int
+typedef int libusb_hotplug_callback_handle;
+int libusb_hotplug_register_callback() {return 0xcafe;};
+int libusb_set_auto_detach_kernel_driver() {return 0xcafe;}
+#endif
+
 /* From cltra.c */
 extern int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
 extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
