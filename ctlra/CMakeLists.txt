@@ -13,7 +13,7 @@ pkg_check_modules(ALSA alsa REQUIRED)
 include_directories( ${ALSA_INCLUDE_DIRS}  )
 link_directories   ( ${ALSA_LIBRARY_DIRS}  )
 
-SET(CMAKE_C_FLAGS " -g -fPIC -Wall -Wno-unused-variable ")
+SET(CMAKE_C_FLAGS " -std=c99 -g -fPIC -Wall -Wno-unused-variable ")
 
 if( ${ARCHITECTURE} STREQUAL "x86_64" )
   set(CMAKE_C_FLAGS   ${CMAKE_C_FLAGS}"-msse2" )
