@@ -121,7 +121,7 @@ struct ctlra_event_grid_t {
 	/** The pressure component of the grid, range from 0.f to 1.f */
 	float pressure;
 	/** The state of the button component of the square. Pressed
-	 * should only be set once when the state is concidered changed.
+	 * should only be set once when the state is considered changed.
 	 * This makes handling note-events from a grid easier */
 	uint32_t pressed;
 };
