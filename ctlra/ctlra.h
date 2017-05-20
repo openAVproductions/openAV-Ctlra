@@ -100,6 +100,8 @@ typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 /** A struct describing the properties of a grid */
 struct ctlra_grid_info_t {
 	/* capabilities of each pad */
+	/** When non-zero each pad has the capability to show RGB colour.
+	 * When zero, the pad either has no LED, or brightness only */
 	uint8_t rgb;
 	uint8_t velocity;
 	uint8_t pressure;
