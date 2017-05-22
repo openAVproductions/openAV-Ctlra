@@ -127,6 +127,16 @@ struct ctlra_dev_info_t {
 	uint32_t device_id;
 	/** Serial as a number (if applicable) */
 	uint64_t serial_number;
+	/** The Unique ID assigned to this particular controller by the
+	 * Ctlra library. A specific device (device + serial_number combo)
+	 * is assigned an integer ID when accepted. This unique_id remains
+	 * constant for the device - even if hot-plugged out and back in.
+	 * 
+	 * The use-case for this runtime-constant ID number is to allow an
+	 * application to easily detect when a controller is "returning",
+	 * or when a new controller is being plugged in.
+	 */
+	uint32_t unique_id;
 
 	/** Number of controls the device has of each type. Read eg number
 	 * buttons by accessing the array by *ctlra_event_type_t*
