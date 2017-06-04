@@ -362,8 +362,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 }
 
 struct ctlra_dev_t *
-ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
-                              void *userdata, void *future)
+ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
+				    void *userdata, void *future)
 {
 	(void)future;
 	struct ni_maschine_mikro_mk2_t *dev = calloc(1, sizeof(struct ni_maschine_mikro_mk2_t));

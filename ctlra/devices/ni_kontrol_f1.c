@@ -333,8 +333,8 @@ ni_kontrol_f1_disconnect(struct ctlra_dev_t *base)
 }
 
 struct ctlra_dev_t *
-ni_kontrol_f1_connect(ctlra_event_func event_func,
-				  void *userdata, void *future)
+ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
+			    void *future)
 {
 	(void)future;
 	struct ni_kontrol_f1_t *dev = calloc(1, sizeof(struct ni_kontrol_f1_t));

@@ -23,23 +23,23 @@ struct ctlra_dev_connect_func_t {
  * implementation, instead of centrally located here. This allows drivers
  * to be "dropped in" to the source, and then automatically register up
  * without library code changes */
-DECLARE_DEV_CONNECT_FUNC(ni_kontrol_d2_connect);
-DECLARE_DEV_CONNECT_FUNC(ni_kontrol_z1_connect);
-DECLARE_DEV_CONNECT_FUNC(ni_kontrol_f1_connect);
-DECLARE_DEV_CONNECT_FUNC(ni_kontrol_x1_mk2_connect);
-DECLARE_DEV_CONNECT_FUNC(ni_maschine_mikro_mk2_connect);
-DECLARE_DEV_CONNECT_FUNC(ni_maschine_jam_connect);
-DECLARE_DEV_CONNECT_FUNC(akai_apc_connect);
+CTLRA_DEVICE_DECL(ni_kontrol_d2);
+CTLRA_DEVICE_DECL(ni_kontrol_z1);
+CTLRA_DEVICE_DECL(ni_kontrol_f1);
+CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
+CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
+CTLRA_DEVICE_DECL(ni_maschine_jam);
+CTLRA_DEVICE_DECL(akai_apc);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
-	{0x17cc, 0x1400, ni_kontrol_d2_connect},
-	{0x17cc, 0x1210, ni_kontrol_z1_connect},
-	{0x17cc, 0x1120, ni_kontrol_f1_connect},
-	{0x17cc, 0x1220, ni_kontrol_x1_mk2_connect},
-	{0x17cc, 0x1200, ni_maschine_mikro_mk2_connect},
-	{0x17cc, 0x1500, ni_maschine_jam_connect},
-	/* WIP {0x09e8, 0x0073, akai_apc_connect},*/
+	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
+	{0x17cc, 0x1210, CTLRA_DEVICE_FUNC(ni_kontrol_z1)},
+	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
+	{0x17cc, 0x1220, CTLRA_DEVICE_FUNC(ni_kontrol_x1_mk2)},
+	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
+	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
+	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 

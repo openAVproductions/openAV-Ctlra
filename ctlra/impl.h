@@ -189,9 +189,12 @@ struct ctlra_t
 };
 
 /* Macro extern declaration for the connect function */
-#define DECLARE_DEV_CONNECT_FUNC(name)					\
-extern struct ctlra_dev_t *name(ctlra_event_func event_func,		\
+#define CTLRA_DEVICE_DECL(name)					\
+extern struct ctlra_dev_t * ctlra_ ## name ## _connect(		\
+				ctlra_event_func event_func,	\
 			    void *userdata, void *future)
+/* Macro returns the function name registered using above macro */
+#define CTLRA_DEVICE_FUNC(name)	ctlra_ ## name ## _connect
 
 /* Helper function for dealing with wrapped encoders */
 static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
