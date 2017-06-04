@@ -189,11 +189,6 @@ void ctlra_idle_iter(struct ctlra_t *ctlra);
  * with other cltra instances */
 void ctlra_exit(struct ctlra_t *ctlra);
 
-/** Connect to a controller device. */
-struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int id,
-				      ctlra_event_func event_func,
-				      void *userdata, void *future);
-
 /** Disconnect from controller device, resetting to a neutral state.
  * @param dev The device to be disconnected
  * @retval 0 Successfully disconnected
