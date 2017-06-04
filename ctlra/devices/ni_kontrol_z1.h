@@ -32,6 +32,9 @@
 #ifndef OPENAV_CTLRA_NI_KONTROL_Z1_H
 #define OPENAV_CTLRA_NI_KONTROL_Z1_H
 
+#define NI_KONTROL_Z1_WIDTH  120
+#define NI_KONTROL_Z1_HEIGHT 293
+
 enum NI_KONTROL_Z1_LEDS {
 	/* Left vol LEDs, first 5 blue, last 2 orange */
 	NI_KONTROL_Z1_LED_LEVEL_L1,

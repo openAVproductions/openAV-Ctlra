@@ -118,6 +118,20 @@ struct ctlra_grid_info_t {
 	uint32_t y;
 };
 
+/** Struct that provides physical layout and capabilities about each
+ * item on the controller. Sizes are provided in millimeters. An item can
+ * represent a control such as a slider or dial, but also feedback only
+ * items such as an LED, or screen.
+ */
+struct ctlra_control_info_t {
+	char name[CTLRA_STR_MAX]; /* Human readable name of the item */
+	uint32_t x; /* location of item on X axis */
+	uint32_t y; /* location of item on Y axis */
+	uint32_t w; /* size of item on X axis */
+	uint32_t h; /* size of item on Y axis */
+	/* TODO: figure out how to expose capabilities of item */
+};
+
 /** Struct that provides info about the controller. Passed to the
  * application on probe().
  */
