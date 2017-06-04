@@ -63,9 +63,9 @@ extern "C" {
 
 #include "event.h"
 
-#define CTLRA_DEV_NAME_MAX   32
+#define CTLRA_STR_MAX        32
 #define CTLRA_DEV_SERIAL_MAX 64
-#define CTLRA_MAX_GRIDS 8
+#define CTLRA_NUM_GRIDS_MAX   8
 
 /** Cltra context forward declaration. This struct is opaque to the user
  * of the ctlra library. It provides a handle for cltra internals such as
@@ -113,11 +113,12 @@ struct ctlra_grid_info_t {
  */
 struct ctlra_dev_info_t {
 	/** Name of the vendor/company */
-	char vendor[CTLRA_DEV_NAME_MAX];
+	char vendor[CTLRA_STR_MAX];
 	/** Name of the device */
-	char device[CTLRA_DEV_NAME_MAX];
+	char device[CTLRA_STR_MAX];
 	/** Serial as a string (if applicable) */
 	char serial[CTLRA_DEV_SERIAL_MAX];
+
 	/** USB Vendor ID */
 	uint32_t vendor_id;
 	/** USB device ID */
@@ -129,7 +130,7 @@ struct ctlra_dev_info_t {
 	 * buttons by accessing th array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
-	struct ctlra_grid_info_t grid_info[CTLRA_MAX_GRIDS];
+	struct ctlra_grid_info_t grid_info[CTLRA_NUM_GRIDS_MAX];
 
 	/** @internal function to get name from device. Application must
 	 * use *ctlra_info_get_name* function. */
