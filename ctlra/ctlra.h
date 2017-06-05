@@ -331,11 +331,10 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
  * hardware itself does not have to be present to retrieve this info. The
  * expected utilization of this function is to allow virtual controllers be
  * created for testing and hardware-less development.
- * @retval 0 Success
- * @retval -ENOTSUP This device ID does not support getting info.
+ * @returns A valid pointer, or NULL if the device ID does not support info
  */
-int ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id,
-			     struct ctlra_dev_info_t ** info);
+struct ctlra_dev_info_t *
+ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id);
 
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the

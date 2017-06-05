@@ -141,9 +141,11 @@ int main(int argc, char **argv)
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_dev_id_t id;
-	struct ctlra_dev_info_t *info;
-	int ret = ctlra_dev_get_info_by_id(&id, &info);
-	printf("static info %s\n", info->device);
+	id.type = CTLRA_DEV_TYPE_USB_HID;
+	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
+	printf("static info %p\n", info);
+	if(info != NULL)
+		printf("static info %s\n", info->device);
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);

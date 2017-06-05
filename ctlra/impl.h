@@ -217,6 +217,7 @@ extern struct ctlra_dev_t * ctlra_ ## name ## _connect(		\
 			    void *userdata, void *future)
 /* Macro returns the function name registered using above macro */
 #define CTLRA_DEVICE_FUNC(name)	ctlra_ ## name ## _connect
+
 /* Macro to declare an extern info struct for a device */
 #define CTLRA_DEVICE_INFO(name)					\
 extern struct ctlra_dev_info_t ctlra_ ## name ## _info;

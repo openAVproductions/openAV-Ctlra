@@ -209,11 +209,28 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	info->get_name = dev->info.get_name;
 }
 
-int ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id,
-			     struct ctlra_dev_info_t ** info)
+static struct ctlra_dev_info_t *
+ctlra_dev_match_usb_hid(struct ctlra_dev_id_t *id)
 {
-	//printf("%s: name %s\n", __func__, );
-	*info = &CTLRA_DEVICE_INFO_NAME(ni_kontrol_z1);
+	int vendor = id->usb_hid.vendor_id;
+	int device = id->usb_hid.device_id;
+	/* TODO: iter registered static info structs, return if match */
+	return &CTLRA_DEVICE_INFO_NAME(ni_kontrol_z1);
+}
+
+struct ctlra_dev_info_t *
+ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id)
+{
+	struct ctlra_dev_info_t *tmp = NULL;
+
+	switch(id->type) {
+	case CTLRA_DEV_TYPE_USB_HID:
+		tmp = ctlra_dev_match_usb_hid(id);
+		break;
+	default: break;
+	};
+
+	return tmp;
 }
 
 const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
