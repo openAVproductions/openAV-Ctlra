@@ -144,8 +144,17 @@ int main(int argc, char **argv)
 	id.type = CTLRA_DEV_TYPE_USB_HID;
 	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
 	printf("static info %p\n", info);
-	if(info != NULL)
-		printf("static info %s\n", info->device);
+	if(info != NULL) {
+		printf("static info %s %s\n  buttons = %d\n  sliders %d\n",
+		       info->vendor, info->device,
+		       info->control_count[CTLRA_EVENT_BUTTON],
+		       info->control_count[CTLRA_EVENT_SLIDER]);
+		for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
+			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_BUTTON][i];
+			printf("%d: %d %d\t%d %d\n", i, item->x, item->y,
+			       item->w, item->h);
+		}
+	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);

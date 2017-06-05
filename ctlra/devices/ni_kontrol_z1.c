@@ -82,6 +82,15 @@ static const char *ni_kontrol_z1_names_buttons[] = {
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
 
+
+static struct ctlra_item_info_t buttons_info[] = {
+	{.x = 10, .y = 100, .w = 30, .h = 20},
+	{.x = 50, .y = 100, .w = 30, .h = 20},
+	{.x = 80, .y = 100, .w = 30, .h = 20},
+	{.x =120, .y = 100, .w = 30, .h = 20},
+	{.x =150, .y = 100, .w = 30, .h = 20},
+};
+
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
 	/* Left */
 	{NI_KONTROL_Z1_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
@@ -323,9 +332,8 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 	.device = "Kontrol Z1",
 	.vendor_id = NI_VENDOR,
 	.device_id = NI_KONTROL_Z1,
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 
-	/*
-	.control_count[CTLRA_EVENT_T_COUNT] = {
-	},
-	*/
+	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 };

@@ -124,7 +124,6 @@ struct ctlra_grid_info_t {
  * items such as an LED, or screen.
  */
 struct ctlra_item_info_t {
-	char name[CTLRA_STR_MAX]; /* Human readable name of the item */
 	uint32_t x; /* location of item on X axis */
 	uint32_t y; /* location of item on Y axis */
 	uint32_t w; /* size of item on X axis */

@@ -42,6 +42,7 @@
 
 /** Types of events */
 enum ctlra_event_type_t {
+	/* The order of these events must not be modified */
 	CTLRA_EVENT_BUTTON = 0,
 	CTLRA_EVENT_ENCODER,
 	CTLRA_EVENT_SLIDER,
