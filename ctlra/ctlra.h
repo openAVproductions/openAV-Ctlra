@@ -123,12 +123,22 @@ struct ctlra_grid_info_t {
  * represent a control such as a slider or dial, but also feedback only
  * items such as an LED, or screen.
  */
+#define CTLRA_ITEM_BUTTON        (1<<0)
+#define CTLRA_ITEM_FADER         (1<<1) /* check W vs H for orientation */
+#define CTLRA_ITEM_DIAL          (1<<2)
+#define CTLRA_ITEM_CENTER_NOTCH  (1<<4)
+#define CTLRA_ITEM_LED_INTENSITY (1<<5)
+#define CTLRA_ITEM_LED_COLOUR    (1<<6)
 struct ctlra_item_info_t {
 	uint32_t x; /* location of item on X axis */
 	uint32_t y; /* location of item on Y axis */
 	uint32_t w; /* size of item on X axis */
 	uint32_t h; /* size of item on Y axis */
+
 	/* TODO: figure out how to expose capabilities of item */
+	uint64_t flags;
+
+	uint32_t led_num;
 };
 
 #define CTLRA_DEV_TYPE_INVALID          0

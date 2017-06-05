@@ -154,6 +154,12 @@ int main(int argc, char **argv)
 			printf("%d: %d %d\t%d %d\n", i, item->x, item->y,
 			       item->w, item->h);
 		}
+		printf("sliders\n");
+		for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
+			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_SLIDER][i];
+			printf("%d: %d %d\t%d %d\n", i, item->x, item->y,
+			       item->w, item->h);
+		}
 	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);

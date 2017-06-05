@@ -52,23 +52,47 @@ struct ni_kontrol_z1_ctlra_t {
 };
 
 static const char *ni_kontrol_z1_names_sliders[] = {
-	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
+	"Gain (L)",
+	"Eq High (L)",
+	"Eq Mid (L)",
+	"Eq Low (L)",
+	"Filter (L)",
+	"Gain (R)",
+	"Eq High (R)",
+	"Eq Mid (R)",
+	"Eq Low (R)",
+	"Filter (R)",
 	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
+	"Fader (L)",
+	"Fader (R)",
 	"Crossfader",
 };
 #define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_z1_names_sliders) /\
 				    sizeof(ni_kontrol_z1_names_sliders[0]))
+
+#define Z1_DIAL (CTLRA_ITEM_DIAL)
+#define Z1_DIAL_CENTER (CTLRA_ITEM_DIAL | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t sliders_info[] = {
+	/* left top gain, hi, mid, low, filter */
+	{.x = 14, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
+	{.x = 12, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 12, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 12, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 10, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
+	/* right top gain, hi, mid, low, filter */
+	{.x = 92, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
+	{.x = 90, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 90, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 90, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 88, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
+	/* cue */
+	{.x = 52, .y = 92, .w = 15,  .h = 15, .flags = Z1_DIAL_CENTER},
+	/* fader left, right */
+	{.x = 10, .y =185, .w = 24,  .h = 56, .flags = CTLRA_ITEM_FADER},
+	{.x = 88, .y =185, .w = 24,  .h = 56, .flags = CTLRA_ITEM_FADER},
+	/* crossfader */
+	{.x = 33, .y =248, .w = 56,  .h = 22, .flags = CTLRA_ITEM_FADER},
+};
 
 static const char *ni_kontrol_z1_names_buttons[] = {
 	"A",
@@ -82,14 +106,13 @@ static const char *ni_kontrol_z1_names_buttons[] = {
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
 
-
+#define Z1_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY)
 static struct ctlra_item_info_t buttons_info[] = {
-	{.x = 44, .y = 120, .w = 8,  .h = 8},
-	{.x = 68, .y = 120, .w = 8,  .h = 8},
-	{.x = 53, .y = 165, .w = 18, .h = 8},
-	{.x = 13, .y = 165, .w = 18, .h = 8},
-	{.x = 90, .y = 165, .w = 18, .h = 8},
-	{0},
+	{.x = 44, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN},
+	{.x = 68, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN},
+	{.x = 53, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN},
+	{.x = 13, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN},
+	{.x = 90, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN},
 };
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
@@ -297,6 +320,7 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
 	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
+	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
 	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
@@ -341,4 +365,5 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 
 	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
 };
