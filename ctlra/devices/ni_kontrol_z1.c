@@ -71,11 +71,11 @@ static const char *ni_kontrol_z1_names_sliders[] = {
 				    sizeof(ni_kontrol_z1_names_sliders[0]))
 
 static const char *ni_kontrol_z1_names_buttons[] = {
-	"Headphones Cue A",
-	"Headphones Cue B",
+	"A",
+	"B",
 	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
+	"On (L)",
+	"On (R)",
 };
 #define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_z1_names_buttons) /\
 				    sizeof(ni_kontrol_z1_names_buttons[0]))
@@ -89,6 +89,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 53, .y = 165, .w = 18, .h = 8},
 	{.x = 13, .y = 165, .w = 18, .h = 8},
 	{.x = 90, .y = 165, .w = 18, .h = 8},
+	{0},
 };
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
@@ -295,6 +296,7 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
+	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
