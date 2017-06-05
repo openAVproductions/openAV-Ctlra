@@ -84,11 +84,11 @@ static const char *ni_kontrol_z1_names_buttons[] = {
 
 
 static struct ctlra_item_info_t buttons_info[] = {
-	{.x = 10, .y = 100, .w = 30, .h = 20},
-	{.x = 50, .y = 100, .w = 30, .h = 20},
-	{.x = 80, .y = 100, .w = 30, .h = 20},
-	{.x =120, .y = 100, .w = 30, .h = 20},
-	{.x =150, .y = 100, .w = 30, .h = 20},
+	{.x = 44, .y = 120, .w = 8,  .h = 8},
+	{.x = 68, .y = 120, .w = 8,  .h = 8},
+	{.x = 53, .y = 165, .w = 18, .h = 8},
+	{.x = 13, .y = 165, .w = 18, .h = 8},
+	{.x = 90, .y = 165, .w = 18, .h = 8},
 };
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
@@ -328,10 +328,13 @@ fail:
 
 
 struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
-	.vendor = "Native Instruments",
-	.device = "Kontrol Z1",
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol Z1",
 	.vendor_id = NI_VENDOR,
 	.device_id = NI_KONTROL_Z1,
+	.size_x    = 120,
+	.size_y    = 294,
+
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 

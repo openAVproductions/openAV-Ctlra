@@ -196,6 +196,9 @@ struct ctlra_dev_info_t {
 
 	/* TODO: feedback/led only ctlra_item info */
 
+	uint32_t size_x;
+	uint32_t size_y;
+
 	struct ctlra_grid_info_t grid_info[CTLRA_NUM_GRIDS_MAX];
 
 	/** @internal function to get name from device. Application must
