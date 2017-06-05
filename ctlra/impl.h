@@ -217,6 +217,11 @@ extern struct ctlra_dev_t * ctlra_ ## name ## _connect(		\
 			    void *userdata, void *future)
 /* Macro returns the function name registered using above macro */
 #define CTLRA_DEVICE_FUNC(name)	ctlra_ ## name ## _connect
+/* Macro to declare an extern info struct for a device */
+#define CTLRA_DEVICE_INFO(name)					\
+extern struct ctlra_dev_info_t ctlra_ ## name ## _info;
+/* Macro that returns the name of the info struct */
+#define CTLRA_DEVICE_INFO_NAME(name) ctlra_ ## name ## _info
 
 /* Helper function for dealing with wrapped encoders */
 static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)

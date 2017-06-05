@@ -284,7 +284,6 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol Z1");
 
-
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
 	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
@@ -318,3 +317,15 @@ fail:
 	return 0;
 }
 
+
+struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
+	.vendor = "Native Instruments",
+	.device = "Kontrol Z1",
+	.vendor_id = NI_VENDOR,
+	.device_id = NI_KONTROL_Z1,
+
+	/*
+	.control_count[CTLRA_EVENT_T_COUNT] = {
+	},
+	*/
+};

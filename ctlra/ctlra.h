@@ -123,13 +123,37 @@ struct ctlra_grid_info_t {
  * represent a control such as a slider or dial, but also feedback only
  * items such as an LED, or screen.
  */
-struct ctlra_control_info_t {
+struct ctlra_item_info_t {
 	char name[CTLRA_STR_MAX]; /* Human readable name of the item */
 	uint32_t x; /* location of item on X axis */
 	uint32_t y; /* location of item on Y axis */
 	uint32_t w; /* size of item on X axis */
 	uint32_t h; /* size of item on Y axis */
 	/* TODO: figure out how to expose capabilities of item */
+};
+
+#define CTLRA_DEV_TYPE_INVALID          0
+#define CTLRA_DEV_TYPE_USB_HID          1
+#define CTLRA_DEV_TYPE_BLUETOOTH        2
+#define CTLRA_DEV_TYPE_USB_MIDI         3
+
+/** ID struct for a USB HID device */
+struct ctlra_dev_usb_hid_t {
+	/** USB Vendor ID */
+	uint32_t vendor_id;
+	/** USB device ID */
+	uint32_t device_id;
+	/** Serial number from USB library (if available) */
+	uint64_t serial_number;
+};
+
+struct ctlra_dev_id_t {
+	/* integer representing the type of this device.
+	 * Eg: CTLRA_DEV_TYPE_USB_HID */
+	uint32_t type;
+	union {
+		struct ctlra_dev_usb_hid_t usb_hid;
+	};
 };
 
 /** Struct that provides info about the controller. Passed to the
@@ -164,6 +188,15 @@ struct ctlra_dev_info_t {
 	 * buttons by accessing the array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
+
+	/** An array pointers to ctlra_item_info_t structures.
+	 * The pointers can be used to look up information about each
+	 * control that the device has.
+	 */
+	struct ctlra_item_info_t *control_info[CTLRA_EVENT_T_COUNT];
+
+	/* TODO: feedback/led only ctlra_item info */
+
 	struct ctlra_grid_info_t grid_info[CTLRA_NUM_GRIDS_MAX];
 
 	/** @internal function to get name from device. Application must
@@ -292,6 +325,17 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
  * still owned by the ctlra library, the application must not free it */
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info);
+
+
+/** Get the info struct for a controller by an ID. Note that the controller
+ * hardware itself does not have to be present to retrieve this info. The
+ * expected utilization of this function is to allow virtual controllers be
+ * created for testing and hardware-less development.
+ * @retval 0 Success
+ * @retval -ENOTSUP This device ID does not support getting info.
+ */
+int ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id,
+			     struct ctlra_dev_info_t ** info);
 
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the

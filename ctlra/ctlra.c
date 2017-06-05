@@ -17,6 +17,7 @@ struct ctlra_dev_connect_func_t {
 	uint32_t vid;
 	uint32_t pid;
 	ctlra_dev_connect_func connect;
+	struct ctlra_dev_info_t *info;
 };
 
 /* TODO: Cleanup this registration method to be in the .c files of each
@@ -32,6 +33,8 @@ CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_jam);
 CTLRA_DEVICE_DECL(akai_apc);
+
+CTLRA_DEVICE_INFO(ni_kontrol_z1);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
@@ -204,6 +207,13 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
 	info->serial_number = dev->info.serial_number;
 	info->get_name = dev->info.get_name;
+}
+
+int ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id,
+			     struct ctlra_dev_info_t ** info)
+{
+	//printf("%s: name %s\n", __func__, );
+	*info = &CTLRA_DEVICE_INFO_NAME(ni_kontrol_z1);
 }
 
 const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
