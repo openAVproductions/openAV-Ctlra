@@ -112,7 +112,7 @@ static const struct ni_kontrol_s2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-#define NI_KONTROL_S2_LED_COUNT 70
+#define NI_KONTROL_S2_LED_COUNT 64
 
 /* Represents the the hardware device */
 struct ni_kontrol_s2_t {
@@ -174,6 +174,7 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				printf(" ");
 		}
 		printf("\n");
+		printf("%d %d\n", buf[1], buf[5]);
 		} break;
 	case 51: { /* sliders dials and pitch */
 		for(int i = 0; i < 51; i++) {
@@ -181,6 +182,17 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			/* if(i % 4 == 0) printf(" ");*/
 		}
 		printf("\n");
+		uint16_t *v = &buf[5];
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_SLIDER,
+			.slider  = {
+				.id = 0,
+				.value = *v / 4096.f},
+		};
+		struct ctlra_event_t *e = {&event};
+		dev->base.event_func(&dev->base, 1, &e,
+				     dev->base.event_func_userdata);
+
 		break;
 
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
@@ -242,7 +254,7 @@ static void ni_kontrol_s2_light_set(struct ctlra_dev_t *base,
 
 	if(!dev || light_id > NI_KONTROL_S2_LED_COUNT)
 		return;
-	memset(dev->lights, 0xff, NI_KONTROL_S2_LED_COUNT);
+	memset(dev->lights, 0x1f, NI_KONTROL_S2_LED_COUNT);
 	dev->lights_dirty = 1;
 	return ;
 
@@ -274,7 +286,7 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	/* all normal single-colour (brightness) leds */
 	dev->lights_interface = 0x80;
 	/* Cue / Remix slots, shift0sync-cue-play for both decks */
-	dev->lights_interface = 0x81;
+	//dev->lights_interface = 0x81;
 
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
