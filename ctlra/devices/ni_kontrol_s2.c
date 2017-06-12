@@ -52,20 +52,29 @@ struct ni_kontrol_s2_ctlra_t {
 };
 
 static const char *ni_kontrol_s2_names_sliders[] = {
-	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
-	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
 	"Crossfader",
+	"Pitch (L)",
+	"Pitch (R)",
+	"Cue Mix",
+	"Remix",
+	"Main Level",
+	"Level (Back panel)",
+	"Fader (L)",
+	"Fader (R)",
+	"FX Dry/Wet (L)",
+	"FX 1 (L)",
+	"FX 2 (L)",
+	"FX 3 (L)",
+	"FX Dry/Wet (R)",
+	"FX 1 (R)",
+	"FX 2 (R)",
+	"FX 3 (R)",
+	"EQ HI (L)",
+	"EQ MID (L)",
+	"EQ LOW (L)",
+	"EQ HI (R)",
+	"EQ MID (R)",
+	"EQ LOW (R)",
 };
 #define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_names_sliders) /\
 				    sizeof(ni_kontrol_s2_names_sliders[0]))
@@ -84,20 +93,29 @@ static const char *ni_kontrol_s2_names_buttons[] = {
 
 static const struct ni_kontrol_s2_ctlra_t sliders[] = {
 	/* Left */
-	{NI_KONTROL_S2_SLIDER_LEFT_GAIN    ,  1, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEFT_EQ_HIGH ,  3, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEFT_EQ_MID  ,  5, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEFT_EQ_LOW  ,  7, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEFT_FILTER  ,  9, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_GAIN   , 11, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_EQ_HIGH, 13, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_EQ_MID , 15, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_EQ_LOW , 17, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_FILTER , 19, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_CUE_MIX      , 21, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEFT_FADER   , 23, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_RIGHT_FADER  , 25, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_CROSS_FADER  , 27, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_CROSSFADER,  1, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_PITCH_L   ,  3, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_PITCH_R   ,  5, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_CUE_MIX   ,  7, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_REMIX     ,  9, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_MAIN_LEVEL, 11, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_LEVEL     , 13, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FADER_L   , 15, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FADER_R   , 17, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_DRY  , 19, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_1    , 21, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_2    , 23, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_3    , 25, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_DRY  , 27, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_1    , 29, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_2    , 31, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_FX_L_3    , 33, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_L_HI   , 35, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_L_MID  , 37, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_L_LOW  , 39, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_R_HI   , 41, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_R_MID  , 43, UINT32_MAX},
+	{NI_KONTROL_S2_SLIDER_EQ_R_LOW  , 45, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
@@ -182,6 +200,7 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			/* if(i % 4 == 0) printf(" ");*/
 		}
 		printf("\n");
+		/*
 		uint16_t *v = &buf[5];
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_SLIDER,
@@ -192,15 +211,15 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		struct ctlra_event_t *e = {&event};
 		dev->base.event_func(&dev->base, 1, &e,
 				     dev->base.event_func_userdata);
-
 		break;
+		*/
 
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
 			int id     = i;
 			int offset = sliders[i].buf_byte_offset;
 			int mask   = sliders[i].mask;
 
-			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			uint16_t v = *((uint16_t *)&buf[offset+4]) & mask;
 			if(dev->hw_values[i] != v) {
 				dev->hw_values[i] = v;
 				struct ctlra_event_t event = {
@@ -210,10 +229,8 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 						.value = v / 4096.f},
 				};
 				struct ctlra_event_t *e = {&event};
-				/*
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
-				*/
 			}
 		}
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
