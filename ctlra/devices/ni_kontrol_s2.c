@@ -189,13 +189,85 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 
 	switch(size) {
 	case 17: { /* buttons and jog wheels */
+#define RESET  "\x1B[0m"
+#define GREEN  "\x1B[32m"
+		static uint8_t array[17];
 		for(int i = 0; i < 17; i++) {
-			printf("%02x", buf[16 - i]);
-			if(i % 2 == 0)
-				printf(" ");
+			if(array[i] != buf[16-i])
+				printf(GREEN);
+			printf("%02x %s", buf[16 - i], RESET);
+			array[i] = buf[16-i];
+
+#ifdef NOPE
+static const struct ni_kontrol_s2_ctlra_t buttons[] = {
+	{0  , 9, 0x01},
+
+#endif
+
+			/* buf[9] is the start of buttons
+			 * [ 9]	dB	0x01 play
+			 *		0x02 cue
+			 *		0x04 sync
+			 *		0x08 shift
+			 * [ 9] dB	0x10 cue 4
+			 *		0x20 cue 3
+			 *		0x40 cue 2
+			 *		0x80 cue 1
+			 *
+			 * [10] dB	0x10 deckA jog press
+			 *		0x20 deckB jog press
+			 *		0x40 Main/Booth switch (off = booth)
+			 *		0x80 "Mic Engage"
+			 * [10] dB	0x10 mixer cue
+			 *		0x20 deck flux
+			 *		0x40 loop in
+			 *		0x80 loop out
+			 *
+			 * [11]	dB	0x01 play
+			 *		0x02 cue
+			 *		0x04 sync
+			 *		0x08 shift
+			 * [11] dB	0x10 cue 4
+			 *		0x20 cue 3
+			 *		0x40 cue 2
+			 *		0x80 cue 1
+			 *
+			 * [12]		0x01 Remix On B
+			 *		0x02 Remix on A
+			 *		0x04 Browse Load B
+			 *		0x08 Browse Load A
+			 * [12] dA	0x10 mixer cue
+			 *		0x20 deck flux
+			 *		0x40 loop in
+			 *		0x80 loop out
+			 *
+			 * [13]		0x01 nop?
+			 *		0x02 nop?
+			 *		0x04 deck B FX Dry Wet
+			 *		0x08 deck B FX 3
+			 * [13]		0x10 deck B FX 2
+			 *		0x20 deck B FX 1
+			 *		0x40 deck A gain press
+			 *		0x80 deck B gain press
+			 *
+			 * [14]		0x01 mixer B FX 2
+			 *		0x02 mixer B FX 1
+			 *		0x04 mixer A FX 2
+			 *		0x08 mixer A FX 1
+			 * [14]		0x10 deck A FX Dry Wet
+			 *		0x20        FX 3
+			 *		0x40        FX 2
+			 *		0x80        FX 1
+			 *
+			 * [15]		0x01 dA encoder press (L)
+			 *		0x02 dA encoder press (R)
+			 *		0x04 browse encoder press
+			 *		0x08 dB encoder press (L)
+			 *		0x01 dB encoder press (L)
+			 */
 		}
 		printf("\n");
-		printf("%d %d\n", buf[1], buf[5]);
+		//printf("%d %d\n", buf[1], buf[5]);
 		} break;
 	case 51: { /* sliders dials and pitch */
 		for(int i = 0; i < 51; i++) {
