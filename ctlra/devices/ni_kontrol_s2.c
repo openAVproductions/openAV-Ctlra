@@ -143,6 +143,9 @@ struct ni_kontrol_s2_t {
 
 	uint8_t lights_interface;
 	uint8_t lights[NI_KONTROL_S2_LED_COUNT];
+
+	uint8_t deck_lights_interface;
+	uint8_t deck_lights[16*3]; // TODO: *3 for rgb
 };
 
 static const char *
@@ -271,7 +274,60 @@ static void ni_kontrol_s2_light_set(struct ctlra_dev_t *base,
 
 	if(!dev || light_id > NI_KONTROL_S2_LED_COUNT)
 		return;
-	memset(dev->lights, 0x1f, NI_KONTROL_S2_LED_COUNT);
+
+	memset(dev->lights, 0, NI_KONTROL_S2_LED_COUNT);
+	/* 0 to 4 level A: -15, -6 0, +3 +6,
+	 * 5 to 9 level B: "
+	 *
+	 * 10 FX dry wet
+	 * 11 fx 1
+	 * 12 fx 2
+	 * 13 fx 3
+	 *
+	 * 14 Mixer A FX 1
+	 * 15 Mixer A FX 2
+	 * 16 Mixer B FX 1
+	 * 17 Mixer B FX 2
+	 *
+	 * 18 FX dry wet
+	 * 19 fx 1
+	 * 20 fx 2
+	 * 21 fx 3
+	 *
+	 * 22 Remix On A
+	 *    Remix On B
+	 * 24 Browse Load A
+	 *    Browse Load B
+	 * 26 CUE A
+	 * 27 Mixer Warning
+	 * 28 Mixer USB Connection
+	 *  ANALOG MIC - Requires audio to be running?
+	 * 30 CUE B
+	 *
+	 * 31 Deck A Flux 
+	 * 32 Deck A Loop In
+	 * 33 Deck A Loop Out
+	 *
+	 * 34 Deck B Loop In
+	 * 35 Deck B Loop Out
+	 * 36 Deck B Flux
+	 */
+	dev->lights[28] = 0xff;
+
+	memset(dev->deck_lights, 0, NI_KONTROL_S2_LED_COUNT);
+	/* dec A cue1 RGB, cue2 rgb ...
+	 * dec B cue1 RGB, cue2 rgb ...
+	 * deck A shift (brightness) 24
+	 *	  sync 25
+	 *	  cue 26
+	 *	  play 27
+	 * deck B shift (brightness) 28
+	 *	  sync 29
+	 *	  cue 30
+	 *	  play 31
+	 */
+	//dev->deck_lights[32] = 0xff;
+
 	dev->lights_dirty = 1;
 	return ;
 
@@ -302,8 +358,6 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	/* all normal single-colour (brightness) leds */
 	dev->lights_interface = 0x80;
-	/* Cue / Remix slots, shift0sync-cue-play for both decks */
-	//dev->lights_interface = 0x81;
 
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
@@ -312,6 +366,18 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	if(ret < 0) {
 		//printf("%s write failed!\n", __func__);
 	}
+
+	/* Cue / Remix slots, shift0sync-cue-play for both decks */
+	data = &dev->deck_lights_interface;
+	dev->deck_lights_interface = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     NI_KONTROL_S2_LED_COUNT+1);
+	if(ret < 0) {
+		//printf("%s write failed!\n", __func__);
+	}
+
 }
 
 static int32_t
