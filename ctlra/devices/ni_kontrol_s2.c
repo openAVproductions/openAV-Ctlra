@@ -468,7 +468,7 @@ ni_kontrol_s2_disconnect(struct ctlra_dev_t *base)
 }
 
 struct ctlra_dev_t *
-ni_kontrol_s2_connect(ctlra_event_func event_func,
+ctlra_ni_kontrol_s2_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
 {
 	(void)future;
