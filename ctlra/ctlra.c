@@ -26,6 +26,8 @@ struct ctlra_dev_connect_func_t {
 CTLRA_DEVICE_DECL(ni_kontrol_d2);
 CTLRA_DEVICE_DECL(ni_kontrol_z1);
 CTLRA_DEVICE_DECL(ni_kontrol_f1);
+CTLRA_DEVICE_DECL(ni_kontrol_f1);
+CTLRA_DEVICE_DECL(ni_kontrol_s2);
 CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_jam);
@@ -36,6 +38,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
 	{0x17cc, 0x1210, CTLRA_DEVICE_FUNC(ni_kontrol_z1)},
 	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
+	{0x17cc, 0x1320, CTLRA_DEVICE_FUNC(ni_kontrol_s2)},
 	{0x17cc, 0x1220, CTLRA_DEVICE_FUNC(ni_kontrol_x1_mk2)},
 	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
 	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
