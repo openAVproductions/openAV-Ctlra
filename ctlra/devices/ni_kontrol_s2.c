@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, OpenAV Productions,
+ * Copyright (c) 2017, OpenAV Productions,
  * Harry van Haaren <harryhaaren@gmail.com>
  * All rights reserved.
  *
@@ -80,11 +80,63 @@ static const char *ni_kontrol_s2_names_sliders[] = {
 				    sizeof(ni_kontrol_s2_names_sliders[0]))
 
 static const char *ni_kontrol_s2_names_buttons[] = {
-	"Headphones Cue A",
-	"Headphones Cue B",
-	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
+	"Play (R)",
+	"Cue (R)",
+	"Sync (R)",
+	"Shift (R)",
+	"Cue 4 (R)",
+	"Cue 3 (R)",
+	"Cue 2 (R)",
+	"Cue 1 (R)",
+
+	"Jog Wheel Press (L)",
+	"Jog Wheel Press (R)",
+	"Main/Booth Switch",
+	"Mic Engage",
+	"Mixer Cue (R)",
+	"Flux (R)",
+	"Loop In (R)",
+	"Loop Out (R)",
+
+	"Play (L)",
+	"Cue (L)",
+	"Sync (L)",
+	"Shift (L)",
+	"Cue 4 (L)",
+	"Cue 3 (L)",
+	"Cue 2 (L)",
+	"Cue 1 (L)",
+
+	"Remix On B",
+	"Remix On A",
+	"Browse Load B",
+	"Browse Load A",
+	"Mixer Cue (L)",
+	"Flux (L)",
+	"Loop In (L)",
+	"Loop Out (L)",
+
+	"FX2 Dry/Wet",
+	"FX2 3",
+	"FX2 2",
+	"FX2 1",
+	"Gain Press (L)",
+	"Gain Press (R)",
+
+	"Mixer FX 2 (R)",
+	"Mixer FX 1 (R)",
+	"Mixer FX 2 (L)",
+	"Mixer FX 1 (L)",
+	"FX1 Dry/Wet",
+	"FX1 3",
+	"FX1 2",
+	"FX1 1",
+
+	"Left Encoder Press (L)",
+	"Right Encoder Press (L)",
+	"Browse Encoder Press",
+	"Left Encoder Press (R)",
+	"Right Encoder Press (R)",
 };
 #define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_names_buttons) /\
 				    sizeof(ni_kontrol_s2_names_buttons[0]))
@@ -120,11 +172,65 @@ static const struct ni_kontrol_s2_ctlra_t sliders[] = {
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
 static const struct ni_kontrol_s2_ctlra_t buttons[] = {
-	{NI_KONTROL_S2_BTN_CUE_A  , 29, 0x10},
-	{NI_KONTROL_S2_BTN_CUE_B  , 29, 0x1},
-	{NI_KONTROL_S2_BTN_MODE   , 29, 0x2},
-	{NI_KONTROL_S2_BTN_FX_ON_L, 29, 0x4},
-	{NI_KONTROL_S2_BTN_FX_ON_R, 29, 0x8},
+	{NI_KONTROL_S2_BTN_DECKB_PLAY , 9, 0x01},
+	{NI_KONTROL_S2_BTN_DECKB_CUE  , 9, 0x02},
+	{NI_KONTROL_S2_BTN_DECKB_SYNC , 9, 0x04},
+	{NI_KONTROL_S2_BTN_DECKB_SHIFT, 9, 0x08},
+	{NI_KONTROL_S2_BTN_DECKB_CUE_4, 9, 0x10},
+	{NI_KONTROL_S2_BTN_DECKB_CUE_3, 9, 0x20},
+	{NI_KONTROL_S2_BTN_DECKB_CUE_2, 9, 0x40},
+	{NI_KONTROL_S2_BTN_DECKB_CUE_1, 9, 0x80},
+
+	{NI_KONTROL_S2_BTN_DECKA_JOG_PRESS  , 10, 0x01},
+	{NI_KONTROL_S2_BTN_DECKB_JOG_PRESS  , 10, 0x02},
+	{NI_KONTROL_S2_BTN_MAIN_BOOTH_SWITCH, 10, 0x04},
+	{NI_KONTROL_S2_BTN_MIC_ENGAGE       , 10, 0x08},
+	{NI_KONTROL_S2_BTN_DECKB_MIXER_CUE  , 10, 0x10},
+	{NI_KONTROL_S2_BTN_DECKB_FLUX       , 10, 0x20},
+	{NI_KONTROL_S2_BTN_DECKB_LOOP_IN    , 10, 0x40},
+	{NI_KONTROL_S2_BTN_DECKB_LOOP_OUT   , 10, 0x80},
+
+	{NI_KONTROL_S2_BTN_DECKA_PLAY , 11, 0x01},
+	{NI_KONTROL_S2_BTN_DECKA_CUE  , 11, 0x02},
+	{NI_KONTROL_S2_BTN_DECKA_SYNC , 11, 0x04},
+	{NI_KONTROL_S2_BTN_DECKA_SHIFT, 11, 0x08},
+	{NI_KONTROL_S2_BTN_DECKA_CUE_4, 11, 0x10},
+	{NI_KONTROL_S2_BTN_DECKA_CUE_3, 11, 0x20},
+	{NI_KONTROL_S2_BTN_DECKA_CUE_2, 11, 0x40},
+	{NI_KONTROL_S2_BTN_DECKA_CUE_1, 11, 0x80},
+
+	{NI_KONTROL_S2_BTN_REMIX_ON_B     , 12, 0x01},
+	{NI_KONTROL_S2_BTN_REMIX_ON_A     , 12, 0x02},
+	{NI_KONTROL_S2_BTN_BROWSE_LOAD_B  , 12, 0x04},
+	{NI_KONTROL_S2_BTN_BROWSE_LOAD_A  , 12, 0x08},
+	{NI_KONTROL_S2_BTN_DECKB_MIXER_CUE, 12, 0x10},
+	{NI_KONTROL_S2_BTN_DECKB_FLUX     , 12, 0x20},
+	{NI_KONTROL_S2_BTN_DECKB_LOOP_IN  , 12, 0x40},
+	{NI_KONTROL_S2_BTN_DECKB_LOOP_OUT , 12, 0x80},
+
+	/* waste */
+	/* waste */
+	{NI_KONTROL_S2_BTN_FX2_DRY_WET     , 13, 0x04},
+	{NI_KONTROL_S2_BTN_FX2_3           , 13, 0x08},
+	{NI_KONTROL_S2_BTN_FX2_2           , 13, 0x10},
+	{NI_KONTROL_S2_BTN_FX2_1           , 13, 0x20},
+	{NI_KONTROL_S2_BTN_DECKA_GAIN_PRESS, 13, 0x40},
+	{NI_KONTROL_S2_BTN_DECKA_GAIN_PRESS, 13, 0x80},
+
+	{NI_KONTROL_S2_BTN_MIXER_B_FX2, 14, 0x01},
+	{NI_KONTROL_S2_BTN_MIXER_B_FX1, 14, 0x02},
+	{NI_KONTROL_S2_BTN_MIXER_A_FX2, 14, 0x04},
+	{NI_KONTROL_S2_BTN_MIXER_A_FX1, 14, 0x08},
+	{NI_KONTROL_S2_BTN_FX2_DRY_WET, 14, 0x10},
+	{NI_KONTROL_S2_BTN_FX2_3      , 14, 0x20},
+	{NI_KONTROL_S2_BTN_FX2_2      , 14, 0x40},
+	{NI_KONTROL_S2_BTN_FX2_1      , 14, 0x80},
+
+	{NI_KONTROL_S2_BTN_DECKA_LEFT_ENCODER_PRESS , 15, 0x01},
+	{NI_KONTROL_S2_BTN_DECKA_RIGHT_ENCODER_PRESS, 15, 0x02},
+	{NI_KONTROL_S2_BTN_BROWSE_ENCODER_PRESS     , 15, 0x04},
+	{NI_KONTROL_S2_BTN_DECKB_LEFT_ENCODER_PRESS , 15, 0x08},
+	{NI_KONTROL_S2_BTN_DECKB_RIGHT_ENCODER_PRESS, 15, 0x10},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -189,6 +295,7 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 
 	switch(size) {
 	case 17: { /* buttons and jog wheels */
+#if 0
 #define RESET  "\x1B[0m"
 #define GREEN  "\x1B[32m"
 		static uint8_t array[17];
@@ -197,78 +304,33 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				printf(GREEN);
 			printf("%02x %s", buf[16 - i], RESET);
 			array[i] = buf[16-i];
-
-#ifdef NOPE
-static const struct ni_kontrol_s2_ctlra_t buttons[] = {
-	{0  , 9, 0x01},
-
-#endif
-
-			/* buf[9] is the start of buttons
-			 * [ 9]	dB	0x01 play
-			 *		0x02 cue
-			 *		0x04 sync
-			 *		0x08 shift
-			 * [ 9] dB	0x10 cue 4
-			 *		0x20 cue 3
-			 *		0x40 cue 2
-			 *		0x80 cue 1
-			 *
-			 * [10] dB	0x10 deckA jog press
-			 *		0x20 deckB jog press
-			 *		0x40 Main/Booth switch (off = booth)
-			 *		0x80 "Mic Engage"
-			 * [10] dB	0x10 mixer cue
-			 *		0x20 deck flux
-			 *		0x40 loop in
-			 *		0x80 loop out
-			 *
-			 * [11]	dB	0x01 play
-			 *		0x02 cue
-			 *		0x04 sync
-			 *		0x08 shift
-			 * [11] dB	0x10 cue 4
-			 *		0x20 cue 3
-			 *		0x40 cue 2
-			 *		0x80 cue 1
-			 *
-			 * [12]		0x01 Remix On B
-			 *		0x02 Remix on A
-			 *		0x04 Browse Load B
-			 *		0x08 Browse Load A
-			 * [12] dA	0x10 mixer cue
-			 *		0x20 deck flux
-			 *		0x40 loop in
-			 *		0x80 loop out
-			 *
-			 * [13]		0x01 nop?
-			 *		0x02 nop?
-			 *		0x04 deck B FX Dry Wet
-			 *		0x08 deck B FX 3
-			 * [13]		0x10 deck B FX 2
-			 *		0x20 deck B FX 1
-			 *		0x40 deck A gain press
-			 *		0x80 deck B gain press
-			 *
-			 * [14]		0x01 mixer B FX 2
-			 *		0x02 mixer B FX 1
-			 *		0x04 mixer A FX 2
-			 *		0x08 mixer A FX 1
-			 * [14]		0x10 deck A FX Dry Wet
-			 *		0x20        FX 3
-			 *		0x40        FX 2
-			 *		0x80        FX 1
-			 *
-			 * [15]		0x01 dA encoder press (L)
-			 *		0x02 dA encoder press (R)
-			 *		0x04 browse encoder press
-			 *		0x08 dB encoder press (L)
-			 *		0x01 dB encoder press (L)
-			 */
 		}
 		printf("\n");
-		//printf("%d %d\n", buf[1], buf[5]);
+#endif
+		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+			int id     = i;
+			int offset = buttons[i].buf_byte_offset;
+			int mask   = buttons[i].mask;
+
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			int value_idx = SLIDERS_SIZE + i;
+
+			if(dev->hw_values[value_idx] != v) {
+				dev->hw_values[value_idx] = v;
+
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button  = {
+						.id = id,
+						.pressed = v > 0},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
 		} break;
+
 	case 51: { /* sliders dials and pitch */
 		for(int i = 0; i < 51; i++) {
 			printf("%02x", buf[51 - i]);
@@ -306,30 +368,6 @@ static const struct ni_kontrol_s2_ctlra_t buttons[] = {
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
-			}
-		}
-		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-			int id     = i;
-			int offset = buttons[i].buf_byte_offset;
-			int mask   = buttons[i].mask;
-
-			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-			int value_idx = SLIDERS_SIZE + i;
-
-			if(dev->hw_values[value_idx] != v) {
-				dev->hw_values[value_idx] = v;
-
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_BUTTON,
-					.button  = {
-						.id = id,
-						.pressed = v > 0},
-				};
-				struct ctlra_event_t *e = {&event};
-				/*
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-				*/
 			}
 		}
 		break;
