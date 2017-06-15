@@ -236,7 +236,10 @@ static const struct ni_kontrol_s2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-#define NI_KONTROL_S2_LED_COUNT 64
+/* 36 LEDs on top half - all brightness only */
+#define LED_COUNT 64
+/* 8 cue buttons with RGB each, 8 brightness only */
+#define LED_DECK_COUNT (8*3 + 8)
 
 /* Represents the the hardware device */
 struct ni_kontrol_s2_t {
@@ -248,10 +251,10 @@ struct ni_kontrol_s2_t {
 	uint8_t lights_dirty;
 
 	uint8_t lights_interface;
-	uint8_t lights[NI_KONTROL_S2_LED_COUNT];
+	uint8_t lights[LED_COUNT];
 
 	uint8_t deck_lights_interface;
-	uint8_t deck_lights[16*3]; // TODO: *3 for rgb
+	uint8_t deck_lights[LED_DECK_COUNT];
 };
 
 static const char *
@@ -380,81 +383,27 @@ static void ni_kontrol_s2_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_status)
 {
 	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
-	int ret;
 
-	if(!dev || light_id > NI_KONTROL_S2_LED_COUNT)
-		return;
+	const uint32_t bright = (light_status >> 24) & 0x7F * 2;
 
-	memset(dev->lights, 0, NI_KONTROL_S2_LED_COUNT);
-	/* 0 to 4 level A: -15, -6 0, +3 +6,
-	 * 5 to 9 level B: "
-	 *
-	 * 10 FX dry wet
-	 * 11 fx 1
-	 * 12 fx 2
-	 * 13 fx 3
-	 *
-	 * 14 Mixer A FX 1
-	 * 15 Mixer A FX 2
-	 * 16 Mixer B FX 1
-	 * 17 Mixer B FX 2
-	 *
-	 * 18 FX dry wet
-	 * 19 fx 1
-	 * 20 fx 2
-	 * 21 fx 3
-	 *
-	 * 22 Remix On A
-	 *    Remix On B
-	 * 24 Browse Load A
-	 *    Browse Load B
-	 * 26 CUE A
-	 * 27 Mixer Warning
-	 * 28 Mixer USB Connection
-	 *  ANALOG MIC - Requires audio to be running?
-	 * 30 CUE B
-	 *
-	 * 31 Deck A Flux 
-	 * 32 Deck A Loop In
-	 * 33 Deck A Loop Out
-	 *
-	 * 34 Deck B Loop In
-	 * 35 Deck B Loop Out
-	 * 36 Deck B Flux
-	 */
-	dev->lights[28] = 0xff;
+	if(light_id < 36)
+		dev->lights[light_id] = bright;
 
-	memset(dev->deck_lights, 0, NI_KONTROL_S2_LED_COUNT);
-	/* dec A cue1 RGB, cue2 rgb ...
-	 * dec B cue1 RGB, cue2 rgb ...
-	 * deck A shift (brightness) 24
-	 *	  sync 25
-	 *	  cue 26
-	 *	  play 27
-	 * deck B shift (brightness) 28
-	 *	  sync 29
-	 *	  cue 30
-	 *	  play 31
-	 */
-	//dev->deck_lights[32] = 0xff;
+	/* 36 to 43 is Cue buttons, RGB each */
+	if(light_id >= 36 && light_id < 44) {
+		uint32_t over_36 = light_id - 36;
+		uint8_t r = (light_status >> 16) & 0xff;
+		uint8_t g = (light_status >>  8) & 0xff;
+		uint8_t b = (light_status >>  0) & 0xff;
+		dev->deck_lights[over_36*2+light_id - 36] = r;
+		dev->deck_lights[over_36*2+light_id - 35] = g;
+		dev->deck_lights[over_36*2+light_id - 34] = b;
+	}
+	if(light_id >= 44 && light_id < 52)
+		dev->deck_lights[light_id - 36 + 16] = bright;
 
 	dev->lights_dirty = 1;
 	return ;
-
-	/* write brighness to all LEDs */
-	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
-
-	/* FX ON buttons have orange and blue */
-	if(light_id == NI_KONTROL_S2_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_S2_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
-	}
-
-	dev->lights_dirty = 1;
 }
 
 void
@@ -472,7 +421,7 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     NI_KONTROL_S2_LED_COUNT+1);
+						     LED_COUNT+1);
 	if(ret < 0) {
 		//printf("%s write failed!\n", __func__);
 	}
@@ -483,7 +432,7 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     NI_KONTROL_S2_LED_COUNT+1);
+						     LED_DECK_COUNT+1);
 	if(ret < 0) {
 		//printf("%s write failed!\n", __func__);
 	}
@@ -496,7 +445,8 @@ ni_kontrol_s2_disconnect(struct ctlra_dev_t *base)
 	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
 
 	/* Turn off all lights */
-	memset(dev->lights, 0, NI_KONTROL_S2_LED_COUNT);
+	memset(dev->lights     , 0, LED_COUNT);
+	memset(dev->deck_lights, 0, LED_DECK_COUNT);
 	if(!base->banished)
 		ni_kontrol_s2_light_flush(base, 1);
 
