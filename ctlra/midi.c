@@ -3,6 +3,9 @@
 
 #include <alsa/asoundlib.h>
 
+/* for snd_seq_port_info_alloca() macro expansion */
+#include <alloca.h>
+
 struct ctlra_midi_t {
 	snd_seq_t *seq;
 	snd_midi_event_t *encoder;
