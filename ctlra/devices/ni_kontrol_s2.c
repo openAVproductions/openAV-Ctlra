@@ -247,6 +247,8 @@ struct ni_kontrol_s2_t {
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
+	uint8_t jog_wheels[2];
+	uint32_t jog_wheels_value[2];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
@@ -310,6 +312,38 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		}
 		printf("\n");
 #endif
+
+		static float jog[2];
+		const uint8_t jog_offset[2] = {1, 5};
+		for(int i = 0; i < 2; i++) {
+			uint8_t new_pos = buf[jog_offset[i]];
+			if(new_pos != dev->jog_wheels[i]) {
+				int32_t diff = new_pos - dev->jog_wheels[i];
+
+				if(new_pos < 10 && dev->jog_wheels[i] > 245)
+					dev->jog_wheels_value[i] += 255;
+				if(new_pos > 10 && dev->jog_wheels[i] < 245)
+					dev->jog_wheels_value[i] -= 255;
+
+				dev->jog_wheels_value[i] += diff;
+
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_ENCODER,
+					.encoder  = {
+						/* TODO: #define the encoder numbers */
+						.id = 0,
+						.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
+						.delta_float = ((diff + (dev->jog_wheels_value[i] % 1024)) / 4.f),
+					}
+				};
+				struct ctlra_event_t *e = {&event};
+				//dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
+				printf("encoder %d: value = %f, total %d\n", i, event.encoder.delta_float, dev->jog_wheels_value[i]);
+				dev->jog_wheels[i] = new_pos;
+
+			}
+		}
+
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 			int id     = i;
 			int offset = buttons[i].buf_byte_offset;
