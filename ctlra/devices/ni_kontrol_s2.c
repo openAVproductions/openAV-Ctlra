@@ -51,6 +51,13 @@ struct ni_kontrol_s2_ctlra_t {
 	uint32_t mask;
 };
 
+static const char *ni_kontrol_s2_names_encoders[] = {
+	"Jog Wheel (L)",
+	"Jog Wheel (R)",
+};
+#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_names_encoders) /\
+				    sizeof(ni_kontrol_s2_names_encoders[0]))
+
 static const char *ni_kontrol_s2_names_sliders[] = {
 	"Crossfader",
 	"Pitch (L)",
@@ -248,7 +255,9 @@ struct ni_kontrol_s2_t {
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 	uint8_t jog_wheels[2];
-	uint32_t jog_wheels_value[2];
+	uint8_t jog_wheels_value[2];
+	uint32_t jog_wheels_quadrant[2];
+	uint32_t jog_wheels_1024_value[2];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
@@ -268,6 +277,11 @@ ni_kontrol_s2_control_get_name(enum ctlra_event_type_t type,
 		if(control >= CONTROL_NAMES_SLIDERS_SIZE)
 			return 0;
 		return ni_kontrol_s2_names_sliders[control];
+	case CTLRA_EVENT_ENCODER:
+		if(control >= CONTROL_NAMES_ENCODERS_SIZE)
+			return 0;
+		return ni_kontrol_s2_names_encoders[control];
+
 	case CTLRA_EVENT_BUTTON:
 		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
 			return 0;
@@ -300,47 +314,45 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 
 	switch(size) {
 	case 17: { /* buttons and jog wheels */
-#if 0
-#define RESET  "\x1B[0m"
-#define GREEN  "\x1B[32m"
-		static uint8_t array[17];
-		for(int i = 0; i < 17; i++) {
-			if(array[i] != buf[16-i])
-				printf(GREEN);
-			printf("%02x %s", buf[16 - i], RESET);
-			array[i] = buf[16-i];
-		}
-		printf("\n");
-#endif
-
-		static float jog[2];
 		const uint8_t jog_offset[2] = {1, 5};
 		for(int i = 0; i < 2; i++) {
+			/* Algorithm works, but can be improved for readability and
+			 * efficiency. PRs welcome :) */
 			uint8_t new_pos = buf[jog_offset[i]];
 			if(new_pos != dev->jog_wheels[i]) {
+				/* detect 255 based wrap */
 				int32_t diff = new_pos - dev->jog_wheels[i];
-
-				if(new_pos < 10 && dev->jog_wheels[i] > 245)
-					dev->jog_wheels_value[i] += 255;
-				if(new_pos > 10 && dev->jog_wheels[i] < 245)
-					dev->jog_wheels_value[i] -= 255;
+				dev->jog_wheels_quadrant[i] -= (diff > 200);
+				dev->jog_wheels_quadrant[i] += (diff < -200);
 
 				dev->jog_wheels_value[i] += diff;
+
+				/* calculate 1024 based "full circle" value */
+				int nv = (255 * (dev->jog_wheels_quadrant[i] % 4))
+					+ dev->jog_wheels_value[i];
+				dev->jog_wheels[i] = new_pos;
+
+				int delta_1024 = dev->jog_wheels_1024_value[i] - nv;
+				dev->jog_wheels_1024_value[i] = nv;
+
+				/* handle 1024 based value wrap */
+				if(delta_1024 > 800)
+					delta_1024 -= 1024;
+				if(delta_1024 < -800)
+					delta_1024 += 1024;
+
+				float delta_01 = delta_1024 / 1024.f;
 
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_ENCODER,
 					.encoder  = {
-						/* TODO: #define the encoder numbers */
-						.id = 0,
+						.id = i,
 						.flags = CTLRA_EVENT_ENCODER_FLAG_FLOAT,
-						.delta_float = ((diff + (dev->jog_wheels_value[i] % 1024)) / 4.f),
+						.delta_float = -delta_01,
 					}
 				};
 				struct ctlra_event_t *e = {&event};
-				//dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
-				printf("encoder %d: value = %f, total %d\n", i, event.encoder.delta_float, dev->jog_wheels_value[i]);
-				dev->jog_wheels[i] = new_pos;
-
+				dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
 			}
 		}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, OpenAV Productions,
+ * Copyright (c) 2017, OpenAV Productions,
  * Harry van Haaren <harryhaaren@gmail.com>
  * All rights reserved.
  *
@@ -65,6 +65,12 @@ enum NI_KONTROL_S2_LEDS {
 	NI_KONTROL_S2_LED_UNUSED_2,	/* blue */
 
 	//NI_KONTROL_S2_LED_COUNT,
+};
+
+enum NI_KONTROL_S2_ENCODERS {
+	NI_KONTROL_S2_ENCODER_JOG_WHEEL_LEFT = 0,
+	NI_KONTROL_S2_ENCODER_JOG_WHEEL_RIGHT = 1,
+	/* TODO: add other encoders */
 };
 
 enum NI_KONTROL_S2_SLIDERS {
@@ -150,6 +156,8 @@ enum NI_KONTROL_S2_BUTTONS {
 	NI_KONTROL_S2_BTN_DECKB_LEFT_ENCODER_PRESS,
 	NI_KONTROL_S2_BTN_DECKB_RIGHT_ENCODER_PRESS,
 };
+
+
 
 #if 0
 
