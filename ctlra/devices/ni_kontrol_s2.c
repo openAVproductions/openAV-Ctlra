@@ -243,6 +243,8 @@ static const struct ni_kontrol_s2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+#define ENCODER_COUNT 7
+
 /* 36 LEDs on top half - all brightness only */
 #define LED_COUNT 64
 /* 8 cue buttons with RGB each, 8 brightness only */
@@ -258,6 +260,8 @@ struct ni_kontrol_s2_t {
 	uint8_t jog_wheels_value[2];
 	uint32_t jog_wheels_quadrant[2];
 	uint32_t jog_wheels_1024_value[2];
+	/* current values for stepped encoders */
+	uint8_t encoder_values[ENCODER_COUNT];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
@@ -382,23 +386,31 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 
 	case 51: { /* sliders dials and pitch */
 		for(int i = 0; i < 51; i++) {
-			printf("%02x", buf[51 - i]);
+			printf("%02x ", buf[51 - i]);
 			/* if(i % 4 == 0) printf(" ");*/
 		}
 		printf("\n");
-		/*
-		uint16_t *v = &buf[5];
+
 		struct ctlra_event_t event = {
-			.type = CTLRA_EVENT_SLIDER,
-			.slider  = {
-				.id = 0,
-				.value = *v / 4096.f},
+			.type = CTLRA_EVENT_ENCODER,
+			.encoder = {
+				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+			},
 		};
-		struct ctlra_event_t *e = {&event};
-		dev->base.event_func(&dev->base, 1, &e,
-				     dev->base.event_func_userdata);
-		break;
-		*/
+		for(uint32_t i = 0; i < 1; i++) {
+			uint8_t v = buf[1+i] & 0xf;
+			int m = ctlra_dev_encoder_wrap_16(v, dev->encoder_values[i]);
+			/* +2 offset for jog wheels on 0,1 */
+			event.encoder.id = i + 2;
+			event.encoder.delta = m;
+
+			if(v != dev->encoder_values[i]) {
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				dev->encoder_values[i] = v;
+			}
+		}
 
 		for(uint32_t i = 0; i < SLIDERS_SIZE; i++) {
 			int id     = i;
