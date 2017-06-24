@@ -54,6 +54,13 @@ struct ni_kontrol_s2_ctlra_t {
 static const char *ni_kontrol_s2_names_encoders[] = {
 	"Jog Wheel (L)",
 	"Jog Wheel (R)",
+	"Left Encoder (L)",
+	"Right Encoder (L)",
+	"Browse Encoder",
+	"Left Encoder (R)",
+	"Right Encoder (R)",
+	"Gain Encoder (L)",
+	"Gain Encoder (R)",
 };
 #define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_names_encoders) /\
 				    sizeof(ni_kontrol_s2_names_encoders[0]))
@@ -397,8 +404,14 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
 			},
 		};
-		for(uint32_t i = 0; i < 1; i++) {
-			uint8_t v = buf[1+i] & 0xf;
+
+		for(uint32_t i = 0; i < ENCODER_COUNT; i++) {
+			uint8_t v;
+			if(i % 2 == 0)
+				v =  buf[1+i/2] & 0x0f;
+			else
+				v = (buf[1+i/2] & 0xf0) >> 4;
+
 			int m = ctlra_dev_encoder_wrap_16(v, dev->encoder_values[i]);
 			/* +2 offset for jog wheels on 0,1 */
 			event.encoder.id = i + 2;
