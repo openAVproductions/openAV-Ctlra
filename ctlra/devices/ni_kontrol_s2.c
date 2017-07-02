@@ -392,12 +392,6 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		} break;
 
 	case 51: { /* sliders dials and pitch */
-		for(int i = 0; i < 51; i++) {
-			printf("%02x ", buf[51 - i]);
-			/* if(i % 4 == 0) printf(" ");*/
-		}
-		printf("\n");
-
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_ENCODER,
 			.encoder = {
