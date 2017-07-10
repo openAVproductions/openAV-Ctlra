@@ -481,7 +481,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
                                        uint32_t size)
 {
 	int transferred;
-	const uint32_t timeout = 100;
+	const uint32_t timeout = 1000;
 
 #if 1
 	struct libusb_transfer *xfr;
@@ -498,14 +498,14 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	memcpy(usb_data, data, size);
 
 	libusb_fill_interrupt_transfer(xfr,
-				  dev->usb_interface[idx], /* dev handle */
-	                          endpoint,
-	                          usb_data,
-	                          size,
-	                          ctlra_usb_xfr_write_done_cb,
-	                          dev, /* userdata - pass dev so we can banish
-					  it if required */
-	                          1000 /* timeout */);
+				       dev->usb_interface[idx],
+				       endpoint,
+				       usb_data,
+				       size,
+				       ctlra_usb_xfr_write_done_cb,
+				       dev, /* userdata - pass dev to
+					       banish it if required */
+				       timeout);
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
 		free(usb_data);
