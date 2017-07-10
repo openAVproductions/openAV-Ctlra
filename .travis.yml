@@ -1,0 +1,18 @@
+sudo: required
+language: c
+
+script:
+  - sudo apt-get install libasound2-dev libusb-1.0-0-dev libjack-dev libsndfile-dev
+  - mkdir build
+  - cd build
+  - cmake ..
+
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#openav"
+    template:
+      - "%{repository_name} %{commit_message} %{compare_url} %{build_url}"
+    use_notice: true
+    skip_join: true

@@ -29,7 +29,7 @@ include_directories( "." )
 
 ADD_LIBRARY(ctlra STATIC ${sources} )
 
-target_include_directories(ctlra PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries( ctlra  ${USB_LIBRARIES}        )
 target_link_libraries( ctlra  ${ALSA_LIBRARIES}       )

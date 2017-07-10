@@ -20,7 +20,9 @@ web-browser because you can...
 Usage
 -----
 
-Download the source-code, compile using cmake:
+[![Build Status](https://travis-ci.org/openAVproductions/openAV-Ctlra.svg?branch=master)](https://travis-ci.org/openAVproductions/openAV-Ctlra)
+
+Download the source-code, compile using cmake!
 ```
 mkdir build
 cd build
