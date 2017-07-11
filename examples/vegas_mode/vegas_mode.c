@@ -80,7 +80,6 @@ int main(int argc, char** argv)
 
 	struct dummy_data dummy;
 	memset(&dummy, 0, sizeof(struct dummy_data));
-	void *future = 0x0;
 
 	if(argc > 1) {
 		dummy.print_events = 1;

@@ -505,7 +505,6 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
-	static uint32_t counter;
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
 						USB_ENDPOINT_SCREEN_WRITE,
 						(uint8_t *)&dev->screen_blit,

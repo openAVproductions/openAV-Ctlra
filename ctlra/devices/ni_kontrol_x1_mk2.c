@@ -230,7 +230,6 @@ ni_kontrol_x1_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	uint8_t buf[1024];
-	int handle_idx = 0;
 
 	/* calls into usb_read_cb below if data is available */
 	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
