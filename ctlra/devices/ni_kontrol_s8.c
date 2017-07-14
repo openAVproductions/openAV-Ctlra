@@ -369,10 +369,21 @@ void ni_kontrol_s8_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
 {
 	printf("%s : size = %d\n", __func__, size);
-	for(int i = 0; i < size; i++) {
-		printf("%02x ", data[i]);
+	if(size > 1024) {
+		printf("size > 1024, returning\n");
+		return;
 	}
-	printf("\n");
+
+#define GREEN "\x1b[32m"
+#define RESET "\x1b[0m"
+
+	static uint8_t old[1024];
+	for(int i = 0; i < size; i++) {
+		int same = (old[i] == data[i]);
+		printf("%s%02x%s ", same ? RESET : GREEN, data[i], RESET);
+		old[i] = data[i];
+	}
+	printf("%s\n", RESET);
 	return;
 
 #if 0
