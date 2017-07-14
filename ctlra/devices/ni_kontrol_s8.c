@@ -761,7 +761,7 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 		goto fail;
 	}
 
-	printf("%s: Connected!\n", __func__);
+	printf("%s: Connected! usb_open() success\n", __func__);
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 	                                        USB_INTERFACE_BTNS,
@@ -770,6 +770,8 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 		printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
+
+	printf("%s: Connected! open_interface success\n", __func__);
 
 #if 0
 	/* NOT SUPPORTED - working on input first */
@@ -804,6 +806,8 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	printf("%s: Connected! connect() returning %p\n", __func__, dev);
 
 	return (struct ctlra_dev_t *)dev;
 fail:

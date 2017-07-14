@@ -210,7 +210,7 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 			printf("failed to get device descriptor");
 			goto fail;
 		}
-#if 0
+#if 1
 		printf("%04x:%04x (serial %d) (bus %d, device %d)",
 		       desc.idVendor, desc.idProduct, desc.iSerialNumber,
 		       libusb_get_bus_number(dev),
