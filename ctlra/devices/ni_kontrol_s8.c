@@ -54,7 +54,9 @@
 #define NI_VENDOR                 (0x17cc)
 #define NI_KONTROL_S8             (0x1370)
 
-#define USB_INTERFACE_BTNS        (0x5)
+/* trial-and-error: although iface is 0x5 it fails, while 0x0 works */
+#define USB_INTERFACE_BTNS        (0x0)
+
 #define USB_ENDPOINT_BTNS_READ    (0x84)
 #define USB_ENDPOINT_BTNS_WRITE   (0x03)
 
