@@ -33,6 +33,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "ni_kontrol_s8.h"
 
@@ -63,6 +66,13 @@
 //#define USB_INTERFACE_SCREEN      (0x1)
 //#define USB_ENDPOINT_SCREEN_WRITE (0x2)
 #endif
+
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
 
 /* This struct is a generic struct to identify hw controls */
 struct ni_kontrol_s8_ctlra_t {
@@ -298,6 +308,10 @@ struct s8_screen_blit {
 struct ni_kontrol_s8_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
+
+	/* fd for /dev/hidraw mode */
+	int fd;
+
 	/* current value of each controller is stored here */
 	float hw_values[CONTROLS_SIZE];
 
@@ -354,6 +368,9 @@ ni_kontrol_s8_control_get_name(enum ctlra_event_type_t type,
 	return ret;
 }
 
+void ni_kontrol_s8_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+				uint8_t *data, uint32_t size);
+
 static uint32_t ni_kontrol_s8_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_s8_t *dev = (struct ni_kontrol_s8_t *)base;
@@ -361,9 +378,23 @@ static uint32_t ni_kontrol_s8_poll(struct ctlra_dev_t *base)
 	uint8_t buf[BUF_SIZE];
 	int handle_idx = 0;
 
+#if 0
 	ctlra_dev_impl_usb_interrupt_read(base, handle_idx,
 					  USB_ENDPOINT_BTNS_READ,
 					  buf, BUF_SIZE);
+#else
+	int nbytes;
+	do {
+		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
+			break;
+		}
+		/* call read cb directly */
+		printf("hid read () got %d\n", nbytes);
+		ni_kontrol_s8_usb_read_cb(base, USB_ENDPOINT_BTNS_READ,
+					   buf, nbytes);
+	} while (nbytes > 0);
+#endif
+
 	return 0;
 }
 
@@ -716,12 +747,14 @@ ni_kontrol_s8_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
+#if 0
 	int ret = ctlra_dev_impl_usb_interrupt_write(&dev->base,
 	                USB_INTERFACE_BTNS,
 	                USB_ENDPOINT_BTNS_WRITE,
 	                data, LEDS_SIZE+1);
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
+#endif
 }
 
 static int32_t
@@ -736,7 +769,8 @@ ni_kontrol_s8_disconnect(struct ctlra_dev_t *base)
 		ni_kontrol_s8_screen_splash(base);
 	}
 
-	ctlra_dev_impl_usb_close(base);
+	close(dev->fd);
+	//ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -755,6 +789,50 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 	         "%s", "Kontrol S8");
 
+
+#if 1
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
+
+	int fd, i, res, found = 0;
+	char buf[256];
+	struct hidraw_devinfo info;
+
+	for(i = 0; i < 64; i++) {
+		const char *device = "/dev/hidraw";
+		snprintf(buf, sizeof(buf), "%s%d", device, i);
+		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
+		if(fd < 0)
+			continue;
+
+		memset(&info, 0x0, sizeof(info));
+		res = ioctl(fd, HIDIOCGRAWINFO, &info);
+
+		if (res < 0) {
+			perror("HIDIOCGRAWINFO");
+		} else {
+			if(info.vendor  == NI_VENDOR &&
+			   info.product == NI_KONTROL_S8) {
+				found = 1;
+				break;
+			}
+		}
+		close(fd);
+		/* continue searching next HID dev */
+	}
+
+	if(!found) {
+		free(dev);
+		return 0;
+	}
+
+	dev->fd = fd;
+	printf("s8 on fd %d\n", fd);
+#else
 	/* Open buttons / leds handle */
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_S8);
 	if(err) {
@@ -785,6 +863,8 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 		goto fail;
 	}
 #endif
+
+#endif /* libusb / /dev/hidrawX */
 
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] =
 		CONTROL_NAMES_SLIDER_SIZE;
