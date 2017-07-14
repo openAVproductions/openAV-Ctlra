@@ -51,16 +51,15 @@
 #define USB_INTERFACE_SCREEN      (0x1)
 #define USB_ENDPOINT_SCREEN_WRITE (0x2)
 #else
-/* TODO : rework these */
 #define NI_VENDOR                 (0x17cc)
 #define NI_KONTROL_S8             (0x1370)
 
-#define USB_INTERFACE_BTNS        (0x0)
-#define USB_ENDPOINT_BTNS_READ    (0x81)
-#define USB_ENDPOINT_BTNS_WRITE   (0x01)
+#define USB_INTERFACE_BTNS        (0x5)
+#define USB_ENDPOINT_BTNS_READ    (0x84)
+#define USB_ENDPOINT_BTNS_WRITE   (0x03)
 
-#define USB_INTERFACE_SCREEN      (0x1)
-#define USB_ENDPOINT_SCREEN_WRITE (0x2)
+//#define USB_INTERFACE_SCREEN      (0x1)
+//#define USB_ENDPOINT_SCREEN_WRITE (0x2)
 #endif
 
 /* This struct is a generic struct to identify hw controls */
@@ -369,6 +368,14 @@ static uint32_t ni_kontrol_s8_poll(struct ctlra_dev_t *base)
 void ni_kontrol_s8_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
 {
+	printf("%s : size = %d\n", __func__, size);
+	for(int i = 0; i < size; i++) {
+		printf("%02x ", data[i]);
+	}
+	printf("\n");
+	return;
+
+#if 0
 	struct ni_kontrol_s8_t *dev = (struct ni_kontrol_s8_t *)base;
 	uint8_t *buf = data;
 	switch(size) {
@@ -502,6 +509,7 @@ void ni_kontrol_s8_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		break;
 	} /* case 17 */
 	} /* switch */
+#endif
 }
 
 uint8_t *
@@ -523,6 +531,8 @@ ni_kontrol_s8_screen_splash(struct ctlra_dev_t *base)
 void
 ni_kontrol_s8_screen_blit(struct ctlra_dev_t *base)
 {
+	/* NOT SUPPORTED - working on input first */
+#if 0
 	struct ni_kontrol_s8_t *dev = (struct ni_kontrol_s8_t *)base;
 
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
@@ -531,12 +541,15 @@ ni_kontrol_s8_screen_blit(struct ctlra_dev_t *base)
 						sizeof(dev->screen_blit));
 	if(ret < 0)
 		printf("%s write failed!\n", __func__);
+#endif
 }
 
 int32_t
 ni_kontrol_s8_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
 			      uint32_t *bytes, uint8_t flush)
 {
+	/* NOT SUPPORTED - working on input first */
+#if 0
 	struct ni_kontrol_s8_t *dev = (struct ni_kontrol_s8_t *)base;
 	/* fill in out params */
 	*pixels = ni_kontrol_s8_screen_get_pixels(base);
@@ -544,7 +557,7 @@ ni_kontrol_s8_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
 
 	if(flush)
 		ni_kontrol_s8_screen_blit(base);
-
+#endif
 	return 0;
 }
 
@@ -732,7 +745,8 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 	/* Open buttons / leds handle */
 	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_S8);
 	if(err) {
-		//printf("%s: failed to open button usb interface\n", __func__);
+		printf("%s: failed to open usb interface %d\n",
+		       __func__, __LINE__);
 		goto fail;
 	}
 
@@ -742,17 +756,20 @@ ctlra_ni_kontrol_s8_connect(ctlra_event_func event_func,
 	                                        USB_INTERFACE_BTNS,
 	                                        USB_INTERFACE_BTNS);
 	if(err) {
-		//printf("%s: failed to open button usb interface\n", __func__);
+		printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
 	}
 
+#if 0
+	/* NOT SUPPORTED - working on input first */
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 	                                        USB_INTERFACE_SCREEN,
 	                                        USB_INTERFACE_SCREEN);
 	if(err) {
-		//printf("%s: failed to open screen usb interface\n", __func__);
+		printf("%s: failed to open screen usb interface\n", __func__);
 		goto fail;
 	}
+#endif
 
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] =
 		CONTROL_NAMES_SLIDER_SIZE;
