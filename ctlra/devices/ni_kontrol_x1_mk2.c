@@ -230,7 +230,6 @@ ni_kontrol_x1_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	uint8_t buf[1024];
-	int handle_idx = 0;
 
 	/* calls into usb_read_cb below if data is available */
 	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
@@ -422,7 +421,7 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol X2 Mk2");
+		 "%s", "Kontrol X1 Mk2");
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON]  = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = CONTROL_ENCODER_SIZE;

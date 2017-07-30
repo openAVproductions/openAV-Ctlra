@@ -67,7 +67,6 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 	unsigned char * data = cairo_image_surface_get_data(surface);
 	if(!data)
 		printf("error data == 0\n");
-	uint32_t data_idx = 0;
 
 	uint8_t *pixels = ni_kontrol_d2_screen_get_pixels(dev);
 	uint16_t *write_head = (uint16_t*)pixels;

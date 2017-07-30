@@ -313,24 +313,28 @@ static const char *
 ni_kontrol_d2_control_get_name(enum ctlra_event_type_t type,
                                uint32_t control)
 {
+	const char *ret = 0;
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		if(control >= CONTROL_NAMES_SLIDER_SIZE)
-			return 0;
-		return ni_kontrol_d2_slider_names[control];
+			break;
+		ret = ni_kontrol_d2_slider_names[control];
+		break;
 	case CTLRA_EVENT_BUTTON:
 		if(control >= CONTROL_NAMES_BUTTON_SIZE)
-			return 0;
-		return ni_kontrol_d2_button_names[control];
+			break;
+		ret = ni_kontrol_d2_button_names[control];
+		break;
 	case CTLRA_EVENT_ENCODER:
 		if(control >= CONTROL_NAMES_ENCODER_SIZE)
-			return 0;
-		return ni_kontrol_d2_encoder_names[control];
+			break;
+		ret = ni_kontrol_d2_encoder_names[control];
+		break;
 	default:
 		break;
 	};
 
-	return 0;
+	return ret;
 }
 
 static uint32_t ni_kontrol_d2_poll(struct ctlra_dev_t *base)
@@ -505,7 +509,6 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 
-	static uint32_t counter;
 	int ret = ctlra_dev_impl_usb_bulk_write(base, USB_INTERFACE_SCREEN,
 						USB_ENDPOINT_SCREEN_WRITE,
 						(uint8_t *)&dev->screen_blit,

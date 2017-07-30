@@ -158,7 +158,6 @@ static uint32_t ni_kontrol_f1_poll(struct ctlra_dev_t *base)
 #define BUF_SIZE 1024
 	uint8_t buf[BUF_SIZE];
 
-	int handle_idx = 0;
 	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 					  USB_ENDPOINT_READ, buf, BUF_SIZE);
 	return 0;

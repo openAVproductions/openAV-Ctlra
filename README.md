@@ -20,7 +20,10 @@ web-browser because you can...
 Usage
 -----
 
-Download the source-code, compile using cmake:
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/676339a2937046f28fdcd5697c1259c1)](https://www.codacy.com/app/harryhaaren/openAV-Ctlra?utm_source=github.com&utm_medium=referral&utm_content=openAVproductions/openAV-Ctlra&utm_campaign=badger)
+[![Build Status](https://travis-ci.org/openAVproductions/openAV-Ctlra.svg?branch=master)](https://travis-ci.org/openAVproductions/openAV-Ctlra)
+
+Download the source-code, compile using cmake!
 ```
 mkdir build
 cd build

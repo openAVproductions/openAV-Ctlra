@@ -67,8 +67,8 @@ extern "C" {
 #define CTLRA_DEV_SERIAL_MAX 64
 #define CTLRA_NUM_GRIDS_MAX   8
 
-/** Cltra context forward declaration. This struct is opaque to the user
- * of the ctlra library. It provides a handle for cltra internals such as
+/** Ctlra context forward declaration. This struct is opaque to the user
+ * of the ctlra library. It provides a handle for ctlra internals such as
  * hotplug callbacks and backend details (libusb context for example). It
  * also holds a handle to each ctlra_dev_t in use, allowing it to clean up
  * resources if the application calls ctlra_exit() on the *ctlra_t*.
@@ -76,7 +76,7 @@ extern "C" {
 struct ctlra_t;
 
 /** Struct for forward compatibility, allowing various options to be passed
- * to cltra, without breaking all the function calls */
+ * to ctlra, without breaking all the function calls */
 struct ctlra_create_opts_t {
 	/* creation time flags */
 	uint8_t flags_usb_no_own_context : 1;
@@ -127,7 +127,7 @@ struct ctlra_dev_info_t {
 	uint64_t serial_number;
 
 	/** Number of controls the device has of each type. Read eg number
-	 * buttons by accessing th array by *ctlra_event_type_t*
+	 * buttons by accessing the array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
 	struct ctlra_grid_info_t grid_info[CTLRA_NUM_GRIDS_MAX];
@@ -161,10 +161,10 @@ typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
 				     void **userdata_for_event_func,
 				     void *userdata_for_accept_func);
 
-/** Create a new cltra context. This context holds state about the
+/** Create a new ctlra context. This context holds state about the
  * connected devices, hotplug callbacks and backends (usb, bluetooth, etc)
  * for the controllers. The *opts* argument is a pointer to a struct
- * allowing speicifc control over the ctlra context being created. For
+ * allowing specific control over the ctlra context being created. For
  * simple usage, pass NULL.
  */
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
@@ -186,7 +186,7 @@ void ctlra_idle_iter(struct ctlra_t *ctlra);
 
 /** Cleanup any resources allocated internally in Ctlra. This function
  * releases all resources attached to this context, but does NOT interfere
- * with other cltra instances */
+ * with other ctlra instances */
 void ctlra_exit(struct ctlra_t *ctlra);
 
 /** Disconnect from controller device, resetting to a neutral state.

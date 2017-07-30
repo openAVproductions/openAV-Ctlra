@@ -83,8 +83,8 @@ struct ctlra_event_encoder_t {
 	 *
 	 * Endless encoders (without notches) use the floating point delta
 	 * and the application may interpret the range of the delta as
-	 *  1.0f : maximum amount of clockwise rotation possible in one turn (approx 270 deg)
-	 * -1.0f : maximum amount of anti-clockwise rotation possible in one turn (approx 270 deg)
+	 *  1.0f : one full clockwise rotation (360 deg)
+	 * -1.0f : one full anti-clockwise rotation (-360 deg)
 	 *
 	 * When explicitly scripting support for a controller, the actual
 	 * encoder ID itself will already know which type it is - but for
