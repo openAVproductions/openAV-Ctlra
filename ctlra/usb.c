@@ -5,7 +5,7 @@
 
 #include "impl.h"
 
-#include "libusb.h"
+#include <libusb.h>
 
 #define USB_PATH_MAX 256
 
