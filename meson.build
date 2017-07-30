@@ -1,5 +1,8 @@
 project('openav_ctlra', 'c')
 
+conf_data = configuration_data()
+conf_data.set('version', '0.1')
+
 cc  = meson.get_compiler('c')
 
 subdir('ctlra')
@@ -7,7 +10,7 @@ subdir('ctlra')
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',
-              version: '0.0.1',
+              version: conf_data.get('version'),
               requires: ['libusb-1.0', 'alsa'],
               libraries: ctlra)
 
