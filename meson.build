@@ -12,3 +12,10 @@ pkg.generate(name: 'openav_ctlra',
               libraries: ctlra)
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
+
+subdir('examples')
+ctlra_includes = include_directories('ctlra')
+executable('simple',
+           example_simple,
+           include_directories: ctlra_includes,
+           link_with: ctlra)
