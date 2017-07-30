@@ -1,0 +1,5 @@
+#pragma once
+#define CTLRA_VERSION_STR "@version@"
+#define CTLRA_OPT_JACK "@jack@"
+#define CTLRA_OPT_LIBUSB "@libusb@"
+#define CTLRA_OPT_ALSA "@alsa@"
