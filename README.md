@@ -46,6 +46,7 @@ This library currently supports the following devices:
 - Native Instruments Maschine Mikro (Mk2 only)
 - Native Instruments Traktor D2
 - Native Instruments Traktor F1
+- Native Instruments Traktor S2 (Mk2 only)
 - Native Instruments Traktor X1 (Mk2 only)
 - Native Instruments Traktor Z1
 

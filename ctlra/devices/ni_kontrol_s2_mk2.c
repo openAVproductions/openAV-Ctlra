@@ -34,24 +34,24 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "ni_kontrol_s2.h"
+#include "ni_kontrol_s2_mk2.h"
 #include "impl.h"
 
 #define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_S2      (0x1320)
+#define NI_KONTROL_S2_MK2  (0x1320)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x83)
 #define USB_ENDPOINT_WRITE (0x02)
 
 /* This struct is a generic struct to identify hw controls */
-struct ni_kontrol_s2_ctlra_t {
+struct ni_kontrol_s2_mk2_ctlra_t {
 	int event_id;
 	int buf_byte_offset;
 	uint32_t mask;
 };
 
-static const char *ni_kontrol_s2_names_encoders[] = {
+static const char *ni_kontrol_s2_mk2_names_encoders[] = {
 	"Jog Wheel (L)",
 	"Jog Wheel (R)",
 	"Left Encoder (L)",
@@ -62,10 +62,10 @@ static const char *ni_kontrol_s2_names_encoders[] = {
 	"Gain Encoder (L)",
 	"Gain Encoder (R)",
 };
-#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_names_encoders) /\
-				    sizeof(ni_kontrol_s2_names_encoders[0]))
+#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_encoders) /\
+				    sizeof(ni_kontrol_s2_mk2_names_encoders[0]))
 
-static const char *ni_kontrol_s2_names_sliders[] = {
+static const char *ni_kontrol_s2_mk2_names_sliders[] = {
 	"Crossfader",
 	"Pitch (L)",
 	"Pitch (R)",
@@ -90,10 +90,10 @@ static const char *ni_kontrol_s2_names_sliders[] = {
 	"EQ MID (R)",
 	"EQ LOW (R)",
 };
-#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_names_sliders) /\
-				    sizeof(ni_kontrol_s2_names_sliders[0]))
+#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_sliders) /\
+				    sizeof(ni_kontrol_s2_mk2_names_sliders[0]))
 
-static const char *ni_kontrol_s2_names_buttons[] = {
+static const char *ni_kontrol_s2_mk2_names_buttons[] = {
 	"Play (R)",
 	"Cue (R)",
 	"Sync (R)",
@@ -152,99 +152,99 @@ static const char *ni_kontrol_s2_names_buttons[] = {
 	"Left Encoder Press (R)",
 	"Right Encoder Press (R)",
 };
-#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_names_buttons) /\
-				    sizeof(ni_kontrol_s2_names_buttons[0]))
+#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_mk2_names_buttons) /\
+				    sizeof(ni_kontrol_s2_mk2_names_buttons[0]))
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
 
-static const struct ni_kontrol_s2_ctlra_t sliders[] = {
+static const struct ni_kontrol_s2_mk2_ctlra_t sliders[] = {
 	/* Left */
-	{NI_KONTROL_S2_SLIDER_CROSSFADER,  1, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_PITCH_L   ,  3, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_PITCH_R   ,  5, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_CUE_MIX   ,  7, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_REMIX     ,  9, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_MAIN_LEVEL, 11, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_LEVEL     , 13, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FADER_L   , 15, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FADER_R   , 17, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_DRY  , 19, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_1    , 21, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_2    , 23, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_3    , 25, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_DRY  , 27, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_1    , 29, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_2    , 31, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_FX_L_3    , 33, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_L_HI   , 35, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_L_MID  , 37, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_L_LOW  , 39, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_R_HI   , 41, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_R_MID  , 43, UINT32_MAX},
-	{NI_KONTROL_S2_SLIDER_EQ_R_LOW  , 45, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_CROSSFADER,  1, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_PITCH_L   ,  3, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_PITCH_R   ,  5, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_CUE_MIX   ,  7, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_REMIX     ,  9, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_MAIN_LEVEL, 11, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_LEVEL     , 13, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FADER_L   , 15, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FADER_R   , 17, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_DRY  , 19, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_1    , 21, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_2    , 23, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_3    , 25, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_DRY  , 27, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_1    , 29, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_2    , 31, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_FX_L_3    , 33, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_L_HI   , 35, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_L_MID  , 37, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_L_LOW  , 39, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_R_HI   , 41, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_R_MID  , 43, UINT32_MAX},
+	{NI_KONTROL_S2_MK2_SLIDER_EQ_R_LOW  , 45, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
-static const struct ni_kontrol_s2_ctlra_t buttons[] = {
-	{NI_KONTROL_S2_BTN_DECKB_PLAY , 9, 0x01},
-	{NI_KONTROL_S2_BTN_DECKB_CUE  , 9, 0x02},
-	{NI_KONTROL_S2_BTN_DECKB_SYNC , 9, 0x04},
-	{NI_KONTROL_S2_BTN_DECKB_SHIFT, 9, 0x08},
-	{NI_KONTROL_S2_BTN_DECKB_CUE_4, 9, 0x10},
-	{NI_KONTROL_S2_BTN_DECKB_CUE_3, 9, 0x20},
-	{NI_KONTROL_S2_BTN_DECKB_CUE_2, 9, 0x40},
-	{NI_KONTROL_S2_BTN_DECKB_CUE_1, 9, 0x80},
+static const struct ni_kontrol_s2_mk2_ctlra_t buttons[] = {
+	{NI_KONTROL_S2_MK2_BTN_DECKB_PLAY , 9, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_CUE  , 9, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_SYNC , 9, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_SHIFT, 9, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_CUE_4, 9, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_CUE_3, 9, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_CUE_2, 9, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_CUE_1, 9, 0x80},
 
-	{NI_KONTROL_S2_BTN_DECKA_JOG_PRESS  , 10, 0x01},
-	{NI_KONTROL_S2_BTN_DECKB_JOG_PRESS  , 10, 0x02},
-	{NI_KONTROL_S2_BTN_MAIN_BOOTH_SWITCH, 10, 0x04},
-	{NI_KONTROL_S2_BTN_MIC_ENGAGE       , 10, 0x08},
-	{NI_KONTROL_S2_BTN_DECKB_MIXER_CUE  , 10, 0x10},
-	{NI_KONTROL_S2_BTN_DECKB_FLUX       , 10, 0x20},
-	{NI_KONTROL_S2_BTN_DECKB_LOOP_IN    , 10, 0x40},
-	{NI_KONTROL_S2_BTN_DECKB_LOOP_OUT   , 10, 0x80},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_JOG_PRESS  , 10, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_JOG_PRESS  , 10, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_MAIN_BOOTH_SWITCH, 10, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_MIC_ENGAGE       , 10, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_MIXER_CUE  , 10, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_FLUX       , 10, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_LOOP_IN    , 10, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_LOOP_OUT   , 10, 0x80},
 
-	{NI_KONTROL_S2_BTN_DECKA_PLAY , 11, 0x01},
-	{NI_KONTROL_S2_BTN_DECKA_CUE  , 11, 0x02},
-	{NI_KONTROL_S2_BTN_DECKA_SYNC , 11, 0x04},
-	{NI_KONTROL_S2_BTN_DECKA_SHIFT, 11, 0x08},
-	{NI_KONTROL_S2_BTN_DECKA_CUE_4, 11, 0x10},
-	{NI_KONTROL_S2_BTN_DECKA_CUE_3, 11, 0x20},
-	{NI_KONTROL_S2_BTN_DECKA_CUE_2, 11, 0x40},
-	{NI_KONTROL_S2_BTN_DECKA_CUE_1, 11, 0x80},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_PLAY , 11, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_CUE  , 11, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_SYNC , 11, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_SHIFT, 11, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_CUE_4, 11, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_CUE_3, 11, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_CUE_2, 11, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_CUE_1, 11, 0x80},
 
-	{NI_KONTROL_S2_BTN_REMIX_ON_B     , 12, 0x01},
-	{NI_KONTROL_S2_BTN_REMIX_ON_A     , 12, 0x02},
-	{NI_KONTROL_S2_BTN_BROWSE_LOAD_B  , 12, 0x04},
-	{NI_KONTROL_S2_BTN_BROWSE_LOAD_A  , 12, 0x08},
-	{NI_KONTROL_S2_BTN_DECKB_MIXER_CUE, 12, 0x10},
-	{NI_KONTROL_S2_BTN_DECKB_FLUX     , 12, 0x20},
-	{NI_KONTROL_S2_BTN_DECKB_LOOP_IN  , 12, 0x40},
-	{NI_KONTROL_S2_BTN_DECKB_LOOP_OUT , 12, 0x80},
+	{NI_KONTROL_S2_MK2_BTN_REMIX_ON_B     , 12, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_REMIX_ON_A     , 12, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_BROWSE_LOAD_B  , 12, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_BROWSE_LOAD_A  , 12, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_MIXER_CUE, 12, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_FLUX     , 12, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_LOOP_IN  , 12, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_LOOP_OUT , 12, 0x80},
 
 	/* waste */
 	/* waste */
-	{NI_KONTROL_S2_BTN_FX2_DRY_WET     , 13, 0x04},
-	{NI_KONTROL_S2_BTN_FX2_3           , 13, 0x08},
-	{NI_KONTROL_S2_BTN_FX2_2           , 13, 0x10},
-	{NI_KONTROL_S2_BTN_FX2_1           , 13, 0x20},
-	{NI_KONTROL_S2_BTN_DECKA_GAIN_PRESS, 13, 0x40},
-	{NI_KONTROL_S2_BTN_DECKA_GAIN_PRESS, 13, 0x80},
+	{NI_KONTROL_S2_MK2_BTN_FX2_DRY_WET     , 13, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_FX2_3           , 13, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_FX2_2           , 13, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_FX2_1           , 13, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_GAIN_PRESS, 13, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_GAIN_PRESS, 13, 0x80},
 
-	{NI_KONTROL_S2_BTN_MIXER_B_FX2, 14, 0x01},
-	{NI_KONTROL_S2_BTN_MIXER_B_FX1, 14, 0x02},
-	{NI_KONTROL_S2_BTN_MIXER_A_FX2, 14, 0x04},
-	{NI_KONTROL_S2_BTN_MIXER_A_FX1, 14, 0x08},
-	{NI_KONTROL_S2_BTN_FX2_DRY_WET, 14, 0x10},
-	{NI_KONTROL_S2_BTN_FX2_3      , 14, 0x20},
-	{NI_KONTROL_S2_BTN_FX2_2      , 14, 0x40},
-	{NI_KONTROL_S2_BTN_FX2_1      , 14, 0x80},
+	{NI_KONTROL_S2_MK2_BTN_MIXER_B_FX2, 14, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_MIXER_B_FX1, 14, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_MIXER_A_FX2, 14, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_MIXER_A_FX1, 14, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_FX2_DRY_WET, 14, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_FX2_3      , 14, 0x20},
+	{NI_KONTROL_S2_MK2_BTN_FX2_2      , 14, 0x40},
+	{NI_KONTROL_S2_MK2_BTN_FX2_1      , 14, 0x80},
 
-	{NI_KONTROL_S2_BTN_DECKA_LEFT_ENCODER_PRESS , 15, 0x01},
-	{NI_KONTROL_S2_BTN_DECKA_RIGHT_ENCODER_PRESS, 15, 0x02},
-	{NI_KONTROL_S2_BTN_BROWSE_ENCODER_PRESS     , 15, 0x04},
-	{NI_KONTROL_S2_BTN_DECKB_LEFT_ENCODER_PRESS , 15, 0x08},
-	{NI_KONTROL_S2_BTN_DECKB_RIGHT_ENCODER_PRESS, 15, 0x10},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_LEFT_ENCODER_PRESS , 15, 0x01},
+	{NI_KONTROL_S2_MK2_BTN_DECKA_RIGHT_ENCODER_PRESS, 15, 0x02},
+	{NI_KONTROL_S2_MK2_BTN_BROWSE_ENCODER_PRESS     , 15, 0x04},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_LEFT_ENCODER_PRESS , 15, 0x08},
+	{NI_KONTROL_S2_MK2_BTN_DECKB_RIGHT_ENCODER_PRESS, 15, 0x10},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -258,7 +258,7 @@ static const struct ni_kontrol_s2_ctlra_t buttons[] = {
 #define LED_DECK_COUNT (8*3 + 8)
 
 /* Represents the the hardware device */
-struct ni_kontrol_s2_t {
+struct ni_kontrol_s2_mk2_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
@@ -280,23 +280,23 @@ struct ni_kontrol_s2_t {
 };
 
 static const char *
-ni_kontrol_s2_control_get_name(enum ctlra_event_type_t type,
+ni_kontrol_s2_mk2_control_get_name(enum ctlra_event_type_t type,
 			       uint32_t control)
 {
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		if(control >= CONTROL_NAMES_SLIDERS_SIZE)
 			return 0;
-		return ni_kontrol_s2_names_sliders[control];
+		return ni_kontrol_s2_mk2_names_sliders[control];
 	case CTLRA_EVENT_ENCODER:
 		if(control >= CONTROL_NAMES_ENCODERS_SIZE)
 			return 0;
-		return ni_kontrol_s2_names_encoders[control];
+		return ni_kontrol_s2_mk2_names_encoders[control];
 
 	case CTLRA_EVENT_BUTTON:
 		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
 			return 0;
-		return ni_kontrol_s2_names_buttons[control];
+		return ni_kontrol_s2_mk2_names_buttons[control];
 	default:
 		break;
 	}
@@ -304,9 +304,9 @@ ni_kontrol_s2_control_get_name(enum ctlra_event_type_t type,
 	return 0;
 }
 
-static uint32_t ni_kontrol_s2_poll(struct ctlra_dev_t *base)
+static uint32_t ni_kontrol_s2_mk2_poll(struct ctlra_dev_t *base)
 {
-	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
+	struct ni_kontrol_s2_mk2_t *dev = (struct ni_kontrol_s2_mk2_t *)base;
 #define BUF_SIZE 1024
 	uint8_t buf[BUF_SIZE];
 
@@ -317,10 +317,10 @@ static uint32_t ni_kontrol_s2_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
-void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
+void ni_kontrol_s2_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
 {
-	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
+	struct ni_kontrol_s2_mk2_t *dev = (struct ni_kontrol_s2_mk2_t *)base;
 	uint8_t *buf = data;
 
 	switch(size) {
@@ -363,7 +363,8 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 					}
 				};
 				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
+				dev->base.event_func(&dev->base, 1, &e,
+						dev->base.event_func_userdata);
 			}
 		}
 
@@ -443,11 +444,11 @@ void ni_kontrol_s2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 	}
 }
 
-static void ni_kontrol_s2_light_set(struct ctlra_dev_t *base,
+static void ni_kontrol_s2_mk2_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status)
 {
-	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
+	struct ni_kontrol_s2_mk2_t *dev = (struct ni_kontrol_s2_mk2_t *)base;
 
 	const uint32_t bright = (light_status >> 24) & 0x7F * 2;
 
@@ -472,9 +473,9 @@ static void ni_kontrol_s2_light_set(struct ctlra_dev_t *base,
 }
 
 void
-ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
+ni_kontrol_s2_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
-	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
+	struct ni_kontrol_s2_mk2_t *dev = (struct ni_kontrol_s2_mk2_t *)base;
 	if(!dev->lights_dirty && !force)
 		return;
 	/* technically interface 3, testing showed 0 works but 3 doesnt */
@@ -505,15 +506,15 @@ ni_kontrol_s2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 }
 
 static int32_t
-ni_kontrol_s2_disconnect(struct ctlra_dev_t *base)
+ni_kontrol_s2_mk2_disconnect(struct ctlra_dev_t *base)
 {
-	struct ni_kontrol_s2_t *dev = (struct ni_kontrol_s2_t *)base;
+	struct ni_kontrol_s2_mk2_t *dev = (struct ni_kontrol_s2_mk2_t *)base;
 
 	/* Turn off all lights */
 	memset(dev->lights     , 0, LED_COUNT);
 	memset(dev->deck_lights, 0, LED_DECK_COUNT);
 	if(!base->banished)
-		ni_kontrol_s2_light_flush(base, 1);
+		ni_kontrol_s2_mk2_light_flush(base, 1);
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
@@ -521,26 +522,27 @@ ni_kontrol_s2_disconnect(struct ctlra_dev_t *base)
 }
 
 struct ctlra_dev_t *
-ctlra_ni_kontrol_s2_connect(ctlra_event_func event_func,
+ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
 {
 	(void)future;
-	struct ni_kontrol_s2_t *dev = calloc(1, sizeof(struct ni_kontrol_s2_t));
+	struct ni_kontrol_s2_mk2_t *dev =
+		calloc(1, sizeof(struct ni_kontrol_s2_mk2_t));
 	if(!dev)
 		goto fail;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol S2");
+		 "%s", "Kontrol S2_MK2");
 
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-	dev->base.info.get_name = ni_kontrol_s2_control_get_name;
+	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
 
-	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_KONTROL_S2);
+	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
+					  NI_KONTROL_S2_MK2);
 	if(err) {
 		free(dev);
 		return 0;
@@ -553,11 +555,11 @@ ctlra_ni_kontrol_s2_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
-	dev->base.poll = ni_kontrol_s2_poll;
-	dev->base.disconnect = ni_kontrol_s2_disconnect;
-	dev->base.light_set = ni_kontrol_s2_light_set;
-	dev->base.light_flush = ni_kontrol_s2_light_flush;
-	dev->base.usb_read_cb = ni_kontrol_s2_usb_read_cb;
+	dev->base.poll = ni_kontrol_s2_mk2_poll;
+	dev->base.disconnect = ni_kontrol_s2_mk2_disconnect;
+	dev->base.light_set = ni_kontrol_s2_mk2_light_set;
+	dev->base.light_flush = ni_kontrol_s2_mk2_light_flush;
+	dev->base.usb_read_cb = ni_kontrol_s2_mk2_usb_read_cb;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
