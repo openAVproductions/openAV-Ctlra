@@ -419,6 +419,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 					  it if required */
 	                          timeout);
 	int res = libusb_submit_transfer(xfr);
+	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 
 	/* Only error experienced while developing was ERROR_IO, which was
 	 * caused by stress testing the reading of multiple devices over
@@ -496,6 +497,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	void *usb_data = malloc(size);
 
 	memcpy(usb_data, data, size);
+	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 
 	libusb_fill_interrupt_transfer(xfr,
 				       dev->usb_interface[idx],
@@ -539,15 +541,15 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	const uint32_t timeout = 100;
 	int transferred;
+	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
 	int r = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
 	                               data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		/*
-		fprintf(stderr, "ctlra: usb error %s : %s\n",
-			libusb_error_name(r), libusb_strerror(r));
-		*/
+		fprintf(stderr, "ctlra: usb error %s : %s, bulk write count %d\n",
+			libusb_error_name(r), libusb_strerror(r),
+			dev->usb_xfer_counts[USB_XFER_BULK_WRITE]);
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}

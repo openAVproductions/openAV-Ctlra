@@ -92,6 +92,11 @@ struct ctlra_dev_t {
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
 	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
+#define USB_XFER_INT_READ 0
+#define USB_XFER_INT_WRITE 1
+#define USB_XFER_BULK_WRITE 2
+#define USB_XFER_COUNT 3
+	uint32_t usb_xfer_counts[4];
 
 	/* MIDI I/O pointer */
 	void *midi_in;
