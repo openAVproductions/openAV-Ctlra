@@ -142,6 +142,7 @@ int main(int argc, char **argv)
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	printf("connected devices %d\n", num_devs);
 
 	int i = 0;
 	while(i < 4 && !done) {
