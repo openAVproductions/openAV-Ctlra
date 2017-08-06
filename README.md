@@ -53,6 +53,7 @@ This library currently supports the following devices:
 Prototyping for several other devices is in progress, but not complete.
 These devices include:
 
+- Native Instruments Maschine Jam
 - Nintend WiiMote (Original)
 - Generic MIDI
 - Generic OSC
