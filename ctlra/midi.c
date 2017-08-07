@@ -22,7 +22,6 @@ struct ctlra_midi_t *ctlra_midi_open(const char *name,
 				     ctlra_midi_input_cb cb,
 				     void *userdata)
 {
-	printf("%s : name = %s\n", __func__, name);
 	struct ctlra_midi_t *m = calloc(1, sizeof(struct ctlra_midi_t));
 	if(!m) return 0;
 	int res = snd_seq_open(&m->seq, "default",
