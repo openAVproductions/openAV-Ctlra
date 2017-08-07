@@ -1,7 +1,7 @@
 
 cmake_minimum_required (VERSION 2.6)
 
-project (CTLRA C CXX)
+project (CTLRA C)
 
 set(CTLRA_VERSION_MAJOR "0")
 set(CTLRA_VERSION_MINOR "0")
