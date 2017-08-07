@@ -91,7 +91,7 @@ ENDIF()
 # RtMIDI backends
 ADD_DEFINITIONS( "-D__UNIX_JACK__"  )
 ADD_DEFINITIONS( "-D__LINUX_ALSA__" )
-FILE(GLOB src_daemon daemon/*.cpp )
+FILE(GLOB src_daemon daemon/*.c )
 
 add_executable (daemon ${src_daemon} )
 add_dependencies(daemon ctlra)
