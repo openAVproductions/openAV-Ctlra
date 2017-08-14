@@ -4,18 +4,14 @@
 #include <signal.h>
 #include <string.h>
 
-#include <iostream>
-#include <cstdlib>
-
-#include "RtMidi.h"
-
 #include "ctlra.h"
+#include "midi.h"
+
 #include "devices/ni_maschine_mikro_mk2.h"
 #include "devices/ni_maschine_jam.h"
 #include "sequencer.h"
 
 static volatile uint32_t done;
-static struct ctlra_dev_t* dev;
 
 static Sequencer *sequencers[16];
 
@@ -88,7 +84,6 @@ static struct mm_t
 void jam_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	struct mm_t *mm = &mm_static;
-	const struct col_t *col = &grp_col[mm->grp_id];
 	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
 
 	uint8_t *grid_data = ni_maschine_jam_grid_get_data(dev);
@@ -180,23 +175,18 @@ void demo_event_func(struct ctlra_dev_t* dev,
                      void *userdata)
 {
 	struct mm_t *mm = &mm_static;
-	/* See below, a RtMidiOut instance is passed as the device's
-	 * userdata pointer when registering the event_func */
-	RtMidiOut *midiout = (RtMidiOut *)userdata;
-	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
-
-	std::vector<unsigned char> message(3);
+	struct ctlra_midi_t *midi = userdata;
+	uint8_t msg[3] = {0};
 
 	for(uint32_t i = 0; i < num_events; i++) {
-		const char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
 		int pr = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
-			message[0] = e->button.pressed ? 0x90 : 0x80;
-			message[1] = 60 + e->button.id;
-			message[2] = e->button.pressed ? 0x70 : 0;
-			midiout->sendMessage( &message );
+			msg[0] = e->button.pressed ? 0x90 : 0x80;
+			msg[1] = 60 + e->button.id;
+			msg[2] = e->button.pressed ? 0x70 : 0;
+			ctlra_midi_output_write(midi, 3, msg);
 			printf("button %d\n", e->button.id);
 			pr = e->button.pressed;
 			switch(e->button.id) {
@@ -221,13 +211,16 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_SLIDER:
+#if 0
 			message[0] = 0xb0;
 			message[1] = e->slider.id;
 			message[2] = int(e->slider.value * 127.f);
 			midiout->sendMessage( &message );
+#endif
 			break;
 
 		case CTLRA_EVENT_GRID:
+#if 0
 			pr = e->grid.pressed;
 			if(mm->mode == MODE_GROUP) {
 				/* select new group here */
@@ -251,6 +244,8 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			}
 			mm->pads_pressed[e->grid.pos] = e->grid.pressed;
 			break;
+#endif
+
 		default:
 			break;
 		};
@@ -258,6 +253,12 @@ void demo_event_func(struct ctlra_dev_t* dev,
 
 	ctlra_dev_light_flush(dev, 0);
 }
+
+int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
+{
+	return 0;
+}
+
 
 void sighndlr(int signal)
 {
@@ -268,7 +269,7 @@ void sighndlr(int signal)
 void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		     void *userdata)
 {
-	RtMidiOut *midiout = (RtMidiOut *)userdata;
+	//RtMidiOut *midiout = (RtMidiOut *)userdata;
 	//delete midiout;
 }
 
@@ -291,40 +292,35 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	}
 
 	/* MIDI output */
-	RtMidiOut *midiout = new RtMidiOut(RtMidi::UNSPECIFIED, "CtlraSeq");
-	unsigned int nPorts = midiout->getPortCount();
-	if ( nPorts == 0 ) {
-		std::cout << "No ports available!\n";
+	struct ctlra_midi_t *midi = ctlra_midi_open("CtlraSeq",
+				       ignored_input_cb,
+				       0x0);
+	if(!midi) {
+		printf("%s: failed to open midi backend\n", __func__);
 		return 0;
 	}
-
-	try {
-		midiout->openVirtualPort(info->device);
-	} catch (...) {
-		printf("CtlrError: failed to open virtual midi port\n");
-		return -1;
-	}
-	*userdata_for_event_func = midiout;
-
-	midi_out_void = midiout;
+	*userdata_for_event_func = midi;
 
 	return 1;
 }
 
-void seqEventCb(int frame, int note, int velocity, void* user_data )
+void seqEventCb(int frame, int note, int velocity, void* userdata )
 {
 	printf("%s: %d, %d : %d\n", __func__, frame, note, velocity);
 	if(static_mute)
 		return;
 	memset(mm_static.pads_seq_play, 0, sizeof(mm_static.pads_seq_play));
 	mm_static.pads_seq_play[note] = velocity;
-
-	RtMidiOut *midiout = (RtMidiOut *)midi_out_void;
-	std::vector<unsigned char> message(3);
-	message[0] = 0x90;
-	message[1] = 36 + note;
-	message[2] = velocity;
-	midiout->sendMessage( &message );
+	struct ctlra_midi_t *midi = userdata;
+	uint8_t msg[3] = {
+		0x90,
+		36 + note,
+		velocity
+	};
+	int ret = ctlra_midi_output_write(midi, 3, msg);
+	if(ret) {
+		printf("%s warning: midi_output_write() failed\n", __func__);
+	}
 }
 
 #define SR 48000
@@ -346,6 +342,7 @@ int main()
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	printf("sequencer: Connected controllers %d\n", num_devs);
 
 	uint32_t sleep = SR / 128;
 
