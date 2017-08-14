@@ -1,4 +1,5 @@
 example_simple = files('simple/simple.c')
+example_daemon = files('daemon/daemon.c')
 example_vegas = files('vegas_mode/vegas_mode.c',
                        'vegas_mode/d2.c',
                        'vegas_mode/audio.c',

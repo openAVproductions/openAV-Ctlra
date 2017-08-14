@@ -24,6 +24,11 @@ executable('simple',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
+executable('daemon',
+           example_daemon,
+           include_directories: ctlra_includes,
+           link_with: ctlra)
+
 cairo   = dependency('cairo', required: false)
 sndfile = dependency('sndfile', required: false)
 if(jack.found() and cairo.found() and sndfile.found())
