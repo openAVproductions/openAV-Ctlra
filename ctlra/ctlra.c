@@ -227,6 +227,14 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	if(opts)
 		c->opts = *opts;
 
+	/* ENV variables override application opts */
+	char *ctlra_debug = getenv("CTLRA_DEBUG");
+	if(ctlra_debug) {
+		int debug_level = atoi(ctlra_debug);
+		c->opts.debug_level = debug_level;
+		CTLRA_INFO(c, "debug level: %d\n", debug_level);
+	}
+
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
 	if(err)
@@ -251,6 +259,9 @@ int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 					&dev->remove_func,
 					&dev->event_func_userdata,
 					ctlra->accept_dev_func_userdata);
+
+		CTLRA_INFO(ctlra, "%s %s %s accepted\n", dev->info.vendor,
+			   dev->info.device, accepted ? "" : "not");
 
 		if(!accepted) {
 			ctlra_dev_disconnect(dev);
