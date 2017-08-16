@@ -39,8 +39,10 @@ static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 							     buf_size);
 		if (ret < 0)
 			return -1;
+
+		return 0;
 	}
-	return 0;
+	return -1;
 }
 
 static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
@@ -53,7 +55,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 	struct libusb_device_descriptor desc;
 	ret = libusb_get_device_descriptor(dev, &desc);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Error getting device descriptor\n");
+		CTLRA_ERROR(ctlra, "libusb err device desc: %d\n", ret);
 		return -1;
 	}
 	if(event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
@@ -68,10 +70,9 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		 * The solution used here it to use libusb to detect the
 		 * removal of the device, and then banish the ctlra_dev_t
 		 * instance if it matches the device */
-#if 0
-		printf("Device removed: %04x:%04x, ctlra %p\n",
-		       desc.idVendor, desc.idProduct, user_data);
-#endif
+		CTLRA_INFO(ctlra, "Device removed: %04x:%04x\n",
+			   desc.idVendor, desc.idProduct);
+
 		/* NI Maschine Mikro MK2 */
 		if(desc.idVendor == 0x17cc && desc.idProduct == 0x1200) {
 			struct ctlra_dev_t *ni_mm;
@@ -88,15 +89,15 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 		libusb_device_handle *handle = 0;
 		ret = libusb_open(dev, &handle);
-		if (ret != LIBUSB_SUCCESS)
+		if(ret != LIBUSB_SUCCESS)
 			return -1;
 		uint8_t buf[255];
-		ctlra_usb_impl_get_serial(handle, desc.iSerialNumber,
+		ret = ctlra_usb_impl_get_serial(handle, desc.iSerialNumber,
 					  buf, 255);
-#if 0
-		printf("Device attached: %04x:%04x, serial %s, ctlra %p\n",
-		       desc.idVendor, desc.idProduct, buf, user_data);
-#endif
+		if(ret)
+			snprintf((char *)buf, sizeof(buf), "---");
+		CTLRA_INFO(ctlra, "Device attached: %04x:%04x, serial %s\n",
+			   desc.idVendor, desc.idProduct, buf);
 		/* Quirks:
 		 * Here we can handle strange hotplug issues. For example,
 		 * controllers that have a USB hub integrated show as the
@@ -121,8 +122,9 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 			/* Device is not supported by Ctlra, so release
 			 * the libusb handle which was opened to retrieve
 			 * the serial from the device */
+			CTLRA_WARN(ctlra, "Ctlra does not support hotplugged device %x %x\n",
+				   quirk_vid, quirk_pid);
 			libusb_close(handle);
-			//printf("hotplugged device not supported by Ctlra\n");
 			return -1;
 		}
 
@@ -132,7 +134,6 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		return 0;
 	}
 
-	//printf("%s: done & return 0\n", __func__);
 	return 0;
 }
 
@@ -159,14 +160,14 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 		ret = libusb_init(&ctlra->ctx);
 
 	if (ret < 0) {
-		printf("failed to initialise libusb: %s\n",
+		CTLRA_ERROR(ctlra, "failed to initialise libusb: %s\n",
 		       libusb_error_name(ret));
 		return -1;
 	}
 	ctlra->usb_initialized = 1;
 
 	if(!libusb_has_capability (LIBUSB_CAP_HAS_HOTPLUG)) {
-		printf ("Ctlra: No Hotplug on this platform\n");
+		CTLRA_WARN(ctlra, "Ctlra: Hotplug support on platform: %d\n", 0);
 		return -2;
 	}
 
@@ -183,9 +184,9 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)
 					       ctlra_usb_impl_hotplug_cb,
 					       ctlra,
 					       &hp[0]);
-	if (ret != LIBUSB_SUCCESS) {
-		printf("ctlra: hotplug register failure\n");
-	}
+	if (ret != LIBUSB_SUCCESS)
+		CTLRA_WARN(ctlra, "hotplug register failure: %d\n", ret);
+
 	return 0;
 }
 
@@ -203,11 +204,13 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 	if (cnt < 0)
 		goto fail;
 
+	struct ctlra_t *ctlra = ctlra_dev->ctlra_context;
+
 	while ((dev = devs[i++]) != NULL) {
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(dev, &desc);
 		if (r < 0) {
-			printf("failed to get device descriptor");
+			CTLRA_ERROR(ctlra, "device desc open failed %d", r);
 			goto fail;
 		}
 #if 0
@@ -252,8 +255,12 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
                                       int interface,
                                       int handle_idx)
 {
+	struct ctlra_t *ctlra = ctlra_dev->ctlra_context;
+
 	if(handle_idx >= CTLRA_USB_IFACE_PER_DEV) {
-		printf("request for handle beyond available iface per dev range\n");
+		CTLRA_ERROR(ctlra,
+			    "request for handle beyond available iface per dev range %d\n",
+			    handle_idx);
 		return -1;
 	}
 	libusb_device *usb_dev = ctlra_dev->usb_device;
@@ -262,7 +269,7 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	/* now that we've found the device, open the handle */
 	int ret = libusb_open(usb_dev, &handle);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Error in opening interface, dev %s\n",
+		CTLRA_ERROR(ctlra, "Error in opening interface, dev %s\n",
 		       ctlra_dev->info.device);
 		return -1;
 	}
@@ -275,7 +282,9 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
 		ret = libusb_set_auto_detach_kernel_driver(handle, 1);
 		if(ret != LIBUSB_SUCCESS) {
-			printf("Error setting auto kernel unclaiming\n");
+			CTLRA_ERROR(ctlra,
+				    "Enable auto-kernel unclaiming err: %d\n",
+				    ret);
 			return -1;
 		}
 	} else {
@@ -284,14 +293,15 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 
 	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
-		printf("Ctlra: Could not claim interface %d of dev %s,"
-		       "continuing...\n", interface,
-		       ctlra_dev->info.device);
+		CTLRA_ERROR(ctlra,
+			    "Ctlra: Could not claim interface %d of dev %s, continuing...\n",
+			    interface, ctlra_dev->info.device);
 		int kernel_active = libusb_kernel_driver_active(handle,
 		                    interface);
 		if(kernel_active)
-			printf("=> Kernel has claimed the interface. Stop"
-			       "other applications using this device and retry\n");
+			CTLRA_ERROR(ctlra,
+				    "Kernel has claimed the interface (%d): Stop other applications using this device and retry\n",
+				    kernel_active);
 		return -1;
 	}
 
@@ -337,20 +347,20 @@ static void ctlra_usb_xfr_write_done_cb(struct libusb_transfer *xfr)
 
 static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 {
-	struct ctlra_dev_t *dev;
+	struct ctlra_dev_t *dev = xfr->user_data;
+	struct ctlra_t *ctlra = dev->ctlra_context;
 
 	switch(xfr->status) {
 	/* Success */
 	case LIBUSB_TRANSFER_COMPLETED: {
-		struct ctlra_dev_t *dev = xfr->user_data;
+		dev = xfr->user_data;
 		if(!dev->usb_read_cb) {
-			printf("CTLRA DRIVER ERROR: no USB READ CB implemented!\n");
+			CTLRA_ERROR(ctlra, "DRIVER ERROR: USB READ CB = %d\n", 0);
 			break;
 		}
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
-		}
-		break;
+		} break;
 
 	/* Timeouts *can* happen, but are rare. */
 	case LIBUSB_TRANSFER_TIMED_OUT:
@@ -371,7 +381,8 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		dev->banished = 1;
 		break;
 	default:
-		//printf("%s: USB transaction return unknown.\n", __func__);
+		CTLRA_ERROR(ctlra, "USB transaction has unknown status: %d\n",
+			    xfr->status);
 		break;
 	}
 
@@ -384,6 +395,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
                                       uint32_t size)
 {
 	int transferred;
+	struct ctlra_t *ctlra = dev->ctlra_context;
 
 /* we can use synchronous reads too, but the latency builds up of the
  * timeout. AKA: with 6 devices, at 100 ms each, 600ms between a re-poll
@@ -400,7 +412,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0)
-		printf("WARNING: xfr == NULL!!\n");
+		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
 
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
@@ -482,13 +494,14 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
                                        uint32_t size)
 {
 	int transferred;
+	struct ctlra_t *ctlra = dev->ctlra_context;
 	const uint32_t timeout = 1000;
 
 #if 1
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0)
-		printf("WARNING: write xfr == NULL!!\n");
+		CTLRA_ERROR(ctlra, "write xfr == %p!\n", xfr);
 
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
@@ -540,6 +553,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
                                   uint32_t size)
 {
 	const uint32_t timeout = 100;
+	struct ctlra_t *ctlra = dev->ctlra_context;
 	int transferred;
 	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
 	int r = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
@@ -547,7 +561,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
 	if (r < 0) {
-		fprintf(stderr, "ctlra: usb error %s : %s, bulk write count %d\n",
+		CTLRA_ERROR(ctlra, "usb error %s : %s, bulk write count %d\n",
 			libusb_error_name(r), libusb_strerror(r),
 			dev->usb_xfer_counts[USB_XFER_BULK_WRITE]);
 		ctlra_dev_impl_banish(dev);
@@ -559,21 +573,18 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
+	struct ctlra_t *ctlra = dev->ctlra_context;
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 		if(dev->usb_interface[i]) {
-#if 1
 			// Running this always seems to throw an error,
 			// and it has no negative side-effects to not?
 			int ret = libusb_release_interface(dev->usb_device, i);
 			if(ret == LIBUSB_ERROR_NOT_FOUND) {
 				// Seems to always happen? LibUSB bug?
-				//printf("%s: release interface error: interface %d not found, continuing...\n", __func__, i);
-			} else if (ret == LIBUSB_ERROR_NO_DEVICE)
-				printf("%s: release interface error: no device, continuing...\n", __func__);
-			else if(ret < 0) {
-				printf("%s:Ctrla Warning: release interface ret: %d\n", __func__, ret);
-			}
-#endif
+				//CTLRA_ERROR(ctlra, "release interface error: interface %d not found, continuing...\n", i);
+			} else if(ret < 0)
+				CTLRA_ERROR(ctlra, "libusb release interface error: %s\n",
+					libusb_strerror(ret));
 			libusb_close(dev->usb_interface[i]);
 		}
 	}
