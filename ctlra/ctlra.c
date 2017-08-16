@@ -224,8 +224,12 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	if(!c) return 0;
 
 	/* If options were passed, copy them to the instance */
-	if(opts)
+	if(opts) {
 		c->opts = *opts;
+	} else {
+		/* defaults */
+		c->opts.debug_level = CTLRA_DEBUG_ERROR;
+	}
 
 	/* ENV variables override application opts */
 	char *ctlra_debug = getenv("CTLRA_DEBUG");
