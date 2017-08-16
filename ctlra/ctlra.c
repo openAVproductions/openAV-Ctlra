@@ -230,7 +230,7 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
 	if(err)
-		printf("%s: impl_usb_init() returned %d\n", __func__, err);
+		CTLRA_ERROR(c, "impl_usb_init() returned %d\n", err);
 
 	return c;
 }

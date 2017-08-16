@@ -75,6 +75,11 @@ extern "C" {
  */
 struct ctlra_t;
 
+#define CTLRA_DEBUG_NONE  0
+#define CTLRA_DEBUG_ERROR 1
+#define CTLRA_DEBUG_WARN  2
+#define CTLRA_DEBUG_INFO  3
+
 /** Struct for forward compatibility, allowing various options to be passed
  * to ctlra, without breaking all the function calls */
 struct ctlra_create_opts_t {
@@ -82,8 +87,11 @@ struct ctlra_create_opts_t {
 	uint8_t flags_usb_no_own_context : 1;
 	uint8_t flags_usb_unsued : 7;
 
+	/* debug verbosity */
+	uint8_t debug_level;
+
 	/* reserve lots of space */
-	uint8_t padding[63];
+	uint8_t padding[62];
 };
 
 /** Get the human readable name for *control_id* from *dev*. The

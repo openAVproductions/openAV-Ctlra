@@ -39,6 +39,23 @@ extern "C" {
 #include "ctlra.h"
 #include "event.h"
 
+#define CTLRA_ERROR(ctlra, fmt, ...)					\
+	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_ERROR)		\
+	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+#define CTLRA_WARN(ctlra, fmt, ...)					\
+	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_WARN)		\
+	fprintf(stderr, "[\033[1;33m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+#define CTLRA_INFO(ctlra, fmt, ...)					\
+	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_INFO)		\
+	fprintf(stderr, "[\033[1;32m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+
+
 struct ctlra_dev_t;
 
 /* Functions each device can implement */
