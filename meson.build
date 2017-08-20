@@ -35,6 +35,15 @@ executable('sequencer',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
+avtka   = dependency('openav_avtka', required: false)
+if(avtka.found())
+executable('virt_dev',
+           example_virt_dev,
+           include_directories: ctlra_includes,
+           dependencies: avtka,
+           link_with: ctlra)
+endif
+
 cairo   = dependency('cairo', required: false)
 sndfile = dependency('sndfile', required: false)
 if(jack.found() and cairo.found() and sndfile.found())
