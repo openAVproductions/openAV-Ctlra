@@ -154,24 +154,25 @@ int main(int argc, char **argv)
 		       info->vendor, info->device,
 		       info->control_count[CTLRA_EVENT_BUTTON],
 		       info->control_count[CTLRA_EVENT_SLIDER]);
-		for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
-			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_BUTTON][i];
-			//printf("%d: %d %d\t%d %d\n", i, item->x, item->y, item->w, item->h);
 
+		for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
+			struct ctlra_item_info_t *item =
+				&info->control_info[CTLRA_EVENT_BUTTON][i];
 			struct avtka_item_opts_t ai = {
-				//.name = name,
+				 //.name = name,
 				.x = item->x,
 				.y = item->y,
 				.w = item->w,
 				.h = item->h,
-				.draw = AVTKA_DRAW_DIAL,
+				.draw = AVTKA_DRAW_BUTTON,
 			};
-			//uint32_t button1 = 
 			avtka_item_create(a, &ai);
 		}
+
 		printf("sliders\n");
 		for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
-			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_SLIDER][i];
+			struct ctlra_item_info_t *item =
+				&info->control_info[CTLRA_EVENT_SLIDER][i];
 
 			const char *name = ctlra_info_get_name(info,
 						CTLRA_EVENT_SLIDER, i);
@@ -180,15 +181,15 @@ int main(int argc, char **argv)
 			       item->w, item->h);
 
 			struct avtka_item_opts_t ai = {
-				//.name = name,
 				.x = item->x,
 				.y = item->y,
 				.w = item->w,
 				.h = item->h,
-				.draw = AVTKA_DRAW_DIAL,
 			};
+			ai.draw = (item->flags & CTLRA_ITEM_FADER) ?
+				  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
+
 			snprintf(ai.name, sizeof(ai.name), "%s", name);
-			//uint32_t button1 = 
 			avtka_item_create(a, &ai);
 		}
 	}
