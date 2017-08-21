@@ -4,6 +4,8 @@ ctlra_src = files('ctlra.c', 'event.c', 'usb.c', 'midi.c')
 jack   = dependency('jack', required: false)
 conf_data.set('jack', jack.found())
 
+avtka   = dependency('openav_avtka', required: false)
+
 subdir('devices')
 
 libusb = dependency('libusb-1.0')
@@ -15,7 +17,7 @@ ctlra = static_library('ctlra',
     [ctlra_src, devices_src],
     c_args: '-Wno-unused-variable',
     install : true,
-    dependencies: [libusb, alsa])
+    dependencies: [libusb, alsa, avtka])
 
 configure_file(input : 'config.h.in',
                output : 'config.h',

@@ -33,6 +33,7 @@ CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_jam);
 CTLRA_DEVICE_DECL(akai_apc);
+CTLRA_DEVICE_DECL(avtka);
 
 CTLRA_DEVICE_INFO(ni_kontrol_z1);
 
@@ -46,6 +47,7 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
 	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
 	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
+	{0x1, 0x1, CTLRA_DEVICE_FUNC(avtka)},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 

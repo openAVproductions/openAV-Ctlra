@@ -6,6 +6,8 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
+avtka   = dependency('openav_avtka', required: false)
+
 subdir('ctlra')
 
 pkg = import('pkgconfig')
@@ -13,6 +15,7 @@ pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',
               version: conf_data.get('version'),
               requires: ['libusb-1.0', 'alsa'],
+              dependencies: avtka,
               libraries: ctlra)
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
@@ -35,7 +38,6 @@ executable('sequencer',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
-avtka   = dependency('openav_avtka', required: false)
 if(avtka.found())
 executable('virt_dev',
            example_virt_dev,
