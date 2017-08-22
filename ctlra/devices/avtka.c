@@ -94,9 +94,33 @@ avtka_disconnect(struct ctlra_dev_t *base)
 static void
 event_cb(struct avtka_t *avtka, uint32_t item, void *userdata)
 {
+	struct cavtka_t *dev = (struct cavtka_t *)userdata;
 	printf("event on item %d\n", item);
-}
+	uint32_t type = dev->id_to_ctlra[item].type;
+	uint32_t id   = dev->id_to_ctlra[item].id;
+	printf("event type %d, id = %d\n", type, id);
 
+	struct ctlra_event_t event = {
+		.type = type,
+		.button = {
+			.id = id,
+			// TODO: value get
+			.pressed = 1,
+		},
+	};
+	switch(type) {
+	case CTLRA_EVENT_SLIDER:
+		event.slider.id = id;
+		event.slider.value = 0.5;
+		break;
+	default:
+		break;
+	}
+	struct ctlra_event_t *e = {&event};
+	dev->base.event_func(&dev->base, 1, &e,
+			     dev->base.event_func_userdata);
+
+}
 
 struct ctlra_dev_t *
 ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
