@@ -41,21 +41,30 @@
 
 #define PUGL_PARENT 0x0
 
+#define MAX_ITEMS 1024
+
+/* reverse map from item id to ctlra type/id */
+struct id_to_ctlra_t {
+	uint32_t type;
+	uint32_t id;
+};
+
 /* Represents the the virtual AVTK UI */
-struct avtka_t {
+struct cavtka_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
 	/* represents the Avtka UI */
 	struct avtka_t *a;
+	uint32_t canary;
+	/* item ids for each ui element, stored by event type */
+	struct id_to_ctlra_t id_to_ctlra[MAX_ITEMS];
 };
 
 static uint32_t avtka_poll(struct ctlra_dev_t *base)
 {
-	struct avtka_t *dev = (struct avtka_t *)base;
-
+	struct cavtka_t *dev = (struct cavtka_t *)base;
 	avtka_iterate(dev->a);
 	/* events can be "sent" to the app from the widget callbacks */
-
 	return 0;
 }
 
@@ -63,31 +72,40 @@ static void avtka_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status)
 {
-	struct avtka_t *dev = (struct avtka_t *)base;
+	struct cavtka_t *dev = (struct cavtka_t *)base;
 	/* TODO: figure out how to display feedback */
 }
 
 void
 avtka_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
-	struct avtka_t *dev = (struct avtka_t *)base;
+	struct cavtka_t *dev = (struct cavtka_t *)base;
 }
 
 static int32_t
 avtka_disconnect(struct ctlra_dev_t *base)
 {
-	struct avtka_t *dev = (struct avtka_t *)base;
+	struct cavtka_t *dev = (struct cavtka_t *)base;
 
 	free(dev);
 	return 0;
 }
 
+static void
+event_cb(struct avtka_t *avtka, uint32_t item, void *userdata)
+{
+	printf("event on item %d\n", item);
+}
+
+
 struct ctlra_dev_t *
 ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 {
-	struct avtka_t *dev = (struct avtka_t *)calloc(1, sizeof(struct avtka_t));
+	struct cavtka_t *dev = calloc(1, sizeof(struct cavtka_t));
 	if(!dev)
 		goto fail;
+
+	dev->canary = 0xcafe;
 
 	struct ctlra_dev_info_t *info = future;
 
@@ -110,13 +128,14 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	/* initialize the Avtka UI */
 	struct avtka_opts_t opts = {
 		.w = 360,
-		.h = 240
+		.h = 240,
+		.event_callback = event_cb,
+		.event_callback_userdata = dev,
 	};
 	char name[64];
 	snprintf(name, sizeof(name), "%s - %s", dev->base.info.vendor,
 		 dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);
-
 
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
 		struct ctlra_item_info_t *item =
@@ -130,7 +149,13 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			.draw = AVTKA_DRAW_BUTTON,
 			.interact = AVTKA_INTERACT_CLICK,
 		};
-		avtka_item_create(a, &ai);
+		uint32_t idx = avtka_item_create(a, &ai);
+		if(idx > MAX_ITEMS) {
+			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
+			return 0;
+		}
+		dev->id_to_ctlra[idx].type = CTLRA_EVENT_BUTTON;
+		dev->id_to_ctlra[idx].id   = i;
 	}
 
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
@@ -151,7 +176,13 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
-		avtka_item_create(a, &ai);
+		uint32_t idx = avtka_item_create(a, &ai);
+		if(idx > MAX_ITEMS) {
+			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
+			return 0;
+		}
+		dev->id_to_ctlra[idx].type = CTLRA_EVENT_SLIDER;
+		dev->id_to_ctlra[idx].id   = i;
 	}
 
 	/* pass in back-pointer to ctlra_dev_t class for sending events */
