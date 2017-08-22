@@ -258,6 +258,20 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
 int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		void *userdata);
 
+/** Add a virtualized device. This function adds a "virtual" device, which
+ * provides the controls of the physical device by displaying a user
+ * interface. In order for this function to operate, the device being
+ * virtualized must provide its info statically via the
+ * *ctlra_dev_get_info_by_id* API.
+ *
+ * The info provided about the device is used to emulate the device
+ * itself - the normal accept dev callback will be called in the
+ * application, with the device descriptor filled out as if it was the
+ * actual hardware plugged in. This allows total emulate of the hardware.
+ */
+int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra,
+			     struct ctlra_dev_info_t *info);
+
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
  */

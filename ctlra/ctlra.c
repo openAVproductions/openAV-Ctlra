@@ -117,6 +117,18 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
 	return 0;
 }
 
+int32_t
+ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
+{
+	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
+	/* call into AVTKA and virtualize the device */
+
+	/* assuming info setup is ok, call accept dev callback in app */
+
+	/* add dev to dev list, and it will be polled as normal */
+	return 0;
+}
+
 uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 {
 	if(dev && dev->poll && !dev->banished) {
