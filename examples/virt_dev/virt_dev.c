@@ -203,11 +203,9 @@ int main(int argc, char **argv)
 	/* add a virtualized device */
 	ctlra_dev_virtualize(ctlra, info);
 
-
 	int i = 0;
 	while(i < 4 && !done) {
 		ctlra_idle_iter(ctlra);
-		//avtka_iterate(a);
 		usleep(10 * 1000);
 	}
 

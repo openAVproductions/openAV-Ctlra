@@ -115,11 +115,26 @@ ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
 {
 	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
 	/* call into AVTKA and virtualize the device */
-	//ctlra_avtka_connect(
+	struct ctlra_dev_t *dev =
+		ctlra_dev_connect(c, ctlra_avtka_connect, 0x0, 0x0, 0x0);
+	if(!dev)
+		CTLRA_WARN(c, "avtka dev returned %p\n", dev);
 
 	/* assuming info setup is ok, call accept dev callback in app */
+	int accepted = c->accept_dev_func(&dev->info,
+				&dev->event_func,
+				&dev->feedback_func,
+				&dev->remove_func,
+				&dev->event_func_userdata,
+				c->accept_dev_func_userdata);
 
-	/* add dev to dev list, and it will be polled as normal */
+	CTLRA_INFO(c, "%s %s %s accepted\n", dev->info.vendor,
+		   dev->info.device, accepted ? "" : "not");
+
+	if(!accepted) {
+		ctlra_dev_disconnect(dev);
+		return -ENOTSUP;
+	}
 	return 0;
 }
 
