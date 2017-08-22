@@ -136,10 +136,7 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
-	struct ctlra_dev_id_t id;
-	id.type = CTLRA_DEV_TYPE_USB_HID;
-	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
-
+#if 0
 	struct avtka_opts_t opts = {
 		.w = info->size_x,
 		.h = info->size_y,
@@ -193,15 +190,24 @@ int main(int argc, char **argv)
 			avtka_item_create(a, &ai);
 		}
 	}
+#endif
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
 
+	struct ctlra_dev_id_t id;
+	id.type = CTLRA_DEV_TYPE_USB_HID;
+	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
+
+	/* add a virtualized device */
+	ctlra_dev_virtualize(ctlra, info);
+
+
 	int i = 0;
 	while(i < 4 && !done) {
 		ctlra_idle_iter(ctlra);
-		avtka_iterate(a);
+		//avtka_iterate(a);
 		usleep(10 * 1000);
 	}
 

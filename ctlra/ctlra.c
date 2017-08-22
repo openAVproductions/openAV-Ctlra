@@ -47,7 +47,6 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
 	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
 	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
-	{0x1, 0x1, CTLRA_DEVICE_FUNC(avtka)},
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
 
@@ -84,35 +83,29 @@ int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 }
 
 
-struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
+				      ctlra_dev_connect_func connect,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)
 {
-	if(dev_id < 0)
-		return 0;
+	struct ctlra_dev_t *new_dev = 0;
+	new_dev = connect(event_func, userdata, future);
+	if(new_dev) {
+		new_dev->ctlra_context = ctlra;
+		new_dev->dev_list_next = 0;
 
-	if((unsigned)dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect) {
-		struct ctlra_dev_t *new_dev = 0;
-		new_dev = devices[dev_id].connect(event_func,
-						  userdata,
-						  future);
-		if(new_dev) {
-			new_dev->ctlra_context = ctlra;
-			new_dev->dev_list_next = 0;
-
-			// if list empty, add as main ptr
-			if(ctlra->dev_list == 0) {
-				ctlra->dev_list = new_dev;
-				return new_dev;
-			}
-
-			// skip to end of list, and append
-			struct ctlra_dev_t *dev_iter = ctlra->dev_list;
-			while(dev_iter->dev_list_next)
-				dev_iter = dev_iter->dev_list_next;
-			dev_iter->dev_list_next = new_dev;
+		// if list empty, add as main ptr
+		if(ctlra->dev_list == 0) {
+			ctlra->dev_list = new_dev;
 			return new_dev;
 		}
+
+		// skip to end of list, and append
+		struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+		while(dev_iter->dev_list_next)
+			dev_iter = dev_iter->dev_list_next;
+		dev_iter->dev_list_next = new_dev;
+		return new_dev;
 	}
 	return 0;
 }
@@ -122,6 +115,7 @@ ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
 {
 	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
 	/* call into AVTKA and virtualize the device */
+	//ctlra_avtka_connect(
 
 	/* assuming info setup is ok, call accept dev callback in app */
 
@@ -291,8 +285,13 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 			  int id)
 {
+	if(id < 0 || id >= CTLRA_NUM_DEVS || !devices[id].connect) {
+		CTLRA_WARN(ctlra, "invalid device id recieved %d\n", id);
+		return 0;
+	}
+
 	struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
-						    id,
+						    devices[id].connect,
 						    0x0,
 						    0 /* userdata */,
 						    0x0);
