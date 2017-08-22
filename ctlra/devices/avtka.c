@@ -41,29 +41,12 @@
 
 #define PUGL_PARENT 0x0
 
-static const char *
-avtka_control_get_name(enum ctlra_event_type_t type, uint32_t control)
-{
-	if(type == CTLRA_EVENT_BUTTON && control == 0)
-		return "Test Button";
-	if(type == CTLRA_EVENT_SLIDER && control == 0)
-		return "Test Slider";
-	return 0;
-}
-
-#define CONTROLS_SIZE 10
-
-#define AVTK    0x01
-#define VIRTUAL 0x01
-
 /* Represents the the virtual AVTK UI */
 struct avtka_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
 	/* represents the Avtka UI */
 	struct avtka_t *a;
-	/* current value of each controller is stored here */
-	float hw_values[CONTROLS_SIZE];
 };
 
 static uint32_t avtka_poll(struct ctlra_dev_t *base)
@@ -102,24 +85,24 @@ avtka_disconnect(struct ctlra_dev_t *base)
 struct ctlra_dev_t *
 ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 {
-	printf("%s\n", __func__);
-	(void)future;
 	struct avtka_t *dev = (struct avtka_t *)calloc(1, sizeof(struct avtka_t));
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "OpenAV Avtka");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Virtual Ctlra");
+	struct ctlra_dev_info_t *info = future;
 
-	dev->base.info.vendor_id = AVTK;
-	dev->base.info.device_id = VIRTUAL;
+	/* reuse the existing info from the device backend, amended as 
+	 * appropriate below */
+	dev->base.info = *info;
+
+	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
+		 "%s", "OpenAV Virtual Ctlra");
+	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
+		 "%s %s", info->vendor, info->device);
 
 	dev->base.poll = avtka_poll;
 	dev->base.disconnect = avtka_disconnect;
 	dev->base.light_set = avtka_light_set;
-	dev->base.info.get_name = avtka_control_get_name;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
@@ -130,25 +113,49 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 		.h = 240
 	};
 	char name[64];
-	snprintf(name, sizeof(name), "%s:%s", dev->base.info.vendor,
+	snprintf(name, sizeof(name), "%s - %s", dev->base.info.vendor,
 		 dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);
 
-	struct avtka_item_opts_t item = {
-		.name = "Dial 1",
-		.x = 10, .y = 10, .w = 50, .h = 50,
-		.draw = AVTKA_DRAW_DIAL,
-		.interact = AVTKA_INTERACT_CLICK,
-	};
-	uint32_t button1 = avtka_item_create(a, &item);
-	item.x = 70;
-	snprintf(item.name, sizeof(item.name), "Dial 2");
-	uint32_t button2 = avtka_item_create(a, &item);
-	printf("items created %d and %d\n", button1, button2);
+
+	for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
+		struct ctlra_item_info_t *item =
+			&info->control_info[CTLRA_EVENT_BUTTON][i];
+		struct avtka_item_opts_t ai = {
+			 //.name = name,
+			.x = item->x,
+			.y = item->y,
+			.w = item->w,
+			.h = item->h,
+			.draw = AVTKA_DRAW_BUTTON,
+			.interact = AVTKA_INTERACT_CLICK,
+		};
+		avtka_item_create(a, &ai);
+	}
+
+	for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
+		struct ctlra_item_info_t *item =
+			&info->control_info[CTLRA_EVENT_SLIDER][i];
+
+		const char *name = ctlra_info_get_name(info,
+					CTLRA_EVENT_SLIDER, i);
+
+		struct avtka_item_opts_t ai = {
+			.x = item->x,
+			.y = item->y,
+			.w = item->w,
+			.h = item->h,
+			.interact = AVTKA_INTERACT_CLICK,
+		};
+		ai.draw = (item->flags & CTLRA_ITEM_FADER) ?
+			  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
+
+		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		avtka_item_create(a, &ai);
+	}
 
 	/* pass in back-pointer to ctlra_dev_t class for sending events */
 	dev->a = a;
-
 
 	return (struct ctlra_dev_t *)dev;
 fail:

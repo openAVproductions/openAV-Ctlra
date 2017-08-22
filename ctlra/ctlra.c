@@ -113,10 +113,11 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 int32_t
 ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
 {
+	/* call into AVTKA and virtualize the device, passing info through
+	 * the future (void *) to the AVTKA backend. */
 	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
-	/* call into AVTKA and virtualize the device */
-	struct ctlra_dev_t *dev =
-		ctlra_dev_connect(c, ctlra_avtka_connect, 0x0, 0x0, 0x0);
+	struct ctlra_dev_t *dev = ctlra_dev_connect(c, ctlra_avtka_connect,
+						    0x0, 0x0, info);
 	if(!dev)
 		CTLRA_WARN(c, "avtka dev returned %p\n", dev);
 

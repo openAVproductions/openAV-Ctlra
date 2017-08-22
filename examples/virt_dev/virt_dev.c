@@ -136,71 +136,14 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
-#if 0
-	struct avtka_opts_t opts = {
-		.w = info->size_x,
-		.h = info->size_y,
-	};
-	char dev_name[64];
-	snprintf(dev_name, sizeof(dev_name), "Ctlra VDev: %s %s",
-		 info->vendor, info->device);
-	struct avtka_t *a = avtka_create(dev_name, &opts);
-
-	if(info != NULL) {
-		printf("static info %s %s\n  buttons = %d\n  sliders %d\n",
-		       info->vendor, info->device,
-		       info->control_count[CTLRA_EVENT_BUTTON],
-		       info->control_count[CTLRA_EVENT_SLIDER]);
-
-		for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
-			struct ctlra_item_info_t *item =
-				&info->control_info[CTLRA_EVENT_BUTTON][i];
-			struct avtka_item_opts_t ai = {
-				 //.name = name,
-				.x = item->x,
-				.y = item->y,
-				.w = item->w,
-				.h = item->h,
-				.draw = AVTKA_DRAW_BUTTON,
-			};
-			avtka_item_create(a, &ai);
-		}
-
-		printf("sliders\n");
-		for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
-			struct ctlra_item_info_t *item =
-				&info->control_info[CTLRA_EVENT_SLIDER][i];
-
-			const char *name = ctlra_info_get_name(info,
-						CTLRA_EVENT_SLIDER, i);
-			printf("%d, %s: %d %d\t%d %d\n", i, name,
-			       item->x, item->y,
-			       item->w, item->h);
-
-			struct avtka_item_opts_t ai = {
-				.x = item->x,
-				.y = item->y,
-				.w = item->w,
-				.h = item->h,
-			};
-			ai.draw = (item->flags & CTLRA_ITEM_FADER) ?
-				  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
-
-			snprintf(ai.name, sizeof(ai.name), "%s", name);
-			avtka_item_create(a, &ai);
-		}
-	}
-#endif
-
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
 
+	/* add a virtualized device */
 	struct ctlra_dev_id_t id;
 	id.type = CTLRA_DEV_TYPE_USB_HID;
 	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
-
-	/* add a virtualized device */
 	ctlra_dev_virtualize(ctlra, info);
 
 	int i = 0;
