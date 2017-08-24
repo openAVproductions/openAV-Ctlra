@@ -150,8 +150,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 	/* initialize the Avtka UI */
 	struct avtka_opts_t opts = {
-		.w = 360,
-		.h = 240,
+		.w = info->size_x,
+		.h = info->size_y,
 		.event_callback = event_cb,
 		.event_callback_userdata = dev,
 	};
