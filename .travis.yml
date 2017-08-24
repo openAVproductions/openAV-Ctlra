@@ -1,12 +1,23 @@
 sudo: required
 language: c
+group: beta
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+
+install:
+  - export PATH="`pwd`/build:${PATH}"
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install python3 ninja; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build; fi
+  - sudo apt-get install python3-pip
+  - sudo pip3 install meson
 
 script:
   - sudo apt-get install libasound2-dev libusb-1.0-0-dev libjack-dev libsndfile-dev
-  - mkdir build
-  - cd build
-  - cmake ..
-
+  - meson builddir
+  - ninja -C builddir
 
 notifications:
   irc:
