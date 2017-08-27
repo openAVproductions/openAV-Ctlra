@@ -264,9 +264,13 @@ const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
 	/* the info parameter already has the appropriate function pointer
 	 * set by the driver, so we don't need the device instance to be
 	 * passed to the get_name() function */
-	if(info && info->get_name)
+	if(!info)
+		return 0;
+
+	if(info->get_name)
 		return info->get_name(type, control_id);
-	return 0;
+
+	return "N/A";
 }
 
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)

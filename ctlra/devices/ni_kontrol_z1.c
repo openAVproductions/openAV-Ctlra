@@ -366,4 +366,6 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 
 	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
+
+	.get_name = ni_kontrol_z1_control_get_name,
 };
