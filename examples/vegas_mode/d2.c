@@ -132,7 +132,6 @@ void kontrol_d2_func(struct ctlra_dev_t* dev,
 	(void)dev;
 	(void)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
-		char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
 		int p = 0;
 		switch(e->type) {

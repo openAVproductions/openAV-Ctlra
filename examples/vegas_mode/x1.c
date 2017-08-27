@@ -25,7 +25,6 @@ void kontrol_x1_func(struct ctlra_dev_t* dev,
 {
 	struct dummy_data *d = (void *)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
-		char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
 		switch(e->type) {
 

@@ -88,6 +88,7 @@ int main(int argc, char** argv)
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, &dummy);
+	printf("vegas_mode: connected devices: %d\n", num_devs);
 
 	audio_init(&dummy);
 

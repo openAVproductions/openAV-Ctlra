@@ -35,7 +35,6 @@ void demo_event_func(struct ctlra_dev_t* dev,
 	uint8_t msg[3] = {0};
 
 	for(uint32_t i = 0; i < num_events; i++) {
-		const char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
 		int ret;
 		switch(e->type) {
@@ -119,6 +118,7 @@ int main()
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	printf("daemon: connected devices: %d\n", num_devs);
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
