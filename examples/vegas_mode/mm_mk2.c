@@ -23,7 +23,7 @@ void mm_func(struct ctlra_dev_t* dev,
 	(void)dev;
 	(void)userdata;
 	for(uint32_t i = 0; i < num_events; i++) {
-		char *pressed = 0;
+		//char *pressed = 0;
 		struct ctlra_event_t *e = events[i];
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
