@@ -6,11 +6,13 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
+required_libs = ['libusb-1.0', 'alsa']
+
 avtka   = dependency('openav_avtka', required: false)
 if(avtka.found())
   add_global_arguments('-DHAVE_AVTKA', language : 'c')
+  required_libs += 'openav_avtka'
 endif
-
 
 subdir('ctlra')
 
@@ -18,8 +20,7 @@ pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',
               version: conf_data.get('version'),
-              requires: ['libusb-1.0', 'alsa'],
-              dependencies: avtka,
+              requires: required_libs,
               libraries: ctlra)
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
