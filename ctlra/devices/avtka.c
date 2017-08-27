@@ -95,11 +95,10 @@ static void
 event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)userdata;
-	printf("event on item %d\n", item);
 	uint32_t type = dev->id_to_ctlra[item].type;
 	uint32_t id   = dev->id_to_ctlra[item].id;
-	printf("event type %d, id = %d\n", type, id);
 
+	/* default type is button */
 	struct ctlra_event_t event = {
 		.type = type,
 		.button = {
@@ -107,6 +106,8 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 			.pressed = (value == 1.0),
 		},
 	};
+
+	/* modify to other type as required */
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		event.slider.id = id;
@@ -115,10 +116,11 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 	default:
 		break;
 	}
+
+	/* send event */
 	struct ctlra_event_t *e = {&event};
 	dev->base.event_func(&dev->base, 1, &e,
 			     dev->base.event_func_userdata);
-
 }
 
 struct ctlra_dev_t *
@@ -132,8 +134,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 	struct ctlra_dev_info_t *info = future;
 
-	/* reuse the existing info from the device backend, amended as 
-	 * appropriate below */
+	/* reuse the existing info from the device backend, then update */
 	dev->base.info = *info;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
