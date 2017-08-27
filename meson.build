@@ -7,6 +7,10 @@ conf_data.set('version', '0.1')
 cc  = meson.get_compiler('c')
 
 avtka   = dependency('openav_avtka', required: false)
+if(avtka.found())
+  add_global_arguments('-DHAVE_AVTKA', language : 'c')
+endif
+
 
 subdir('ctlra')
 

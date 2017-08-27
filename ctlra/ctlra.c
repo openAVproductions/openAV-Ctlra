@@ -113,6 +113,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 int32_t
 ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
 {
+#ifdef HAVE_AVTKA
 	/* call into AVTKA and virtualize the device, passing info through
 	 * the future (void *) to the AVTKA backend. */
 	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
@@ -134,9 +135,12 @@ ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
 
 	if(!accepted) {
 		ctlra_dev_disconnect(dev);
-		return -ENOTSUP;
+		return -ECONNREFUSED;
 	}
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
