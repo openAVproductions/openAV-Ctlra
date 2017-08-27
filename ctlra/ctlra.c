@@ -23,7 +23,8 @@ struct ctlra_dev_connect_func_t {
  * implementation, instead of centrally located here. This allows drivers
  * to be "dropped in" to the source, and then automatically register up
  * without library code changes */
-CTLRA_DEVICE_DECL(ni_kontrol_d2);
+CTLRA_DEVICE_DECL(ni_kontrol_s8);
+//CTLRA_DEVICE_DECL(ni_kontrol_d2);
 CTLRA_DEVICE_DECL(ni_kontrol_z1);
 CTLRA_DEVICE_DECL(ni_kontrol_f1);
 CTLRA_DEVICE_DECL(ni_kontrol_f1);
@@ -35,7 +36,11 @@ CTLRA_DEVICE_DECL(akai_apc);
 
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
-	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
+
+	/* TODO: fix handling of 0x0 usb vid pid */
+	{0, 0, CTLRA_DEVICE_FUNC(ni_kontrol_s8)},
+
+	//{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
 	{0x17cc, 0x1210, CTLRA_DEVICE_FUNC(ni_kontrol_z1)},
 	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
 	{0x17cc, 0x1320, CTLRA_DEVICE_FUNC(ni_kontrol_s2_mk2)},
