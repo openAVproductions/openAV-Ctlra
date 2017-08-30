@@ -10,12 +10,13 @@ libusb = dependency('libusb-1.0')
 conf_data.set('libusb', libusb.found())
 alsa   = dependency('alsa', required: false)
 conf_data.set('alsa', alsa.found())
+gl     = dependency('gl', required: false)
 
 ctlra = static_library('ctlra',
     [ctlra_src, devices_src],
     c_args: '-Wno-unused-variable',
     install : true,
-    dependencies: [libusb, alsa, avtka])
+    dependencies: [libusb, alsa, avtka, gl])
 
 configure_file(input : 'config.h.in',
                output : 'config.h',
