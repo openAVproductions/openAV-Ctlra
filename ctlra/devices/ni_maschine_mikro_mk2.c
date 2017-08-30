@@ -131,6 +131,46 @@ static const struct ni_maschine_mikro_mk2_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
+#define MIKRO_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* restart -> grid */
+	{.x = 20, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 45, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 70, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 95, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	/* play -> shift */
+	{.x = 20, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 45, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 70, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 95, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	/* group -> note repeat */
+	{.x = 20, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 45, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 70, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x = 95, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	/* encoder press */
+	{.x = 95, .y =  70, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	/* F1 -> control */
+	{.x = 20, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 45, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 70, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 95, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	/* Nav -> Main */
+	{.x = 20, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 45, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 70, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	{.x = 95, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN},
+	/* Scene -> Mute */
+	{.x =130, .y =  29, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y =  47, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y =  66, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y =  84, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y = 103, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y = 121, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y = 140, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+	{.x =130, .y = 158, .w = 18,  .h = 10, .flags = MIKRO_BTN},
+};
+
 #define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
@@ -441,6 +481,7 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
+
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
@@ -455,3 +496,25 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Maschine Mikro Mk2",
+	.vendor_id = NI_VENDOR,
+	.device_id = NI_MASCHINE_MIKRO_MK2,
+	.size_x    = 320,
+	.size_y    = 195,
+
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_GRID] = 1,
+	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
+
+	.grid_info[0] = {
+		.rgb = 1,
+		.velocity = 1,
+		.pressure = 1,
+		.x = 4,
+		.y = 4,
+	},
+
+	.get_name = ni_maschine_mikro_mk2_control_get_name,
+};
