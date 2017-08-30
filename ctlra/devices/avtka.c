@@ -113,6 +113,10 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 		event.slider.id = id;
 		event.slider.value = value;
 		break;
+	case CTLRA_EVENT_GRID:
+		event.grid.id = 0;
+		event.grid.pos = id;
+		event.grid.pressed = (value == 1.0);
 	default:
 		break;
 	}
@@ -208,6 +212,34 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 		}
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_SLIDER;
 		dev->id_to_ctlra[idx].id   = i;
+	}
+
+	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
+		struct ctlra_grid_info_t *gi = &info->grid_info[g];
+		uint32_t size_w = (gi->info.w / gi->x);
+		uint32_t size_h = (gi->info.h / gi->y);
+		/* iterate over each pad */
+		for(int i = 0; i < (gi->x * gi->y); i++) {
+			/* draw big square for grid */
+			struct avtka_item_opts_t ai = {
+				 //.name = name,
+				.x = gi->info.x + ((i % gi->x) * (size_w+2)),
+				.y = gi->info.y + ((i / gi->y) * (size_h+2)),
+				.w = size_w - 2,
+				.h = size_h - 2,
+				.draw = AVTKA_DRAW_BUTTON,
+				.interact = AVTKA_INTERACT_CLICK,
+			};
+			printf("grid %d: %d %d, %d %d\n", i,
+			       ai.x, ai.y, ai.w, ai.h);
+			uint32_t idx = avtka_item_create(a, &ai);
+			if(idx > MAX_ITEMS) {
+				printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
+				return 0;
+			}
+			dev->id_to_ctlra[idx].type = CTLRA_EVENT_GRID;
+			dev->id_to_ctlra[idx].id   = i;
+		}
 	}
 
 	/* pass in back-pointer to ctlra_dev_t class for sending events */
