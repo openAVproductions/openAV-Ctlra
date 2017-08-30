@@ -194,10 +194,11 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			.y = item->y,
 			.w = item->w,
 			.h = item->h,
-			.interact = AVTKA_INTERACT_CLICK,
 		};
 		ai.draw = (item->flags & CTLRA_ITEM_FADER) ?
 			  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
+		ai.interact = item->h > (item->w - 2) ?
+			AVTKA_INTERACT_DRAG_V : AVTKA_INTERACT_DRAG_H ;
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
 		uint32_t idx = avtka_item_create(a, &ai);
