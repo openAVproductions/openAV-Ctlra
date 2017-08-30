@@ -105,19 +105,6 @@ struct ctlra_create_opts_t {
 typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 						uint32_t control_id);
 
-/** A struct describing the properties of a grid */
-struct ctlra_grid_info_t {
-	/* capabilities of each pad */
-	/** When non-zero each pad has the capability to show RGB colour.
-	 * When zero, the pad either has no LED, or brightness only */
-	uint8_t rgb;
-	uint8_t velocity;
-	uint8_t pressure;
-	/* number of pads in x and y direction */
-	uint32_t x;
-	uint32_t y;
-};
-
 /** Struct that provides physical layout and capabilities about each
  * item on the controller. Sizes are provided in millimeters. An item can
  * represent a control such as a slider or dial, but also feedback only
@@ -139,6 +126,21 @@ struct ctlra_item_info_t {
 	uint64_t flags;
 
 	uint32_t led_num;
+};
+
+/** A struct describing the properties of a grid */
+struct ctlra_grid_info_t {
+	/* capabilities of each pad */
+	/** When non-zero each pad has the capability to show RGB colour.
+	 * When zero, the pad either has no LED, or brightness only */
+	uint8_t rgb;
+	uint8_t velocity;
+	uint8_t pressure;
+	/* number of pads in x and y direction */
+	uint32_t x;
+	uint32_t y;
+	/* location of grid itself on the device */
+	struct ctlra_item_info_t info;
 };
 
 #define CTLRA_DEV_TYPE_INVALID          0
