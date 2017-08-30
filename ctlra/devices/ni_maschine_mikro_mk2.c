@@ -514,6 +514,12 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 		.pressure = 1,
 		.x = 4,
 		.y = 4,
+		.info = {
+			.x = 168,
+			.y = 29,
+			.w = 138,
+			.h = 138,
+		}
 	},
 
 	.get_name = ni_maschine_mikro_mk2_control_get_name,
