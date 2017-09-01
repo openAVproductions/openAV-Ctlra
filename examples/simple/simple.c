@@ -35,7 +35,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	 * proper demo on how to do feedback, see examples/vegas/
 	 */
 
-	static const char* grid_pressed[] = { " X ", "   " };
+	static const char* grid_pressed[] = { "   ", " X " };
 
 	/* Retrieve info, so we can look up names. Note this is not
 	 * expected to be used in production code - the names should be
@@ -80,7 +80,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			} else {
 				pressed = "---";
 			}
-			printf("[%s] grid %d", pressed ? " X " : "   ", e->grid.pos);
+			printf("[%s] grid %d", pressed, e->grid.pos);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
