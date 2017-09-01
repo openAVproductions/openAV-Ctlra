@@ -220,6 +220,14 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 				};
 				struct ctlra_event_t *e = {&event};
 				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
+					/* detect velocity over limit */
+					float velo = (dev->pad_avg[i] - 200) / 200.f;
+					float v2 = velo * velo;
+					float fin = (velo - v2);
+					fin = fin > 1.0f ? 1.0f : fin;
+					fin = fin < 0.0f ? 0.0f : fin;
+					//printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
+					e->grid.pressure = fin;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 					//printf("%d pressed\n", i);
@@ -228,6 +236,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 					//printf("%d release\n", i);
 					dev->pads[i] = 0;
 					event.grid.pressed = 0;
+					event.grid.pressure = 0.f;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
