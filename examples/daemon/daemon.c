@@ -58,12 +58,15 @@ void demo_event_func(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_GRID:
 			msg[0] = e->grid.pressed ? 0x90 : 0x80;
 			msg[1] = e->grid.pos + 36; /* GM kick drum note */
-			msg[2] = e->grid.pressed ? 0x70 : 0;
+			msg[2] = e->grid.pressed ?
+					e->grid.pressure * 127 : 0;
 			ret = ctlra_midi_output_write(midi, 3, msg);
 			break;
 		default:
 			break;
 		};
+		// TODO: Error check midi writes
+		(void) ret;
 	}
 }
 
