@@ -127,6 +127,17 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 			     dev->base.event_func_userdata);
 }
 
+#define CTLRA_RESIZE 2
+static inline void
+ctlra_item_scale(struct avtka_item_opts_t *i)
+{
+	const uint32_t s = CTLRA_RESIZE;
+	i->x *= s;
+	i->y *= s;
+	i->w *= s;
+	i->h *= s;
+}
+
 struct ctlra_dev_t *
 ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 {
@@ -155,8 +166,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 	/* initialize the Avtka UI */
 	struct avtka_opts_t opts = {
-		.w = info->size_x,
-		.h = info->size_y,
+		.w = info->size_x * CTLRA_RESIZE,
+		.h = info->size_y * CTLRA_RESIZE,
 		.event_callback = event_cb,
 		.event_callback_userdata = dev,
 	};
@@ -177,6 +188,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			.draw = AVTKA_DRAW_BUTTON,
 			.interact = AVTKA_INTERACT_CLICK,
 		};
+		ctlra_item_scale(&ai);
 		uint32_t idx = avtka_item_create(a, &ai);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
@@ -199,6 +211,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			.w = item->w,
 			.h = item->h,
 		};
+		ctlra_item_scale(&ai);
 		ai.draw = (item->flags & CTLRA_ITEM_FADER) ?
 			  AVTKA_DRAW_SLIDER :  AVTKA_DRAW_DIAL;
 		ai.interact = item->h > (item->w - 2) ?
@@ -230,6 +243,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 				.draw = AVTKA_DRAW_BUTTON,
 				.interact = AVTKA_INTERACT_CLICK,
 			};
+			ctlra_item_scale(&ai);
 			printf("grid %d: %d %d, %d %d\n", i,
 			       ai.x, ai.y, ai.w, ai.h);
 			uint32_t idx = avtka_item_create(a, &ai);
