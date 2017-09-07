@@ -160,9 +160,9 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	dev->base.info = *info;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "OpenAV Virtual Ctlra");
+		 "Ctlra Virtual - %s", info->vendor);
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s %s", info->vendor, info->device);
+		 "%s", info->device);
 
 	dev->base.poll = avtka_poll;
 	dev->base.disconnect = avtka_disconnect;
