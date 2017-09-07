@@ -303,6 +303,8 @@ ni_kontrol_z1_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
@@ -312,6 +314,7 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
+#if 0
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
@@ -322,6 +325,9 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
 	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
+#else
+	dev->base.info = ctlra_ni_kontrol_z1_info;
+#endif
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					 NI_VENDOR, NI_KONTROL_Z1);
