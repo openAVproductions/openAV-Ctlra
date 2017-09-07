@@ -1,4 +1,5 @@
 example_simple = files('simple/simple.c')
+example_dev_test = files('device_test/device_test.c')
 example_daemon = files('daemon/daemon.c')
 example_virt_dev = files('virt_dev/virt_dev.c')
 example_seq    = files('sequencer/seq.c', 'sequencer/sequencer.c')

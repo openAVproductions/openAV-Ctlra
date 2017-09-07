@@ -49,6 +49,12 @@ executable('virt_dev',
            include_directories: ctlra_includes,
            dependencies: avtka,
            link_with: ctlra)
+
+executable('device_test',
+           example_dev_test,
+           include_directories: ctlra_includes,
+           dependencies: avtka,
+           link_with: ctlra)
 endif
 
 cairo   = dependency('cairo', required: false)
