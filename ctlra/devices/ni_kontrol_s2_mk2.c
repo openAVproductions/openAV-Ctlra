@@ -282,6 +282,76 @@ static const struct ni_kontrol_s2_mk2_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
+static struct ctlra_item_info_t buttons_info[] = {
+	/* R: play cue sync shift */
+	{.x = 376, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 298, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* R: 4, 3, 2, 1 */
+	{.x = 376, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 298, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* Jog wheel Press L, R, Main/Booth Switch, Mic Engage */
+	{.x = 142, .y = 210, .w = 18, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 280, .y = 210, .w = 18, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 164, .y =  10, .w = 24, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 380, .y = 350, .w = 18, .h = 18, .flags = CTLRA_ITEM_BUTTON},
+	/* R: Mixer Cue, Flux, Loop In, Loop Out */
+	{.x = 250, .y = 195, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 415, .y = 218, .w = 10, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	/* L: play cue sync shift */
+	{.x = 126, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  48, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* L: 4, 3, 2, 1 */
+	{.x = 126, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  48, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* remix On B, A, Browse Load B, A */
+	{.x = 222, .y = 125, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 202, .y = 125, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 222, .y = 184, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 202, .y = 184, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* L: Mixer Cue, Flux, Loop In, Loop Out */
+	{.x = 170, .y = 195, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  15, .y = 218, .w = 10, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	/* FX 2: Dry wet, 3, 2, 1, */
+	{.x = 317, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 417, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 384, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 352, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* TODO: gain encoders press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* Mixer R: FX 2, 1 */
+	{.x = 265, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 245, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* Mixer L: FX 2, 1 */
+	{.x = 185, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 165, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* FX 1: Dry wet, 3, 2, 1, */
+	{.x =  17, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 117, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  84, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  54, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* TODO: Left deck loop encoder press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* TODO: Browse encoder press */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* TODO: Right deck loop encoder press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+};
+
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
 #define ENCODER_COUNT 9
@@ -594,6 +664,7 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 
 	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
 	dev->base.info.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
+	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
@@ -637,6 +708,7 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_COUNT,
 
+	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
 	.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
 
