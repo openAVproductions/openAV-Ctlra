@@ -61,7 +61,7 @@ struct cavtka_t {
 	struct id_to_ctlra_t id_to_ctlra[MAX_ITEMS];
 };
 
-static uint32_t avtka_poll(struct ctlra_dev_t *base)
+uint32_t avtka_poll(struct ctlra_dev_t *base)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	avtka_iterate(dev->a);
@@ -75,6 +75,13 @@ static void avtka_light_set(struct ctlra_dev_t *base,
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	/* TODO: figure out how to display feedback */
+	struct avtka_t *a = dev->a;
+	static float v;
+	printf("%s: %d %f\n", __func__, light_id, v);
+	avtka_item_value(a, light_id, v);
+	v += 0.0066;
+	if(v > 1.0f) v -= 1.0f;
+	avtka_redraw(a);
 }
 
 void
@@ -145,6 +152,10 @@ ctlra_item_scale(struct avtka_item_opts_t *i)
 	i->h *= s;
 }
 
+struct avtka_t *
+ctlra_build_avtka_ui(struct cavtka_t *dev,
+		     struct ctlra_dev_info_t *info);
+
 struct ctlra_dev_t *
 ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 {
@@ -171,6 +182,23 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
 
+	printf("%s, self %p\n", __func__, dev);
+	/* pass in back-pointer to ctlra_dev_t class for sending events */
+	dev->a = ctlra_build_avtka_ui(dev, info);
+	if(!dev->a)
+		goto fail;
+
+	return (struct ctlra_dev_t *)dev;
+fail:
+	printf("%s, failed to create dev, ret 0\n", __func__);
+	free(dev);
+	return 0;
+}
+
+struct avtka_t *
+ctlra_build_avtka_ui(struct cavtka_t *dev,
+		     struct ctlra_dev_info_t *info)
+{
 	/* initialize the Avtka UI */
 	struct avtka_opts_t opts = {
 		.w = info->size_x * CTLRA_RESIZE,
@@ -182,6 +210,9 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	snprintf(name, sizeof(name), "%s - %s", dev->base.info.vendor,
 		 dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);
+	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);
+	if(!a)
+		return 0;
 
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
 		struct ctlra_item_info_t *item =
@@ -243,7 +274,6 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			&info->control_info[CTLRA_EVENT_ENCODER][i];
 		if(!item)
 			break;
-
 		const char *name = ctlra_info_get_name(info,
 					CTLRA_EVENT_ENCODER, i);
 
@@ -262,6 +292,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
 		uint32_t idx = avtka_item_create(a, &ai);
+		printf("encoder %d = %s\n", idx, name);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
 			return 0;
@@ -303,11 +334,9 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 		}
 	}
 
-	/* pass in back-pointer to ctlra_dev_t class for sending events */
-	dev->a = a;
+	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);
 
-	return (struct ctlra_dev_t *)dev;
-fail:
-	free(dev);
-	return 0;
+	/* return the pointer to the new UI instance */
+	return a;
 }
+

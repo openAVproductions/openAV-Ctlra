@@ -643,6 +643,8 @@ ni_kontrol_s2_mk2_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
@@ -653,11 +655,11 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
+#if 0
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
 		 "%s", "Native Instruments");
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", "Kontrol S2_MK2");
-
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
@@ -666,6 +668,9 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
 	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
+#else
+	dev->base.info = ctlra_ni_kontrol_s2_mk2_info;
+#endif
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
 					  NI_KONTROL_S2_MK2);
