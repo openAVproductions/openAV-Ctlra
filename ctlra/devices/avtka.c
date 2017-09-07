@@ -179,6 +179,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_BUTTON][i];
+		if(!item)
+			break;
 		struct avtka_item_opts_t ai = {
 			 //.name = name,
 			.x = item->x,
@@ -201,6 +203,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_SLIDER][i];
+		if(!item)
+			break;
 
 		const char *name = ctlra_info_get_name(info,
 					CTLRA_EVENT_SLIDER, i);
@@ -229,6 +233,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
 		struct ctlra_grid_info_t *gi = &info->grid_info[g];
+		if(!gi)
+			break;
 		uint32_t size_w = (gi->info.w / gi->x);
 		uint32_t size_h = (gi->info.h / gi->y);
 		/* iterate over each pad */
