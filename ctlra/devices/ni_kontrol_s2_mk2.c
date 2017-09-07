@@ -284,7 +284,25 @@ static const struct ni_kontrol_s2_mk2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-#define ENCODER_COUNT 7
+#define ENCODER_COUNT 9
+
+#define ENCODER_NOTCH  (CTLRA_ITEM_ENCODER | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t encoders_info[] = {
+	/* jog left, jog right */
+	{.x =  15, .y =  95, .w = 125, .h = 125, .flags = CTLRA_ITEM_ENCODER},
+	{.x = 300, .y =  95, .w = 125, .h = 125, .flags = CTLRA_ITEM_ENCODER},
+	/* left encoder (Left deck), right encoder (left deck) */
+	{.x =  44, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	{.x = 122, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* browse */
+	{.x = 208, .y = 155, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* left encoder (Left deck), right encoder (left deck) */
+	{.x = 294, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	{.x = 372, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* gain left, gain right */
+	{.x = 172, .y =  60, .w =  18, .h =  18, .flags = ENCODER_NOTCH},
+	{.x = 252, .y =  60, .w =  18, .h =  18, .flags = ENCODER_NOTCH},
+};
 
 /* 36 LEDs on top half - all brightness only */
 #define LED_COUNT 64
@@ -575,6 +593,7 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
 
 	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
+	dev->base.info.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
 	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
@@ -616,9 +635,10 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
 
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_COUNT,
 
-	//.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
 	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
+	.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
 
 	.get_name = ni_kontrol_s2_mk2_control_get_name,
 };
