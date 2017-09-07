@@ -55,13 +55,19 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			ret = ctlra_midi_output_write(midi, 3, msg);
 			break;
 
-		case CTLRA_EVENT_GRID:
+		case CTLRA_EVENT_GRID: {
 			msg[0] = e->grid.pressed ? 0x90 : 0x80;
-			msg[1] = e->grid.pos + 36; /* GM kick drum note */
+			int pos = e->grid.pos;
+			/* transform grid */
+			int row = 3 - (pos / 4);
+			int col = (pos % 4);
+			int new_pos = (row * 4) + col;
+			msg[1] = new_pos + 36; /* GM kick drum note */
 			msg[2] = e->grid.pressed ?
 					e->grid.pressure * 127 : 0;
 			ret = ctlra_midi_output_write(midi, 3, msg);
 			break;
+		}
 		default:
 			break;
 		};
