@@ -247,7 +247,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			.h = item->h,
 		};
 		ctlra_item_scale(&ai);
-		ai.draw = AVTKA_DRAW_DIAL;
+		ai.draw = (item->flags & CTLRA_ITEM_CENTER_NOTCH) ?
+			  AVTKA_DRAW_DIAL :  AVTKA_DRAW_JOG_WHEEL;
 		ai.interact = item->h > (item->w - 2) ?
 			AVTKA_INTERACT_DRAG_V : AVTKA_INTERACT_DRAG_H ;
 
