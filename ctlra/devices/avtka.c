@@ -45,7 +45,8 @@
 
 /* reverse map from item id to ctlra type/id */
 struct id_to_ctlra_t {
-	uint32_t type;
+	uint16_t type;
+	uint16_t encoder_float_delta : 1;
 	uint32_t id;
 };
 
@@ -117,6 +118,12 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 		event.grid.id = 0;
 		event.grid.pos = id;
 		event.grid.pressed = (value == 1.0);
+	case CTLRA_EVENT_ENCODER:
+		event.encoder.id = id;
+		if(dev->id_to_ctlra[item].encoder_float_delta)
+			event.encoder.delta_float = value;
+		else
+			event.encoder.delta = (int)value;
 	default:
 		break;
 	}
@@ -260,6 +267,8 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 			return 0;
 		}
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_ENCODER;
+		dev->id_to_ctlra[idx].encoder_float_delta =
+			!(item->flags & CTLRA_ITEM_CENTER_NOTCH);
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
