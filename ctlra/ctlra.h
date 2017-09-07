@@ -113,6 +113,7 @@ typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 #define CTLRA_ITEM_BUTTON        (1<<0)
 #define CTLRA_ITEM_FADER         (1<<1) /* check W vs H for orientation */
 #define CTLRA_ITEM_DIAL          (1<<2)
+#define CTLRA_ITEM_ENCODER       (1<<3)
 #define CTLRA_ITEM_CENTER_NOTCH  (1<<4)
 #define CTLRA_ITEM_LED_INTENSITY (1<<5)
 #define CTLRA_ITEM_LED_COLOUR    (1<<6)
