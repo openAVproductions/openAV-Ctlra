@@ -231,6 +231,36 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
+	for(int i = 0; i < info->control_count[CTLRA_EVENT_ENCODER]; i++) {
+		struct ctlra_item_info_t *item =
+			&info->control_info[CTLRA_EVENT_ENCODER][i];
+		if(!item)
+			break;
+
+		const char *name = ctlra_info_get_name(info,
+					CTLRA_EVENT_ENCODER, i);
+
+		struct avtka_item_opts_t ai = {
+			.x = item->x,
+			.y = item->y,
+			.w = item->w,
+			.h = item->h,
+		};
+		ctlra_item_scale(&ai);
+		ai.draw = AVTKA_DRAW_DIAL;
+		ai.interact = item->h > (item->w - 2) ?
+			AVTKA_INTERACT_DRAG_V : AVTKA_INTERACT_DRAG_H ;
+
+		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		uint32_t idx = avtka_item_create(a, &ai);
+		if(idx > MAX_ITEMS) {
+			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
+			return 0;
+		}
+		dev->id_to_ctlra[idx].type = CTLRA_EVENT_ENCODER;
+		dev->id_to_ctlra[idx].id   = i;
+	}
+
 	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
 		struct ctlra_grid_info_t *gi = &info->grid_info[g];
 		if(!gi)
