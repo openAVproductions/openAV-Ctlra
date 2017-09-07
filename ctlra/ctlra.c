@@ -35,6 +35,7 @@ CTLRA_DEVICE_DECL(ni_maschine_jam);
 CTLRA_DEVICE_DECL(akai_apc);
 CTLRA_DEVICE_DECL(avtka);
 
+CTLRA_DEVICE_INFO(ni_kontrol_s2_mk2);
 CTLRA_DEVICE_INFO(ni_kontrol_z1);
 CTLRA_DEVICE_INFO(ni_maschine_mikro_mk2);
 
@@ -244,7 +245,8 @@ ctlra_dev_match_usb_hid(struct ctlra_dev_id_t *id)
 	int vendor = id->usb_hid.vendor_id;
 	int device = id->usb_hid.device_id;
 	/* TODO: iter registered static info structs, return if match */
-	return &CTLRA_DEVICE_INFO_NAME(ni_kontrol_z1);
+	return &CTLRA_DEVICE_INFO_NAME(ni_kontrol_s2_mk2);
+	//return &CTLRA_DEVICE_INFO_NAME(ni_kontrol_z1);
 	//return &CTLRA_DEVICE_INFO_NAME(ni_maschine_mikro_mk2);
 }
 
