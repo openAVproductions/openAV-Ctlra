@@ -60,6 +60,9 @@ struct cavtka_t {
 	uint32_t canary;
 	/* item ids for each ui element, stored by event type */
 	struct id_to_ctlra_t id_to_ctlra[MAX_ITEMS];
+
+	/* ctlra id offsets for each event type */
+	uint32_t type_to_item_offset[CTLRA_EVENT_T_COUNT];
 };
 
 uint32_t avtka_poll(struct ctlra_dev_t *base)
@@ -99,9 +102,6 @@ avtka_disconnect(struct ctlra_dev_t *base)
 	free(dev);
 	return 0;
 }
-
-/* TODO: add an Event Mirror cb here, which updates the UI based on the
- * incoming events (from a real hardware device) */
 
 static void
 event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
@@ -143,6 +143,32 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 	struct ctlra_event_t *e = {&event};
 	dev->base.event_func(&dev->base, 1, &e,
 			     dev->base.event_func_userdata);
+}
+
+void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
+			struct ctlra_event_t** events, void *userdata)
+{
+	struct cavtka_t *dev = (struct cavtka_t *)base;
+	struct avtka_t *a = dev->a;
+
+	/* loop over each event, calculate item id, and set value based
+	 * on type of the event */
+	for(uint32_t i = 0; i < num_events; i++) {
+		struct ctlra_event_t *e = events[i];
+		uint32_t id;
+		switch(e->type) {
+		case CTLRA_EVENT_BUTTON:
+			id = e->button.id + 1;
+			avtka_item_value(a, id, e->button.pressed);
+			break;
+		case CTLRA_EVENT_SLIDER:
+			id = dev->type_to_item_offset[CTLRA_EVENT_SLIDER] +
+				e->slider.id;
+			avtka_item_value(a, id + 1, e->slider.value);
+			break;
+		}
+	}
+	avtka_redraw(a);
 }
 
 #define CTLRA_RESIZE 2
@@ -218,7 +244,10 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 	if(!a)
 		return 0;
 
-	for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
+	/* i scope magic - it is used after the loop to set the offset */
+	int i = 0;
+	dev->type_to_item_offset[CTLRA_EVENT_BUTTON] = i;
+	for(i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_BUTTON][i];
 		if(!item)
@@ -242,6 +271,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
+	dev->type_to_item_offset[CTLRA_EVENT_SLIDER] = i;
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_SLIDER][i];
@@ -273,6 +303,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
+	dev->type_to_item_offset[CTLRA_EVENT_ENCODER] = i;
 	for(int i = 0; i < info->control_count[CTLRA_EVENT_ENCODER]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_ENCODER][i];
@@ -307,6 +338,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
+	dev->type_to_item_offset[CTLRA_EVENT_GRID] = i;
 	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
 		struct ctlra_grid_info_t *gi = &info->grid_info[g];
 		if(!gi)
