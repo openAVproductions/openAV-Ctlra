@@ -47,6 +47,8 @@ enum ctlra_event_type_t {
 	CTLRA_EVENT_ENCODER,
 	CTLRA_EVENT_SLIDER,
 	CTLRA_EVENT_GRID,
+	/* Feedback items represent items like LEDs */
+	CTLRA_FEEDBACK_ITEM,
 	/* The number of event types there are */
 	CTLRA_EVENT_T_COUNT,
 };

@@ -7,8 +7,10 @@
 #include "ctlra.h"
 
 static volatile uint32_t done;
-static uint32_t led;
-static uint32_t led_set;
+static uint32_t led_count;
+
+#define NUM_LEDS 256
+static uint32_t leds[NUM_LEDS];
 
 static struct avtka_t *avtka_ui;
 
@@ -18,17 +20,9 @@ uint32_t avtka_poll(struct ctlra_dev_t *base);
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
-	/* feedback like LEDs and Screen drawing based on application
-	 * state goes here. See the vegas_mode/ example for an example of
-	 * how to turn on LEDs on the controllers.
-	 *
-	 * Alternatively re-run the simple example with an integer
-	 * parameter and that light number will be lit: ./simple 5
-	 */
-	if(led_set) {
-		ctlra_dev_light_set(dev, led, 0xffffffff);
-		ctlra_dev_light_flush(dev, 1);
-	}
+	for(int i = 0; i < led_count; i++)
+		ctlra_dev_light_set(dev, i, leds[i]);
+	ctlra_dev_light_flush(dev, 1);
 }
 
 void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
@@ -51,15 +45,23 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
+		int id = 0;
 		const char *pressed = 0;
 		const char *name = 0;
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_BUTTON,
 						   e->button.id);
+			id = e->button.id;
 			printf("[%s] button %s (%d)\n",
 			       e->button.pressed ? " X " : "   ",
-			       name, e->button.id);
+			       name, id);
+			struct ctlra_item_info_t *item = &info.control_info[CTLRA_EVENT_BUTTON][id];
+			if(item && item->flags & CTLRA_ITEM_HAS_FB_ID) {
+				uint32_t col = item->flags & CTLRA_ITEM_LED_COLOR ?
+						0xff0000ff : 0xff000000;
+				leds[item->fb_id] = e->button.pressed * col;
+			}
 			break;
 
 		case CTLRA_EVENT_ENCODER:
@@ -69,7 +71,6 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 
-			ctlra_dev_light_set(avtka_ui, 75, 0xffffffff);
 			break;
 
 		case CTLRA_EVENT_SLIDER:
@@ -136,6 +137,10 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	 * functions simple_event_func() and simple_feedback_func(). */
 	*userdata_for_event_func = userdata;
 
+	led_count = info->control_count[CTLRA_FEEDBACK_ITEM];
+	if(led_count > NUM_LEDS)
+		led_count = NUM_LEDS;
+
 	static int first;
 	if(!first) {
 #if 0
@@ -153,11 +158,6 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 int main(int argc, char **argv)
 {
-	if(argc > 1) {
-		led = atoi(argv[1]);
-		led_set = 1;
-	}
-
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);

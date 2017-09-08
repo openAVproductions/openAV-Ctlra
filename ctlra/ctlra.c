@@ -231,12 +231,16 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 	if(!dev)
 		return;
 
+#if 0
 	memset(info, 0, sizeof(*info));
 	snprintf(info->vendor, sizeof(info->vendor), "%s", dev->info.vendor);
 	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
 	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
 	info->serial_number = dev->info.serial_number;
 	info->get_name = dev->info.get_name;
+#else
+	*info = dev->info;
+#endif
 }
 
 static struct ctlra_dev_info_t *

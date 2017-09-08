@@ -110,13 +110,14 @@ typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
  * represent a control such as a slider or dial, but also feedback only
  * items such as an LED, or screen.
  */
-#define CTLRA_ITEM_BUTTON        (1<<0)
-#define CTLRA_ITEM_FADER         (1<<1) /* check W vs H for orientation */
-#define CTLRA_ITEM_DIAL          (1<<2)
-#define CTLRA_ITEM_ENCODER       (1<<3)
-#define CTLRA_ITEM_CENTER_NOTCH  (1<<4)
-#define CTLRA_ITEM_LED_INTENSITY (1<<5)
-#define CTLRA_ITEM_LED_COLOUR    (1<<6)
+#define CTLRA_ITEM_BUTTON        (1<< 0)
+#define CTLRA_ITEM_FADER         (1<< 1) /* check W vs H for orientation */
+#define CTLRA_ITEM_DIAL          (1<< 2)
+#define CTLRA_ITEM_ENCODER       (1<< 3)
+#define CTLRA_ITEM_CENTER_NOTCH  (1<< 4)
+#define CTLRA_ITEM_LED_INTENSITY (1<< 5)
+#define CTLRA_ITEM_LED_COLOR     (1<< 6)
+#define CTLRA_ITEM_HAS_FB_ID     (1<<31)
 struct ctlra_item_info_t {
 	uint32_t x; /* location of item on X axis */
 	uint32_t y; /* location of item on Y axis */
@@ -126,7 +127,10 @@ struct ctlra_item_info_t {
 	/* TODO: figure out how to expose capabilities of item */
 	uint64_t flags;
 
-	uint32_t led_num;
+	/* The feedback id for this item. Calling ctlra_dev_light_set()
+	 * with this light_id should result the the LED under the item
+	 * changing state */
+	uint32_t fb_id;
 };
 
 /** A struct describing the properties of a grid */

@@ -48,6 +48,7 @@ struct id_to_ctlra_t {
 	uint16_t type;
 	uint16_t encoder_float_delta : 1;
 	uint32_t id;
+	uint32_t fb_id;
 };
 
 /* Represents the the virtual AVTK UI */
@@ -98,6 +99,9 @@ avtka_disconnect(struct ctlra_dev_t *base)
 	free(dev);
 	return 0;
 }
+
+/* TODO: add an Event Mirror cb here, which updates the UI based on the
+ * incoming events (from a real hardware device) */
 
 static void
 event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
