@@ -166,6 +166,11 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 				e->slider.id;
 			avtka_item_value(a, id + 1, e->slider.value);
 			break;
+		case CTLRA_EVENT_ENCODER: {
+			id = dev->type_to_item_offset[CTLRA_EVENT_ENCODER] +
+				e->encoder.id;
+			avtka_item_value_inc(a, id + 1, e->encoder.delta_float);
+			} break;
 		}
 	}
 	avtka_redraw(a);
@@ -272,7 +277,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 	}
 
 	dev->type_to_item_offset[CTLRA_EVENT_SLIDER] = i;
-	for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
+	for(i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_SLIDER][i];
 		if(!item)
@@ -303,8 +308,11 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
-	dev->type_to_item_offset[CTLRA_EVENT_ENCODER] = i;
-	for(int i = 0; i < info->control_count[CTLRA_EVENT_ENCODER]; i++) {
+	/* FIXME: current offset-method is hacky - required adding on the
+	 * offset of previous item type manually - refactor */
+	dev->type_to_item_offset[CTLRA_EVENT_ENCODER] =
+		i + dev->type_to_item_offset[CTLRA_EVENT_SLIDER];
+	for(i = 0; i < info->control_count[CTLRA_EVENT_ENCODER]; i++) {
 		struct ctlra_item_info_t *item =
 			&info->control_info[CTLRA_EVENT_ENCODER][i];
 		if(!item)
@@ -327,7 +335,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
 		uint32_t idx = avtka_item_create(a, &ai);
-		printf("encoder %d = %s\n", idx, name);
+		printf("encoder ID %d = %s\n", idx, name);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
 			return 0;
@@ -346,7 +354,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		uint32_t size_w = (gi->info.w / gi->x);
 		uint32_t size_h = (gi->info.h / gi->y);
 		/* iterate over each pad */
-		for(int i = 0; i < (gi->x * gi->y); i++) {
+		for(i = 0; i < (gi->x * gi->y); i++) {
 			/* draw big square for grid */
 			struct avtka_item_opts_t ai = {
 				 //.name = name,
