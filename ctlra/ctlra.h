@@ -115,8 +115,12 @@ typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 #define CTLRA_ITEM_DIAL          (1<< 2)
 #define CTLRA_ITEM_ENCODER       (1<< 3)
 #define CTLRA_ITEM_CENTER_NOTCH  (1<< 4)
+
 #define CTLRA_ITEM_LED_INTENSITY (1<< 5)
 #define CTLRA_ITEM_LED_COLOR     (1<< 6)
+
+#define CTLRA_ITEM_FB_LED_STRIP  (1<< 7)
+
 #define CTLRA_ITEM_HAS_FB_ID     (1<<31)
 struct ctlra_item_info_t {
 	uint32_t x; /* location of item on X axis */
@@ -131,6 +135,8 @@ struct ctlra_item_info_t {
 	 * with this light_id should result the the LED under the item
 	 * changing state */
 	uint32_t fb_id;
+	/* feedback parameters depending on flags */
+	uint8_t params[4];
 };
 
 /** A struct describing the properties of a grid */
