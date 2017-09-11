@@ -65,7 +65,8 @@ struct cavtka_t {
 	uint32_t type_to_item_offset[CTLRA_EVENT_T_COUNT];
 };
 
-uint32_t avtka_poll(struct ctlra_dev_t *base)
+uint32_t
+avtka_poll(struct ctlra_dev_t *base)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	avtka_iterate(dev->a);
@@ -73,9 +74,9 @@ uint32_t avtka_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
-static void avtka_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status)
+static void
+avtka_light_set(struct ctlra_dev_t *base, uint32_t light_id,
+		uint32_t light_status)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	/* TODO: figure out how to display feedback */
@@ -145,8 +146,9 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 			     dev->base.event_func_userdata);
 }
 
-void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
-			struct ctlra_event_t** events, void *userdata)
+void
+avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
+		   struct ctlra_event_t** events, void *userdata)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	struct avtka_t *a = dev->a;
@@ -165,6 +167,13 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 			id = dev->type_to_item_offset[CTLRA_EVENT_SLIDER] +
 				e->slider.id;
 			avtka_item_value(a, id + 1, e->slider.value);
+			if(e->slider.id < 2) {
+				int vu = dev->type_to_item_offset[CTLRA_FEEDBACK_ITEM] +
+					e->slider.id + 1;
+				avtka_item_value(a, vu, e->slider.value);
+				printf("setting vu %d to %f\n", vu,
+				       e->slider.value);
+			}
 			break;
 		case CTLRA_EVENT_ENCODER: {
 			id = dev->type_to_item_offset[CTLRA_EVENT_ENCODER] +
@@ -180,7 +189,7 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 static inline void
 ctlra_item_scale(struct avtka_item_opts_t *i)
 {
-	const uint32_t s = CTLRA_RESIZE;
+	const float s = CTLRA_RESIZE;
 	i->x *= s;
 	i->y *= s;
 	i->w *= s;
@@ -346,7 +355,8 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].id   = i;
 	}
 
-	dev->type_to_item_offset[CTLRA_EVENT_GRID] = i;
+	dev->type_to_item_offset[CTLRA_EVENT_GRID] =
+		i + dev->type_to_item_offset[CTLRA_EVENT_ENCODER];
 	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
 		struct ctlra_grid_info_t *gi = &info->grid_info[g];
 		if(!gi)
@@ -376,6 +386,39 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			dev->id_to_ctlra[idx].type = CTLRA_EVENT_GRID;
 			dev->id_to_ctlra[idx].id   = i;
 		}
+	}
+
+	dev->type_to_item_offset[CTLRA_FEEDBACK_ITEM] =
+		dev->type_to_item_offset[CTLRA_EVENT_GRID] + i;
+	for(i = 0; i < info->control_count[CTLRA_FEEDBACK_ITEM]; i++) {
+		struct ctlra_item_info_t *item =
+			&info->control_info[CTLRA_FEEDBACK_ITEM][i];
+		if(!item)
+			break;
+		const char *name = ctlra_info_get_name(info,
+					CTLRA_FEEDBACK_ITEM, i);
+
+		struct avtka_item_opts_t ai = {
+			.x = item->x,
+			.y = item->y,
+			.w = item->w,
+			.h = item->h,
+		};
+		ctlra_item_scale(&ai);
+		ai.draw = AVTKA_DRAW_LED_STRIP;
+		ai.interact = 0;
+		/* get the number of segments from the LED ids */
+		ai.params[0] = item->params[1] - item->params[0];
+		ai.params[1] = item->params[2];
+
+		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		uint32_t idx = avtka_item_create(a, &ai);
+		if(idx > MAX_ITEMS) {
+			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
+			return 0;
+		}
+		dev->id_to_ctlra[idx].type = CTLRA_FEEDBACK_ITEM;
+		dev->id_to_ctlra[idx].id   = i;
 	}
 
 	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);
