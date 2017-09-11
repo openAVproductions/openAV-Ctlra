@@ -171,8 +171,6 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 				int vu = dev->type_to_item_offset[CTLRA_FEEDBACK_ITEM] +
 					e->slider.id + 1;
 				avtka_item_value(a, vu, e->slider.value);
-				printf("setting vu %d to %f\n", vu,
-				       e->slider.value);
 			}
 			break;
 		case CTLRA_EVENT_ENCODER: {

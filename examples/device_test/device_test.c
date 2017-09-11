@@ -26,8 +26,15 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
+	/* raw LED API *MUST* be used first */
+	for(int i = 0; i < NUM_LEDS; i++)
+		ctlra_dev_light_set(dev, i, leds[i]);
+
+	/* API for feedback used second - overwrites raw API */
 	for(int i = 0; i < NUM_SLIDERS; i++)
 		ctlra_dev_feedback_set(dev, i, sliders[i]);
+
+	/* finally flush output */
 	ctlra_dev_light_flush(dev, 1);
 }
 
