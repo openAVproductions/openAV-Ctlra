@@ -202,6 +202,13 @@ void ctlra_dev_light_set(struct ctlra_dev_t *dev, uint32_t light_id,
 		dev->light_set(dev, light_id, light_status);
 }
 
+void ctlra_dev_feedback_set(struct ctlra_dev_t *dev, uint32_t fb_id,
+			    float value)
+{
+	if(dev && dev->feedback_set)
+		dev->feedback_set(dev, fb_id, value);
+}
+
 void ctlra_dev_light_flush(struct ctlra_dev_t *dev, uint32_t force)
 {
 	if(dev && dev->light_flush)
