@@ -410,6 +410,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info;
+
 struct ctlra_dev_t *
 ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 				    void *userdata, void *future)
@@ -481,6 +483,7 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = NI_VENDOR;
 	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
 
+	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
