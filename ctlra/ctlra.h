@@ -75,8 +75,9 @@ extern "C" {
  */
 struct ctlra_t;
 
-#define CTLRA_DEBUG_NONE  0
-#define CTLRA_DEBUG_ERROR 1
+/* Errors only is default */
+#define CTLRA_DEBUG_ERROR 0
+#define CTLRA_DEBUG_NONE  1
 #define CTLRA_DEBUG_WARN  2
 #define CTLRA_DEBUG_INFO  3
 
