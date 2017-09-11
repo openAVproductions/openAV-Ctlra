@@ -266,7 +266,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 					float fin = (velo - v2) * 3;
 					fin = fin > 1.0f ? 1.0f : fin;
 					fin = fin < 0.0f ? 0.0f : fin;
-					printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
+					//printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
 					e->grid.pressure = fin;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
