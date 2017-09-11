@@ -160,13 +160,14 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	static int first;
 	if(!first) {
-#if 0
-		ctlra_dev_virtualize(userdata, info);
-#else
 		avtka_ui = ctlra_avtka_connect(simple_event_func,
 						 0x0, info);
 		printf("avtka ui = %p\n", avtka_ui);
-#endif
+		if(!avtka_ui) {
+			printf("=== Critical error: avtka ui = %p.\n\
+Error creating interface - please report to OpenAV. Exiting.\n", avtka_ui);
+			exit(-1);
+		}
 		first++;
 	}
 
