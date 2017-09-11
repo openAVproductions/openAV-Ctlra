@@ -179,6 +179,10 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 			avtka_item_value_inc(a, id + 1, e->encoder.delta_float);
 			} break;
 		case CTLRA_EVENT_GRID:
+			id = dev->type_to_item_offset[CTLRA_EVENT_GRID] +
+				e->grid.pos;
+			avtka_item_value(a, id + 1, e->grid.pressed);
+			break;
 		case CTLRA_FEEDBACK_ITEM:
 		default: break;
 		}
