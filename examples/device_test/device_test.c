@@ -14,6 +14,9 @@ static uint32_t leds[NUM_LEDS];
 
 static struct avtka_t *avtka_ui;
 
+#define NUM_SLIDERS 8
+static float sliders[NUM_SLIDERS];
+
 struct ctlra_dev_t * ctlra_avtka_connect(ctlra_event_func event_func,
 					 void *userdata, void *future);
 uint32_t avtka_poll(struct ctlra_dev_t *base);
@@ -23,8 +26,8 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
-	for(int i = 0; i < led_count; i++)
-		ctlra_dev_light_set(dev, i, leds[i]);
+	for(int i = 0; i < NUM_SLIDERS; i++)
+		ctlra_dev_feedback_set(dev, i, sliders[i]);
 	ctlra_dev_light_flush(dev, 1);
 }
 
@@ -84,6 +87,8 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
+			if(e->slider.id < NUM_SLIDERS)
+				sliders[e->slider.id] = e->slider.value;
 			break;
 
 		case CTLRA_EVENT_GRID:
