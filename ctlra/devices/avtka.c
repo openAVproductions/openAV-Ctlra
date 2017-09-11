@@ -180,6 +180,9 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 				e->encoder.id;
 			avtka_item_value_inc(a, id + 1, e->encoder.delta_float);
 			} break;
+		case CTLRA_EVENT_GRID:
+		case CTLRA_FEEDBACK_ITEM:
+		default: break;
 		}
 	}
 	avtka_redraw(a);
@@ -239,6 +242,16 @@ fail:
 	return 0;
 }
 
+static inline void
+ctlra_avtka_string_strip(char *s)
+{
+	/* replace ( with \0 to terminate before details */
+	for (int i=0; s[i] != '\0'; i++) {
+		if (s[i] == '(')
+			s[i] = '\0';
+	}
+}
+
 struct avtka_t *
 ctlra_build_avtka_ui(struct cavtka_t *dev,
 		     struct ctlra_dev_info_t *info)
@@ -266,8 +279,9 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			&info->control_info[CTLRA_EVENT_BUTTON][i];
 		if(!item)
 			break;
+		const char *name = ctlra_info_get_name(info,
+					CTLRA_EVENT_BUTTON, i);
 		struct avtka_item_opts_t ai = {
-			 //.name = name,
 			.x = item->x,
 			.y = item->y,
 			.w = item->w,
@@ -276,6 +290,9 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			.interact = AVTKA_INTERACT_CLICK,
 		};
 		ctlra_item_scale(&ai);
+		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		ctlra_avtka_string_strip(ai.name);
+
 		uint32_t idx = avtka_item_create(a, &ai);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
@@ -308,6 +325,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			AVTKA_INTERACT_DRAG_V : AVTKA_INTERACT_DRAG_H ;
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		ctlra_avtka_string_strip(ai.name);
 		uint32_t idx = avtka_item_create(a, &ai);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
@@ -343,6 +361,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			AVTKA_INTERACT_DRAG_DELTA_H ;
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		ctlra_avtka_string_strip(ai.name);
 		uint32_t idx = avtka_item_create(a, &ai);
 		printf("encoder ID %d = %s\n", idx, name);
 		if(idx > MAX_ITEMS) {
@@ -367,7 +386,6 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		for(i = 0; i < (gi->x * gi->y); i++) {
 			/* draw big square for grid */
 			struct avtka_item_opts_t ai = {
-				 //.name = name,
 				.x = gi->info.x + ((i % gi->x) * (size_w+2)),
 				.y = gi->info.y + ((i / gi->y) * (size_h+2)),
 				.w = size_w - 2,
@@ -412,6 +430,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		ai.params[1] = item->params[2];
 
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		ctlra_avtka_string_strip(ai.name);
 		uint32_t idx = avtka_item_create(a, &ai);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
