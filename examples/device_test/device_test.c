@@ -41,22 +41,12 @@ void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
-	/* Events from the Ctlra device are handled here. They should be
-	 * decoded, and events sent to the application. Note that this
-	 * function must *NOT* send feedback to the device. Instead, the
-	 * feedback_func() above should be used to send feedback. For a
-	 * proper demo on how to do feedback, see examples/vegas/
-	 */
-
 	static const char* grid_pressed[] = { "   ", " X " };
-
-	/* Retrieve info, so we can look up names. Note this is not
-	 * expected to be used in production code - the names should be
-	 * cached in the UI, and not retrieved on every event */
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 
-	avtka_mirror_hw_cb(avtka_ui, num_events, events, 0x0);
+	avtka_mirror_hw_cb((struct ctlra_dev_t *)avtka_ui, num_events,
+			   events, 0x0);
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
@@ -126,9 +116,6 @@ void sighndlr(int signal)
 void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 			void *userdata)
 {
-	/* Notifies application of device removal, also allows cleanup
-	 * of any device specific structures. See daemon/ example, where
-	 * the MIDI I/O is cleaned up in the remove() function */
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 	printf("simple: removing %s %s\n", info.vendor, info.device);
@@ -143,15 +130,9 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
                     void *userdata)
 {
 	printf("simple: accepting %s %s\n", info->vendor, info->device);
-	/* Fill in the callbacks the device needs to function.
-	 * In this example, all events are routed to the above functions,
-	 * which simply print the event that occurred. Look at the daemon/
-	 * example in order to see how to send MIDI messages for events */
 	*event_func    = simple_event_func;
 	*feedback_func = simple_feedback_func;
 	*remove_func   = simple_remove_func;
-	/* Optionally provide a userdata. It is passed to the callback
-	 * functions simple_event_func() and simple_feedback_func(). */
 	*userdata_for_event_func = userdata;
 
 	led_count = info->control_count[CTLRA_FEEDBACK_ITEM];
