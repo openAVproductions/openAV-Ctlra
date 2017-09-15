@@ -203,10 +203,11 @@ ctlra_item_scale(struct avtka_item_opts_t *i)
 
 struct avtka_t *
 ctlra_build_avtka_ui(struct cavtka_t *dev,
-		     struct ctlra_dev_info_t *info);
+		     const struct ctlra_dev_info_t *info);
 
 struct ctlra_dev_t *
-ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
+ctlra_avtka_connect(ctlra_event_func event_func, void *userdata,
+		    const void *future)
 {
 	struct cavtka_t *dev = calloc(1, sizeof(struct cavtka_t));
 	if(!dev)
@@ -214,7 +215,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata, void *future)
 
 	dev->canary = 0xcafe;
 
-	struct ctlra_dev_info_t *info = future;
+	const struct ctlra_dev_info_t *info = future;
 
 	/* reuse the existing info from the device backend, then update */
 	dev->base.info = *info;
@@ -256,7 +257,7 @@ ctlra_avtka_string_strip(char *s)
 
 struct avtka_t *
 ctlra_build_avtka_ui(struct cavtka_t *dev,
-		     struct ctlra_dev_info_t *info)
+		     const struct ctlra_dev_info_t *info)
 {
 	/* initialize the Avtka UI */
 	struct avtka_opts_t opts = {
@@ -379,7 +380,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 	dev->type_to_item_offset[CTLRA_EVENT_GRID] =
 		i + dev->type_to_item_offset[CTLRA_EVENT_ENCODER];
 	for(int g = 0; g < info->control_count[CTLRA_EVENT_GRID]; g++) {
-		struct ctlra_grid_info_t *gi = &info->grid_info[g];
+		const struct ctlra_grid_info_t *gi = &info->grid_info[g];
 		if(!gi)
 			break;
 		uint32_t size_w = (gi->info.w / gi->x);
