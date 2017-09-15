@@ -426,13 +426,24 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			.h = item->h,
 		};
 		ctlra_item_scale(&ai);
-		ai.draw = AVTKA_DRAW_LED_STRIP;
-		ai.interact = 0;
-		/* get the number of segments from the LED ids */
-		ai.params[0] = item->params[1] - item->params[0];
-		ai.params[1] = item->params[2];
 
-		snprintf(ai.name, sizeof(ai.name), "%s", name);
+		/* default draws a button if it is not understood */
+		ai.draw = AVTKA_DRAW_BUTTON;
+		/* LED strip */
+		if(item->flags & CTLRA_ITEM_FB_LED_STRIP) {
+			ai.draw = AVTKA_DRAW_LED_STRIP;
+			/* get the number of segments from the LED ids */
+			ai.params[0] = item->params[1] - item->params[0];
+			ai.params[1] = item->params[2];
+		}
+		/* Screen */
+		if(item->flags & CTLRA_ITEM_FB_SCREEN) {
+			ai.draw = AVTKA_DRAW_BUTTON;
+		}
+
+		ai.interact = 0;
+
+		//snprintf(ai.name, sizeof(ai.name), "%s", name);
 		ctlra_avtka_string_strip(ai.name);
 		uint32_t idx = avtka_item_create(a, &ai);
 		if(idx > MAX_ITEMS) {
@@ -440,7 +451,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			return 0;
 		}
 		dev->id_to_ctlra[idx].type = CTLRA_FEEDBACK_ITEM;
-		dev->id_to_ctlra[idx].id   = i;
+		dev->id_to_ctlra[idx].id   = 6;
 	}
 
 	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);

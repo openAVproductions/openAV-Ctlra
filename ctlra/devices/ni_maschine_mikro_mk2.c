@@ -171,6 +171,12 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x =130, .y = 158, .w = 18,  .h = 10, .flags = MIKRO_BTN, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_MUTE},
 };
 
+static struct ctlra_item_info_t feedback_info[] = {
+	/* Screen */
+	{.x = 20, .y =  44, .w = 70,  .h = 35, .flags = CTLRA_ITEM_FB_SCREEN},
+};
+#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
+
 #define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
@@ -510,6 +516,8 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_GRID] = 1,
 	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_FEEDBACK_ITEM] = &feedback_info,
 
 	.grid_info[0] = {
 		.rgb = 1,
