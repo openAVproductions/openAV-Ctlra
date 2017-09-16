@@ -66,7 +66,7 @@ static const char *ni_maschine_mikro_mk2_control_names[] = {
 	"Browse",
 	"Sampling",
 	"Note Repeat",
-	"Encoder Press",
+	"Enc Btn",
 	"F1",
 	"F2",
 	"F3",
