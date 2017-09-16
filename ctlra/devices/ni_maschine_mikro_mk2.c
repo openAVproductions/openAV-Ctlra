@@ -531,6 +531,10 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 			.y = 29,
 			.w = 138,
 			.h = 138,
+			/* start light id */
+			.params[0] = NI_MASCHINE_MIKRO_MK2_LED_PAD_1,
+			/* end light id */
+			.params[1] = NI_MASCHINE_MIKRO_MK2_LED_PAD_16,
 		}
 	},
 
