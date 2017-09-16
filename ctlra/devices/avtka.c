@@ -397,8 +397,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 				.interact = AVTKA_INTERACT_CLICK,
 			};
 			ctlra_item_scale(&ai);
-			printf("grid %d: %d %d, %d %d\n", i,
-			       ai.x, ai.y, ai.w, ai.h);
+			//printf("grid %d: %d %d, %d %d\n", i, ai.x, ai.y, ai.w, ai.h);
 			uint32_t idx = avtka_item_create(a, &ai);
 			if(idx > MAX_ITEMS) {
 				printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
@@ -406,6 +405,9 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			}
 			dev->id_to_ctlra[idx].type = CTLRA_EVENT_GRID;
 			dev->id_to_ctlra[idx].id   = i;
+
+			//printf("grid item %d: param[0] = %d, [1] = %d\n", i, gi->info.params[0], gi->info.params[1]);
+			dev->id_to_ctlra[idx].fb_id = (i + gi->info.params[0]);
 		}
 	}
 
