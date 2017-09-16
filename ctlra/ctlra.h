@@ -367,8 +367,8 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t flush);
 
 
-/** Get the human readable name for the device. The returned pointer is
- * still owned by the ctlra library, the application must not free it */
+/** Get the info struct from a device. The user-supplied info pointer is
+ * filled in by the device driver */
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info);
 
