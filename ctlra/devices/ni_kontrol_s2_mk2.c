@@ -713,9 +713,9 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_COUNT,
 
-	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
-	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
-	.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_EVENT_ENCODER] = encoders_info,
 
 	.get_name = ni_kontrol_s2_mk2_control_get_name,
 };
