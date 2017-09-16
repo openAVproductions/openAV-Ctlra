@@ -514,11 +514,12 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 	.size_y    = 195,
 
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
-	.control_count[CTLRA_EVENT_GRID] = 1,
-	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
-	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
-	.control_info[CTLRA_FEEDBACK_ITEM] = &feedback_info,
+	.control_info [CTLRA_EVENT_BUTTON] = buttons_info,
 
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
+
+	.control_count[CTLRA_EVENT_GRID] = 1,
 	.grid_info[0] = {
 		.rgb = 1,
 		.velocity = 1,
