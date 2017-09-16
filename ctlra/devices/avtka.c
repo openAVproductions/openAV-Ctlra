@@ -130,6 +130,7 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 		event.grid.id = 0;
 		event.grid.pos = id;
 		event.grid.pressed = (value == 1.0);
+		event.grid.flags |= CTLRA_EVENT_GRID_FLAG_BUTTON;
 	case CTLRA_EVENT_ENCODER:
 		event.encoder.id = id;
 		if(dev->id_to_ctlra[item].encoder_float_delta)
