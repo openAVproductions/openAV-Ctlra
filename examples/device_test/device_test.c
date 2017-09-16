@@ -12,7 +12,7 @@ static uint32_t led_count;
 #define NUM_LEDS 256
 static uint32_t leds[NUM_LEDS];
 
-static struct avtka_t *avtka_ui;
+static struct ctlra_dev_t *avtka_ui;
 
 #define NUM_SLIDERS 8
 static float sliders[NUM_SLIDERS];
@@ -67,8 +67,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 
-	avtka_mirror_hw_cb((struct ctlra_dev_t *)avtka_ui, num_events,
-			   events, 0x0);
+	avtka_mirror_hw_cb(avtka_ui, num_events, events, 0x0);
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
@@ -168,7 +167,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	static int first;
 	if(!first) {
 		avtka_ui = ctlra_avtka_connect(simple_event_func,
-						 0x0, info);
+						 0x0, (void *)info);
 		if(!avtka_ui) {
 			printf("=== Critical error: avtka ui = %p.\n\
 Error creating interface - please report to OpenAV. Exiting.\n", avtka_ui);
@@ -188,8 +187,7 @@ int main(int argc, char **argv)
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, ctlra);
 	printf("connected devices %d\n", num_devs);
 
-	int i = 0;
-	while(i < 4 && !done) {
+	while(!done) {
 		ctlra_idle_iter(ctlra);
 		if(avtka_ui)
 			avtka_poll(avtka_ui);
