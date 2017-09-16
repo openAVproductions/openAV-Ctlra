@@ -17,6 +17,16 @@ static struct avtka_t *avtka_ui;
 #define NUM_SLIDERS 8
 static float sliders[NUM_SLIDERS];
 
+#define MAX_GRID_SIZE 64
+struct grid_square_t {
+	uint8_t pressed;
+	uint8_t pressure;
+	uint16_t fb_id;
+	uint32_t colour;
+};
+/* TODO: support more than 1 grid */
+static struct grid_square_t grid[MAX_GRID_SIZE];
+
 struct ctlra_dev_t * ctlra_avtka_connect(ctlra_event_func event_func,
 					 void *userdata, void *future);
 uint32_t avtka_poll(struct ctlra_dev_t *base);
@@ -26,9 +36,21 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
+	struct ctlra_dev_info_t info;
+	ctlra_dev_get_info(dev, &info);
+
 	/* raw LED API *MUST* be used first */
 	for(int i = 0; i < NUM_LEDS; i++)
 		ctlra_dev_light_set(dev, i, leds[i]);
+
+	/* raw LED API for Grid */
+	if(info.control_count[CTLRA_EVENT_GRID]) {
+		for(int i = 0; i < 16; i++) {
+			int id = info.grid_info[0].info.params[0] + i;
+			uint32_t col = grid[i].colour * (grid[i].pressed > 0);
+			ctlra_dev_light_set(dev, id, col);
+		}
+	}
 
 	/* API for feedback used second - overwrites raw API */
 	for(int i = 0; i < NUM_SLIDERS; i++)
@@ -100,6 +122,10 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
+
+			id = e->grid.pos;
+			grid[id].colour = 0xff0051fe;
+			grid[id].pressed = e->grid.pressed;
 			break;
 		default:
 			break;
@@ -143,7 +169,6 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	if(!first) {
 		avtka_ui = ctlra_avtka_connect(simple_event_func,
 						 0x0, info);
-		printf("avtka ui = %p\n", avtka_ui);
 		if(!avtka_ui) {
 			printf("=== Critical error: avtka ui = %p.\n\
 Error creating interface - please report to OpenAV. Exiting.\n", avtka_ui);
