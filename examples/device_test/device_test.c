@@ -30,6 +30,7 @@ static struct grid_square_t grid[MAX_GRID_SIZE];
 struct ctlra_dev_t * ctlra_avtka_connect(ctlra_event_func event_func,
 					 void *userdata, void *future);
 uint32_t avtka_poll(struct ctlra_dev_t *base);
+int32_t avtka_disconnect(struct ctlra_dev_t *base);
 
 void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 			struct ctlra_event_t** events, void *userdata);
@@ -144,6 +145,11 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 	printf("simple: removing %s %s\n", info.vendor, info.device);
+	if(avtka_ui) {
+		/* cleanup and exit UI, resetting for next plugin */
+		avtka_disconnect(avtka_ui);
+		avtka_ui = 0;
+	}
 
 }
 
@@ -164,8 +170,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	if(led_count > NUM_LEDS)
 		led_count = NUM_LEDS;
 
-	static int first;
-	if(!first) {
+	if(!avtka_ui) {
 		avtka_ui = ctlra_avtka_connect(simple_event_func,
 						 0x0, (void *)info);
 		if(!avtka_ui) {
@@ -173,7 +178,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 Error creating interface - please report to OpenAV. Exiting.\n", avtka_ui);
 			exit(-1);
 		}
-		first++;
+		printf("oepned avtka ui\n");
 	}
 
 	return 1;
