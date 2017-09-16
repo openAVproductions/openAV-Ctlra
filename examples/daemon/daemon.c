@@ -152,6 +152,9 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	return 1;
 fail:
 	printf("failed to alloc/open midi backend\n");
+	if(daemon)
+		free(daemon);
+
 	return 0;
 }
 
