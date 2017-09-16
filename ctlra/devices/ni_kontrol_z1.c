@@ -219,6 +219,9 @@ static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status);
 
+static void ni_kontrol_z1_light_flush(struct ctlra_dev_t *base,
+				      uint32_t force);
+
 void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
 {
@@ -420,9 +423,9 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 	/* TODO: refactor to present "logical" feedback items */
 	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 
-	.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
-	.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
-	.control_info[CTLRA_FEEDBACK_ITEM] = &feedback_info,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 
 	.get_name = ni_kontrol_z1_control_get_name,
 };
