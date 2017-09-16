@@ -95,11 +95,11 @@ avtka_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 }
 
-static int32_t
+int32_t
 avtka_disconnect(struct ctlra_dev_t *base)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
-
+	avtka_destroy(dev->a);
 	free(dev);
 	return 0;
 }
