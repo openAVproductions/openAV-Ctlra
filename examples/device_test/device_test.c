@@ -124,7 +124,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("\n");
 
 			id = e->grid.pos;
-			grid[id].colour = 0xff0051fe;
+			grid[id].colour = 0xffffffff;
 			grid[id].pressed = e->grid.pressed;
 			break;
 		default:
