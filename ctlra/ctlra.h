@@ -137,6 +137,8 @@ struct ctlra_item_info_t {
 	 * with this light_id should result the the LED under the item
 	 * changing state */
 	uint32_t fb_id;
+	/* mask of colours the hw can represent */
+	uint32_t colour;
 	/* feedback parameters depending on flags */
 	uint8_t params[4];
 };
