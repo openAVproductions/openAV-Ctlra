@@ -13,13 +13,6 @@ void ctlra_impl_usb_idle_iter(struct ctlra_t *);
 /* For cleaning up the USB subsystem */
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
 
-struct ctlra_dev_connect_func_t {
-	uint32_t vid;
-	uint32_t pid;
-	ctlra_dev_connect_func connect;
-	struct ctlra_dev_info_t *info;
-};
-
 /* TODO: Cleanup this registration method to be in the .c files of each
  * implementation, instead of centrally located here. This allows drivers
  * to be "dropped in" to the source, and then automatically register up
@@ -39,6 +32,17 @@ CTLRA_DEVICE_INFO(ni_kontrol_s2_mk2);
 CTLRA_DEVICE_INFO(ni_kontrol_z1);
 CTLRA_DEVICE_INFO(ni_maschine_mikro_mk2);
 
+#define CTLRA_MAX_DEVICES 64
+struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
+uint32_t __ctlra_device_count;
+
+__attribute__((constructor(101)))
+static void ctlra_static_setup()
+{
+	printf("%s\n", __func__);
+}
+
+#if 0
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
 	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
@@ -51,11 +55,12 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
 };
 #define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
+#endif
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 {
-	for(unsigned i = 0; i < CTLRA_NUM_DEVS; i++) {
-		if(devices[i].vid == vid && devices[i].pid == pid) {
+	for(unsigned i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].vid == vid && __ctlra_devices[i].pid == pid) {
 			return i;
 		}
 	}
@@ -324,13 +329,13 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 			  int id)
 {
-	if(id < 0 || id >= CTLRA_NUM_DEVS || !devices[id].connect) {
+	if(id < 0 || id >= __ctlra_device_count || !__ctlra_devices[id].connect) {
 		CTLRA_WARN(ctlra, "invalid device id recieved %d\n", id);
 		return 0;
 	}
 
 	struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
-						    devices[id].connect,
+						    __ctlra_devices[id].connect,
 						    0x0,
 						    0 /* userdata */,
 						    0x0);
@@ -366,7 +371,7 @@ int ctlra_probe(struct ctlra_t *ctlra,
 
 	ctlra->accept_dev_func = accept_func;
 	ctlra->accept_dev_func_userdata = userdata;
-	for(; i < CTLRA_NUM_DEVS; i++) {
+	for(; i < __ctlra_device_count; i++) {
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
 

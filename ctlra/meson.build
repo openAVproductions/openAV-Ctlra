@@ -6,16 +6,27 @@ conf_data.set('jack', jack.found())
 
 subdir('devices')
 
+cargs = ['-Wno-unused-variable']
+
 libusb = dependency('libusb-1.0')
 conf_data.set('libusb', libusb.found())
 alsa   = dependency('alsa', required: false)
 conf_data.set('alsa', alsa.found())
 gl     = dependency('gl', required: false)
 
-ctlra = static_library('ctlra',
-    [ctlra_src, devices_src],
-    c_args: '-Wno-unused-variable',
+link_args = ['-Wl,--no-as-needed', '-Wl,--whole-archive']
+
+devices_lib = static_library('ctlra_devices', devices_src,
+    c_args: cargs,
+    install : false,
+    link_args : '-Wl,--whole-archive',
+    dependencies: [libusb, alsa, avtka, gl])
+
+ctlra = library('ctlra',
+    [ctlra_src],
+    c_args: cargs,
     install : true,
+    link_whole : devices_lib,
     dependencies: [libusb, alsa, avtka, gl])
 
 configure_file(input : 'config.h.in',

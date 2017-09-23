@@ -16,6 +16,8 @@ endif
 
 subdir('ctlra')
 
+#['-Wl,--whole-archive'] + devices_lib + ['-Wl,--no-whole-archive']
+
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',

@@ -228,6 +228,34 @@ extern struct ctlra_dev_info_t ctlra_ ## name ## _info;
 /* Macro that returns the name of the info struct */
 #define CTLRA_DEVICE_INFO_NAME(name) ctlra_ ## name ## _info
 
+
+struct ctlra_dev_connect_func_t {
+	uint32_t vid;
+	uint32_t pid;
+	ctlra_dev_connect_func connect;
+	struct ctlra_dev_info_t *info;
+};
+
+// TODO: check does this registration system even help
+#define CTLRA_MAX_DEVICES 64
+extern uint32_t __ctlra_device_count;
+extern struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
+
+
+#define CTLRA_DEVICE_REGISTER(name)				\
+static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
+	CTLRA_DRIVER_VENDOR, CTLRA_DRIVER_DEVICE,		\
+	ctlra_ ## name ## _connect,				\
+};								\
+__attribute__((constructor(102)))				\
+static void ctlra_ ## name ## _register() {			\
+	printf("%s, c = %d\n", __func__, __ctlra_device_count);	\
+	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
+}
+
+
+
+
 /* Helper function for dealing with wrapped encoders */
 static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
 {

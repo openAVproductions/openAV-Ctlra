@@ -429,3 +429,7 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 
 	.get_name = ni_kontrol_z1_control_get_name,
 };
+
+#define CTLRA_DRIVER_VENDOR NI_VENDOR
+#define CTLRA_DRIVER_DEVICE NI_KONTROL_Z1
+CTLRA_DEVICE_REGISTER(ni_kontrol_z1)

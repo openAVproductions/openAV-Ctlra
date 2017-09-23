@@ -540,3 +540,7 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 
 	.get_name = ni_maschine_mikro_mk2_control_get_name,
 };
+
+#define CTLRA_DRIVER_VENDOR NI_VENDOR
+#define CTLRA_DRIVER_DEVICE NI_MASCHINE_MIKRO_MK2
+CTLRA_DEVICE_REGISTER(ni_maschine_mikro_mk2)
