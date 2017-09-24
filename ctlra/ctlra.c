@@ -77,6 +77,40 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 	return 0;
 }
 
+
+int32_t
+ctlra_get_vendors(const char *vendors[], int32_t size)
+{
+	memset(vendors, 0, sizeof(char *) * size);
+	int vendor_idx = 0;
+
+	int i;
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info) {
+			const char * v = __ctlra_devices[i].info->vendor;
+
+			/* check this is not duplicate */
+			int j = 0;
+			int unique = 1;
+			while(vendors[j] != 0) {
+				if(strcmp(vendors[j], v) == 0) {
+					unique = 0;
+					break;
+				}
+				j++;
+			}
+
+			if(unique) {
+				if(vendor_idx >= size)
+					break;
+				vendors[vendor_idx++] = v;
+			}
+		}
+	}
+
+	return vendor_idx;
+}
+
 int32_t
 ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
 		     const char *device)

@@ -275,19 +275,6 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
 int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		void *userdata);
 
-/** Add a virtualized device. This function adds a "virtual" device, which
- * provides the controls of the physical device by displaying a user
- * interface. In order for this function to operate, the device being
- * virtualized must provide its info statically in the driver.
- *
- * The info provided about the device is used to emulate the device
- * itself - the normal accept dev callback will be called in the
- * application, with the device descriptor filled out as if it was the
- * actual hardware plugged in. This allows total emulation of the hardware.
- */
-int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra, const char *vendor,
-			     const char *device);
-
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
  */
@@ -305,6 +292,34 @@ void ctlra_exit(struct ctlra_t *ctlra);
  * @retval <0 Error in disconnecting device
  */
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev);
+
+/** Retrieve a list of vendors. The returned strings are human readable
+ * names of the companies/manufacturers of controller hardware. This
+ * function is to allow eg: a drop-down list of vendors be displayed to
+ * the user, which are supported by ctlra (and can be virtualized).
+ *
+ * Note that the strings pointed to by vendors after this call *remain*
+ * owned by the Ctlra library - and they must not be freed by the callee.
+ *
+ * @param vendors An array of *size* that will be filled in with null
+ *                terminated strings, where each entry is a vendor's name.
+ * @param size    Size of the callee supplied array
+ * @returns       Number of vendors populated in the array
+ */
+int32_t ctlra_get_vendors(const char *vendors[], int32_t size);
+
+/** Add a virtualized device. This function adds a "virtual" device, which
+ * provides the controls of the physical device by displaying a user
+ * interface. In order for this function to operate, the device being
+ * virtualized must provide its info statically in the driver.
+ *
+ * The info provided about the device is used to emulate the device
+ * itself - the normal accept dev callback will be called in the
+ * application, with the device descriptor filled out as if it was the
+ * actual hardware plugged in. This allows total emulation of the hardware.
+ */
+int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra, const char *vendor,
+			     const char *device);
 
 /** Change the Event func. This may be useful when integrating into
  * an application that doesn't know yet which event func to attach to

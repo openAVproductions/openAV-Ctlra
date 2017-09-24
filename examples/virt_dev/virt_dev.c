@@ -140,6 +140,13 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
+	const char *vendors[32];
+	int ret = ctlra_get_vendors(vendors, 32);
+	printf("get vendors ret = %d\n", ret);
+	for(int i = 0; i < ret; i++) {
+		printf("%d: %s\n", i, vendors[i]);
+	}
+
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
