@@ -164,7 +164,6 @@ static const char *ni_kontrol_z1_names_feedback[] = {
 #define CONTROL_NAMES_FEEDBACK_SIZE (sizeof(ni_kontrol_z1_names_feedback) /\
 				    sizeof(ni_kontrol_z1_names_feedback[0]))
 
-
 /* Represents the the hardware device */
 struct ni_kontrol_z1_t {
 	/* base handles usb i/o etc */
@@ -198,7 +197,6 @@ ni_kontrol_z1_control_get_name(enum ctlra_event_type_t type,
 	default:
 		break;
 	}
-
 	return 0;
 }
 
@@ -215,6 +213,7 @@ ni_kontrol_z1_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
+/* TODO: remove forward declarations */
 static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_id,
 				    uint32_t light_status);
@@ -273,6 +272,7 @@ void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		break;
 		}
 	}
+	/* TODO: remove this? */
 	ni_kontrol_z1_light_flush(&dev->base, 1);
 }
 
@@ -333,9 +333,9 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						     USB_ENDPOINT_WRITE,
 						     data,
 						     NI_KONTROL_Z1_LED_COUNT+1);
-	if(ret < 0) {
-		//printf("%s write failed!\n", __func__);
-	}
+	if(ret < 0)
+		CTLRA_ERROR(base->ctlra_context,
+			    "USB led write failed %d\n", ret);
 }
 
 static int32_t
@@ -364,20 +364,7 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
-#if 0
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol Z1");
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
-	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
-	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
-#else
 	dev->base.info = ctlra_ni_kontrol_z1_info;
-#endif
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,
