@@ -89,6 +89,19 @@ int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 	return -1;
 }
 
+/** Get the info struct for a controller by name. Note that the controller
+ * hardware itself does not have to be present to retrieve this info. The
+ * expected utilization of this function is to allow virtual controllers be
+ * created for testing and hardware-less development.
+ * @returns A valid pointer, or NULL if the device ID does not support info
+ */
+static struct ctlra_dev_info_t *
+ctlra_dev_get_info_by_name(const char *vendor, const char *device)
+{
+	return 0;
+}
+
+
 
 struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 				      ctlra_dev_connect_func connect,
@@ -118,8 +131,28 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 }
 
 int32_t
-ctlra_dev_virtualize(struct ctlra_t *c, struct ctlra_dev_info_t *info)
+ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
+		     const char *device)
 {
+	int i;
+	struct ctlra_dev_info_t *info = 0;
+
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info &&
+		   strcmp(vendor, __ctlra_devices[i].info->vendor) == 0 &&
+		   strcmp(device, __ctlra_devices[i].info->device) == 0) {
+			printf("found device @ %d\n", i);
+			info = __ctlra_devices[i].info;
+			break;
+		}
+	}
+
+	if(!info) {
+		CTLRA_WARN(c, "Couldn't find device '%s %s' in %d registered drivers\n",
+			   vendor, device, i);
+		return -ENODEV;
+	}
+
 #ifdef HAVE_AVTKA
 	/* call into AVTKA and virtualize the device, passing info through
 	 * the future (void *) to the AVTKA backend. */

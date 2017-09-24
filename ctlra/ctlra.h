@@ -286,8 +286,8 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
  * application, with the device descriptor filled out as if it was the
  * actual hardware plugged in. This allows total emulate of the hardware.
  */
-int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra,
-			     struct ctlra_dev_info_t *info);
+int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra, const char *vendor,
+			     const char *device);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
@@ -373,16 +373,6 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
  * filled in by the device driver */
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info);
-
-
-/** Get the info struct for a controller by an ID. Note that the controller
- * hardware itself does not have to be present to retrieve this info. The
- * expected utilization of this function is to allow virtual controllers be
- * created for testing and hardware-less development.
- * @returns A valid pointer, or NULL if the device ID does not support info
- */
-struct ctlra_dev_info_t *
-ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id);
 
 /** Get the human readable name for *control_id* from *dev*. The
  * control id is passed in eg: event.button.id, or can be any of the

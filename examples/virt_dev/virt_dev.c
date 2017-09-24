@@ -141,10 +141,7 @@ int main(int argc, char **argv)
 	printf("connected devices %d\n", num_devs);
 
 	/* add a virtualized device */
-	struct ctlra_dev_id_t id;
-	id.type = CTLRA_DEV_TYPE_USB_HID;
-	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
-	ctlra_dev_virtualize(ctlra, info);
+	ctlra_dev_virtualize(ctlra, "Native Instruments", "Kontrol Z1");
 
 	int i = 0;
 	while(i < 4 && !done) {

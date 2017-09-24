@@ -420,7 +420,6 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
-	/* TODO: refactor to present "logical" feedback items */
 	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 
 	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,

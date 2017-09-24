@@ -191,7 +191,6 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
-
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
 
 
@@ -244,8 +243,10 @@ extern struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
 
 #define CTLRA_DEVICE_REGISTER(name)				\
 static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
-	CTLRA_DRIVER_VENDOR, CTLRA_DRIVER_DEVICE,		\
-	ctlra_ ## name ## _connect,				\
+	.vid = CTLRA_DRIVER_VENDOR,				\
+	.pid = CTLRA_DRIVER_DEVICE,				\
+	.connect = ctlra_ ## name ## _connect,			\
+	.info = &ctlra_ ## name ## _info,			\
 };								\
 __attribute__((constructor(102)))				\
 static void ctlra_ ## name ## _register() {			\
