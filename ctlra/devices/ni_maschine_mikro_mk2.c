@@ -39,8 +39,8 @@
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
 
-#define NI_VENDOR             (0x17cc)
-#define NI_MASCHINE_MIKRO_MK2 (0x1200)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1200)
 #define USB_INTERFACE_ID      (0x00)
 #define USB_HANDLE_IDX        (0x00)
 #define USB_ENDPOINT_READ     (0x81)
@@ -456,8 +456,8 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		if (res < 0) {
 			perror("HIDIOCGRAWINFO");
 		} else {
-			if(info.vendor  == NI_VENDOR &&
-			   info.product == NI_MASCHINE_MIKRO_MK2) {
+			if(info.vendor  == CTLRA_DRIVER_VENDOR &&
+			   info.product == CTLRA_DRIVER_DEVICE) {
 				found = 1;
 				break;
 			}
@@ -486,8 +486,8 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	grid->x = 4;
 	grid->y = 4;
 
-	dev->base.info.vendor_id = NI_VENDOR;
-	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
+	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
+	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
 
 	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
 
@@ -508,8 +508,8 @@ fail:
 struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 	.vendor    = "Native Instruments",
 	.device    = "Maschine Mikro Mk2",
-	.vendor_id = NI_VENDOR,
-	.device_id = NI_MASCHINE_MIKRO_MK2,
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
 	.size_x    = 320,
 	.size_y    = 195,
 
@@ -541,6 +541,4 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
 	.get_name = ni_maschine_mikro_mk2_control_get_name,
 };
 
-#define CTLRA_DRIVER_VENDOR NI_VENDOR
-#define CTLRA_DRIVER_DEVICE NI_MASCHINE_MIKRO_MK2
 CTLRA_DEVICE_REGISTER(ni_maschine_mikro_mk2)
