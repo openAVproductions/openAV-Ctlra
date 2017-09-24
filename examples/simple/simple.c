@@ -140,34 +140,11 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
-	struct ctlra_dev_id_t id;
-	id.type = CTLRA_DEV_TYPE_USB_HID;
-	struct ctlra_dev_info_t *info = ctlra_dev_get_info_by_id(&id);
-	printf("static info %p\n", info);
-	if(info != NULL) {
-		printf("static info %s %s\n  buttons = %d\n  sliders %d\n",
-		       info->vendor, info->device,
-		       info->control_count[CTLRA_EVENT_BUTTON],
-		       info->control_count[CTLRA_EVENT_SLIDER]);
-		for(int i = 0; i < info->control_count[CTLRA_EVENT_BUTTON]; i++) {
-			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_BUTTON][i];
-			printf("%d: %d %d\t%d %d\n", i, item->x, item->y,
-			       item->w, item->h);
-		}
-		printf("sliders\n");
-		for(int i = 0; i < info->control_count[CTLRA_EVENT_SLIDER]; i++) {
-			struct ctlra_item_info_t *item = &info->control_info[CTLRA_EVENT_SLIDER][i];
-			printf("%d: %d %d\t%d %d\n", i, item->x, item->y,
-			       item->w, item->h);
-		}
-	}
-
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
 
-	int i = 0;
-	while(i < 4 && !done) {
+	while(!done) {
 		ctlra_idle_iter(ctlra);
 		usleep(10 * 1000);
 	}
