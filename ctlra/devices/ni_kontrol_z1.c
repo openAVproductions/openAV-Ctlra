@@ -37,8 +37,8 @@
 #include "ni_kontrol_z1.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_Z1      (0x1210)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1210)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
@@ -380,7 +380,8 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 #endif
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_KONTROL_Z1);
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -413,8 +414,8 @@ fail:
 struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 	.vendor    = "Native Instruments",
 	.device    = "Kontrol Z1",
-	.vendor_id = NI_VENDOR,
-	.device_id = NI_KONTROL_Z1,
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
 	.size_x    = 120,
 	.size_y    = 294,
 
@@ -429,6 +430,4 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
 	.get_name = ni_kontrol_z1_control_get_name,
 };
 
-#define CTLRA_DRIVER_VENDOR NI_VENDOR
-#define CTLRA_DRIVER_DEVICE NI_KONTROL_Z1
 CTLRA_DEVICE_REGISTER(ni_kontrol_z1)

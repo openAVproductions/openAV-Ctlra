@@ -129,9 +129,13 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 int main(int argc, char **argv)
 {
-	if(argc > 1) {
-		led = atoi(argv[1]);
-		led_set = 1;
+	/* default device to test.. */
+	char *vendor = "Native Instruments";
+	char *device = "Kontrol Z1";
+
+	if(argc > 2) {
+		vendor = argv[1];
+		device = argv[2];
 	}
 
 	signal(SIGINT, sighndlr);
@@ -141,7 +145,7 @@ int main(int argc, char **argv)
 	printf("connected devices %d\n", num_devs);
 
 	/* add a virtualized device */
-	ctlra_dev_virtualize(ctlra, "Native Instruments", "Kontrol Z1");
+	ctlra_dev_virtualize(ctlra, vendor, device);
 
 	int i = 0;
 	while(i < 4 && !done) {
