@@ -37,8 +37,8 @@
 #include "ni_kontrol_d2.h"
 #include "impl.h"
 
-#define NI_VENDOR                 (0x17cc)
-#define NI_KONTROL_D2             (0x1400)
+#define CTLRA_DRIVER_VENDOR       (0x17cc)
+#define CTLRA_DRIVER_DEVICE       (0x1400)
 
 #define USB_INTERFACE_BTNS        (0x0)
 #define USB_ENDPOINT_BTNS_READ    (0x81)
@@ -115,7 +115,7 @@ static const char *ni_kontrol_d2_button_names[] = {
 	"Play",
 	"Touchstrip Touch",
 };
-#define CONTROL_NAMES_BUTTON_SIZE (sizeof(ni_kontrol_d2_button_names) /\
+#define BUTTON_SIZE (sizeof(ni_kontrol_d2_button_names) /\
 				   sizeof(ni_kontrol_d2_button_names[0]))
 
 static const char *ni_kontrol_d2_slider_names[] = {
@@ -130,7 +130,7 @@ static const char *ni_kontrol_d2_slider_names[] = {
 	"FX Dial 4",
 	"Touchstrip Movement",
 };
-#define CONTROL_NAMES_SLIDER_SIZE (sizeof(ni_kontrol_d2_slider_names) /\
+#define SLIDER_SIZE (sizeof(ni_kontrol_d2_slider_names) /\
 				   sizeof(ni_kontrol_d2_slider_names[0]))
 
 static const char *ni_kontrol_d2_encoder_names[] = {
@@ -143,12 +143,12 @@ static const char *ni_kontrol_d2_encoder_names[] = {
 	"Browse Encoder Turn",
 	"Loop Encoder Turn",
 };
-#define CONTROL_NAMES_ENCODER_SIZE (sizeof(ni_kontrol_d2_encoder_names) /\
+#define ENCODER_SIZE (sizeof(ni_kontrol_d2_encoder_names) /\
 				    sizeof(ni_kontrol_d2_encoder_names[0]))
 
-#define CONTROL_NAMES_SIZE (CONTROL_NAMES_BUTTON_SIZE + \
-			    CONTROL_NAMES_SLIDER_SIZE + \
-			    CONTROL_NAMES_ENCODER_SIZE)
+#define CONTROL_NAMES_SIZE (BUTTON_SIZE + \
+			    SLIDER_SIZE + \
+			    ENCODER_SIZE)
 
 /* Sliders are calulated on the fly, not using pre-set bitmasks */
 #define SLIDERS_SIZE (12)
@@ -316,17 +316,17 @@ ni_kontrol_d2_control_get_name(enum ctlra_event_type_t type,
 	const char *ret = 0;
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
-		if(control >= CONTROL_NAMES_SLIDER_SIZE)
+		if(control >= SLIDER_SIZE)
 			break;
 		ret = ni_kontrol_d2_slider_names[control];
 		break;
 	case CTLRA_EVENT_BUTTON:
-		if(control >= CONTROL_NAMES_BUTTON_SIZE)
+		if(control >= BUTTON_SIZE)
 			break;
 		ret = ni_kontrol_d2_button_names[control];
 		break;
 	case CTLRA_EVENT_ENCODER:
-		if(control >= CONTROL_NAMES_ENCODER_SIZE)
+		if(control >= ENCODER_SIZE)
 			break;
 		ret = ni_kontrol_d2_encoder_names[control];
 		break;
@@ -714,7 +714,8 @@ ctlra_ni_kontrol_d2_connect(ctlra_event_func event_func,
 	         "%s", "Kontrol D2");
 
 	/* Open buttons / leds handle */
-	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_D2);
+	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		//printf("%s: failed to open button usb interface\n", __func__);
 		goto fail;
@@ -736,12 +737,10 @@ ctlra_ni_kontrol_d2_connect(ctlra_event_func event_func,
 		goto fail;
 	}
 
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] =
-		CONTROL_NAMES_SLIDER_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
-		CONTROL_NAMES_BUTTON_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_ENCODER] =
-		CONTROL_NAMES_ENCODER_SIZE;
+	/* TODO: copy info from static info below */
+	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDER_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTON_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE;
 	dev->base.info.get_name = ni_kontrol_d2_control_get_name;
 
 	/* Copy the screen update details into the embedded struct */
@@ -765,3 +764,28 @@ fail:
 	return 0;
 }
 
+
+struct ctlra_dev_info_t ctlra_ni_kontrol_d2_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol D2",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 196,
+	.size_y    = 378,
+
+	/* TODO: expsoe info */
+#if 0
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_count[CTLRA_EVENT_ENCODER] = encoders,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.get_name = ni_kontrol_d2_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_d2)
