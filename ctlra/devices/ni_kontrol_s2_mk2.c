@@ -62,7 +62,7 @@ static const char *ni_kontrol_s2_mk2_names_encoders[] = {
 	"Gain Encoder (L)",
 	"Gain Encoder (R)",
 };
-#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_encoders) /\
+#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_encoders) / \
 				    sizeof(ni_kontrol_s2_mk2_names_encoders[0]))
 
 static const char *ni_kontrol_s2_mk2_names_sliders[] = {
@@ -90,7 +90,7 @@ static const char *ni_kontrol_s2_mk2_names_sliders[] = {
 	"EQ MID (R)",
 	"EQ LOW (R)",
 };
-#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_sliders) /\
+#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_sliders) / \
 				    sizeof(ni_kontrol_s2_mk2_names_sliders[0]))
 
 static const char *ni_kontrol_s2_mk2_names_buttons[] = {
@@ -152,7 +152,7 @@ static const char *ni_kontrol_s2_mk2_names_buttons[] = {
 	"Left Encoder Press (R)",
 	"Right Encoder Press (R)",
 };
-#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_mk2_names_buttons) /\
+#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_mk2_names_buttons) / \
 				    sizeof(ni_kontrol_s2_mk2_names_buttons[0]))
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
@@ -655,22 +655,7 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
-#if 0
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol S2_MK2");
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-
-	dev->base.info.control_info[CTLRA_EVENT_SLIDER] = &sliders_info,
-	dev->base.info.control_info[CTLRA_EVENT_ENCODER] = &encoders_info,
-	dev->base.info.control_info[CTLRA_EVENT_BUTTON] = &buttons_info,
-	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
-#else
 	dev->base.info = ctlra_ni_kontrol_s2_mk2_info;
-#endif
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,

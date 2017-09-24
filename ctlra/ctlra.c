@@ -35,11 +35,6 @@ int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	*out_dev = 0x0;
 	while(dev_iter) {
-#if 0
-		printf("%s, checking %04x %04x\n", __func__,
-		       dev_iter->info.vendor_id,
-		       dev_iter->info.device_id);
-#endif
 		if(dev_iter->info.vendor_id == vid &&
 		   dev_iter->info.device_id == pid) {
 			*out_dev = dev_iter;
@@ -55,7 +50,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)
 {
-	struct ctlra_dev_t *new_dev = 0;
+	struct ctlra_dev_t *new_dev;
 	new_dev = connect(event_func, userdata, future);
 	if(new_dev) {
 		new_dev->ctlra_context = ctlra;
