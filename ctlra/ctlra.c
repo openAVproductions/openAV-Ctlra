@@ -5,20 +5,8 @@
 
 #include "ctlra.h"
 #include "impl.h"
+#include "usb.h"
 
-/* For USB initialization */
-int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);
-/* For polling hotplug / other events */
-void ctlra_impl_usb_idle_iter(struct ctlra_t *);
-/* For cleaning up the USB subsystem */
-void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
-
-/* TODO: Cleanup this registration method to be in the .c files of each
- * implementation, instead of centrally located here. This allows drivers
- * to be "dropped in" to the source, and then automatically register up
- * without library code changes */
-CTLRA_DEVICE_DECL(akai_apc);
-CTLRA_DEVICE_DECL(avtka);
 
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
@@ -113,6 +101,9 @@ ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
 	}
 
 #ifdef HAVE_AVTKA
+	/* TODO: find better solution to this hack */
+CTLRA_DEVICE_DECL(avtka);
+
 	/* call into AVTKA and virtualize the device, passing info through
 	 * the future (void *) to the AVTKA backend. */
 	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
@@ -380,5 +371,3 @@ void ctlra_exit(struct ctlra_t *ctlra)
 
 	free(ctlra);
 }
-
-
