@@ -37,8 +37,8 @@
 #include "ni_kontrol_f1.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_F1      (0x1120)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1120)
 #define USB_INTERFACE_ID   (0x00)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
@@ -349,7 +349,9 @@ ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.get_name = ni_kontrol_f1_control_get_name;
 
-	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_F1);
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -376,3 +378,25 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_f1_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol F1",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 120,
+	.size_y    = 294,
+
+	/* TODO: expose info */
+#if 0
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.get_name = ni_kontrol_f1_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_f1)

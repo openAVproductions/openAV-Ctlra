@@ -17,8 +17,6 @@ void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
  * implementation, instead of centrally located here. This allows drivers
  * to be "dropped in" to the source, and then automatically register up
  * without library code changes */
-CTLRA_DEVICE_DECL(ni_kontrol_f1);
-CTLRA_DEVICE_DECL(ni_kontrol_f1);
 CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_jam);
@@ -40,7 +38,6 @@ static void ctlra_static_setup()
 #if 0
 static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
-	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
 	{0x17cc, 0x1220, CTLRA_DEVICE_FUNC(ni_kontrol_x1_mk2)},
 	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
 	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
