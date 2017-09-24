@@ -39,8 +39,8 @@
 #include "impl.h"
 #include "ni_maschine_jam.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_MASCHINE_JAM    (0x1500)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1500)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x0)
 #define USB_ENDPOINT_READ  (0x81)
@@ -286,12 +286,9 @@ struct ni_maschine_jam_t {
 };
 
 static const char *
-ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+ni_maschine_jam_control_get_name(enum ctlra_event_type_t type,
+				 uint32_t control_id)
 {
-	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
-
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		control_id += NI_MASCHINE_JAM_BTN_COUNT;
@@ -682,8 +679,8 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 
 
 #ifdef USE_LIBUSB
-	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_MASCHINE_JAM);
+	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -721,8 +718,8 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 		if (res < 0) {
 			perror("HIDIOCGRAWINFO");
 		} else {
-			if(info.vendor  == NI_VENDOR &&
-			   info.product == NI_MASCHINE_JAM) {
+			if(info.vendor  == CTLRA_DRIVER_VENDOR  &&
+			   info.product == CTLRA_DRIVER_DEVICE) {
 				found = 1;
 				break;
 			}
@@ -739,13 +736,13 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 	dev->fd = fd;
 	printf("jam on fd %d\n", fd);
 #endif
-	dev->base.info.vendor_id = NI_VENDOR;
-	dev->base.info.device_id = NI_MASCHINE_JAM;
+	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
+	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
 
 	dev->base.poll = ni_maschine_jam_poll;
 	dev->base.disconnect = ni_maschine_jam_disconnect;
 	dev->base.light_set = ni_maschine_jam_light_set;
-	dev->base.control_get_name = ni_maschine_jam_control_get_name;
+	//dev->base.control_get_name = ni_maschine_jam_control_get_name;
 	dev->base.light_flush = ni_maschine_jam_light_flush;
 	dev->base.usb_read_cb = ni_machine_jam_usb_read_cb;
 
@@ -758,3 +755,26 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Maschine Jam",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 320,
+	.size_y    = 295,
+
+	/* TODO: expose info */
+#if 0
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.get_name = ni_maschine_jam_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_maschine_jam)
