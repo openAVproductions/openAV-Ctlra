@@ -150,6 +150,7 @@ ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
 	if(!info) {
 		CTLRA_WARN(c, "Couldn't find device '%s' '%s' in %d registered drivers\n",
 			   vendor, device, i);
+		CTLRA_STRERROR(c, "Device not found\n");
 		return -ENODEV;
 	}
 
@@ -178,10 +179,12 @@ CTLRA_DEVICE_DECL(avtka);
 
 	if(!accepted) {
 		ctlra_dev_disconnect(dev);
+		CTLRA_STRERROR(c, "Application refused device\n");
 		return -ECONNREFUSED;
 	}
 	return 0;
 #else
+	CTLRA_STRERROR(c, "No virtualized backends available\n");
 	return -ENOTSUP;
 #endif
 }
@@ -423,4 +426,9 @@ void ctlra_exit(struct ctlra_t *ctlra)
 	ctlra_impl_usb_shutdown(ctlra);
 
 	free(ctlra);
+}
+
+void ctlra_strerror(struct ctlra_t *ctlra, FILE* out)
+{
+	fprintf(out, "Ctlra: %s\n", ctlra->strerror);
 }

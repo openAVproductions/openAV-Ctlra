@@ -9,7 +9,7 @@ cc  = meson.get_compiler('c')
 required_libs = ['libusb-1.0', 'alsa']
 
 avtka   = dependency('openav_avtka', required: false)
-if(avtka.found())
+if(avtka.found() and get_option('avtka') == true)
   add_global_arguments('-DHAVE_AVTKA', language : 'c')
   required_libs += 'openav_avtka'
 endif

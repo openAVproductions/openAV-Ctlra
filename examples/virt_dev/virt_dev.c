@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #include <avtka/avtka.h>
 
@@ -157,7 +158,12 @@ int main(int argc, char **argv)
 	printf("connected devices %d\n", num_devs);
 
 	/* add a virtualized device */
-	ctlra_dev_virtualize(ctlra, vendor, device);
+	ret = ctlra_dev_virtualize(ctlra, vendor, device);
+	if(ret) {
+		printf("Ctlra virtualize() of device %s %s, failed, err %d: %s\n",
+		       vendor, device, ret, strerror(ret));
+		ctlra_strerror(ctlra, stdout);
+	}
 
 	int i = 0;
 	while(i < 4 && !done) {

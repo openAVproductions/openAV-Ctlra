@@ -1,0 +1,1 @@
+option('avtka', type : 'boolean', value : true, description : 'Use Avtka library for virtual controller support')

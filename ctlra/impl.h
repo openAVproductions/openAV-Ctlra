@@ -39,6 +39,9 @@ extern "C" {
 #include "ctlra.h"
 #include "event.h"
 
+#define CTLRA_STRERROR(ctlra, err)					\
+	do { ctlra->strerror = err; } while (0)
+
 #define CTLRA_ERROR(ctlra, fmt, ...)					\
 	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_ERROR)		\
 	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
@@ -211,6 +214,9 @@ struct ctlra_t
 	struct ctlra_dev_t *dev_list;
 	/* List of devices that are banished */
 	struct ctlra_dev_t *banished_list;
+
+	/* context aware error message pointer */
+	const char *strerror;
 };
 
 /* Macro extern declaration for the connect function */

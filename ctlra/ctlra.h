@@ -61,6 +61,8 @@ extern "C" {
  * on the device.
  */
 
+#include <stdio.h>
+
 #include "event.h"
 
 #define CTLRA_STR_MAX        32
@@ -334,9 +336,14 @@ int32_t ctlra_get_devices_by_vendor(const char *vendor,
  * itself - the normal accept dev callback will be called in the
  * application, with the device descriptor filled out as if it was the
  * actual hardware plugged in. This allows total emulation of the hardware.
+ *
+ * @retval 0 Successfully virtualized the device using an available backend
+ * @retval -1 Error in virtualizing
  */
 int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra, const char *vendor,
 			     const char *device);
+
+void ctlra_strerror(struct ctlra_t *ctlra, FILE* out);
 
 /** Change the Event func. This may be useful when integrating into
  * an application that doesn't know yet which event func to attach to
