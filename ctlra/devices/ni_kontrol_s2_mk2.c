@@ -37,8 +37,8 @@
 #include "ni_kontrol_s2_mk2.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_S2_MK2  (0x1320)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1320)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x83)
@@ -672,8 +672,9 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	dev->base.info = ctlra_ni_kontrol_s2_mk2_info;
 #endif
 
-	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
-					  NI_KONTROL_S2_MK2);
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -704,8 +705,8 @@ fail:
 struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
 	.vendor    = "Native Instruments",
 	.device    = "Kontrol S2 Mk2",
-	.vendor_id = NI_VENDOR,
-	.device_id = NI_KONTROL_S2_MK2,
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
 	.size_x    = 440,
 	.size_y    = 370, /* includes back and front panels */
 
@@ -719,3 +720,5 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
 
 	.get_name = ni_kontrol_s2_mk2_control_get_name,
 };
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_s2_mk2)

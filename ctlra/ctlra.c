@@ -20,14 +20,12 @@ void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
 CTLRA_DEVICE_DECL(ni_kontrol_d2);
 CTLRA_DEVICE_DECL(ni_kontrol_f1);
 CTLRA_DEVICE_DECL(ni_kontrol_f1);
-CTLRA_DEVICE_DECL(ni_kontrol_s2_mk2);
 CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(ni_maschine_jam);
 CTLRA_DEVICE_DECL(akai_apc);
 CTLRA_DEVICE_DECL(avtka);
 
-CTLRA_DEVICE_INFO(ni_kontrol_s2_mk2);
 CTLRA_DEVICE_INFO(ni_maschine_mikro_mk2);
 
 #define CTLRA_MAX_DEVICES 64
@@ -45,7 +43,6 @@ static const struct ctlra_dev_connect_func_t devices[] = {
 	{0, 0, 0},
 	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
 	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
-	{0x17cc, 0x1320, CTLRA_DEVICE_FUNC(ni_kontrol_s2_mk2)},
 	{0x17cc, 0x1220, CTLRA_DEVICE_FUNC(ni_kontrol_x1_mk2)},
 	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
 	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
@@ -277,7 +274,7 @@ ctlra_dev_match_usb_hid(struct ctlra_dev_id_t *id)
 	int vendor = id->usb_hid.vendor_id;
 	int device = id->usb_hid.device_id;
 	/* TODO: iter registered static info structs, return if match */
-	return &CTLRA_DEVICE_INFO_NAME(ni_kontrol_s2_mk2);
+	return 0;
 	//return &CTLRA_DEVICE_INFO_NAME(ni_maschine_mikro_mk2);
 }
 
