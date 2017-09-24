@@ -308,6 +308,23 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev);
  */
 int32_t ctlra_get_vendors(const char *vendors[], int32_t size);
 
+
+/** Retrieve a list of devices by a specific vendor. The returned strings
+ * are human-readable names of devices. These names could be presented to
+ * the user in eg: a drop down box allowing the user to select a specific
+ * device. One use case could be virtualizing a specific hardware device
+ *
+ * @param vendor The vendor from which to find all supported devices. See
+ *               the *ctlra_get_vendors* function to retrieve vendors.
+ * @param devices An array of at least *size* to be filled in with null
+ *                terminated strings, with each string representing a device.
+ * @param size   Size of the devices array passed in.
+ * @return       The number of devices populated in the array
+ */
+int32_t ctlra_get_devices_by_vendor(const char *vendor,
+				    const char *devices[],
+				    int32_t size);
+
 /** Add a virtualized device. This function adds a "virtual" device, which
  * provides the controls of the physical device by displaying a user
  * interface. In order for this function to operate, the device being

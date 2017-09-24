@@ -77,6 +77,30 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 	return 0;
 }
 
+int32_t
+ctlra_get_devices_by_vendor(const char *vendor, const char *devices[],
+			    int32_t size)
+{
+	memset(devices, 0, sizeof(char *) * size);
+	int device_idx = 0;
+
+	int i;
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info) {
+			const char *v = __ctlra_devices[i].info->vendor;
+			const char *d = __ctlra_devices[i].info->device;
+
+			/* check this device is by vendor */
+			if(strcmp(vendor, v) == 0) {
+				if(device_idx >= size)
+					break;
+				devices[device_idx++] = d;
+			}
+		}
+	}
+
+	return device_idx;
+}
 
 int32_t
 ctlra_get_vendors(const char *vendors[], int32_t size)

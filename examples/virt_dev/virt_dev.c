@@ -142,9 +142,14 @@ int main(int argc, char **argv)
 
 	const char *vendors[32];
 	int ret = ctlra_get_vendors(vendors, 32);
-	printf("get vendors ret = %d\n", ret);
 	for(int i = 0; i < ret; i++) {
 		printf("%d: %s\n", i, vendors[i]);
+		const char *devices[32];
+		int devs = ctlra_get_devices_by_vendor(vendors[i],
+						       devices, 32);
+		for(int j = 0; j < devs; j++) {
+			printf(" - %d: %s\n", j, devices[j]);
+		}
 	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
