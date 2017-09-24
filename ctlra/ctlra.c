@@ -17,11 +17,8 @@ void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
  * implementation, instead of centrally located here. This allows drivers
  * to be "dropped in" to the source, and then automatically register up
  * without library code changes */
-CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
 CTLRA_DEVICE_DECL(akai_apc);
 CTLRA_DEVICE_DECL(avtka);
-
-CTLRA_DEVICE_INFO(ni_maschine_mikro_mk2);
 
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
@@ -32,15 +29,6 @@ static void ctlra_static_setup()
 {
 	printf("%s\n", __func__);
 }
-
-#if 0
-static const struct ctlra_dev_connect_func_t devices[] = {
-	{0, 0, 0},
-	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
-	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
-};
-#define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
-#endif
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 {
@@ -246,51 +234,13 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 {
 	if(!dev)
 		return;
-
-#if 0
-	memset(info, 0, sizeof(*info));
-	snprintf(info->vendor, sizeof(info->vendor), "%s", dev->info.vendor);
-	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
-	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
-	info->serial_number = dev->info.serial_number;
-	info->get_name = dev->info.get_name;
-#else
 	*info = dev->info;
-#endif
 }
 
-static struct ctlra_dev_info_t *
-ctlra_dev_match_usb_hid(struct ctlra_dev_id_t *id)
+const char *
+ctlra_info_get_name(const struct ctlra_dev_info_t *info,
+		    enum ctlra_event_type_t type, uint32_t control_id)
 {
-	int vendor = id->usb_hid.vendor_id;
-	int device = id->usb_hid.device_id;
-	/* TODO: iter registered static info structs, return if match */
-	return 0;
-	//return &CTLRA_DEVICE_INFO_NAME(ni_maschine_mikro_mk2);
-}
-
-struct ctlra_dev_info_t *
-ctlra_dev_get_info_by_id(struct ctlra_dev_id_t *id)
-{
-	struct ctlra_dev_info_t *tmp = NULL;
-
-	switch(id->type) {
-	case CTLRA_DEV_TYPE_USB_HID:
-		tmp = ctlra_dev_match_usb_hid(id);
-		break;
-	default: break;
-	};
-
-	return tmp;
-}
-
-const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
-				enum ctlra_event_type_t type,
-				uint32_t control_id)
-{
-	/* the info parameter already has the appropriate function pointer
-	 * set by the driver, so we don't need the device instance to be
-	 * passed to the get_name() function */
 	if(!info)
 		return 0;
 
@@ -377,8 +327,6 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	for(; i < __ctlra_device_count; i++) {
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
-
-	/* probe midi devices here? */
 
 	return num_accepted;
 }
