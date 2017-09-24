@@ -250,7 +250,6 @@ static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
 };								\
 __attribute__((constructor(102)))				\
 static void ctlra_ ## name ## _register() {			\
-	printf("%s, c = %d\n", __func__, __ctlra_device_count);	\
 	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
 }
 
