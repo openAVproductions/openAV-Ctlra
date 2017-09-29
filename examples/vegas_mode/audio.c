@@ -50,7 +50,6 @@ void
 soffa_note_on(struct soffa_t *s, uint8_t chan, uint8_t note, float vel)
 {
 	fluid_synth_noteon(s->synth, chan, note, vel * 127.f);
-	printf("note on %d\n", note);
 }
 
 void
@@ -137,20 +136,20 @@ int audio_init(void *dummy)
 	/* setup JACK */
 	client = jack_client_open("CtlraPlayer", JackNullOption, 0, 0 );
 	int sr = jack_get_sample_rate(client);
+
+	struct dummy_data *d = dummy;
+	d->soffa = soffa_init(sr);
+	if(!d->soffa) {
+		printf("soffa init() failed\n");
+		exit(-1);
+	}
+
 	if(jack_set_process_callback(client, process, dummy)) {
 		printf("error setting JACK callback\n");
 	}
 	outputPort = jack_port_register(client, "output",
 	                                JACK_DEFAULT_AUDIO_TYPE,
 	                                JackPortIsOutput, 0 );
-
-	struct dummy_data *d = dummy;
-	//int sr = 44100;
-	d->soffa = soffa_init(sr);
-	if(!d->soffa) {
-		printf("soffa init() failed\n");
-		exit(-1);
-	}
 
 	jack_activate(client);
 	return 0;

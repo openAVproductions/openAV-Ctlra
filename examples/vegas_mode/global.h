@@ -10,6 +10,7 @@
 #define VEGAS_BTN_COUNT 512
 
 struct soffa_t;
+struct mikro_t;
 
 struct dummy_data {
 	uint8_t print_events;
@@ -19,6 +20,7 @@ struct dummy_data {
 	int playing[2];
 	int buttons[VEGAS_BTN_COUNT];
 	struct soffa_t *soffa;
+	struct mikro_t *mikro;
 };
 
 /* "useful" parts of the program */
