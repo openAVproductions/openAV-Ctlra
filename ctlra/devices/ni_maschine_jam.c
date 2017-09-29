@@ -440,23 +440,29 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			/* columns */
 			for(int c = 0; c < 6; c++) {
 				uint8_t p = d & col_mask[c];
-				if(p) {
+				if(p != dev->grid[r*8+c]) {
+					dev->grid[r*8+c] = p;
 					e->grid.pos = (r * 8) + c;
+					e->grid.pressed = p;
 					printf("%d %d = %d\n", r, c, p > 0);
 					dev->base.event_func(&dev->base, 1, &e,
 							     dev->base.event_func_userdata);
 				}
 			}
 			uint8_t p = data[4+1+r] & 0x1;
-			if(p) {
+			if(p != dev->grid[r*8+6]) {
 				e->grid.pos = (r * 8) + 6;
+				e->grid.pressed = p;
+				dev->grid[r*8+6] = p;
 				printf("%d %d = %d\n", r, 6, p);
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 			}
 			p = data[4+1+r] & 0x2;
-			if(p) {
+			if(p != dev->grid[r*8+7]) {
 				printf("%d %d = %d\n", r, 7, p);
+				dev->grid[r*8+7] = p;
+				e->grid.pressed = p;
 				e->grid.pos = (r * 8) + 7;
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
