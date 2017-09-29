@@ -36,13 +36,6 @@ soffa_init(uint32_t sr)
 	fluid_synth_program_select(s->synth, midi_chan, s->sf_id, bank, patch);
 	fluid_synth_program_select(s->synth, midi_chan+1, s->sf_id, bank, patch + 4);
 
-	for(int i = 0; i < 10; i++) {
-		fluid_synth_channel_info_t channelInfo;
-		fluid_synth_program_change(s->synth, 0, i);
-		fluid_synth_get_channel_info(s->synth, 0, &channelInfo);
-		printf("%d: %s\n", i, channelInfo.name);
-	}
-
 	fluid_synth_program_change(s->synth, 0, patch);
 
 	return s;
@@ -67,9 +60,16 @@ soffa_note_off(struct soffa_t *s, uint8_t chan, uint8_t note)
 }
 
 void
-soffa_set_patch(struct soffa_t *s, uint8_t chan, uint8_t bank, uint8_t patch)
+soffa_set_patch(struct soffa_t *s, uint8_t chan,
+		uint8_t bank, uint8_t patch, const char **name)
 {
 	fluid_synth_program_select(s->synth, chan, s->sf_id, bank, patch);
+
+	if(name) {
+		fluid_synth_channel_info_t channelInfo;
+		fluid_synth_get_channel_info(s->synth, 0, &channelInfo);
+		*name = channelInfo.name;
+	}
 }
 
 void soffa_process(struct soffa_t *s, int nframes, float** output)

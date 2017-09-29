@@ -38,9 +38,10 @@ void mm_func(struct ctlra_dev_t* dev,
 				chan--;
 			if(chan < 0)
 				chan = 0;
-			printf("enc %d, %d, patch = %d\n",
-			       e->encoder.id, e->encoder.delta, chan);
-			soffa_set_patch(dummy->soffa, 0, 0, chan);
+			const char *name = 0;
+			soffa_set_patch(dummy->soffa, 0, 0, chan, &name);
+			printf("enc %d, %d, patch = %d\t%s\n",
+			       e->encoder.id, e->encoder.delta, chan, name);
 
 			break;
 		case CTLRA_EVENT_SLIDER:
@@ -61,7 +62,8 @@ void mm_func(struct ctlra_dev_t* dev,
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				dummy->buttons[e->grid.pos] = e->grid.pressed;
 				if(e->grid.pressed)
-					soffa_note_on(dummy->soffa, 0, 36 + e->grid.pos, 0.8);
+					soffa_note_on(dummy->soffa, 0, 36 + e->grid.pos,
+						      0.3 + 0.7 * e->grid.pressure);
 				else
 					soffa_note_off(dummy->soffa, 0, 36 + e->grid.pos);
 			} else {

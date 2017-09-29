@@ -26,7 +26,8 @@ int audio_init();
 void audio_exit();
 
 /* SF2 sound generation */
-void soffa_set_patch(struct soffa_t *s, uint8_t chan, uint8_t bank, uint8_t patch);
+void soffa_set_patch(struct soffa_t *s, uint8_t chan,
+		     uint8_t bank, uint8_t patch, const char **name);
 void soffa_note_on(struct soffa_t *s, uint8_t chan, uint8_t note, float vel);
 void soffa_note_off(struct soffa_t *s, uint8_t chan, uint8_t note);
 
