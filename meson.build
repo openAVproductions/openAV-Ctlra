@@ -61,10 +61,11 @@ endif
 
 cairo   = dependency('cairo', required: false)
 sndfile = dependency('sndfile', required: false)
-if(jack.found() and cairo.found() and sndfile.found())
+fluid   = dependency('fluidsynth', required: false)
+if(jack.found() and cairo.found() and sndfile.found() and fluid.found())
 executable('vegas_mode',
            example_vegas,
            include_directories: ctlra_includes,
            link_with: ctlra,
-           dependencies: [jack, cairo, sndfile])
+           dependencies: [jack, cairo, sndfile, fluid])
 endif

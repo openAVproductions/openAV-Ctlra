@@ -4,6 +4,8 @@
 #include "ctlra.h"
 #include "devices/ni_maschine_mikro_mk2.h"
 
+static int chan;
+
 void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 {
 	struct dummy_data *d = ud;
@@ -30,7 +32,16 @@ void mm_func(struct ctlra_dev_t* dev,
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
 		case CTLRA_EVENT_ENCODER:
-			//printf("enc %d, %d\n", e->encoder.id, e->encoder.delta);
+			if(e->encoder.delta > 0)
+				chan++;
+			else
+				chan--;
+			if(chan < 0)
+				chan = 0;
+			printf("enc %d, %d, patch = %d\n",
+			       e->encoder.id, e->encoder.delta, chan);
+			soffa_set_patch(dummy->soffa, 0, 0, chan);
+
 			break;
 		case CTLRA_EVENT_SLIDER:
 			if(e->slider.id == 11) {
@@ -49,7 +60,10 @@ void mm_func(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				dummy->buttons[e->grid.pos] = e->grid.pressed;
-				//pressed = e->grid.pressed ? " X " : "   ";
+				if(e->grid.pressed)
+					soffa_note_on(dummy->soffa, 0, 36 + e->grid.pos, 0.8);
+				else
+					soffa_note_off(dummy->soffa, 0, 36 + e->grid.pos);
 			} else {
 				//pressed = "---";
 			}

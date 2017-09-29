@@ -9,6 +9,8 @@
 
 #define VEGAS_BTN_COUNT 512
 
+struct soffa_t;
+
 struct dummy_data {
 	uint8_t print_events;
 	uint64_t revision;
@@ -16,11 +18,17 @@ struct dummy_data {
 	float progress;
 	int playing[2];
 	int buttons[VEGAS_BTN_COUNT];
+	struct soffa_t *soffa;
 };
 
 /* "useful" parts of the program */
 int audio_init();
 void audio_exit();
+
+/* SF2 sound generation */
+void soffa_set_patch(struct soffa_t *s, uint8_t chan, uint8_t bank, uint8_t patch);
+void soffa_note_on(struct soffa_t *s, uint8_t chan, uint8_t note, float vel);
+void soffa_note_off(struct soffa_t *s, uint8_t chan, uint8_t note);
 
 /* Functions to poll / push state to the devs */
 void kontrol_x1_update_state(struct ctlra_dev_t *dev, void *d);
