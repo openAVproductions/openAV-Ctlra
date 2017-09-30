@@ -37,7 +37,7 @@
 
 #include "impl.h"
 
-#include <avtka/avtka.h>
+#include <avtka.h>
 
 #define PUGL_PARENT 0x0
 

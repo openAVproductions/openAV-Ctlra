@@ -20,14 +20,14 @@ devices_lib = static_library('ctlra_devices', devices_src,
     c_args: cargs,
     install : false,
     link_args : '-Wl,--whole-archive',
-    dependencies: [libusb, alsa, avtka, gl])
+    dependencies: [libusb, alsa, avtka_dep, gl])
 
 ctlra = library('ctlra',
     [ctlra_src],
     c_args: cargs,
     install : true,
     link_whole : devices_lib,
-    dependencies: [libusb, alsa, avtka, gl])
+    dependencies: [libusb, alsa, avtka_dep, gl])
 
 configure_file(input : 'config.h.in',
                output : 'config.h',

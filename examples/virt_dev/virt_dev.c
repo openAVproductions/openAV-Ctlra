@@ -5,8 +5,6 @@
 #include <signal.h>
 #include <string.h>
 
-#include <avtka/avtka.h>
-
 #include "ctlra.h"
 
 static volatile uint32_t done;
