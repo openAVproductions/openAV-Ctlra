@@ -8,9 +8,8 @@ cc  = meson.get_compiler('c')
 
 required_libs = ['libusb-1.0', 'alsa']
 
+avtka_dep = dependency('openav_avtka', required: false)
 if(get_option('avtka') == true)
-    avtka_dep = dependency('openav_avtka', required: false)
-
     if (not avtka_dep.found())
       avtka_git = subproject('avtka')
       avtka_dep = avtka_git.get_variable('avtka_dep')
@@ -51,18 +50,20 @@ executable('sequencer',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
-if(avtka_dep.found())
-executable('virt_dev',
-           example_virt_dev,
-           include_directories: ctlra_includes,
-           dependencies: avtka_dep,
-           link_with: ctlra)
+if(get_option('avtka') == true)
+ if(avtka_dep.found())
+  executable('virt_dev',
+             example_virt_dev,
+             include_directories: ctlra_includes,
+             dependencies: avtka_dep,
+             link_with: ctlra)
 
-executable('device_test',
-           example_dev_test,
-           include_directories: ctlra_includes,
-           dependencies: avtka_dep,
-           link_with: ctlra)
+  executable('device_test',
+             example_dev_test,
+             include_directories: ctlra_includes,
+             dependencies: avtka_dep,
+             link_with: ctlra)
+  endif
 endif
 
 cairo   = dependency('cairo', required: false)
