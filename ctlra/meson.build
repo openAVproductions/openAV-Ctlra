@@ -17,8 +17,9 @@ gl     = dependency('gl', required: false)
 devices_lib = static_library('ctlra_devices', devices_src,
     c_args: cargs,
     install : false,
+    include_directories : firmatac_includes,
     link_args : '-Wl,--whole-archive',
-    dependencies: [libusb, alsa, avtka_dep, gl])
+    dependencies: [libusb, alsa, avtka_dep, gl, firmatac_dep])
 
 ctlra = library('ctlra',
     [ctlra_src],

@@ -1,0 +1,4 @@
+[wrap-git]
+directory=firmatac
+url=https://github.com/openAVproductions/FirmataC
+revision=head
