@@ -139,7 +139,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 26, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 8},
 	{.x = 16, .y = 140, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 9},
 	/* Note Repeat, macro, level, aux */
-	{.x = 10, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 10},
+	{.x = 10, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 10},
 	{.x = 10, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 18},
 	{.x = 10, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 19},
 	{.x = 10, .y = 209, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 20},
@@ -165,7 +165,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 290, .y = 208, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 25},
 	{.x = 290, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 24},
 	{.x = 290, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 23},
-	{.x = 290, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 17},
+	{.x = 290, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 17},
 	/* Encoder Touch, press, etc */
 	{.x = 290, .y = 120, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
 	{.x = 290, .y = 148, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
@@ -185,15 +185,15 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 221, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 	{.x = 250, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 	/* a, b, c, d */
-	{.x =  50, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x =  78, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 107, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 136, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	/* 5,6,7,8 */
-	{.x = 164, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 192, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 221, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 250, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  50, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	/* e,f,g,h */
+	{.x = 164, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 };
 
 static struct ctlra_item_info_t sliders_info[] = {
@@ -900,9 +900,9 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 			.h = 100,
 			/* TODO: Figure out the light mappings */
 			/* start light id */
-			//.params[0] = NI_MASCHINE_MIKRO_MK2_LED_PAD_1,
+			.params[0] = 255,
 			/* end light id */
-			//.params[1] = NI_MASCHINE_MIKRO_MK2_LED_PAD_16,
+			.params[1] = 255,
 		}
 	},
 
