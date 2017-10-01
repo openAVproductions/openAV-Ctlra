@@ -123,6 +123,96 @@ static const char *ni_maschine_jam_control_names[] = {
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
 
+
+#define JAM_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_LED_COLOR | CTLRA_ITEM_HAS_FB_ID)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* song, step, pad mode, clear, duplicate */
+	{.x = 10, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 10, .y = 39, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 54, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 68, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 82, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* Up Left Right Down */
+	{.x = 16, .y = 120, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
+	{.x =  6, .y = 130, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 26, .y = 130, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 16, .y = 140, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
+	/* Note Repeat, macro, level, aux */
+	{.x = 10, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 184, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 196, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 209, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* control, auto, shift */
+	{.x = 10, .y = 228, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 240, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	/* play rec < > */
+	{.x =  50, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x =  78, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 107, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 136, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	/* Tempo, Grid, Solo, Mute */
+	{.x = 164, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 192, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 221, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 250, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	/* Select, Swing, Tune, Lock */
+	{.x = 290, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 240, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 227, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* Lock, notes, perform, browse */
+	{.x = 290, .y = 208, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 196, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 184, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* Encoder Touch, press, etc */
+	{.x = 290, .y = 120, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 148, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* In 1, Headphone, Mst, Grp */
+	{.x = 290, .y = 100, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 304, .y = 100, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y =  82, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 304, .y =  82, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	/* 1,2,3,4 */
+	{.x =  50, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	/* 5,6,7,8 */
+	{.x = 164, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	/* a, b, c, d */
+	{.x =  50, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	/* 5,6,7,8 */
+	{.x = 164, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+};
+
+static struct ctlra_item_info_t sliders_info[] = {
+	/* 8 touch faders left-to-right */
+	{.x =  52, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x =  81, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 110, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 137, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	/* */
+	{.x = 165, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 196, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 224, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 256, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+};
+
+static struct ctlra_item_info_t encoder_info[] = {
+	/* 8 touch faders left-to-right */
+	{.x = 287, .y = 125, .w = 24, .h = 24, .flags = CTLRA_ITEM_ENCODER},
+};
+
 enum BTN_T {
 	NI_MASCHINE_JAM_BTN_SONG,
 	NI_MASCHINE_JAM_BTN_STEP,
@@ -783,12 +873,31 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 	.control_count[CTLRA_EVENT_ENCODER] = 1,
-	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_count[CTLRA_EVENT_GRID] = 1,
 
-	//.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
-	//.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
-	//.control_info[CTLRA_EVENT_ENCODER] = sliders_info,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_EVENT_ENCODER] = encoder_info,
+
+	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 	//.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+
+	.grid_info[0] = {
+		.rgb = 1,
+		.x = 8,
+		.y = 8,
+		.info = {
+			.x = 51,
+			.y = 39,
+			.w = 215,
+			.h = 100,
+			/* TODO: Figure out the light mappings */
+			/* start light id */
+			//.params[0] = NI_MASCHINE_MIKRO_MK2_LED_PAD_1,
+			/* end light id */
+			//.params[1] = NI_MASCHINE_MIKRO_MK2_LED_PAD_16,
+		}
+	},
 
 	.get_name = ni_maschine_jam_control_get_name,
 };
