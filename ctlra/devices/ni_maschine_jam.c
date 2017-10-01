@@ -111,88 +111,89 @@ static const char *ni_maschine_jam_control_names[] = {
 	"G",
 	"H",
 	"Footswitch",
-	"Touchstrip 1",
-	"Touchstrip 2",
-	"Touchstrip 3",
-	"Touchstrip 4",
-	"Touchstrip 5",
-	"Touchstrip 6",
-	"Touchstrip 7",
-	"Touchstrip 8",
+	"Strip 1",
+	"Strip 2",
+	"Strip 3",
+	"Strip 4",
+	"Strip 5",
+	"Strip 6",
+	"Strip 7",
+	"Strip 8",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
 
 
-#define JAM_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_LED_COLOR | CTLRA_ITEM_HAS_FB_ID)
+#define JAM_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | \
+		 CTLRA_ITEM_LED_COLOR | CTLRA_ITEM_HAS_FB_ID)
 static struct ctlra_item_info_t buttons_info[] = {
 	/* song, step, pad mode, clear, duplicate */
-	{.x = 10, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 10, .y = 39, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 54, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 68, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 82, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 39, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 2},
+	{.x = 10, .y = 54, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 3},
+	{.x = 10, .y = 68, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 4},
+	{.x = 10, .y = 82, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 5},
 	/* Up Left Right Down */
-	{.x = 16, .y = 120, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
-	{.x =  6, .y = 130, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 26, .y = 130, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 16, .y = 140, .w = 8,  .h = 8, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 16, .y = 120, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 6},
+	{.x =  6, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 7},
+	{.x = 26, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 8},
+	{.x = 16, .y = 140, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 9},
 	/* Note Repeat, macro, level, aux */
-	{.x = 10, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 184, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 196, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 209, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 10},
+	{.x = 10, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 18},
+	{.x = 10, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 19},
+	{.x = 10, .y = 209, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 20},
 	/* control, auto, shift */
-	{.x = 10, .y = 228, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 240, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 228, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 21},
+	{.x = 10, .y = 240, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 22},
+	{.x = 10, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 28},
 	/* play rec < > */
-	{.x =  50, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x =  78, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 107, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 136, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x =  50, .y = 260, .w = 20,  .h = 10, .colour = 0xff00ff00, .flags = JAM_BTN, .fb_id = 29},
+	{.x =  78, .y = 260, .w = 20,  .h = 10, .colour = 0xffff0000, .flags = JAM_BTN, .fb_id = 30},
+	{.x = 107, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 31},
+	{.x = 136, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 32},
 	/* Tempo, Grid, Solo, Mute */
-	{.x = 164, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 192, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 221, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 250, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 164, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 33},
+	{.x = 192, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 34},
+	{.x = 221, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 35},
+	{.x = 250, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 36},
 	/* Select, Swing, Tune, Lock */
-	{.x = 290, .y = 260, .w = 20,  .h = 10, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 240, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 227, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 37},
+	{.x = 290, .y = 240, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 27},
+	{.x = 290, .y = 227, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 26},
 	/* Lock, notes, perform, browse */
-	{.x = 290, .y = 208, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 196, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 184, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 208, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 25},
+	{.x = 290, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 24},
+	{.x = 290, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 23},
+	{.x = 290, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 17},
 	/* Encoder Touch, press, etc */
-	{.x = 290, .y = 120, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y = 148, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 120, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 290, .y = 148, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
 	/* In 1, Headphone, Mst, Grp */
-	{.x = 290, .y = 100, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 304, .y = 100, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 290, .y =  82, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 304, .y =  82, .w = 6,  .h = 6, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 290, .y = 100, .w = 6,  .h = 6, .colour = 0xff0000ff, .flags = JAM_BTN, .fb_id = 13},
+	{.x = 304, .y = 100, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 15},
+	{.x = 290, .y =  82, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 11},
+	{.x = 304, .y =  82, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 12},
 	/* 1,2,3,4 */
-	{.x =  50, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x =  78, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 107, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 136, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  50, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 	/* 5,6,7,8 */
-	{.x = 164, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 192, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 221, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 250, .y = 20, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 164, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 	/* a, b, c, d */
-	{.x =  50, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x =  78, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 107, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 136, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  50, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 	/* 5,6,7,8 */
-	{.x = 164, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 192, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 221, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
-	{.x = 250, .y = 160, .w = 20,  .h = 6, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 164, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 160, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
 };
 
 static struct ctlra_item_info_t sliders_info[] = {
@@ -209,7 +210,6 @@ static struct ctlra_item_info_t sliders_info[] = {
 };
 
 static struct ctlra_item_info_t encoder_info[] = {
-	/* 8 touch faders left-to-right */
 	{.x = 287, .y = 125, .w = 24, .h = 24, .flags = CTLRA_ITEM_ENCODER},
 };
 
@@ -879,8 +879,15 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
 	.control_info[CTLRA_EVENT_ENCODER] = encoder_info,
 
-	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
-	//.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+	/* TODO: feedback items:
+	 * - 2 VU meter style LED strips
+	 *   Left  id: 38 to 45,
+	 *   Right id: 46 to 53
+	 */
+#if 0
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
 
 	.grid_info[0] = {
 		.rgb = 1,
