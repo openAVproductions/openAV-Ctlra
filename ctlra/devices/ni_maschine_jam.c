@@ -278,6 +278,8 @@ struct ni_maschine_jam_t {
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
+	uint8_t encoder;
+
 	uint8_t lights_interface;
 	uint8_t lights[NI_MASCHINE_JAM_LED_COUNT*2];
 
@@ -407,6 +409,7 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		//ni_maschine_jam_light_flush(base, 1);
 		break;
 	}
+
 	case 17: {
 		static uint8_t old[17];
 		int i = 17;
@@ -502,6 +505,25 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				ni_maschine_jam_light_flush(base, 1);
 #endif
 			}
+		}
+
+		/* encoder */
+		uint8_t encoder_now = (data[1] & 0xf);
+		if(dev->encoder != encoder_now) {
+			int dir = ctlra_dev_encoder_wrap_16(encoder_now,
+							    dev->encoder);
+			dev->encoder = encoder_now;
+
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder  = {
+					.id = 0,
+				},
+			};
+			event.encoder.delta = dir;
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 	} /* case 17 */
 	} /* switch */
