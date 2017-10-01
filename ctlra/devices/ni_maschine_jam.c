@@ -129,10 +129,10 @@ static const char *ni_maschine_jam_control_names[] = {
 static struct ctlra_item_info_t buttons_info[] = {
 	/* song, step, pad mode, clear, duplicate */
 	{.x = 10, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 1},
-	{.x = 10, .y = 39, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 2},
-	{.x = 10, .y = 54, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 3},
-	{.x = 10, .y = 68, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 4},
-	{.x = 10, .y = 82, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 5},
+	{.x = 10, .y = 39, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 2},
+	{.x = 10, .y = 54, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 3},
+	{.x = 10, .y = 68, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 4},
+	{.x = 10, .y = 82, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 5},
 	/* Up Left Right Down */
 	{.x = 16, .y = 120, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 6},
 	{.x =  6, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 7},
