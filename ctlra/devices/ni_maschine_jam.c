@@ -293,6 +293,12 @@ ni_maschine_jam_control_get_name(enum ctlra_event_type_t type,
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		control_id += NI_MASCHINE_JAM_BTN_COUNT;
+		break;
+	case CTLRA_EVENT_ENCODER:
+		if(control_id == 0) {
+			return "Encoder";
+		}
+		return 0;
 	default:
 		break;
 	}
@@ -353,15 +359,6 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		static uint8_t old[49];
 		int i = 49;
 		int do_lights = 0;
-#if 0
-		/* print incoming bytes */
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
-		}
-		printf("\n");
-#endif 
-
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_SLIDER,
 			.slider  = {
@@ -404,21 +401,12 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				ni_maschine_jam_touchstrip_led(base, i, lights);
 			}
 		}
-		//printf("\n");
-		//ni_maschine_jam_light_flush(base, 1);
 		break;
 	}
 
 	case 17: {
 		static uint8_t old[17];
 		int i = 17;
-#if 0
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
-		}
-		printf("\n");
-#endif
 		uint64_t pressed = 0;
 
 		static uint16_t col_mask[] = {
@@ -690,6 +678,8 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_jam_info;
+
 struct ctlra_dev_t *
 ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 			      void *userdata, void *future)
@@ -763,13 +753,12 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 	dev->fd = fd;
 	printf("jam on fd %d\n", fd);
 #endif
-	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
-	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
+
+	dev->base.info = ctlra_ni_maschine_jam_info;
 
 	dev->base.poll = ni_maschine_jam_poll;
 	dev->base.disconnect = ni_maschine_jam_disconnect;
 	dev->base.light_set = ni_maschine_jam_light_set;
-	//dev->base.control_get_name = ni_maschine_jam_control_get_name;
 	dev->base.light_flush = ni_maschine_jam_light_flush;
 	dev->base.usb_read_cb = ni_machine_jam_usb_read_cb;
 
@@ -791,15 +780,15 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 	.size_y    = 295,
 
 	/* TODO: expose info */
-#if 0
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
-	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = 1,
+	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 
-	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
-	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
-	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
-#endif
+	//.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	//.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	//.control_info[CTLRA_EVENT_ENCODER] = sliders_info,
+	//.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 
 	.get_name = ni_maschine_jam_control_get_name,
 };
