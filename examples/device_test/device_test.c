@@ -11,6 +11,7 @@ static uint32_t led_count;
 
 #define NUM_LEDS 256
 static uint32_t leds[NUM_LEDS];
+static uint32_t leds_update[NUM_LEDS];
 
 static struct ctlra_dev_t *avtka_ui;
 
@@ -41,8 +42,12 @@ void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 	ctlra_dev_get_info(dev, &info);
 
 	/* raw LED API *MUST* be used first */
-	for(int i = 0; i < NUM_LEDS; i++)
-		ctlra_dev_light_set(dev, i, leds[i]);
+	for(int i = 0; i < NUM_LEDS; i++) {
+		if(leds_update[i]) {
+			ctlra_dev_light_set(dev, i, leds[i]);
+			leds_update[i] = 0;
+		}
+	}
 
 	/* raw LED API for Grid */
 	if(info.control_count[CTLRA_EVENT_GRID]) {
@@ -88,6 +93,8 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 				uint32_t col = item->flags & CTLRA_ITEM_LED_COLOR ?
 						0xff0000ff : 0xff000000;
 				leds[item->fb_id] = e->button.pressed * col;
+				leds_update[item->fb_id] = 1;
+				printf("btn id = %d, fb id = %d\n", id, item->fb_id);
 			}
 			break;
 
