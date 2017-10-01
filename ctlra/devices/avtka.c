@@ -82,7 +82,6 @@ avtka_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	/* TODO: figure out how to display feedback */
 	struct avtka_t *a = dev->a;
 	static float v;
-	printf("%s: %d %f\n", __func__, light_id, v);
 	avtka_item_value(a, light_id, v);
 	v += 0.0066;
 	if(v > 1.0f) v -= 1.0f;
@@ -233,7 +232,6 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata,
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
 
-	printf("%s, self %p\n", __func__, dev);
 	/* pass in back-pointer to ctlra_dev_t class for sending events */
 	dev->a = ctlra_build_avtka_ui(dev, info);
 	if(!dev->a)
@@ -271,7 +269,6 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 	snprintf(name, sizeof(name), "%s - %s", dev->base.info.vendor,
 		 dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);
-	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);
 	if(!a)
 		return 0;
 

@@ -35,7 +35,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-//#include "ni_maschine_jam.h"
 #include "impl.h"
 #include "ni_maschine_jam.h"
 
