@@ -6,6 +6,9 @@
 #include "ctlra.h"
 #include "devices/ni_maschine_jam.h"
 
+static int chan;
+const char *patch_name;
+
 void jam_update_state(struct ctlra_dev_t *dev, void *ud)
 {
 	struct dummy_data *d = ud;
@@ -38,7 +41,15 @@ void jam_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
-			printf("encoder\n");
+			if(e->encoder.delta > 0)
+				chan++;
+			else
+				chan--;
+			if(chan < 0)   chan =   0;
+			if(chan > 127) chan = 127;
+			soffa_set_patch(d->soffa, 0, 0, chan, &patch_name);
+			printf("maschine: patch switched to %s (%d)\n",
+			       patch_name, chan);
 			break;
 
 		case CTLRA_EVENT_SLIDER:

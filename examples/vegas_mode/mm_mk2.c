@@ -7,7 +7,6 @@
 #include "devices/ni_maschine_mikro_mk2.h"
 
 static int chan;
-
 const char *patch_name;
 
 const char modes[] = {
