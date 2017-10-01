@@ -272,8 +272,9 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 	if(!a)
 		return 0;
 
-	uint8_t col_red   = avtka_register_colour(a, 1, 0, 0, 1);
-	uint8_t col_green = avtka_register_colour(a, 0, 1, 0, 1);
+	uint8_t col_red   = avtka_register_colour(a, 1,  0, 0, 1);
+	uint8_t col_green = avtka_register_colour(a, 0,  1, 0, 1);
+	uint8_t col_blue  = avtka_register_colour(a, 0, .3, 1, 1);
 
 	/* i scope magic - it is used after the loop to set the offset */
 	int i = 0;
@@ -309,6 +310,8 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 				avtka_item_colour(a, idx, col_red);
 			if(0x0000ff00 & item->colour)
 				avtka_item_colour(a, idx, col_green);
+			if(0x000000ff & item->colour)
+				avtka_item_colour(a, idx, col_blue);
 		}
 
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_BUTTON;
