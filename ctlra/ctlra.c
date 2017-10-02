@@ -414,6 +414,22 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	}
 }
 
+void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
+{
+	struct ctlra_t *ctlra = dev->ctlra_context;
+	dev->banished = 1;
+	if(ctlra->banished_list == 0)
+		ctlra->banished_list = dev;
+	else {
+		struct ctlra_dev_t *dev_iter = ctlra->banished_list;
+		while(dev_iter->banished_list_next)
+			dev_iter = dev_iter->banished_list_next;
+		dev_iter->banished_list_next = dev;
+		dev->banished_list_next = 0;
+	}
+}
+
+
 void ctlra_exit(struct ctlra_t *ctlra)
 {
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;

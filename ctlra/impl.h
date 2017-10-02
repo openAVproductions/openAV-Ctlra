@@ -194,6 +194,10 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
+/* Marks a device as failed, and adds it to the disconnect list. After
+ * having been banished, the device instance will not function again */
+void ctlra_dev_impl_banish(struct ctlra_dev_t *dev);
+
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
 
 
