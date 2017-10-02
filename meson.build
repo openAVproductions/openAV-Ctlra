@@ -21,7 +21,7 @@ endif
 
 firmatac = subproject('firmatac')
 firmatac_dep = firmatac.get_variable('firmatac_dep')
-required_libs += 'firmata_dep'
+#required_libs += 'firmata_dep'
 
 firmatac_includes = include_directories('subprojects/firmatac/includes')
 
