@@ -126,6 +126,7 @@ struct ni_kontrol_f1_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+	uint8_t encoder;
 
 	uint8_t lights_interface;
 	// TODO FIXME: Lights size can be improved to actually reserve the
@@ -146,6 +147,9 @@ ni_kontrol_f1_control_get_name(enum ctlra_event_type_t type,
 		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
 			return 0;
 		return ni_kontrol_f1_names_buttons[control];
+	case CTLRA_EVENT_ENCODER:
+		if(control == 0)
+			return "Encoder";
 	default:
 		break;
 	}
@@ -169,18 +173,6 @@ void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 {
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 	uint8_t *buf = data;
-#if 0
-	static uint8_t old[22];
-	for(int i = 0; i < nbytes; i++) {
-		if(old[i] != buf[i]) {
-			old[i] = buf[i];
-			printf("\033[31m%02x\033[0m ", buf[i]);
-		}
-		else
-			printf("%02x ", buf[i]);
-	}
-	printf("\n");
-#endif
 
 	switch(size) {
 	case 22: {
@@ -202,6 +194,26 @@ void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 			}
+		}
+
+		/* encoder: uses 0xff bits, result is same with just 0xf,
+		 * so simplify the implementation to just 0xf */
+		int enc_new = buf[5] & 0xf;
+		if(dev->encoder != enc_new) {
+			int dir = ctlra_dev_encoder_wrap_16(enc_new,
+							    dev->encoder);
+			dev->encoder = enc_new;
+
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder  = {
+					.id = 0,
+				},
+			};
+			event.encoder.delta = dir;
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 
 		/* Grid */
