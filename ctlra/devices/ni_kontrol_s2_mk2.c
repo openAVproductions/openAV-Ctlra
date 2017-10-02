@@ -37,8 +37,8 @@
 #include "ni_kontrol_s2_mk2.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_S2_MK2  (0x1320)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1320)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x83)
@@ -62,7 +62,7 @@ static const char *ni_kontrol_s2_mk2_names_encoders[] = {
 	"Gain Encoder (L)",
 	"Gain Encoder (R)",
 };
-#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_encoders) /\
+#define CONTROL_NAMES_ENCODERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_encoders) / \
 				    sizeof(ni_kontrol_s2_mk2_names_encoders[0]))
 
 static const char *ni_kontrol_s2_mk2_names_sliders[] = {
@@ -90,7 +90,7 @@ static const char *ni_kontrol_s2_mk2_names_sliders[] = {
 	"EQ MID (R)",
 	"EQ LOW (R)",
 };
-#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_sliders) /\
+#define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_s2_mk2_names_sliders) / \
 				    sizeof(ni_kontrol_s2_mk2_names_sliders[0]))
 
 static const char *ni_kontrol_s2_mk2_names_buttons[] = {
@@ -152,7 +152,7 @@ static const char *ni_kontrol_s2_mk2_names_buttons[] = {
 	"Left Encoder Press (R)",
 	"Right Encoder Press (R)",
 };
-#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_mk2_names_buttons) /\
+#define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_s2_mk2_names_buttons) / \
 				    sizeof(ni_kontrol_s2_mk2_names_buttons[0]))
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
@@ -184,6 +184,40 @@ static const struct ni_kontrol_s2_mk2_ctlra_t sliders[] = {
 	{NI_KONTROL_S2_MK2_SLIDER_EQ_R_LOW  , 45, UINT32_MAX},
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
+
+#define DIAL_CENTER (CTLRA_ITEM_DIAL | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t sliders_info[] = {
+	/* crossfader, pitch L, pitch R */
+	{.x = 195, .y = 285, .w =  50, .h  = 20, .flags = CTLRA_ITEM_FADER},
+	{.x =  10, .y = 230, .w =  20, .h  = 80, .flags = CTLRA_ITEM_FADER},
+	{.x = 410, .y = 230, .w =  20, .h  = 80, .flags = CTLRA_ITEM_FADER},
+	/* cue mix, remix, main level, level (back panel) */
+	{.x = 330, .y = 330, .w =  14, .h  = 14, .flags = DIAL_CENTER},
+	{.x = 210, .y = 102, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 210, .y =  60, .w =  18, .h  = 18, .flags = CTLRA_ITEM_DIAL},
+	{.x = 195, .y =   5, .w =  18, .h  = 18, .flags = CTLRA_ITEM_DIAL},
+	/* Fader L, fader R */
+	{.x = 170, .y = 220, .w =  20, .h  = 50, .flags = CTLRA_ITEM_FADER},
+	{.x = 250, .y = 220, .w =  20, .h  = 50, .flags = CTLRA_ITEM_FADER},
+	/* FX L Dry, 1, 2, 3 */
+	{.x =  15, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x =  50, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x =  82, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 115, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	/* FX R Dry, 1, 2, 3 */
+	{.x = 315, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 350, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 382, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 415, .y =  60, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	/* EQ L Hi, Mid, Low */
+	{.x = 172, .y = 102, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 172, .y = 134, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 172, .y = 166, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	/* EQ L Hi, Mid, Low */
+	{.x = 250, .y = 102, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 250, .y = 134, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+	{.x = 250, .y = 166, .w =  18, .h  = 18, .flags = DIAL_CENTER},
+};
 
 static const struct ni_kontrol_s2_mk2_ctlra_t buttons[] = {
 	{NI_KONTROL_S2_MK2_BTN_DECKB_PLAY , 9, 0x01},
@@ -248,9 +282,97 @@ static const struct ni_kontrol_s2_mk2_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
+static struct ctlra_item_info_t buttons_info[] = {
+	/* R: play cue sync shift */
+	{.x = 376, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 298, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* R: 4, 3, 2, 1 */
+	{.x = 376, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 298, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* Jog wheel Press L, R, Main/Booth Switch, Mic Engage */
+	{.x = 142, .y = 210, .w = 18, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 280, .y = 210, .w = 18, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 164, .y =  10, .w = 24, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 380, .y = 350, .w = 18, .h = 18, .flags = CTLRA_ITEM_BUTTON},
+	/* R: Mixer Cue, Flux, Loop In, Loop Out */
+	{.x = 250, .y = 195, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 415, .y = 218, .w = 10, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 324, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 350, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	/* L: play cue sync shift */
+	{.x = 126, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  48, .y = 295, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* L: 4, 3, 2, 1 */
+	{.x = 126, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  48, .y = 268, .w = 18, .h = 15, .flags = CTLRA_ITEM_BUTTON},
+	/* remix On B, A, Browse Load B, A */
+	{.x = 222, .y = 125, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 202, .y = 125, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 222, .y = 184, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 202, .y = 184, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* L: Mixer Cue, Flux, Loop In, Loop Out */
+	{.x = 170, .y = 195, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  15, .y = 218, .w = 10, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  74, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 100, .y = 241, .w = 18, .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	/* FX 2: Dry wet, 3, 2, 1, */
+	{.x = 317, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 417, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 384, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 352, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* TODO: gain encoders press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* Mixer R: FX 2, 1 */
+	{.x = 265, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 245, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* Mixer L: FX 2, 1 */
+	{.x = 185, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 165, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* FX 1: Dry wet, 3, 2, 1, */
+	{.x =  17, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 117, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  84, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	{.x =  54, .y = 74, .w = 14, .h = 14, .flags = CTLRA_ITEM_BUTTON},
+	/* TODO: Left deck loop encoder press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* TODO: Browse encoder press */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	/* TODO: Right deck loop encoder press L, R */
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+	{.x = 0, .y = 0, .w = 0, .h = 0, .flags = 0},
+};
+
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
-#define ENCODER_COUNT 7
+#define ENCODER_COUNT 9
+
+#define ENCODER_NOTCH  (CTLRA_ITEM_ENCODER | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t encoders_info[] = {
+	/* jog left, jog right */
+	{.x =  15, .y =  95, .w = 125, .h = 125, .flags = CTLRA_ITEM_ENCODER},
+	{.x = 300, .y =  95, .w = 125, .h = 125, .flags = CTLRA_ITEM_ENCODER},
+	/* left encoder (Left deck), right encoder (left deck) */
+	{.x =  44, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	{.x = 122, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* browse */
+	{.x = 208, .y = 155, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* left encoder (Left deck), right encoder (left deck) */
+	{.x = 294, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	{.x = 372, .y = 234, .w =  24, .h =  24, .flags = ENCODER_NOTCH},
+	/* gain left, gain right */
+	{.x = 172, .y =  60, .w =  18, .h =  18, .flags = ENCODER_NOTCH},
+	{.x = 252, .y =  60, .w =  18, .h =  18, .flags = ENCODER_NOTCH},
+};
 
 /* 36 LEDs on top half - all brightness only */
 #define LED_COUNT 64
@@ -521,6 +643,8 @@ ni_kontrol_s2_mk2_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
@@ -531,18 +655,11 @@ ctlra_ni_kontrol_s2_mk2_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol S2_MK2");
+	dev->base.info = ctlra_ni_kontrol_s2_mk2_info;
 
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-	dev->base.info.get_name = ni_kontrol_s2_mk2_control_get_name;
-
-	int err = ctlra_dev_impl_usb_open(&dev->base,NI_VENDOR,
-					  NI_KONTROL_S2_MK2);
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -570,3 +687,23 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_s2_mk2_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol S2 Mk2",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 440,
+	.size_y    = 370, /* includes back and front panels */
+
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_COUNT,
+
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_EVENT_ENCODER] = encoders_info,
+
+	.get_name = ni_kontrol_s2_mk2_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_s2_mk2)

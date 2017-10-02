@@ -37,8 +37,8 @@
 #include "ni_kontrol_f1.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_F1      (0x1120)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1120)
 #define USB_INTERFACE_ID   (0x00)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
@@ -126,6 +126,7 @@ struct ni_kontrol_f1_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+	uint8_t encoder;
 
 	uint8_t lights_interface;
 	// TODO FIXME: Lights size can be improved to actually reserve the
@@ -146,6 +147,9 @@ ni_kontrol_f1_control_get_name(enum ctlra_event_type_t type,
 		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
 			return 0;
 		return ni_kontrol_f1_names_buttons[control];
+	case CTLRA_EVENT_ENCODER:
+		if(control == 0)
+			return "Encoder";
 	default:
 		break;
 	}
@@ -169,18 +173,6 @@ void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 {
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 	uint8_t *buf = data;
-#if 0
-	static uint8_t old[22];
-	for(int i = 0; i < nbytes; i++) {
-		if(old[i] != buf[i]) {
-			old[i] = buf[i];
-			printf("\033[31m%02x\033[0m ", buf[i]);
-		}
-		else
-			printf("%02x ", buf[i]);
-	}
-	printf("\n");
-#endif
 
 	switch(size) {
 	case 22: {
@@ -202,6 +194,26 @@ void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 			}
+		}
+
+		/* encoder: uses 0xff bits, result is same with just 0xf,
+		 * so simplify the implementation to just 0xf */
+		int enc_new = buf[5] & 0xf;
+		if(dev->encoder != enc_new) {
+			int dir = ctlra_dev_encoder_wrap_16(enc_new,
+							    dev->encoder);
+			dev->encoder = enc_new;
+
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder  = {
+					.id = 0,
+				},
+			};
+			event.encoder.delta = dir;
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 
 		/* Grid */
@@ -349,7 +361,9 @@ ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
 	dev->base.info.get_name = ni_kontrol_f1_control_get_name;
 
-	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_F1);
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -376,3 +390,25 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_f1_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol F1",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 120,
+	.size_y    = 294,
+
+	/* TODO: expose info */
+#if 0
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.get_name = ni_kontrol_f1_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_f1)

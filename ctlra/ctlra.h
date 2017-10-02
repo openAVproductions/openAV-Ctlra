@@ -61,6 +61,8 @@ extern "C" {
  * on the device.
  */
 
+#include <stdio.h>
+
 #include "event.h"
 
 #define CTLRA_STR_MAX        32
@@ -75,8 +77,9 @@ extern "C" {
  */
 struct ctlra_t;
 
-#define CTLRA_DEBUG_NONE  0
-#define CTLRA_DEBUG_ERROR 1
+/* Errors only is default */
+#define CTLRA_DEBUG_ERROR 0
+#define CTLRA_DEBUG_NONE  1
 #define CTLRA_DEBUG_WARN  2
 #define CTLRA_DEBUG_INFO  3
 
@@ -105,6 +108,43 @@ struct ctlra_create_opts_t {
 typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 						uint32_t control_id);
 
+/** Struct that provides physical layout and capabilities about each
+ * item on the controller. Sizes are provided in millimeters. An item can
+ * represent a control such as a slider or dial, but also feedback only
+ * items such as an LED, or screen.
+ */
+#define CTLRA_ITEM_BUTTON        (1<< 0)
+#define CTLRA_ITEM_FADER         (1<< 1) /* check W vs H for orientation */
+#define CTLRA_ITEM_DIAL          (1<< 2)
+#define CTLRA_ITEM_ENCODER       (1<< 3)
+#define CTLRA_ITEM_CENTER_NOTCH  (1<< 4)
+
+#define CTLRA_ITEM_LED_INTENSITY (1<< 5)
+#define CTLRA_ITEM_LED_COLOR     (1<< 6)
+
+#define CTLRA_ITEM_FB_LED_STRIP  (1<< 7)
+#define CTLRA_ITEM_FB_SCREEN     (1<< 7)
+
+#define CTLRA_ITEM_HAS_FB_ID     (1<<31)
+struct ctlra_item_info_t {
+	uint32_t x; /* location of item on X axis */
+	uint32_t y; /* location of item on Y axis */
+	uint32_t w; /* size of item on X axis */
+	uint32_t h; /* size of item on Y axis */
+
+	/* TODO: figure out how to expose capabilities of item */
+	uint64_t flags;
+
+	/* The feedback id for this item. Calling ctlra_dev_light_set()
+	 * with this light_id should result the the LED under the item
+	 * changing state */
+	uint32_t fb_id;
+	/* mask of colours the hw can represent */
+	uint32_t colour;
+	/* feedback parameters depending on flags */
+	uint8_t params[4];
+};
+
 /** A struct describing the properties of a grid */
 struct ctlra_grid_info_t {
 	/* capabilities of each pad */
@@ -116,6 +156,32 @@ struct ctlra_grid_info_t {
 	/* number of pads in x and y direction */
 	uint32_t x;
 	uint32_t y;
+	/* location of grid itself on the device */
+	struct ctlra_item_info_t info;
+};
+
+#define CTLRA_DEV_TYPE_INVALID          0
+#define CTLRA_DEV_TYPE_USB_HID          1
+#define CTLRA_DEV_TYPE_BLUETOOTH        2
+#define CTLRA_DEV_TYPE_USB_MIDI         3
+
+/** ID struct for a USB HID device */
+struct ctlra_dev_usb_hid_t {
+	/** USB Vendor ID */
+	uint32_t vendor_id;
+	/** USB device ID */
+	uint32_t device_id;
+	/** Serial number from USB library (if available) */
+	uint64_t serial_number;
+};
+
+struct ctlra_dev_id_t {
+	/* integer representing the type of this device.
+	 * Eg: CTLRA_DEV_TYPE_USB_HID */
+	uint32_t type;
+	union {
+		struct ctlra_dev_usb_hid_t usb_hid;
+	};
 };
 
 /** Struct that provides info about the controller. Passed to the
@@ -150,6 +216,18 @@ struct ctlra_dev_info_t {
 	 * buttons by accessing the array by *ctlra_event_type_t*
 	 * CTRLA_EVENT_BUTTON */
 	uint32_t control_count[CTLRA_EVENT_T_COUNT];
+
+	/** An array pointers to ctlra_item_info_t structures.
+	 * The pointers can be used to look up information about each
+	 * control that the device has.
+	 */
+	struct ctlra_item_info_t *control_info[CTLRA_EVENT_T_COUNT];
+
+	/* TODO: feedback/led only ctlra_item info */
+
+	uint32_t size_x;
+	uint32_t size_y;
+
 	struct ctlra_grid_info_t grid_info[CTLRA_NUM_GRIDS_MAX];
 
 	/** @internal function to get name from device. Application must
@@ -217,6 +295,56 @@ void ctlra_exit(struct ctlra_t *ctlra);
  */
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev);
 
+/** Retrieve a list of vendors. The returned strings are human readable
+ * names of the companies/manufacturers of controller hardware. This
+ * function is to allow eg: a drop-down list of vendors be displayed to
+ * the user, which are supported by ctlra (and can be virtualized).
+ *
+ * Note that the strings pointed to by vendors after this call *remain*
+ * owned by the Ctlra library - and they must not be freed by the callee.
+ *
+ * @param vendors An array of *size* that will be filled in with null
+ *                terminated strings, where each entry is a vendor's name.
+ * @param size    Size of the callee supplied array
+ * @returns       Number of vendors populated in the array
+ */
+int32_t ctlra_get_vendors(const char *vendors[], int32_t size);
+
+
+/** Retrieve a list of devices by a specific vendor. The returned strings
+ * are human-readable names of devices. These names could be presented to
+ * the user in eg: a drop down box allowing the user to select a specific
+ * device. One use case could be virtualizing a specific hardware device
+ *
+ * @param vendor The vendor from which to find all supported devices. See
+ *               the *ctlra_get_vendors* function to retrieve vendors.
+ * @param devices An array of at least *size* to be filled in with null
+ *                terminated strings, with each string representing a device.
+ * @param size   Size of the devices array passed in.
+ * @return       The number of devices populated in the array
+ */
+int32_t ctlra_get_devices_by_vendor(const char *vendor,
+				    const char *devices[],
+				    int32_t size);
+
+/** Add a virtualized device. This function adds a "virtual" device, which
+ * provides the controls of the physical device by displaying a user
+ * interface. In order for this function to operate, the device being
+ * virtualized must provide its info statically in the driver.
+ *
+ * The info provided about the device is used to emulate the device
+ * itself - the normal accept dev callback will be called in the
+ * application, with the device descriptor filled out as if it was the
+ * actual hardware plugged in. This allows total emulation of the hardware.
+ *
+ * @retval 0 Successfully virtualized the device using an available backend
+ * @retval -1 Error in virtualizing
+ */
+int32_t ctlra_dev_virtualize(struct ctlra_t *ctlra, const char *vendor,
+			     const char *device);
+
+void ctlra_strerror(struct ctlra_t *ctlra, FILE* out);
+
 /** Change the Event func. This may be useful when integrating into
  * an application that doesn't know yet which event func to attach to
  * the device when connecting to it. A dummy event_func can be used, and
@@ -239,6 +367,11 @@ void ctlra_dev_set_event_func(struct ctlra_dev_t* dev,
 void ctlra_dev_light_set(struct ctlra_dev_t *dev,
 			uint32_t light_id,
 			uint32_t light_status);
+
+/** Feedback item set: sets the value for a feedback item */
+void ctlra_dev_feedback_set(struct ctlra_dev_t *dev,
+			    uint32_t fb_id,
+			    float value);
 
 /** Flush the bytes with the Lights/LEDs info over the cable. The device
  * implementation must track which lights are actually dirty, and only
@@ -274,8 +407,8 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t flush);
 
 
-/** Get the human readable name for the device. The returned pointer is
- * still owned by the ctlra library, the application must not free it */
+/** Get the info struct from a device. The user-supplied info pointer is
+ * filled in by the device driver */
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info);
 

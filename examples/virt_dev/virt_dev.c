@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #include "ctlra.h"
 
@@ -10,14 +11,14 @@ static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
 
-void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
+void virt_dev_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* feedback like LEDs and Screen drawing based on application
 	 * state goes here. See the vegas_mode/ example for an example of
 	 * how to turn on LEDs on the controllers.
 	 *
-	 * Alternatively re-run the simple example with an integer
-	 * parameter and that light number will be lit: ./simple 5
+	 * Alternatively re-run the virt_dev example with an integer
+	 * parameter and that light number will be lit: ./virt_dev 5
 	 */
 	if(led_set) {
 		ctlra_dev_light_set(dev, led, 0xffffffff);
@@ -25,7 +26,7 @@ void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 	}
 }
 
-void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
+void virt_dev_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
 	/* Events from the Ctlra device are handled here. They should be
@@ -35,7 +36,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	 * proper demo on how to do feedback, see examples/vegas/
 	 */
 
-	static const char* grid_pressed[] = { "   ", " X " };
+	static const char* grid_pressed[] = { " X ", "   " };
 
 	/* Retrieve info, so we can look up names. Note this is not
 	 * expected to be used in production code - the names should be
@@ -80,7 +81,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			} else {
 				pressed = "---";
 			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
+			printf("[%s] grid %d", pressed ? " X " : "   ", e->grid.pos);
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
@@ -97,7 +98,7 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
-void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
+void virt_dev_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 			void *userdata)
 {
 	/* Notifies application of device removal, also allows cleanup
@@ -105,7 +106,7 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	 * the MIDI I/O is cleaned up in the remove() function */
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
-	printf("simple: removing %s %s\n", info.vendor, info.device);
+	printf("virt_dev: removing %s %s\n", info.vendor, info.device);
 
 }
 
@@ -116,16 +117,10 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
                     void **userdata_for_event_func,
                     void *userdata)
 {
-	printf("simple: accepting %s %s\n", info->vendor, info->device);
-	/* Fill in the callbacks the device needs to function.
-	 * In this example, all events are routed to the above functions,
-	 * which simply print the event that occurred. Look at the daemon/
-	 * example in order to see how to send MIDI messages for events */
-	*event_func    = simple_event_func;
-	*feedback_func = simple_feedback_func;
-	*remove_func   = simple_remove_func;
-	/* Optionally provide a userdata. It is passed to the callback
-	 * functions simple_event_func() and simple_feedback_func(). */
+	printf("virt_dev: accepting %s %s\n", info->vendor, info->device);
+	*event_func    = virt_dev_event_func;
+	*feedback_func = virt_dev_feedback_func;
+	*remove_func   = virt_dev_remove_func;
 	*userdata_for_event_func = userdata;
 
 	return 1;
@@ -133,18 +128,43 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 int main(int argc, char **argv)
 {
-	if(argc > 1) {
-		led = atoi(argv[1]);
-		led_set = 1;
+	/* default device to test.. */
+	char *vendor = "Native Instruments";
+	char *device = "Kontrol Z1";
+
+	if(argc > 2) {
+		vendor = argv[1];
+		device = argv[2];
 	}
 
 	signal(SIGINT, sighndlr);
+
+	const char *vendors[32];
+	int ret = ctlra_get_vendors(vendors, 32);
+	for(int i = 0; i < ret; i++) {
+		printf("%d: %s\n", i, vendors[i]);
+		const char *devices[32];
+		int devs = ctlra_get_devices_by_vendor(vendors[i],
+						       devices, 32);
+		for(int j = 0; j < devs; j++) {
+			printf(" - %d: %s\n", j, devices[j]);
+		}
+	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
 
-	while(!done) {
+	/* add a virtualized device */
+	ret = ctlra_dev_virtualize(ctlra, vendor, device);
+	if(ret) {
+		printf("Ctlra virtualize() of device %s %s, failed, err %d: %s\n",
+		       vendor, device, ret, strerror(ret));
+		ctlra_strerror(ctlra, stdout);
+	}
+
+	int i = 0;
+	while(i < 4 && !done) {
 		ctlra_idle_iter(ctlra);
 		usleep(10 * 1000);
 	}

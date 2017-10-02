@@ -9,14 +9,35 @@
 
 static volatile uint32_t done;
 
+#define GRID_SIZE 64
+
 /* a struct to pass around as userdata to callbacks */
 struct daemon_t {
 	struct ctlra_dev_t* dev;
 	struct ctlra_midi_t *midi;
+	int has_grid;
+	uint32_t grid_col;
+	uint8_t grid[GRID_SIZE];
+
+	struct ctlra_dev_info_t info;
 };
 
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
+	struct daemon_t *daemon = d;
+	if(daemon->has_grid) {
+		for(int i = 0; i < 16; i++) {
+			int id = daemon->info.grid_info[0].info.params[0] + i;
+			uint32_t col = daemon->grid_col * (daemon->grid[i] > 0);
+			ctlra_dev_light_set(dev, id, col);
+		}
+	}
+
+	/* lights for grids */
+	for(int i = 0 ; i < 16; i++) {
+		ctlra_dev_light_set(dev, i, 0);
+	}
+
 	ctlra_dev_light_flush(dev, 0);
 }
 
@@ -55,15 +76,25 @@ void demo_event_func(struct ctlra_dev_t* dev,
 			ret = ctlra_midi_output_write(midi, 3, msg);
 			break;
 
-		case CTLRA_EVENT_GRID:
+		case CTLRA_EVENT_GRID: {
 			msg[0] = e->grid.pressed ? 0x90 : 0x80;
-			msg[1] = e->grid.pos + 36; /* GM kick drum note */
-			msg[2] = e->grid.pressed ? 0x70 : 0;
+			int pos = e->grid.pos;
+			daemon->grid[pos] = e->grid.pressed;
+			/* transform grid */
+			int row = 3 - (pos / 4);
+			int col = (pos % 4);
+			int new_pos = (row * 4) + col;
+			msg[1] = new_pos + 36; /* GM kick drum note */
+			msg[2] = e->grid.pressed ?
+					e->grid.pressure * 127 : 0;
 			ret = ctlra_midi_output_write(midi, 3, msg);
 			break;
+		}
 		default:
 			break;
 		};
+		// TODO: Error check midi writes
+		(void) ret;
 	}
 }
 
@@ -101,6 +132,18 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	daemon->midi = ctlra_midi_open(info->device,
 				       ignored_input_cb,
 				       0x0);
+
+	daemon->info = *info;
+	if(info->control_count[CTLRA_EVENT_GRID] > 0) {
+		daemon->has_grid = 1;
+		daemon->grid_col = 0xff0040ff;
+
+		/* easter egg: set env var to change colour of pads */
+		char *col = getenv("CTLRA_COLOUR");
+		if(col)
+			daemon->grid_col = atoi(col);
+	}
+
 	if(!daemon->midi)
 		goto fail;
 
@@ -109,6 +152,9 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	return 1;
 fail:
 	printf("failed to alloc/open midi backend\n");
+	if(daemon)
+		free(daemon);
+
 	return 0;
 }
 

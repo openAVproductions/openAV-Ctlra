@@ -5,3 +5,7 @@ devices_src = files('ni_kontrol_f1.c',
                     'ni_kontrol_z1.c',
                     'ni_maschine_jam.c',
                     'ni_maschine_mikro_mk2.c')
+
+if (get_option('avtka') == true)
+  devices_src += files('avtka.c')
+endif

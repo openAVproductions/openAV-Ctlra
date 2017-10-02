@@ -90,6 +90,14 @@ int main(int argc, char** argv)
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, &dummy);
 	printf("vegas_mode: connected devices: %d\n", num_devs);
 
+	/*
+	int ret = ctlra_dev_virtualize(ctlra, "Native Instruments", "Maschine Mikro Mk2");
+	if(ret) {
+		printf("failed to virtualize dev\n");
+		exit(0);
+	}
+	*/
+
 	audio_init(&dummy);
 
 	while(!done) {

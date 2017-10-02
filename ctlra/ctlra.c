@@ -5,51 +5,23 @@
 
 #include "ctlra.h"
 #include "impl.h"
+#include "usb.h"
 
-/* For USB initialization */
-int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);
-/* For polling hotplug / other events */
-void ctlra_impl_usb_idle_iter(struct ctlra_t *);
-/* For cleaning up the USB subsystem */
-void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
 
-struct ctlra_dev_connect_func_t {
-	uint32_t vid;
-	uint32_t pid;
-	ctlra_dev_connect_func connect;
-};
+#define CTLRA_MAX_DEVICES 64
+struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
+uint32_t __ctlra_device_count;
 
-/* TODO: Cleanup this registration method to be in the .c files of each
- * implementation, instead of centrally located here. This allows drivers
- * to be "dropped in" to the source, and then automatically register up
- * without library code changes */
-CTLRA_DEVICE_DECL(ni_kontrol_d2);
-CTLRA_DEVICE_DECL(ni_kontrol_z1);
-CTLRA_DEVICE_DECL(ni_kontrol_f1);
-CTLRA_DEVICE_DECL(ni_kontrol_f1);
-CTLRA_DEVICE_DECL(ni_kontrol_s2_mk2);
-CTLRA_DEVICE_DECL(ni_kontrol_x1_mk2);
-CTLRA_DEVICE_DECL(ni_maschine_mikro_mk2);
-CTLRA_DEVICE_DECL(ni_maschine_jam);
-CTLRA_DEVICE_DECL(akai_apc);
-
-static const struct ctlra_dev_connect_func_t devices[] = {
-	{0, 0, 0},
-	{0x17cc, 0x1400, CTLRA_DEVICE_FUNC(ni_kontrol_d2)},
-	{0x17cc, 0x1210, CTLRA_DEVICE_FUNC(ni_kontrol_z1)},
-	{0x17cc, 0x1120, CTLRA_DEVICE_FUNC(ni_kontrol_f1)},
-	{0x17cc, 0x1320, CTLRA_DEVICE_FUNC(ni_kontrol_s2_mk2)},
-	{0x17cc, 0x1220, CTLRA_DEVICE_FUNC(ni_kontrol_x1_mk2)},
-	{0x17cc, 0x1200, CTLRA_DEVICE_FUNC(ni_maschine_mikro_mk2)},
-	{0x17cc, 0x1500, CTLRA_DEVICE_FUNC(ni_maschine_jam)},
-	/* WIP {0x09e8, 0x0073, CTLRA_DEVICE_FUNC(akai_apc)},*/
-};
-#define CTLRA_NUM_DEVS (sizeof(devices) / sizeof(devices[0]))
+__attribute__((constructor(101)))
+static void ctlra_static_setup()
+{
+	printf("%s\n", __func__);
+}
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
 {
-	for(unsigned i = 0; i < CTLRA_NUM_DEVS; i++) {
-		if(devices[i].vid == vid && devices[i].pid == pid) {
+	for(unsigned i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].vid == vid && __ctlra_devices[i].pid == pid) {
 			return i;
 		}
 	}
@@ -63,11 +35,6 @@ int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	*out_dev = 0x0;
 	while(dev_iter) {
-#if 0
-		printf("%s, checking %04x %04x\n", __func__,
-		       dev_iter->info.vendor_id,
-		       dev_iter->info.device_id);
-#endif
 		if(dev_iter->info.vendor_id == vid &&
 		   dev_iter->info.device_id == pid) {
 			*out_dev = dev_iter;
@@ -78,38 +45,148 @@ int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 	return -1;
 }
 
-
-struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra, int dev_id,
+struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
+				      ctlra_dev_connect_func connect,
 				      ctlra_event_func event_func,
 				      void *userdata, void *future)
 {
-	if(dev_id < 0)
-		return 0;
+	struct ctlra_dev_t *new_dev;
+	new_dev = connect(event_func, userdata, future);
+	if(new_dev) {
+		new_dev->ctlra_context = ctlra;
+		new_dev->dev_list_next = 0;
 
-	if((unsigned)dev_id < CTLRA_NUM_DEVS && devices[dev_id].connect) {
-		struct ctlra_dev_t *new_dev = 0;
-		new_dev = devices[dev_id].connect(event_func,
-						  userdata,
-						  future);
-		if(new_dev) {
-			new_dev->ctlra_context = ctlra;
-			new_dev->dev_list_next = 0;
-
-			// if list empty, add as main ptr
-			if(ctlra->dev_list == 0) {
-				ctlra->dev_list = new_dev;
-				return new_dev;
-			}
-
-			// skip to end of list, and append
-			struct ctlra_dev_t *dev_iter = ctlra->dev_list;
-			while(dev_iter->dev_list_next)
-				dev_iter = dev_iter->dev_list_next;
-			dev_iter->dev_list_next = new_dev;
+		// if list empty, add as main ptr
+		if(ctlra->dev_list == 0) {
+			ctlra->dev_list = new_dev;
 			return new_dev;
 		}
+
+		// skip to end of list, and append
+		struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+		while(dev_iter->dev_list_next)
+			dev_iter = dev_iter->dev_list_next;
+		dev_iter->dev_list_next = new_dev;
+		return new_dev;
 	}
 	return 0;
+}
+
+int32_t
+ctlra_get_devices_by_vendor(const char *vendor, const char *devices[],
+			    int32_t size)
+{
+	memset(devices, 0, sizeof(char *) * size);
+	int device_idx = 0;
+
+	int i;
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info) {
+			const char *v = __ctlra_devices[i].info->vendor;
+			const char *d = __ctlra_devices[i].info->device;
+
+			/* check this device is by vendor */
+			if(strcmp(vendor, v) == 0) {
+				if(device_idx >= size)
+					break;
+				devices[device_idx++] = d;
+			}
+		}
+	}
+
+	return device_idx;
+}
+
+int32_t
+ctlra_get_vendors(const char *vendors[], int32_t size)
+{
+	memset(vendors, 0, sizeof(char *) * size);
+	int vendor_idx = 0;
+
+	int i;
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info) {
+			const char * v = __ctlra_devices[i].info->vendor;
+
+			/* check this is not duplicate */
+			int j = 0;
+			int unique = 1;
+			while(vendors[j] != 0) {
+				if(strcmp(vendors[j], v) == 0) {
+					unique = 0;
+					break;
+				}
+				j++;
+			}
+
+			if(unique) {
+				if(vendor_idx >= size)
+					break;
+				vendors[vendor_idx++] = v;
+			}
+		}
+	}
+
+	return vendor_idx;
+}
+
+int32_t
+ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
+		     const char *device)
+{
+	int i;
+	struct ctlra_dev_info_t *info = 0;
+
+	for(i = 0; i < __ctlra_device_count; i++) {
+		if(__ctlra_devices[i].info &&
+		   strcmp(vendor, __ctlra_devices[i].info->vendor) == 0 &&
+		   strcmp(device, __ctlra_devices[i].info->device) == 0) {
+			printf("found device @ %d\n", i);
+			info = __ctlra_devices[i].info;
+			break;
+		}
+	}
+
+	if(!info) {
+		CTLRA_WARN(c, "Couldn't find device '%s' '%s' in %d registered drivers\n",
+			   vendor, device, i);
+		CTLRA_STRERROR(c, "Device not found\n");
+		return -ENODEV;
+	}
+
+#ifdef HAVE_AVTKA
+	/* TODO: find better solution to this hack */
+CTLRA_DEVICE_DECL(avtka);
+
+	/* call into AVTKA and virtualize the device, passing info through
+	 * the future (void *) to the AVTKA backend. */
+	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
+	struct ctlra_dev_t *dev = ctlra_dev_connect(c, ctlra_avtka_connect,
+						    0x0, 0x0, info);
+	if(!dev)
+		CTLRA_WARN(c, "avtka dev returned %p\n", dev);
+
+	/* assuming info setup is ok, call accept dev callback in app */
+	int accepted = c->accept_dev_func(&dev->info,
+				&dev->event_func,
+				&dev->feedback_func,
+				&dev->remove_func,
+				&dev->event_func_userdata,
+				c->accept_dev_func_userdata);
+
+	CTLRA_INFO(c, "%s %s %s accepted\n", dev->info.vendor,
+		   dev->info.device, accepted ? "" : "not");
+
+	if(!accepted) {
+		ctlra_dev_disconnect(dev);
+		CTLRA_STRERROR(c, "Application refused device\n");
+		return -ECONNREFUSED;
+	}
+	return 0;
+#else
+	CTLRA_STRERROR(c, "No virtualized backends available\n");
+	return -ENOTSUP;
+#endif
 }
 
 uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
@@ -132,8 +209,8 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 
 	for(int i = 0; i < USB_XFER_COUNT; i++) {
-		printf("usb xfer count (type %d) = %d\n", i,
-		       dev->usb_xfer_counts[i]);
+		CTLRA_INFO(ctlra, "usb xfer count (type %d) = %d\n", i,
+			   dev->usb_xfer_counts[i]);
 	}
 
 	if(dev && dev->disconnect) {
@@ -169,6 +246,13 @@ void ctlra_dev_light_set(struct ctlra_dev_t *dev, uint32_t light_id,
 		dev->light_set(dev, light_id, light_status);
 }
 
+void ctlra_dev_feedback_set(struct ctlra_dev_t *dev, uint32_t fb_id,
+			    float value)
+{
+	if(dev && dev->feedback_set)
+		dev->feedback_set(dev, fb_id, value);
+}
+
 void ctlra_dev_light_flush(struct ctlra_dev_t *dev, uint32_t force)
 {
 	if(dev && dev->light_flush)
@@ -197,25 +281,20 @@ void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 {
 	if(!dev)
 		return;
-
-	memset(info, 0, sizeof(*info));
-	snprintf(info->vendor, sizeof(info->vendor), "%s", dev->info.vendor);
-	snprintf(info->device, sizeof(info->device), "%s", dev->info.device);
-	snprintf(info->serial, sizeof(info->serial), "%s", dev->info.serial);
-	info->serial_number = dev->info.serial_number;
-	info->get_name = dev->info.get_name;
+	*info = dev->info;
 }
 
-const char * ctlra_info_get_name(const struct ctlra_dev_info_t *info,
-				enum ctlra_event_type_t type,
-				uint32_t control_id)
+const char *
+ctlra_info_get_name(const struct ctlra_dev_info_t *info,
+		    enum ctlra_event_type_t type, uint32_t control_id)
 {
-	/* the info parameter already has the appropriate function pointer
-	 * set by the driver, so we don't need the device instance to be
-	 * passed to the get_name() function */
-	if(info && info->get_name)
+	if(!info)
+		return 0;
+
+	if(info->get_name)
 		return info->get_name(type, control_id);
-	return 0;
+
+	return "N/A";
 }
 
 struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
@@ -250,8 +329,13 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 			  int id)
 {
+	if(id < 0 || id >= __ctlra_device_count || !__ctlra_devices[id].connect) {
+		CTLRA_WARN(ctlra, "invalid device id recieved %d\n", id);
+		return 0;
+	}
+
 	struct ctlra_dev_t* dev = ctlra_dev_connect(ctlra,
-						    id,
+						    __ctlra_devices[id].connect,
 						    0x0,
 						    0 /* userdata */,
 						    0x0);
@@ -287,11 +371,9 @@ int ctlra_probe(struct ctlra_t *ctlra,
 
 	ctlra->accept_dev_func = accept_func;
 	ctlra->accept_dev_func_userdata = userdata;
-	for(; i < CTLRA_NUM_DEVS; i++) {
+	for(; i < __ctlra_device_count; i++) {
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
-
-	/* probe midi devices here? */
 
 	return num_accepted;
 }
@@ -346,4 +428,7 @@ void ctlra_exit(struct ctlra_t *ctlra)
 	free(ctlra);
 }
 
-
+void ctlra_strerror(struct ctlra_t *ctlra, FILE* out)
+{
+	fprintf(out, "Ctlra: %s\n", ctlra->strerror);
+}

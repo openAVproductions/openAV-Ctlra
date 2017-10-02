@@ -65,8 +65,10 @@ void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 	/* Calculate stride / pixel copy */
 	int stride = cairo_image_surface_get_stride(surface);
 	unsigned char * data = cairo_image_surface_get_data(surface);
-	if(!data)
+	if(!data) {
 		printf("error data == 0\n");
+		return;
+	}
 
 	uint8_t *pixels = ni_kontrol_d2_screen_get_pixels(dev);
 	uint16_t *write_head = (uint16_t*)pixels;

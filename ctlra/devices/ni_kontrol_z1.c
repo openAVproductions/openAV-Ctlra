@@ -37,8 +37,8 @@
 #include "ni_kontrol_z1.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_Z1      (0x1210)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1210)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x03)
 #define USB_ENDPOINT_READ  (0x82)
@@ -52,35 +52,69 @@ struct ni_kontrol_z1_ctlra_t {
 };
 
 static const char *ni_kontrol_z1_names_sliders[] = {
-	"Gain (Left)",
-	"Eq High (Left)",
-	"Eq Mid (Left)",
-	"Eq Low (Left)",
-	"Filter (Left)",
-	"Gain (Right)",
-	"Eq High (Right)",
-	"Eq Mid (Right)",
-	"Eq Low (Right)",
-	"Filter (Right)",
+	"Gain (L)",
+	"Eq High (L)",
+	"Eq Mid (L)",
+	"Eq Low (L)",
+	"Filter (L)",
+	"Gain (R)",
+	"Eq High (R)",
+	"Eq Mid (R)",
+	"Eq Low (R)",
+	"Filter (R)",
 	"Cue Mix",
-	"Fader (Left)",
-	"Fader (Right)",
+	"Fader (L)",
+	"Fader (R)",
 	"Crossfader",
 };
 #define CONTROL_NAMES_SLIDERS_SIZE (sizeof(ni_kontrol_z1_names_sliders) /\
 				    sizeof(ni_kontrol_z1_names_sliders[0]))
 
+#define Z1_DIAL (CTLRA_ITEM_DIAL)
+#define Z1_DIAL_CENTER (CTLRA_ITEM_DIAL | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t sliders_info[] = {
+	/* left top gain, hi, mid, low, filter */
+	{.x = 14, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
+	{.x = 12, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 12, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 12, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 10, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
+	/* right top gain, hi, mid, low, filter */
+	{.x = 92, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
+	{.x = 90, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 90, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 90, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 88, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
+	/* cue */
+	{.x = 52, .y = 92, .w = 15,  .h = 15, .flags = Z1_DIAL_CENTER},
+	/* fader left, right */
+	{.x = 10, .y =185, .w = 24,  .h = 56, .flags = CTLRA_ITEM_FADER},
+	{.x = 88, .y =185, .w = 24,  .h = 56, .flags = CTLRA_ITEM_FADER},
+	/* crossfader */
+	{.x = 33, .y =248, .w = 56,  .h = 22, .flags = CTLRA_ITEM_FADER},
+};
+
 static const char *ni_kontrol_z1_names_buttons[] = {
-	"Headphones Cue A",
-	"Headphones Cue B",
+	"A",
+	"B",
 	"Mode",
-	"Filter On (Left)",
-	"Filter On (Right)",
+	"On (L)",
+	"On (R)",
 };
 #define CONTROL_NAMES_BUTTONS_SIZE (sizeof(ni_kontrol_z1_names_buttons) /\
 				    sizeof(ni_kontrol_z1_names_buttons[0]))
 #define CONTROL_NAMES_SIZE (CONTROL_NAMES_SLIDERS_SIZE + \
 			    CONTROL_NAMES_BUTTONS_SIZE)
+
+#define Z1_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+#define Z1_BTN_COL (Z1_BTN | CTLRA_ITEM_LED_COLOR)
+static struct ctlra_item_info_t buttons_info[] = {
+	{.x = 44, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_CUE_A},
+	{.x = 68, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_CUE_B},
+	{.x = 53, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_MODE},
+	{.x = 13, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .fb_id = NI_KONTROL_Z1_LED_FX_ON_LEFT},
+	{.x = 90, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .fb_id = NI_KONTROL_Z1_LED_FX_ON_RIGHT},
+};
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
 	/* Left */
@@ -112,6 +146,24 @@ static const struct ni_kontrol_z1_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+/* feedback items */
+static struct ctlra_item_info_t feedback_info[] = {
+	/* level meter A */
+	{	.x = 50, .y = 185, .w = 3, .h = 56, .flags = CTLRA_ITEM_FB_LED_STRIP,
+		.params = {0, 7, 5, 0},},
+	/* level meter B */
+	{	.x = 70, .y = 185, .w = 3, .h = 56, .flags = CTLRA_ITEM_FB_LED_STRIP,
+		.params = {7,14, 5, 0},},
+};
+#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
+
+static const char *ni_kontrol_z1_names_feedback[] = {
+	"Meter A",
+	"Meter B",
+};
+#define CONTROL_NAMES_FEEDBACK_SIZE (sizeof(ni_kontrol_z1_names_feedback) /\
+				    sizeof(ni_kontrol_z1_names_feedback[0]))
+
 /* Represents the the hardware device */
 struct ni_kontrol_z1_t {
 	/* base handles usb i/o etc */
@@ -138,14 +190,18 @@ ni_kontrol_z1_control_get_name(enum ctlra_event_type_t type,
 		if(control >= CONTROL_NAMES_BUTTONS_SIZE)
 			return 0;
 		return ni_kontrol_z1_names_buttons[control];
+	case CTLRA_FEEDBACK_ITEM:
+		if(control >= CONTROL_NAMES_FEEDBACK_SIZE)
+			return 0;
+		return ni_kontrol_z1_names_feedback[control];
 	default:
 		break;
 	}
-
 	return 0;
 }
 
-static uint32_t ni_kontrol_z1_poll(struct ctlra_dev_t *base)
+static uint32_t
+ni_kontrol_z1_poll(struct ctlra_dev_t *base)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 #define BUF_SIZE 1024
@@ -156,6 +212,14 @@ static uint32_t ni_kontrol_z1_poll(struct ctlra_dev_t *base)
 					  buf, BUF_SIZE);
 	return 0;
 }
+
+/* TODO: remove forward declarations */
+static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
+				    uint32_t light_id,
+				    uint32_t light_status);
+
+static void ni_kontrol_z1_light_flush(struct ctlra_dev_t *base,
+				      uint32_t force);
 
 void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				uint8_t *data, uint32_t size)
@@ -208,16 +272,20 @@ void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		break;
 		}
 	}
+	/* TODO: remove this? */
+	ni_kontrol_z1_light_flush(&dev->base, 1);
 }
 
-static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status)
+static inline void
+ni_kontrol_z1_light_set(struct ctlra_dev_t *base, uint32_t light_id,
+			uint32_t light_status)
 {
 	struct ni_kontrol_z1_t *dev = (struct ni_kontrol_z1_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_KONTROL_Z1_LED_COUNT)
+	if(!dev || light_id >= NI_KONTROL_Z1_LED_COUNT ||
+	   light_id == NI_KONTROL_Z1_LED_FX_ON_LEFT +1 ||
+	   light_id == NI_KONTROL_Z1_LED_FX_ON_RIGHT+1)
 		return;
 
 	/* write brighness to all LEDs */
@@ -236,6 +304,21 @@ static void ni_kontrol_z1_light_set(struct ctlra_dev_t *base,
 	dev->lights_dirty = 1;
 }
 
+static void
+ni_kontrol_z1_feedback_set(struct ctlra_dev_t *base, uint32_t fb_id,
+			   float value)
+{
+	if(fb_id > 1)
+		return;
+
+	int id = (fb_id == 1);
+	for(int i = 0; i < 7; i++) {
+		ni_kontrol_z1_light_set(base, id * 7 + i,
+					i < (value * 7) ?
+					0xff000000 : 0x0);
+	}
+}
+
 void
 ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
@@ -250,9 +333,9 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						     USB_ENDPOINT_WRITE,
 						     data,
 						     NI_KONTROL_Z1_LED_COUNT+1);
-	if(ret < 0) {
-		//printf("%s write failed!\n", __func__);
-	}
+	if(ret < 0)
+		CTLRA_ERROR(base->ctlra_context,
+			    "USB led write failed %d\n", ret);
 }
 
 static int32_t
@@ -270,6 +353,8 @@ ni_kontrol_z1_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 				  void *userdata, void *future)
@@ -279,18 +364,11 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol Z1");
-
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-	dev->base.info.get_name = ni_kontrol_z1_control_get_name;
+	dev->base.info = ctlra_ni_kontrol_z1_info;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_KONTROL_Z1);
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -306,6 +384,7 @@ ctlra_ni_kontrol_z1_connect(ctlra_event_func event_func,
 	dev->base.poll = ni_kontrol_z1_poll;
 	dev->base.disconnect = ni_kontrol_z1_disconnect;
 	dev->base.light_set = ni_kontrol_z1_light_set;
+	dev->base.feedback_set = ni_kontrol_z1_feedback_set;
 	dev->base.light_flush = ni_kontrol_z1_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_z1_usb_read_cb;
 
@@ -318,3 +397,24 @@ fail:
 	return 0;
 }
 
+
+struct ctlra_dev_info_t ctlra_ni_kontrol_z1_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol Z1",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 120,
+	.size_y    = 294,
+
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+
+	.get_name = ni_kontrol_z1_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_z1)

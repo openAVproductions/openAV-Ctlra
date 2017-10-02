@@ -39,6 +39,9 @@ extern "C" {
 #include "ctlra.h"
 #include "event.h"
 
+#define CTLRA_STRERROR(ctlra, err)					\
+	do { ctlra->strerror = err; } while (0)
+
 #define CTLRA_ERROR(ctlra, fmt, ...)					\
 	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_ERROR)		\
 	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
@@ -64,6 +67,9 @@ typedef int32_t (*ctlra_dev_impl_disconnect)(struct ctlra_dev_t *dev);
 typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,
 					   uint32_t light_id,
 					   uint32_t light_status);
+typedef void (*ctlra_dev_impl_feedback_set)(struct ctlra_dev_t *dev,
+					    uint32_t fb_id,
+					    float value);
 typedef void (*ctlra_dev_impl_light_flush)(struct ctlra_dev_t *dev,
 					  uint32_t force);
 typedef void (*ctlra_dev_impl_usb_read_cb)(struct ctlra_dev_t *dev,
@@ -130,6 +136,7 @@ struct ctlra_dev_t {
 
 	/* Function pointers to write feedback to device */
 	ctlra_dev_impl_light_set light_set;
+	ctlra_dev_impl_feedback_set feedback_set;
 	ctlra_dev_impl_grid_light_set grid_light_set;
 	ctlra_dev_impl_light_flush light_flush;
 	ctlra_dev_impl_usb_read_cb usb_read_cb;
@@ -187,7 +194,6 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 /** Close the USB device handles, returning them to the kernel */
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev);
 
-
 /* IMPLEMENTATION DETAILS ONLY BELOW HERE */
 
 
@@ -208,6 +214,9 @@ struct ctlra_t
 	struct ctlra_dev_t *dev_list;
 	/* List of devices that are banished */
 	struct ctlra_dev_t *banished_list;
+
+	/* context aware error message pointer */
+	const char *strerror;
 };
 
 /* Macro extern declaration for the connect function */
@@ -217,6 +226,41 @@ extern struct ctlra_dev_t * ctlra_ ## name ## _connect(		\
 			    void *userdata, void *future)
 /* Macro returns the function name registered using above macro */
 #define CTLRA_DEVICE_FUNC(name)	ctlra_ ## name ## _connect
+
+/* Macro to declare an extern info struct for a device */
+#define CTLRA_DEVICE_INFO(name)					\
+extern struct ctlra_dev_info_t ctlra_ ## name ## _info;
+/* Macro that returns the name of the info struct */
+#define CTLRA_DEVICE_INFO_NAME(name) ctlra_ ## name ## _info
+
+
+struct ctlra_dev_connect_func_t {
+	uint32_t vid;
+	uint32_t pid;
+	ctlra_dev_connect_func connect;
+	struct ctlra_dev_info_t *info;
+};
+
+// TODO: check does this registration system even help
+#define CTLRA_MAX_DEVICES 64
+extern uint32_t __ctlra_device_count;
+extern struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
+
+
+#define CTLRA_DEVICE_REGISTER(name)				\
+static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
+	.vid = CTLRA_DRIVER_VENDOR,				\
+	.pid = CTLRA_DRIVER_DEVICE,				\
+	.connect = ctlra_ ## name ## _connect,			\
+	.info = &ctlra_ ## name ## _info,			\
+};								\
+__attribute__((constructor(102)))				\
+static void ctlra_ ## name ## _register() {			\
+	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
+}
+
+
+
 
 /* Helper function for dealing with wrapped encoders */
 static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)

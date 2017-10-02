@@ -37,8 +37,8 @@
 #include "ni_kontrol_x1_mk2.h"
 #include "impl.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_KONTROL_X1_MK2  (0x1220)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1220)
 #define USB_INTERFACE_ID   (0x0)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
@@ -62,7 +62,7 @@ static const char *ni_kontrol_x1_mk2_slider_names[] = {
 	"FX 4 Knob (Right)",
 	"Touchstrip (Position)",
 };
-#define CONTROL_SLIDER_SIZE (sizeof(ni_kontrol_x1_mk2_slider_names) /\
+#define SLIDER_SIZE (sizeof(ni_kontrol_x1_mk2_slider_names) /\
 			    sizeof(ni_kontrol_x1_mk2_slider_names[0]))
 
 static const char *ni_kontrol_x1_mk2_encoder_names[] = {
@@ -71,7 +71,7 @@ static const char *ni_kontrol_x1_mk2_encoder_names[] = {
 	"Encoder Rotate (Left)",
 	"Encoder Rotate (Right)",
 };
-#define CONTROL_ENCODER_SIZE (sizeof(ni_kontrol_x1_mk2_encoder_names) /\
+#define ENCODER_SIZE (sizeof(ni_kontrol_x1_mk2_encoder_names) /\
 			    sizeof(ni_kontrol_x1_mk2_encoder_names[0]))
 
 static const char *ni_kontrol_x1_mk2_button_names[] = {
@@ -114,12 +114,12 @@ static const char *ni_kontrol_x1_mk2_button_names[] = {
 	"Encoder Press (Middle)",
 	"Encoder Press (Left)",
 };
-#define CONTROL_BUTTON_SIZE (sizeof(ni_kontrol_x1_mk2_button_names) /\
+#define BUTTON_SIZE (sizeof(ni_kontrol_x1_mk2_button_names) /\
 			     sizeof(ni_kontrol_x1_mk2_button_names[0]))
 
-#define CONTROL_NAMES_SIZE (CONTROL_SLIDER_SIZE_SIZE + \
-			    CONTROL_ENCODER_SIZE +\
-			    CONTROL_BUTTON_SIZE)
+#define CONTROL_NAMES_SIZE (SLIDER_SIZE_SIZE + \
+			    ENCODER_SIZE +\
+			    BUTTON_SIZE)
 
 static const struct ni_kontrol_x1_mk2_ctlra_t sliders[] = {
 	{NI_KONTROL_X1_MK2_SLIDER_LEFT_FX_1    ,  1, UINT32_MAX},
@@ -209,9 +209,9 @@ ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
 				   uint32_t control)
 {
 	uint16_t num_of_type[CTLRA_EVENT_T_COUNT];
-	num_of_type[CTLRA_EVENT_SLIDER]  = CONTROL_SLIDER_SIZE;
-	num_of_type[CTLRA_EVENT_BUTTON]  = CONTROL_BUTTON_SIZE;
-	num_of_type[CTLRA_EVENT_ENCODER] = CONTROL_ENCODER_SIZE;
+	num_of_type[CTLRA_EVENT_SLIDER]  = SLIDER_SIZE;
+	num_of_type[CTLRA_EVENT_BUTTON]  = BUTTON_SIZE;
+	num_of_type[CTLRA_EVENT_ENCODER] = ENCODER_SIZE;
 
 	uint16_t n = num_of_type[type];
 	if(control >= n)
@@ -424,11 +424,12 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 		 "%s", "Kontrol X1 Mk2");
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON]  = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = CONTROL_ENCODER_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER]  = CONTROL_SLIDER_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE;
+	dev->base.info.control_count[CTLRA_EVENT_SLIDER]  = SLIDER_SIZE;
 	dev->base.info.get_name = ni_kontrol_x1_mk2_control_get_name;
 
-	int err = ctlra_dev_impl_usb_open(&dev->base, NI_VENDOR, NI_KONTROL_X1_MK2);
+	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -452,3 +453,26 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	return (struct ctlra_dev_t *)dev;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_x1_mk2_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Kontrol X1 Mk2",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 120,
+	.size_y    = 294,
+
+	/* TODO: expose info */
+#if 0
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTON_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDER_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE,
+	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.get_name = ni_kontrol_x1_mk2_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_kontrol_x1_mk2)

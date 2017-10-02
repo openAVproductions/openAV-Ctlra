@@ -35,12 +35,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-//#include "ni_maschine_jam.h"
 #include "impl.h"
 #include "ni_maschine_jam.h"
 
-#define NI_VENDOR          (0x17cc)
-#define NI_MASCHINE_JAM    (0x1500)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1500)
 #define USB_HANDLE_IDX     (0x0)
 #define USB_INTERFACE_ID   (0x0)
 #define USB_ENDPOINT_READ  (0x81)
@@ -112,17 +111,107 @@ static const char *ni_maschine_jam_control_names[] = {
 	"G",
 	"H",
 	"Footswitch",
-	"Touchstrip 1",
-	"Touchstrip 2",
-	"Touchstrip 3",
-	"Touchstrip 4",
-	"Touchstrip 5",
-	"Touchstrip 6",
-	"Touchstrip 7",
-	"Touchstrip 8",
+	"Strip 1",
+	"Strip 2",
+	"Strip 3",
+	"Strip 4",
+	"Strip 5",
+	"Strip 6",
+	"Strip 7",
+	"Strip 8",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_jam_control_names) /\
 			    sizeof(ni_maschine_jam_control_names[0]))
+
+
+#define JAM_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | \
+		 CTLRA_ITEM_LED_COLOR | CTLRA_ITEM_HAS_FB_ID)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* song, step, pad mode, clear, duplicate */
+	{.x = 10, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 1},
+	{.x = 10, .y = 39, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 2},
+	{.x = 10, .y = 54, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 3},
+	{.x = 10, .y = 68, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 4},
+	{.x = 10, .y = 82, .w = 20,  .h =10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 5},
+	/* Up Left Right Down */
+	{.x = 16, .y = 120, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 6},
+	{.x =  6, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 7},
+	{.x = 26, .y = 130, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 8},
+	{.x = 16, .y = 140, .w = 8,  .h = 8, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 9},
+	/* Note Repeat, macro, level, aux */
+	{.x = 10, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 10},
+	{.x = 10, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 18},
+	{.x = 10, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 19},
+	{.x = 10, .y = 209, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 20},
+	/* control, auto, shift */
+	{.x = 10, .y = 228, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 21},
+	{.x = 10, .y = 240, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 22},
+	{.x = 10, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 28},
+	/* play rec < > */
+	{.x =  50, .y = 260, .w = 20,  .h = 10, .colour = 0xff00ff00, .flags = JAM_BTN, .fb_id = 29},
+	{.x =  78, .y = 260, .w = 20,  .h = 10, .colour = 0xffff0000, .flags = JAM_BTN, .fb_id = 30},
+	{.x = 107, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 31},
+	{.x = 136, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 32},
+	/* Tempo, Grid, Solo, Mute */
+	{.x = 164, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 33},
+	{.x = 192, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 34},
+	{.x = 221, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 35},
+	{.x = 250, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 36},
+	/* Select, Swing, Tune, Lock */
+	{.x = 290, .y = 260, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 37},
+	{.x = 290, .y = 240, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 27},
+	{.x = 290, .y = 227, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 26},
+	/* Lock, notes, perform, browse */
+	{.x = 290, .y = 208, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 25},
+	{.x = 290, .y = 196, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 24},
+	{.x = 290, .y = 184, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 23},
+	{.x = 290, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 17},
+	/* Encoder Touch, press, etc */
+	{.x = 290, .y = 120, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 290, .y = 148, .w = 20,  .h = 6, .colour = 0xff000000, .flags = CTLRA_ITEM_BUTTON},
+	/* In 1, Headphone, Mst, Grp */
+	{.x = 290, .y = 100, .w = 6,  .h = 6, .colour = 0xff0000ff, .flags = JAM_BTN, .fb_id = 13},
+	{.x = 304, .y = 100, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 15},
+	{.x = 290, .y =  82, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 11},
+	{.x = 304, .y =  82, .w = 6,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 12},
+	/* 1,2,3,4 */
+	{.x =  50, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	/* 5,6,7,8 */
+	{.x = 164, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 20, .w = 20,  .h = 6, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	/* a, b, c, d */
+	{.x =  50, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x =  78, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 107, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 136, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	/* e,f,g,h */
+	{.x = 164, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 192, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 221, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+	{.x = 250, .y = 160, .w = 20,  .h = 10, .colour = 0xff000000, .flags = JAM_BTN, .fb_id = 0},
+};
+
+static struct ctlra_item_info_t sliders_info[] = {
+	/* 8 touch faders left-to-right */
+	{.x =  52, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x =  81, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 110, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 137, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	/* */
+	{.x = 165, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 196, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 224, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+	{.x = 256, .y = 185, .w = 16, .h = 65, .flags = CTLRA_ITEM_FADER},
+};
+
+static struct ctlra_item_info_t encoder_info[] = {
+	{.x = 287, .y = 125, .w = 24, .h = 24, .flags = CTLRA_ITEM_ENCODER},
+};
 
 enum BTN_T {
 	NI_MASCHINE_JAM_BTN_SONG,
@@ -278,6 +367,8 @@ struct ni_maschine_jam_t {
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
+	uint8_t encoder;
+
 	uint8_t lights_interface;
 	uint8_t lights[NI_MASCHINE_JAM_LED_COUNT*2];
 
@@ -286,15 +377,18 @@ struct ni_maschine_jam_t {
 };
 
 static const char *
-ni_maschine_jam_control_get_name(const struct ctlra_dev_t *base,
-			       enum ctlra_event_type_t type,
-			       uint32_t control_id)
+ni_maschine_jam_control_get_name(enum ctlra_event_type_t type,
+				 uint32_t control_id)
 {
-	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
-
 	switch(type) {
 	case CTLRA_EVENT_SLIDER:
 		control_id += NI_MASCHINE_JAM_BTN_COUNT;
+		break;
+	case CTLRA_EVENT_ENCODER:
+		if(control_id == 0) {
+			return "Encoder";
+		}
+		return 0;
 	default:
 		break;
 	}
@@ -355,15 +449,6 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		static uint8_t old[49];
 		int i = 49;
 		int do_lights = 0;
-#if 0
-		/* print incoming bytes */
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
-		}
-		printf("\n");
-#endif 
-
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_SLIDER,
 			.slider  = {
@@ -406,20 +491,12 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				ni_maschine_jam_touchstrip_led(base, i, lights);
 			}
 		}
-		//printf("\n");
-		//ni_maschine_jam_light_flush(base, 1);
 		break;
 	}
+
 	case 17: {
 		static uint8_t old[17];
 		int i = 17;
-#if 0
-		while(i --> 0) {
-			printf("%02x ", data[i]);
-			old[i] = data[i];
-		}
-		printf("\n");
-#endif
 		uint64_t pressed = 0;
 
 		static uint16_t col_mask[] = {
@@ -443,23 +520,29 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			/* columns */
 			for(int c = 0; c < 6; c++) {
 				uint8_t p = d & col_mask[c];
-				if(p) {
+				if(p != dev->grid[r*8+c]) {
+					dev->grid[r*8+c] = p;
 					e->grid.pos = (r * 8) + c;
+					e->grid.pressed = p;
 					printf("%d %d = %d\n", r, c, p > 0);
 					dev->base.event_func(&dev->base, 1, &e,
 							     dev->base.event_func_userdata);
 				}
 			}
 			uint8_t p = data[4+1+r] & 0x1;
-			if(p) {
+			if(p != dev->grid[r*8+6]) {
 				e->grid.pos = (r * 8) + 6;
+				e->grid.pressed = p;
+				dev->grid[r*8+6] = p;
 				printf("%d %d = %d\n", r, 6, p);
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 			}
 			p = data[4+1+r] & 0x2;
-			if(p) {
+			if(p != dev->grid[r*8+7]) {
 				printf("%d %d = %d\n", r, 7, p);
+				dev->grid[r*8+7] = p;
+				e->grid.pressed = p;
 				e->grid.pos = (r * 8) + 7;
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
@@ -499,6 +582,25 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				ni_maschine_jam_light_flush(base, 1);
 #endif
 			}
+		}
+
+		/* encoder */
+		uint8_t encoder_now = (data[1] & 0xf);
+		if(dev->encoder != encoder_now) {
+			int dir = ctlra_dev_encoder_wrap_16(encoder_now,
+							    dev->encoder);
+			dev->encoder = encoder_now;
+
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_ENCODER,
+				.encoder  = {
+					.id = 0,
+				},
+			};
+			event.encoder.delta = dir;
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
 		}
 	} /* case 17 */
 	} /* switch */
@@ -666,6 +768,8 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_jam_info;
+
 struct ctlra_dev_t *
 ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 			      void *userdata, void *future)
@@ -682,8 +786,8 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 
 
 #ifdef USE_LIBUSB
-	int err = ctlra_dev_impl_usb_open(&dev->base,
-					 NI_VENDOR, NI_MASCHINE_JAM);
+	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
 	if(err) {
 		free(dev);
 		return 0;
@@ -721,8 +825,8 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 		if (res < 0) {
 			perror("HIDIOCGRAWINFO");
 		} else {
-			if(info.vendor  == NI_VENDOR &&
-			   info.product == NI_MASCHINE_JAM) {
+			if(info.vendor  == CTLRA_DRIVER_VENDOR  &&
+			   info.product == CTLRA_DRIVER_DEVICE) {
 				found = 1;
 				break;
 			}
@@ -739,13 +843,12 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 	dev->fd = fd;
 	printf("jam on fd %d\n", fd);
 #endif
-	dev->base.info.vendor_id = NI_VENDOR;
-	dev->base.info.device_id = NI_MASCHINE_JAM;
+
+	dev->base.info = ctlra_ni_maschine_jam_info;
 
 	dev->base.poll = ni_maschine_jam_poll;
 	dev->base.disconnect = ni_maschine_jam_disconnect;
 	dev->base.light_set = ni_maschine_jam_light_set;
-	dev->base.control_get_name = ni_maschine_jam_control_get_name;
 	dev->base.light_flush = ni_maschine_jam_light_flush;
 	dev->base.usb_read_cb = ni_machine_jam_usb_read_cb;
 
@@ -758,3 +861,52 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Maschine Jam",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 320,
+	.size_y    = 295,
+
+	/* TODO: expose info */
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_EVENT_ENCODER] = 1,
+	.control_count[CTLRA_EVENT_GRID] = 1,
+
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_info[CTLRA_EVENT_ENCODER] = encoder_info,
+
+	/* TODO: feedback items:
+	 * - 2 VU meter style LED strips
+	 *   Left  id: 38 to 45,
+	 *   Right id: 46 to 53
+	 */
+#if 0
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
+#endif
+
+	.grid_info[0] = {
+		.rgb = 1,
+		.x = 8,
+		.y = 8,
+		.info = {
+			.x = 51,
+			.y = 39,
+			.w = 215,
+			.h = 100,
+			/* TODO: Figure out the light mappings */
+			/* start light id */
+			.params[0] = 255,
+			/* end light id */
+			.params[1] = 255,
+		}
+	},
+
+	.get_name = ni_maschine_jam_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_maschine_jam)

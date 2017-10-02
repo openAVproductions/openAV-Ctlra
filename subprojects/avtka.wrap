@@ -1,0 +1,4 @@
+[wrap-git]
+directory=avtka
+url=https://github.com/openAVproductions/openAV-Avtka/
+revision=head

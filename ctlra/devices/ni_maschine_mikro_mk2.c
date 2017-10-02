@@ -39,8 +39,8 @@
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
 
-#define NI_VENDOR             (0x17cc)
-#define NI_MASCHINE_MIKRO_MK2 (0x1200)
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1200)
 #define USB_INTERFACE_ID      (0x00)
 #define USB_HANDLE_IDX        (0x00)
 #define USB_ENDPOINT_READ     (0x81)
@@ -66,7 +66,7 @@ static const char *ni_maschine_mikro_mk2_control_names[] = {
 	"Browse",
 	"Sampling",
 	"Note Repeat",
-	"Encoder Press",
+	"Enc Btn",
 	"F1",
 	"F2",
 	"F3",
@@ -130,6 +130,52 @@ static const struct ni_maschine_mikro_mk2_ctlra_t buttons[] = {
 	{NI_MASCHINE_MIKRO_MK2_BTN_MUTE     , 4, 0x01},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
+
+#define MIKRO_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* restart -> grid */
+	{.x = 20, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_RESTART},
+	{.x = 45, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_LEFT},
+	{.x = 70, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_RIGHT},
+	{.x = 95, .y = 138, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_GRID},
+	/* play -> shift */
+	{.x = 20, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff00ff00, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_PLAY},
+	{.x = 45, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xffff0000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_REC},
+	{.x = 70, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_ERASE},
+	{.x = 95, .y = 156, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_SHIFT},
+	/* group -> note repeat */
+	{.x = 20, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN | CTLRA_ITEM_LED_COLOR, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_GROUP},
+	{.x = 45, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_BROWSE},
+	{.x = 70, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_SAMPLING},
+	{.x = 95, .y = 107, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_NOTE_REPEAT},
+	/* encoder press */
+	{.x = 95, .y =  70, .w = 18,  .h = 10, .flags = CTLRA_ITEM_BUTTON},
+	/* F1 -> control */
+	{.x = 20, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_F1},
+	{.x = 45, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_F2},
+	{.x = 70, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_F3},
+	{.x = 95, .y =  29, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_CONTROL},
+	/* Nav -> Main */
+	{.x = 20, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_NAV},
+	{.x = 45, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_NAV_LEFT},
+	{.x = 70, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_NAV_RIGHT},
+	{.x = 95, .y =  87, .w = 18,  .h =  5, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_MAIN},
+	/* Scene -> Mute */
+	{.x =130, .y =  29, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_SCENE},
+	{.x =130, .y =  47, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_PATTERN},
+	{.x =130, .y =  66, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_PAD_MODE},
+	{.x =130, .y =  84, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_VIEW},
+	{.x =130, .y = 103, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_DUPLICATE},
+	{.x =130, .y = 121, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_SELECT},
+	{.x =130, .y = 140, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_SOLO},
+	{.x =130, .y = 158, .w = 18,  .h = 10, .flags = MIKRO_BTN, .colour = 0xff000000, .fb_id = NI_MASCHINE_MIKRO_MK2_LED_MUTE},
+};
+
+static struct ctlra_item_info_t feedback_info[] = {
+	/* Screen */
+	{.x = 20, .y =  44, .w = 70,  .h = 35, .flags = CTLRA_ITEM_FB_SCREEN},
+};
+#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
 
 #define ENCODERS_SIZE (1)
 
@@ -220,6 +266,14 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 				};
 				struct ctlra_event_t *e = {&event};
 				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
+					/* detect velocity over limit */
+					float velo = (dev->pad_avg[i] - 200) / 200.f;
+					float v2 = velo * velo * velo * velo;
+					float fin = (velo - v2) * 3;
+					fin = fin > 1.0f ? 1.0f : fin;
+					fin = fin < 0.0f ? 0.0f : fin;
+					//printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
+					e->grid.pressure = fin;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 					//printf("%d pressed\n", i);
@@ -228,6 +282,7 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 					//printf("%d release\n", i);
 					dev->pads[i] = 0;
 					event.grid.pressed = 0;
+					event.grid.pressure = 0.f;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
@@ -361,6 +416,8 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info;
+
 struct ctlra_dev_t *
 ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 				    void *userdata, void *future)
@@ -399,8 +456,8 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		if (res < 0) {
 			perror("HIDIOCGRAWINFO");
 		} else {
-			if(info.vendor  == NI_VENDOR &&
-			   info.product == NI_MASCHINE_MIKRO_MK2) {
+			if(info.vendor  == CTLRA_DRIVER_VENDOR &&
+			   info.product == CTLRA_DRIVER_DEVICE) {
 				found = 1;
 				break;
 			}
@@ -429,8 +486,10 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	grid->x = 4;
 	grid->y = 4;
 
-	dev->base.info.vendor_id = NI_VENDOR;
-	dev->base.info.device_id = NI_MASCHINE_MIKRO_MK2;
+	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
+	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
+
+	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
 
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
@@ -446,3 +505,40 @@ fail:
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk2_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Maschine Mikro Mk2",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 320,
+	.size_y    = 195,
+
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_info [CTLRA_EVENT_BUTTON] = buttons_info,
+
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
+
+	.control_count[CTLRA_EVENT_GRID] = 1,
+	.grid_info[0] = {
+		.rgb = 1,
+		.velocity = 1,
+		.pressure = 1,
+		.x = 4,
+		.y = 4,
+		.info = {
+			.x = 168,
+			.y = 29,
+			.w = 138,
+			.h = 138,
+			/* start light id */
+			.params[0] = NI_MASCHINE_MIKRO_MK2_LED_PAD_1,
+			/* end light id */
+			.params[1] = NI_MASCHINE_MIKRO_MK2_LED_PAD_16,
+		}
+	},
+
+	.get_name = ni_maschine_mikro_mk2_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_maschine_mikro_mk2)

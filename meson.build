@@ -6,13 +6,26 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
+required_libs = ['libusb-1.0', 'alsa']
+
+avtka_dep = dependency('openav_avtka', required: false)
+if(get_option('avtka') == true)
+    if (not avtka_dep.found())
+      avtka_git = subproject('avtka')
+      avtka_dep = avtka_git.get_variable('avtka_dep')
+    endif
+
+    add_project_arguments('-DHAVE_AVTKA', language : 'c')
+    required_libs += 'openav_avtka'
+endif
+
 subdir('ctlra')
 
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',
               version: conf_data.get('version'),
-              requires: ['libusb-1.0', 'alsa'],
+              requires: required_libs,
               libraries: ctlra)
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
@@ -35,12 +48,29 @@ executable('sequencer',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
+if(get_option('avtka') == true)
+ if(avtka_dep.found())
+  executable('virt_dev',
+             example_virt_dev,
+             include_directories: ctlra_includes,
+             dependencies: avtka_dep,
+             link_with: ctlra)
+
+  executable('device_test',
+             example_dev_test,
+             include_directories: ctlra_includes,
+             dependencies: avtka_dep,
+             link_with: ctlra)
+  endif
+endif
+
 cairo   = dependency('cairo', required: false)
 sndfile = dependency('sndfile', required: false)
-if(jack.found() and cairo.found() and sndfile.found())
+fluid   = dependency('fluidsynth', required: false)
+if(jack.found() and cairo.found() and sndfile.found() and fluid.found())
 executable('vegas_mode',
            example_vegas,
            include_directories: ctlra_includes,
            link_with: ctlra,
-           dependencies: [jack, cairo, sndfile])
+           dependencies: [jack, cairo, sndfile, fluid])
 endif
