@@ -63,7 +63,10 @@ firmata_poll(struct ctlra_dev_t *base)
 	struct firmata_t *dev = (struct firmata_t *)base;
 
 	int ret = firmata_pull(dev->firmata);
-	(void)ret;
+	if(ret < 0) {
+		printf("banished = 1\n");
+		ctlra_dev_impl_banish(base);
+	}
 
 #if 0
 	for(int i = 0; i < ret; i++)
@@ -91,14 +94,6 @@ firmata_poll(struct ctlra_dev_t *base)
 
 	return 0;
 }
-
-/* TODO: remove forward declarations */
-static void firmata_light_set(struct ctlra_dev_t *base,
-				    uint32_t light_id,
-				    uint32_t light_status);
-
-static void firmata_light_flush(struct ctlra_dev_t *base,
-				      uint32_t force);
 
 static inline void
 firmata_light_set(struct ctlra_dev_t *base, uint32_t light_id,
@@ -134,7 +129,8 @@ firmata_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		firmata_light_flush(base, 1);
 
-	ctlra_dev_impl_usb_close(base);
+	printf("free firmata instance\n");
+
 	free(dev);
 	return 0;
 }
@@ -151,9 +147,17 @@ ctlra_firmata_connect(ctlra_event_func event_func,
 		goto fail;
 
 	/* initialize the firmata instance */
+	/* TODO: make the device ttyXXXY dynamic */
 	dev->firmata = firmata_new("/dev/ttyUSB0");
-	while(!dev->firmata->isReady)
-		firmata_pull(dev->firmata);
+	if(!dev->firmata)
+		goto fail;
+
+	/* TODO: how to make this be more elegant? */
+	int32_t timeout = 100000000;
+	while (!dev->firmata->isReady && timeout) {
+		int p = firmata_pull(dev->firmata);
+		timeout--;
+	}
 
 	dev->base.info = ctlra_firmata_info;
 
@@ -174,13 +178,11 @@ fail:
 
 struct ctlra_dev_info_t ctlra_firmata_info = {
 	.vendor    = "Firmata",
-	.device    = "Firmata Firmware Interface",
+	.device    = "Firmware Interface",
 	.vendor_id = CTLRA_DRIVER_VENDOR,
 	.device_id = CTLRA_DRIVER_DEVICE,
 
 	.control_count[CTLRA_EVENT_SLIDER] = 1,
-
-	//.get_name = firmata_control_get_name,
 };
 
 CTLRA_DEVICE_REGISTER(firmata)
