@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
@@ -230,10 +232,24 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024];
 	int32_t nbytes;
 
+static double worst_poll;
+
 	do {
-		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
+		struct timeval tv1, tv2;
+		gettimeofday(&tv1, NULL);
+		nbytes = read(dev->fd, &buf, sizeof(buf));
+		if (nbytes < 0) {
 			break;
 		}
+		gettimeofday(&tv2, NULL);
+		double delta =
+			(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+			(double) (tv2.tv_sec - tv1.tv_sec);
+		if(delta > worst_poll) {
+			printf ("worst poll %f\n", delta);
+			worst_poll = delta;
+		}
+
 
 		uint8_t *data = &buf[1];
 
@@ -400,7 +416,19 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
+static double worst_write;
+	struct timeval tv1, tv2;
+	gettimeofday(&tv1, NULL);
 	write(dev->fd, data, LIGHTS_SIZE);
+	gettimeofday(&tv2, NULL);
+	double delta =
+		(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+		(double) (tv2.tv_sec - tv1.tv_sec);
+	if(delta > worst_write) {
+		printf ("worst write %f\n", delta);
+		worst_write = delta;
+	}
+
 }
 
 static int32_t
