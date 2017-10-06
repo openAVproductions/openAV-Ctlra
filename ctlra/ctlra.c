@@ -15,7 +15,7 @@ uint32_t __ctlra_device_count;
 __attribute__((constructor(101)))
 static void ctlra_static_setup()
 {
-	printf("%s\n", __func__);
+	/* placeholder */
 }
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
