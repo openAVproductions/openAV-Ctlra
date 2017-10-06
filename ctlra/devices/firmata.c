@@ -78,17 +78,22 @@ firmata_poll(struct ctlra_dev_t *base)
 	for(int i = 0; i < 1; i++) {
 		int pin = 14 + i;
 		int v = dev->firmata->pins[pin].value;
-		if(dev->hw_values[i] != v) {
-			struct ctlra_event_t event = {
-				.type = CTLRA_EVENT_SLIDER,
-				.slider  = {
+		/* TODO: concider rework debounce in micro-controller,
+		 * so no debounce required here? */
+		int pressed = v > 512;
+		int changed = dev->hw_values[i] != (pressed);
+		if(changed) {
+			struct ctlra_event_t events = {
+				.type = CTLRA_EVENT_BUTTON,
+				.button  = {
 					.id = i,
-					.value = v / 1024.f},
+					.pressed = v > 512
+				}
 			};
-			struct ctlra_event_t *e = {&event};
+			struct ctlra_event_t *e = {&events};
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
-			dev->hw_values[i] = v;
+			dev->hw_values[i] = pressed;
 		}
 	}
 
@@ -108,6 +113,14 @@ firmata_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	dev->lights[light_id] = bright;
 
 	dev->lights_dirty = 1;
+}
+
+static const char *
+firmata_get_name(enum ctlra_event_type_t type, uint32_t control_id)
+{
+	if(type == CTLRA_EVENT_BUTTON && control_id == 0)
+		return "Footswitch";
+	return "Invalid";
 }
 
 void
@@ -183,6 +196,8 @@ struct ctlra_dev_info_t ctlra_firmata_info = {
 	.device_id = CTLRA_DRIVER_DEVICE,
 
 	.control_count[CTLRA_EVENT_SLIDER] = 1,
+
+	.get_name = firmata_get_name,
 };
 
 CTLRA_DEVICE_REGISTER(firmata)
