@@ -15,7 +15,7 @@ uint32_t __ctlra_device_count;
 __attribute__((constructor(101)))
 static void ctlra_static_setup()
 {
-	printf("%s\n", __func__);
+	/* placeholder */
 }
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)
@@ -413,6 +413,22 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		ctlra->banished_list = tmp;
 	}
 }
+
+void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
+{
+	struct ctlra_t *ctlra = dev->ctlra_context;
+	dev->banished = 1;
+	if(ctlra->banished_list == 0)
+		ctlra->banished_list = dev;
+	else {
+		struct ctlra_dev_t *dev_iter = ctlra->banished_list;
+		while(dev_iter->banished_list_next)
+			dev_iter = dev_iter->banished_list_next;
+		dev_iter->banished_list_next = dev;
+		dev->banished_list_next = 0;
+	}
+}
+
 
 void ctlra_exit(struct ctlra_t *ctlra)
 {

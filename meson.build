@@ -19,6 +19,12 @@ if(get_option('avtka') == true)
     required_libs += 'openav_avtka'
 endif
 
+firmatac = subproject('firmatac')
+firmatac_dep = firmatac.get_variable('firmatac_dep')
+#required_libs += 'firmata_dep'
+
+firmatac_includes = include_directories('subprojects/firmatac/includes')
+
 subdir('ctlra')
 
 pkg = import('pkgconfig')
@@ -32,6 +38,7 @@ install_headers(ctlra_hdr, subdir : 'ctlra')
 
 subdir('examples')
 ctlra_includes = include_directories('ctlra')
+
 
 executable('simple',
            example_simple,
