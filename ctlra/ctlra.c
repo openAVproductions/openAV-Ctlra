@@ -375,6 +375,19 @@ int ctlra_probe(struct ctlra_t *ctlra,
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
 	}
 
+	/* virtualize device from ENV variable */
+	char *virt_vendor = getenv("CTLRA_VIRTUAL_VENDOR");
+	char *virt_device = getenv("CTLRA_VIRTUAL_DEVICE");
+	if(virt_vendor && virt_device) {
+		int32_t ret = ctlra_dev_virtualize(ctlra,
+						   virt_vendor,
+						   virt_device);
+		/* could flag error, but dev_virtualize() already does */
+		(void) ret;
+		/* increment if the device was virtualized successfully */
+		num_accepted += (ret == 0);
+	}
+
 	return num_accepted;
 }
 
