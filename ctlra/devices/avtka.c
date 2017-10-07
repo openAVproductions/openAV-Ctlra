@@ -81,10 +81,7 @@ avtka_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	/* TODO: figure out how to display feedback */
 	struct avtka_t *a = dev->a;
-	static float v;
-	avtka_item_value(a, light_id, v);
-	v += 0.0066;
-	if(v > 1.0f) v -= 1.0f;
+	//avtka_item_value(a, light_id, v);
 	avtka_redraw(a);
 }
 
@@ -221,7 +218,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata,
 	dev->base.info = *info;
 
 	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "Ctlra Virtual - %s", info->vendor);
+		 "%s", info->vendor);
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 		 "%s", info->device);
 
@@ -266,8 +263,8 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		.event_callback_userdata = dev,
 	};
 	char name[64];
-	snprintf(name, sizeof(name), "%s - %s", dev->base.info.vendor,
-		 dev->base.info.device);
+	snprintf(name, sizeof(name), "Ctlra Virtual: %s - %s",
+		 dev->base.info.vendor, dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);
 	if(!a)
 		return 0;
@@ -379,7 +376,6 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		snprintf(ai.name, sizeof(ai.name), "%s", name);
 		ctlra_avtka_string_strip(ai.name);
 		uint32_t idx = avtka_item_create(a, &ai);
-		printf("encoder ID %d = %s\n", idx, name);
 		if(idx > MAX_ITEMS) {
 			printf("CTLRA ERROR: > MAX ITEMS in AVTKA dev\n");
 			return 0;
@@ -468,8 +464,6 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].type = CTLRA_FEEDBACK_ITEM;
 		dev->id_to_ctlra[idx].id   = 6;
 	}
-
-	printf("%s %d; avtka_t %p\n", __func__, __LINE__, a);
 
 	/* return the pointer to the new UI instance */
 	return a;

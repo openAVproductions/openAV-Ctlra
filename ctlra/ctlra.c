@@ -160,7 +160,8 @@ CTLRA_DEVICE_DECL(avtka);
 
 	/* call into AVTKA and virtualize the device, passing info through
 	 * the future (void *) to the AVTKA backend. */
-	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
+	CTLRA_INFO(c, "virtualizing dev '%s' '%s'\n",
+		   info->vendor, info->device);
 	struct ctlra_dev_t *dev = ctlra_dev_connect(c, ctlra_avtka_connect,
 						    0x0, 0x0, info);
 	if(!dev)
