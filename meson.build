@@ -27,13 +27,6 @@ firmatac_includes = include_directories('subprojects/firmatac/includes')
 
 subdir('ctlra')
 
-pkg = import('pkgconfig')
-pkg.generate(name: 'openav_ctlra',
-              description: 'OpenAV Ctlra Library',
-              version: conf_data.get('version'),
-              requires: required_libs,
-              libraries: ctlra)
-
 install_headers(ctlra_hdr, subdir : 'ctlra')
 
 subdir('examples')
@@ -81,3 +74,11 @@ executable('vegas_mode',
            link_with: ctlra,
            dependencies: [jack, cairo, sndfile, fluid])
 endif
+
+pkg = import('pkgconfig')
+pkg.generate(name: 'openav_ctlra',
+              description: 'OpenAV Ctlra Library',
+              version: conf_data.get('version'),
+              requires: required_libs,
+              subdirs : 'ctlra',
+              libraries: ctlra)

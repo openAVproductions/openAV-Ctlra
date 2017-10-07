@@ -235,7 +235,7 @@ void ni_kontrol_f1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 						.id = 0,
 						.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
 						.pos = i,
-						.pressed = v
+						.pressed = v > 0,
 					},
 				};
 				struct ctlra_event_t *e = {&event};

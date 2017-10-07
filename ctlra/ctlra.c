@@ -160,7 +160,8 @@ CTLRA_DEVICE_DECL(avtka);
 
 	/* call into AVTKA and virtualize the device, passing info through
 	 * the future (void *) to the AVTKA backend. */
-	CTLRA_INFO(c, "virtualizing dev with info %p\n", info);
+	CTLRA_INFO(c, "virtualizing dev '%s' '%s'\n",
+		   info->vendor, info->device);
 	struct ctlra_dev_t *dev = ctlra_dev_connect(c, ctlra_avtka_connect,
 						    0x0, 0x0, info);
 	if(!dev)
@@ -373,6 +374,19 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	ctlra->accept_dev_func_userdata = userdata;
 	for(; i < __ctlra_device_count; i++) {
 		num_accepted += ctlra_impl_accept_dev(ctlra, i);
+	}
+
+	/* virtualize device from ENV variable */
+	char *virt_vendor = getenv("CTLRA_VIRTUAL_VENDOR");
+	char *virt_device = getenv("CTLRA_VIRTUAL_DEVICE");
+	if(virt_vendor && virt_device) {
+		int32_t ret = ctlra_dev_virtualize(ctlra,
+						   virt_vendor,
+						   virt_device);
+		/* could flag error, but dev_virtualize() already does */
+		(void) ret;
+		/* increment if the device was virtualized successfully */
+		num_accepted += (ret == 0);
 	}
 
 	return num_accepted;
