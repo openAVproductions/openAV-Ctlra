@@ -42,6 +42,10 @@
 #define USB_HANDLE_IDX     (0x0)
 #define USB_ENDPOINT_READ  (0x81)
 
+/* device magic numbers */
+#define BTN_MSG_SIZE 7
+#define DOF_MSG_SIZE 13
+
 /* 6-dof movement broken down into 12 sliders */
 static const char *spacemouse_names_sliders[] = {
 	"Move Left",
@@ -156,7 +160,7 @@ spacemouse_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 	uint8_t *buf = data;
 
 	switch(size) {
-	case 7:
+	case BTN_MSG_SIZE:
 		for(int i = 0; i < BUTTONS_SIZE; i++) {
 			int p = buf[buttons[i].offset] & buttons[i].mask;
 			if(p == dev->buttons[i])
@@ -175,7 +179,7 @@ spacemouse_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 					     dev->base.event_func_userdata);
 		}
 		break;
-	case 13:
+	case DOF_MSG_SIZE:
 		for(int i = 0; i < CONTROLS_SIZE; i++) {
 			int off = i * 2;
 			int16_t v = buf[off + 1] | (buf[off + 2] << 8);
@@ -248,18 +252,14 @@ ctlra_spacemouse_connect(ctlra_event_func event_func, void *userdata,
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
-	if(err) {
-		free(dev);
-		return 0;
-	}
+	if(err)
+		goto fail;
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 						USB_INTERFACE_ID,
 						USB_HANDLE_IDX);
-	if(err) {
-		free(dev);
-		return 0;
-	}
+	if(err)
+		goto fail;
 
 	dev->base.info = ctlra_spacemouse_info;
 	dev->base.poll = spacemouse_poll;
