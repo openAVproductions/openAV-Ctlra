@@ -1,4 +1,5 @@
-devices_src = files('firmata.c',
+devices_src = files('3dconnexion.c',
+                    'firmata.c',
                     'ni_kontrol_f1.c',
                     'ni_kontrol_d2.c',
                     'ni_kontrol_x1_mk2.c',
