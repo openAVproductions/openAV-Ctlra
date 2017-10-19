@@ -43,6 +43,7 @@ Supported Devices
 
 This library currently supports the following devices:
 
+- 3DConnexion SpaceMouse Pro (Wireless)
 - Native Instruments Maschine Mikro (Mk2 only)
 - Native Instruments Traktor D2
 - Native Instruments Traktor F1
