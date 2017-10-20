@@ -118,8 +118,9 @@ struct ctlra_dev_t {
 #define USB_XFER_INT_READ 0
 #define USB_XFER_INT_WRITE 1
 #define USB_XFER_BULK_WRITE 2
-#define USB_XFER_COUNT 3
-	uint32_t usb_xfer_counts[4];
+#define USB_XFER_ERROR 4
+#define USB_XFER_COUNT 4
+	uint32_t usb_xfer_counts[USB_XFER_COUNT];
 
 	/* MIDI I/O pointer */
 	void *midi_in;

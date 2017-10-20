@@ -388,8 +388,9 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data, LIGHTS_SIZE+1);
-	if(ret < 0)
-		printf("%s write failed!\n", __func__);
+	if(ret < 0) {
+		base->usb_xfer_counts[USB_XFER_ERROR]++;
+	}
 }
 
 static int32_t
