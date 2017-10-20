@@ -491,6 +491,10 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	 * pass the actual dev_t owned data, since the application may
 	 * update it again before the USB transaction completes. */
 	void *usb_data = malloc(size);
+	if(!usb_data) {
+		dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
+		return -ENOSPC;
+	}
 
 	memcpy(usb_data, data, size);
 	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
