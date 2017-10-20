@@ -128,10 +128,10 @@ struct ni_kontrol_f1_t {
 	uint8_t lights_dirty;
 	uint8_t encoder;
 
+	/* LED SIZE is the number of bytes to the device */
+#define LED_SIZE 79
 	uint8_t lights_interface;
-	// TODO FIXME: Lights size can be improved to actually reserve the
-	// exact right amount, instead of grossly over-estimating :)
-	uint8_t lights[NI_KONTROL_F1_LED_COUNT+100];
+	uint8_t lights[LED_SIZE];
 };
 
 static const char *
@@ -278,22 +278,46 @@ static void ni_kontrol_f1_light_set(struct ctlra_dev_t *base,
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_KONTROL_F1_LED_COUNT)
+	/* zero-th byte seems useless, so skip it :) */
+	light_id += 1;
+
+#define NUM_LED_IN (23 + 16 + 4)
+	if(!dev || light_id > NUM_LED_IN)
 		return;
 
-	/* write brighness to all LEDs */
+	/* Lights:
+	 * 0 ..15: digit displays, 8 is * in the top left.
+	 * 16..23 Browse, Size, Type, Reverse, Shift, capture, quant, sync
+	 * 24..71 BRG, BRG, BRG for all pads, top left -> top right ... 
+	 * (72,73), (74,75) .. 79. RIGHT lowest buttons, in pairs
+	 */
+	/* brighness only, direct mapping */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
-
-	/* FX ON buttons have orange and blue */
-	if(light_id == NI_KONTROL_F1_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_F1_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
+	if(light_id < 24) {
+		dev->lights[light_id] = bright;
+		goto fin;
+	};
+	/* pad buttons, 24 .. 71 */
+	if(light_id >= 24 && light_id < 40) {
+		uint32_t r      = (light_status >> 16) & 0x7F;
+		uint32_t g      = (light_status >>  8) & 0x7F;
+		uint32_t b      = (light_status >>  0) & 0x7F;
+		/* amend ID to skip over red/green bytes per pad */
+		light_id += (light_id - 24) * 2;
+		/* Pads are BRG ordered */
+		dev->lights[light_id  ] = b;
+		dev->lights[light_id+1] = r;
+		dev->lights[light_id+2] = g;
+		goto fin;
+	}
+	/* lowest buttons "double up" on bytes */
+	if(light_id >= 40) {
+		int idx = 72 + (light_id - 40) * 2;
+		dev->lights[idx  ] = bright;
+		dev->lights[idx+1] = bright;
 	}
 
+fin:
 	dev->lights_dirty = 1;
 }
 
