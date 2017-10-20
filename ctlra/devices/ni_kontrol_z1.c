@@ -272,8 +272,6 @@ void ni_kontrol_z1_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 		break;
 		}
 	}
-	/* TODO: remove this? */
-	ni_kontrol_z1_light_flush(&dev->base, 1);
 }
 
 static inline void
