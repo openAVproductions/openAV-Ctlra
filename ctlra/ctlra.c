@@ -220,6 +220,8 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 			   dev_iter->info.device, usb_xfer_str[i], i,
 			   dev->usb_xfer_counts[i]);
 	}
+	CTLRA_INFO(ctlra, "[%s] outstanding xfers: %d\n",
+		   dev_iter->info.device, dev->usb_xfer_outstanding);
 
 	if(dev && dev->disconnect) {
 		/* call the application remove_func() to inform app */

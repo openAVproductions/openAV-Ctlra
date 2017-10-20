@@ -341,6 +341,12 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 			CTLRA_ERROR(ctlra, "DRIVER ERROR: USB READ CB = %d\n", 0);
 			break;
 		}
+		if(dev->usb_xfer_outstanding == 0) {
+			CTLRA_ERROR(ctlra,
+				    "oustanding xfers going negative %d\n",
+				    dev->usb_xfer_outstanding);
+		}
+		dev->usb_xfer_outstanding--;
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
 		} break;
@@ -397,6 +403,11 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	if(xfr == 0)
 		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
 
+	if(dev->usb_xfer_outstanding > 10) {
+		//CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
+		return 0;
+	}
+
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
 	 * pass the actual dev_t owned data, since the application may
@@ -413,9 +424,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          dev, /* userdata - pass dev so we can banish
 					  it if required */
 	                          timeout);
-	int res = libusb_submit_transfer(xfr);
-	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 
+	int res = libusb_submit_transfer(xfr);
 	/* Only error experienced while developing was ERROR_IO, which was
 	 * caused by stress testing the reading of multiple devices over
 	 * time. The _IO error would show after (almost exactly) 1 minute
@@ -432,6 +442,9 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		//printf("error submitting data: %s\n", libusb_error_name(res));
 		return -1;
 	}
+
+	dev->usb_xfer_outstanding++;
+	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 
 	/* do we want to return the size here? */
 	/* This read op is async - there *IS* no data to read right now.
@@ -478,7 +491,12 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	int transferred;
 	struct ctlra_t *ctlra = dev->ctlra_context;
-	const uint32_t timeout = 1000;
+	const uint32_t timeout = 100;
+
+	if(dev->usb_xfer_outstanding > 10) {
+		CTLRA_WARN(ctlra, "int write, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
+		return 0;
+	}
 
 #if 1
 	struct libusb_transfer *xfr;
@@ -497,7 +515,6 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 
 	memcpy(usb_data, data, size);
-	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 
 	libusb_fill_interrupt_transfer(xfr,
 				       dev->usb_interface[idx],
@@ -514,6 +531,9 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 		//printf("error submitting data!!\n");
 		return -1;
 	}
+
+	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
+	dev->usb_xfer_outstanding++;
 
 	/* do we want to return the size here? */
 	/* This read op is async - there *IS* no data written yet */
@@ -554,6 +574,8 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
+
+	dev->usb_xfer_outstanding++;
 	return transferred;
 
 }
