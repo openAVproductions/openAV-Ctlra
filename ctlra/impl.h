@@ -114,7 +114,8 @@ struct ctlra_dev_t {
 	 * are on bulk/interrupt interfaces). The controller is responsible
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
-	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
+	void *usb_handle[CTLRA_USB_IFACE_PER_DEV];
+	uint8_t usb_interface[CTLRA_USB_IFACE_PER_DEV];
 #define USB_XFER_INT_READ 0
 #define USB_XFER_INT_WRITE 1
 #define USB_XFER_BULK_WRITE 2

@@ -63,7 +63,10 @@ ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
 		if(dev->usb_xfer_ptr[i]) {
 			struct libusb_transfer *xfer = dev->usb_xfer_ptr[i];
 			int ret = libusb_cancel_transfer(xfer);
-			printf(" xfer %d, %p, ret = %d\n", i, xfer, ret);
+			if(ret)
+				CTLRA_ERROR(dev->ctlra_context,
+					    "usb cancel xfer failed: %s\n",
+					    libusb_strerror(ret));
 		}
 	}
 }
@@ -283,8 +286,8 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *ctlra_dev, int vid,
 		goto fail;
 	ctlra_dev->usb_device = dev;
 
-	memset(ctlra_dev->usb_interface, 0,
-	       sizeof(ctlra_dev->usb_interface));
+	memset(ctlra_dev->usb_handle, 0,
+	       sizeof(ctlra_dev->usb_handle));
 
 	return 0;
 fail:
@@ -346,7 +349,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	}
 
 	/* Commit to success: update handles in struct and return ok*/
-	ctlra_dev->usb_interface[handle_idx] = handle;
+	ctlra_dev->usb_handle[handle_idx] = handle;
+	ctlra_dev->usb_interface[handle_idx] = interface;
 
 	return 0;
 }
@@ -448,7 +452,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	if(xfr == 0)
 		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
 
-	if(dev->usb_xfer_outstanding > 5) {
+	if(dev->usb_xfer_outstanding >= CTLRA_USB_XFER_COUNT - 1) {
 		//CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
 		return 0;
 	}
@@ -460,7 +464,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	void *usb_data = malloc(size);
 
 	libusb_fill_interrupt_transfer(xfr,
-				  dev->usb_interface[idx], /* dev handle */
+				  dev->usb_handle[idx],
 	                          endpoint,
 	                          usb_data,
 	                          size,
@@ -502,7 +506,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	 * instead of actual data. This depends on the host system - laptops
 	 * are significantly slower in servicing USB times than desktops */
 	const uint32_t timeout = 100;
-	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
+	int r = libusb_interrupt_transfer(dev->usb_handle[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
@@ -539,8 +543,8 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 
 	CTLRA_USB_XFER_SPACE_OR_RET(dev, -ENOBUFS);
 
-	if(dev->usb_xfer_outstanding > 10) {
-		CTLRA_WARN(ctlra, "int write, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
+	if(dev->usb_xfer_outstanding > CTLRA_USB_XFER_COUNT - 1) {
+		dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 		return 0;
 	}
 
@@ -563,7 +567,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	memcpy(usb_data, data, size);
 
 	libusb_fill_interrupt_transfer(xfr,
-				       dev->usb_interface[idx],
+				       dev->usb_handle[idx],
 				       endpoint,
 				       usb_data,
 				       size,
@@ -586,7 +590,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	/* This read op is async - there *IS* no data written yet */
 	return size;
 #else
-	int r = libusb_interrupt_transfer(dev->usb_interface[idx], endpoint,
+	int r = libusb_interrupt_transfer(dev->usb_handle[idx], endpoint,
 	                                  data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
@@ -610,7 +614,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	int transferred;
 	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
-	int r = libusb_bulk_transfer(dev->usb_interface[idx], endpoint,
+	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
 	                               data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
@@ -638,8 +642,9 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 
-		if(dev->usb_interface[i]) {
-			int ret = libusb_release_interface(dev->usb_interface[i], i);
+		if(dev->usb_handle[i]) {
+			int ret = libusb_release_interface(dev->usb_handle[i],
+							   dev->usb_interface[i]);
 			if(ret == LIBUSB_ERROR_NOT_FOUND) {
 				// Seems to always happen? LibUSB bug?
 				CTLRA_ERROR(ctlra, "release interface error: interface %d not found\n", i);
@@ -648,7 +653,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 					libusb_strerror(ret));
 
 			/* close() takes a handle* ptr... */
-			libusb_close(dev->usb_interface[i]);
+			libusb_close(dev->usb_handle[i]);
 		}
 	}
 }
