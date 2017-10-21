@@ -9,6 +9,8 @@
 
 #define USB_PATH_MAX 256
 
+#define CTLRA_USE_ASYNC_XFER 0
+
 #ifndef LIBUSB_HOTPLUG_MATCH_ANY
 #define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xdeadbeef
 #define LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED 0xdeadbeef
@@ -355,6 +357,7 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	return 0;
 }
 
+#if CTLRA_USE_ASYNC_XFER
 static void ctlra_usb_xfr_write_done_cb(struct libusb_transfer *xfr)
 {
 	int failed = 0;
@@ -425,6 +428,7 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 	free(xfr->buffer);
 	libusb_free_transfer(xfr);
 }
+#endif /* CTLRA_USE_ASYNC_XFER */
 
 int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
                                       uint32_t endpoint, uint8_t *data,
@@ -440,7 +444,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
  * time, so should be preferred, unless there is a good reason to use the
  * sync method.
  */
-#if 0
+#if CTLRA_USE_ASYNC_XFER
 	CTLRA_USB_XFER_SPACE_OR_RET(dev, 0);
 
 	/* timeout of zero means no timeout. For ASync case, this means
@@ -527,13 +531,14 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 
 	if(!dev->usb_read_cb) {
-		printf("CTLRA DRIVER ERROR: no USB READ CB implemented!\n");
+		CTLRA_ERROR(ctlra, "DRIVER ERROR: no USB READ CB = %p!\n",
+			    dev->usb_read_cb);
 		return 0;
 	}
 	dev->usb_read_cb(dev, endpoint, data, transferred);
-
+	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 	return r;
-#endif
+#endif /* CTLRA_USE_ASYNC_XFER */
 
 }
 
@@ -552,7 +557,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 		return 0;
 	}
 
-#if 0
+#if CTLRA_USE_ASYNC_XFER
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0)
@@ -607,8 +612,9 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 		ctlra_dev_impl_banish(dev);
 		return r;
 	}
+	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 	return transferred;
-#endif
+#endif /* CTLRA_USE_ASYNC_XFER */
 }
 
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
