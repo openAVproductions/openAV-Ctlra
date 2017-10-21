@@ -137,9 +137,9 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x =  52, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 17},
 	{.x =  74, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 16},
 	/* browse */
-	{.x =  96, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0x00ff0000, .fb_id = 16},
+	{.x =  96, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0x00ff0000, .fb_id = 15},
 	/* enc press */
-	{.x =  96, .y = 126, .w = 16,  .h = 16, .flags = F1_BTN},
+	{.x =  96, .y = 126, .w = 16,  .h = 16, .flags = CTLRA_ITEM_BUTTON},
 	/* stop left -> right */
 	{.x =  8, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 42},
 	{.x = 35, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 41},
@@ -372,8 +372,9 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data, 81);
-	if(ret < 0)
-		base->usb_xfer_counts[USB_XFER_ERROR]++;
+	if(ret < 0) {
+		//base->usb_xfer_counts[USB_XFER_ERROR]++;
+	}
 }
 
 static int32_t
