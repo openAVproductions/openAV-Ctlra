@@ -12,11 +12,11 @@
 #define CTLRA_USE_ASYNC_XFER 0
 
 #ifndef LIBUSB_HOTPLUG_MATCH_ANY
-#define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xdeadbeef
-#define LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED 0xdeadbeef
-#define LIBUSB_HOTPLUG_MATCH_ANY 0xdeadbeef
-#define LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER 0xdeadbeef
-#define LIBUSB_CAP_HAS_HOTPLUG 0xdeadbeef
+#define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xcafe
+#define LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED 0xcafe
+#define LIBUSB_HOTPLUG_MATCH_ANY 0xcafe
+#define LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER 0xcafe
+#define LIBUSB_CAP_HAS_HOTPLUG 0xcafe
 #warning "Please update your very old libusb version"
 #define libusb_hotplug_event int
 typedef int libusb_hotplug_callback_handle;
@@ -29,6 +29,8 @@ extern int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid);
 extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
 extern int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 					 int32_t pid, struct ctlra_dev_t **out_dev);
+
+
 
 #define CTLRA_USB_XFER_SPACE_OR_RET(dev,ret)			\
 	do {							\
