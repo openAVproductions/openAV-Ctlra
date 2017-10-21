@@ -30,11 +30,11 @@ extern int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 
 #define CTLRA_USB_XFER_SPACE_OR_RET(dev,ret)			\
 	do {							\
-	if (dev->usb_xfer_tail - dev->usb_xfer_head == 1)	\
+	if (dev->usb_xfer_head - dev->usb_xfer_tail >=		\
+			CTLRA_USB_XFER_COUNT) {			\
+		dev->usb_xfer_counts[USB_XFER_ERROR]++;		\
 		return ret;					\
-	} while (0)
-
-
+	} } while (0)
 
 static inline void
 ctlra_usb_impl_xfer_push(struct ctlra_dev_t *dev, void *xfer)
@@ -440,8 +440,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
  * time, so should be preferred, unless there is a good reason to use the
  * sync method.
  */
-#if 1
-
+#if 0
 	CTLRA_USB_XFER_SPACE_OR_RET(dev, 0);
 
 	/* timeout of zero means no timeout. For ASync case, this means
@@ -449,13 +448,17 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	const uint32_t timeout = 0;
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
-	if(xfr == 0)
+	if(xfr == 0) {
 		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
+	}
 
 	if(dev->usb_xfer_outstanding >= CTLRA_USB_XFER_COUNT - 1) {
-		//CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
+		CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n",
+			   dev->usb_xfer_outstanding);
+		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return 0;
 	}
+	printf("%s : %d\n", __func__, __LINE__);
 
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
@@ -486,10 +489,11 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		if(res == LIBUSB_ERROR_IO)
 			return 0;
 
-		//printf("error submitting data: %s\n", libusb_error_name(res));
+		printf("error submitting data: %s\n", libusb_error_name(res));
 		return -1;
 	}
 
+	printf("%s : %d\n", __func__, __LINE__);
 	dev->usb_xfer_outstanding++;
 	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 	ctlra_usb_impl_xfer_push(dev, xfr);
@@ -544,11 +548,11 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	CTLRA_USB_XFER_SPACE_OR_RET(dev, -ENOBUFS);
 
 	if(dev->usb_xfer_outstanding > CTLRA_USB_XFER_COUNT - 1) {
-		dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
+		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return 0;
 	}
 
-#if 1
+#if 0
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0)
@@ -560,7 +564,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	 * update it again before the USB transaction completes. */
 	void *usb_data = malloc(size);
 	if(!usb_data) {
-		dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
+		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return -ENOSPC;
 	}
 
@@ -583,6 +587,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 
 	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
+	printf("%s : %d\n", __func__, __LINE__);
 	dev->usb_xfer_outstanding++;
 	ctlra_usb_impl_xfer_push(dev, xfr);
 
@@ -613,7 +618,6 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 	const uint32_t timeout = 100;
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	int transferred;
-	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
 	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
 	                               data, size, &transferred, timeout);
 	if(r == LIBUSB_ERROR_TIMEOUT)
@@ -626,7 +630,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 		return r;
 	}
 
-	dev->usb_xfer_outstanding++;
+	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
 	return transferred;
 
 }
