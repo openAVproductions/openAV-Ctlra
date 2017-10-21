@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "impl.h"
 
@@ -9,7 +10,7 @@
 
 #define USB_PATH_MAX 256
 
-#define CTLRA_USE_ASYNC_XFER 0
+#define CTLRA_USE_ASYNC_XFER 1
 
 #ifndef LIBUSB_HOTPLUG_MATCH_ANY
 #define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xcafe
@@ -30,7 +31,11 @@ extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
 extern int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 					 int32_t pid, struct ctlra_dev_t **out_dev);
 
-
+/* struct to track async USB transfers */
+struct usb_async_t {
+	struct usb_async_t *next;
+	char malloc_mem[0];
+};
 
 #define CTLRA_USB_XFER_SPACE_OR_RET(dev,ret)			\
 	do {							\
@@ -414,20 +419,22 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 	case LIBUSB_TRANSFER_ERROR:
 	case LIBUSB_TRANSFER_STALL:
 	case LIBUSB_TRANSFER_OVERFLOW:
-#if 1
-		printf("Ctlra: USB transfer error %s\n",
-		       libusb_error_name(xfr->status));
-#endif
+		CTLRA_DRIVER(ctlra, "Ctlra: USB transfer error %s\n",
+			     libusb_error_name(xfr->status));
 		dev = xfr->user_data;
 		dev->banished = 1;
 		break;
 	default:
-		CTLRA_ERROR(ctlra, "USB transaction has unknown status: %d\n",
+		CTLRA_DRIVER(ctlra, "USB transaction has unknown status: %d\n",
 			    xfr->status);
 		break;
 	}
 
-	free(xfr->buffer);
+	struct usb_async_t *async = (struct usb_async_t *)
+		(((uint8_t *)xfr->buffer) - offsetof(struct usb_async_t, malloc_mem));
+	CTLRA_DRIVER(ctlra, "free async @ %p\n", async);
+
+	free(async);
 	libusb_free_transfer(xfr);
 }
 #endif /* CTLRA_USE_ASYNC_XFER */
@@ -455,11 +462,11 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	struct libusb_transfer *xfr;
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0) {
-		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
+		CTLRA_DRIVER(ctlra, "xfr == %p\n", xfr);
 	}
 
 	if(dev->usb_xfer_outstanding >= CTLRA_USB_XFER_COUNT - 1) {
-		CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n",
+		CTLRA_DRIVER(ctlra, "int read, but xfer outstanding = %d\n",
 			   dev->usb_xfer_outstanding);
 		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return 0;
@@ -469,8 +476,19 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	/* Malloc space for the USB transaction - not ideal, but we have
 	 * to pass ownership of the data to the USB library, and we can't
 	 * pass the actual dev_t owned data, since the application may
-	 * update it again before the USB transaction completes. */
-	void *usb_data = malloc(size);
+	 * update it again before the USB transaction completes.
+	 *
+	 * Ctlra has to track the async references to cancel them for a
+	 * clean shutdown. Hence, we allocate a usb_async_t struct, which
+	 * is used as a linked list for xfers, at little extra overhead
+	 * due to just allocating a slightly block, and keeping the list
+	 * pointer at the start of the block, before the libusb xfer mem */
+	struct usb_async_t *async = malloc(size + sizeof(struct usb_async_t));
+	/* insert at head into linked list for device */
+	async->next = dev->usb_async_next;
+	dev->usb_async_next = async;
+	void *usb_data = async->malloc_mem;
+	printf("alloc async @ %p\n", async);
 
 	libusb_fill_interrupt_transfer(xfr,
 				  dev->usb_handle[idx],
@@ -478,7 +496,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	                          usb_data,
 	                          size,
 	                          ctlra_usb_xfr_done_cb,
-	                          dev, /* userdata - pass dev so we can banish it if required */
+	                          dev,
 	                          timeout);
 
 	int res = libusb_submit_transfer(xfr);
@@ -526,7 +544,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		return 0;
 	*/
 	if (r < 0) {
-		fprintf(stderr, "ctlra: usb error %s : %s\n",
+		CTLRA_DRIVER(ctlra, "dev banished, usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
