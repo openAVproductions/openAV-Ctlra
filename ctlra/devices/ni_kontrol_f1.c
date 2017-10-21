@@ -452,6 +452,25 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_f1_info = {
 	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 #endif
 
+	.control_count[CTLRA_EVENT_GRID] = 1,
+	.grid_info[0] = {
+		.rgb = 1,
+		.velocity = 1,
+		.pressure = 1,
+		.x = 4,
+		.y = 4,
+		.info = {
+			.x =   8,
+			.y = 166,
+			.w = 100,
+			.h =  86,
+			/* start light id */
+			.params[0] = 23,
+			/* end light id */
+			.params[1] = 38,
+		}
+	},
+
 	.get_name = ni_kontrol_f1_control_get_name,
 };
 
