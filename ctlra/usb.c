@@ -28,6 +28,46 @@ extern int ctlra_impl_accept_dev(struct ctlra_t *ctlra, int dev_id);
 extern int ctlra_impl_dev_get_by_vid_pid(struct ctlra_t *ctlra, int32_t vid,
 					 int32_t pid, struct ctlra_dev_t **out_dev);
 
+#define CTLRA_USB_XFER_SPACE_OR_RET(dev,ret)			\
+	do {							\
+	if (dev->usb_xfer_tail - dev->usb_xfer_head == 1)	\
+		return ret;					\
+	} while (0)
+
+
+
+static inline void
+ctlra_usb_impl_xfer_push(struct ctlra_dev_t *dev, void *xfer)
+{
+	dev->usb_xfer_head++;
+	if(dev->usb_xfer_head >= CTLRA_USB_XFER_COUNT)
+		dev->usb_xfer_head = 0;
+
+	dev->usb_xfer_ptr[dev->usb_xfer_head] = xfer;
+	printf("xfr %p at %d\n", xfer, dev->usb_xfer_head);
+}
+
+static inline void
+ctlra_usb_impl_xfer_pop(struct ctlra_dev_t *dev)
+{
+	dev->usb_xfer_tail++;
+	if(dev->usb_xfer_head >= CTLRA_USB_XFER_COUNT)
+		dev->usb_xfer_head = 0;
+	dev->usb_xfer_ptr[dev->usb_xfer_tail] = NULL;
+}
+
+static inline void
+ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
+{
+	for(int i = 0; i < CTLRA_USB_XFER_COUNT; i++) {
+		if(dev->usb_xfer_ptr[i]) {
+			struct libusb_transfer *xfer = dev->usb_xfer_ptr[i];
+			int ret = libusb_cancel_transfer(xfer);
+			printf(" xfer %d, %p, ret = %d\n", i, xfer, ret);
+		}
+	}
+}
+
 static int ctlra_usb_impl_get_serial(struct libusb_device_handle *handle,
 				     uint8_t desc_serial, uint8_t *buffer,
 				     uint32_t buf_size)
@@ -347,22 +387,25 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 				    dev->usb_xfer_outstanding);
 		}
 		dev->usb_xfer_outstanding--;
+		ctlra_usb_impl_xfer_pop(dev);
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
 		} break;
+	case LIBUSB_TRANSFER_CANCELLED:
+		dev->usb_xfer_outstanding--;
+		ctlra_usb_impl_xfer_pop(dev);
+		break;
 
 	/* Timeouts *can* happen, but are rare. */
 	case LIBUSB_TRANSFER_TIMED_OUT:
 		//printf("timeout... ctlra dev %p\n", xfr->user_data);
 		break;
-
 	/* Anything here is an error, and the device will be banished */
-	case LIBUSB_TRANSFER_CANCELLED:
 	case LIBUSB_TRANSFER_NO_DEVICE:
 	case LIBUSB_TRANSFER_ERROR:
 	case LIBUSB_TRANSFER_STALL:
 	case LIBUSB_TRANSFER_OVERFLOW:
-#if 0
+#if 1
 		printf("Ctlra: USB transfer error %s\n",
 		       libusb_error_name(xfr->status));
 #endif
@@ -395,6 +438,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
  */
 #if 1
 
+	CTLRA_USB_XFER_SPACE_OR_RET(dev, 0);
+
 	/* timeout of zero means no timeout. For ASync case, this means
 	 * the buffer will wait until data becomes available - good! */
 	const uint32_t timeout = 0;
@@ -403,7 +448,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	if(xfr == 0)
 		CTLRA_ERROR(ctlra, "xfr == %p\n", xfr);
 
-	if(dev->usb_xfer_outstanding > 10) {
+	if(dev->usb_xfer_outstanding > 5) {
 		//CTLRA_WARN(ctlra, "int read, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
 		return 0;
 	}
@@ -415,14 +460,12 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	void *usb_data = malloc(size);
 
 	libusb_fill_interrupt_transfer(xfr,
-	//libusb_fill_bulk_transfer(xfr,
 				  dev->usb_interface[idx], /* dev handle */
 	                          endpoint,
 	                          usb_data,
 	                          size,
 	                          ctlra_usb_xfr_done_cb,
-	                          dev, /* userdata - pass dev so we can banish
-					  it if required */
+	                          dev, /* userdata - pass dev so we can banish it if required */
 	                          timeout);
 
 	int res = libusb_submit_transfer(xfr);
@@ -445,6 +488,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 
 	dev->usb_xfer_outstanding++;
 	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
+	ctlra_usb_impl_xfer_push(dev, xfr);
 
 	/* do we want to return the size here? */
 	/* This read op is async - there *IS* no data to read right now.
@@ -493,6 +537,8 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	const uint32_t timeout = 100;
 
+	CTLRA_USB_XFER_SPACE_OR_RET(dev, -ENOBUFS);
+
 	if(dev->usb_xfer_outstanding > 10) {
 		CTLRA_WARN(ctlra, "int write, but xfer outstanding = %d\n", dev->usb_xfer_outstanding);
 		return 0;
@@ -534,6 +580,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 
 	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 	dev->usb_xfer_outstanding++;
+	ctlra_usb_impl_xfer_push(dev, xfr);
 
 	/* do we want to return the size here? */
 	/* This read op is async - there *IS* no data written yet */
@@ -583,17 +630,24 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
+
+	ctlra_usb_impl_xfer_release(dev);
+
+	usleep(1000 * 100);
+	ctlra_impl_usb_idle_iter(ctlra);
+
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
+
 		if(dev->usb_interface[i]) {
-			// Running this always seems to throw an error,
-			// and it has no negative side-effects to not?
-			int ret = libusb_release_interface(dev->usb_device, i);
+			int ret = libusb_release_interface(dev->usb_interface[i], i);
 			if(ret == LIBUSB_ERROR_NOT_FOUND) {
 				// Seems to always happen? LibUSB bug?
-				//CTLRA_ERROR(ctlra, "release interface error: interface %d not found, continuing...\n", i);
+				CTLRA_ERROR(ctlra, "release interface error: interface %d not found\n", i);
 			} else if(ret < 0)
 				CTLRA_ERROR(ctlra, "libusb release interface error: %s\n",
 					libusb_strerror(ret));
+
+			/* close() takes a handle* ptr... */
 			libusb_close(dev->usb_interface[i]);
 		}
 	}
@@ -601,6 +655,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra)
 {
+
 	if(ctlra->opts.flags_usb_no_own_context)
 		libusb_exit(NULL);
 	else

@@ -122,6 +122,11 @@ struct ctlra_dev_t {
 #define USB_XFER_COUNT 4
 	uint32_t usb_xfer_counts[USB_XFER_COUNT];
 	uint32_t usb_xfer_outstanding;
+	/* usb xfer pointers */
+	uint8_t usb_xfer_head;
+	uint8_t usb_xfer_tail;
+#define CTLRA_USB_XFER_COUNT 32 /*UINT8_MAX*/
+	void *usb_xfer_ptr[CTLRA_USB_XFER_COUNT];
 
 	/* MIDI I/O pointer */
 	void *midi_in;
