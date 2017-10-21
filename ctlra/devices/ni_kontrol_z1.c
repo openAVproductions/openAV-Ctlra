@@ -327,13 +327,12 @@ ni_kontrol_z1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0x80;
 
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data,
-						     NI_KONTROL_Z1_LED_COUNT+1);
-	if(ret < 0)
-		CTLRA_ERROR(base->ctlra_context,
-			    "USB led write failed %d\n", ret);
+	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   NI_KONTROL_Z1_LED_COUNT+1);
 }
 
 static int32_t
