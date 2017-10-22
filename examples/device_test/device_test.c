@@ -100,10 +100,10 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			struct ctlra_item_info_t *item = &info.control_info[CTLRA_EVENT_BUTTON][id];
 			if(item && item->flags & CTLRA_ITEM_HAS_FB_ID) {
 				uint32_t col = item->flags & CTLRA_ITEM_LED_COLOR ?
-						0xff0000ff : 0xff000000;
+						item->colour : 0xff000000;
 				leds[item->fb_id] = e->button.pressed * col;
 				leds_update[item->fb_id] = 1;
-				printf("btn id = %d, fb id = %d\n", id, item->fb_id);
+				//printf("btn id = %d, fb id = %d, col %08x\n", id, item->fb_id, col);
 			}
 			break;
 
@@ -112,8 +112,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 						   e->encoder.id);
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
-
+			       name, e->encoder.id);
 			break;
 
 		case CTLRA_EVENT_SLIDER:

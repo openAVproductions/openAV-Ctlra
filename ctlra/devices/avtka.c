@@ -307,19 +307,10 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			return 0;
 		}
 
-#if 0
-		/* register and set the item colour if its not only bw */
-		if(item->colour != 0xff000000) {
-			if(0x00ff0000 & item->colour)
-				avtka_item_colour(a, idx, col_red);
-			if(0x0000ff00 & item->colour)
-				avtka_item_colour(a, idx, col_green);
-			if(0x000000ff & item->colour)
-				avtka_item_colour(a, idx, col_blue);
-		}
-#endif
+		/* TODO: store the colour somewhere, and later allow it to
+		 * "return" eg: when value() is set... how to do this? */
+		avtka_item_colour32(a, idx, item->colour);
 
-		avtka_item_colour(a, idx, 0xffffffff);//item->colour);
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_BUTTON;
 		dev->id_to_ctlra[idx].id   = i;
 		dev->id_to_ctlra[idx].fb_id = item->fb_id;
