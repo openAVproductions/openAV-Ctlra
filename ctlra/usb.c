@@ -488,6 +488,12 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
  * sync method.
  */
 #if CTLRA_USE_ASYNC_XFER
+	int inf_reads = dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ];
+	if(inf_reads >= CTLRA_ASYNC_READ_MAX) {
+		dev->usb_xfer_counts[USB_XFER_ERROR]++;
+		return 0;
+	}
+
 	/* timeout of zero means no timeout. For ASync case, this means
 	 * the buffer will wait until data becomes available - good! */
 	const uint32_t timeout = 0;
@@ -495,12 +501,6 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 	xfr = libusb_alloc_transfer(0);
 	if(xfr == 0) {
 		CTLRA_DRIVER(ctlra, "xfr == %p\n", xfr);
-	}
-
-	int inf_reads = dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ];
-	if(inf_reads >= CTLRA_ASYNC_READ_MAX) {
-		dev->usb_xfer_counts[USB_XFER_ERROR]++;
-		return 0;
 	}
 
 	/* Malloc space for the USB transaction - not ideal, but we have
