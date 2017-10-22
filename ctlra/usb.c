@@ -43,18 +43,25 @@ struct usb_async_t {
 static inline void
 ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
 {
-	int i = 0;
-	while(dev->usb_async_next) {
-		struct usb_async_t *del = dev->usb_async_next;
-		int ret = libusb_cancel_transfer(del->xfer);
-		if(ret)
-			CTLRA_ERROR(dev->ctlra_context,
-				    "usb cancel xfer failed: %s\n",
-				    libusb_strerror(ret));
+	struct ctlra_t *c = dev->ctlra_context;
+	struct usb_async_t *current = dev->usb_async_next;
 
-		dev->usb_async_next = del->next;
-		/* TODO: improve this */
-		if(i > CTLRA_ASYNC_READ_MAX)
+	int i = 0;
+	while(current) {
+		CTLRA_DRIVER(c, "async free %d : %p\n", i, current);
+		int ret = libusb_cancel_transfer(current->xfer);
+		if(ret)
+			CTLRA_ERROR(c, "usb cancel xfer failed: %s, async %p\n",
+				    libusb_strerror(ret), current);
+
+		if(current == current->next) {
+			CTLRA_ERROR(c, "list corrupt, cur %p == cur->next %p\n",
+				    current, current->next);
+			break;
+		}
+
+		current = current->next;
+		if(!current || i > CTLRA_ASYNC_READ_MAX)
 			break;
 		i++;
 	}
