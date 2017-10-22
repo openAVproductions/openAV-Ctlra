@@ -135,26 +135,28 @@ static const char *ni_kontrol_x1_mk2_button_names[] = {
 
 #define BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
 #define BTN_COL (BTN | CTLRA_ITEM_LED_COLOR)
+#define DEF_COL .colour = 0xff000000
+#define ORG_COL .colour = 0xffff5100
 static struct ctlra_item_info_t buttons_info[] = {
 	/* Left F1 to F4 vertial */
-	{.x =  8, .y =  28, .w = 16,  .h = 8, .flags = BTN, .fb_id = 0},
-	{.x =  8, .y =  55, .w = 16,  .h = 8, .flags = BTN, .fb_id = 1},
-	{.x =  8, .y =  82, .w = 16,  .h = 8, .flags = BTN, .fb_id = 2},
-	{.x =  8, .y = 108, .w = 16,  .h = 8, .flags = BTN, .fb_id = 3},
+	{.x =  8, .y =  28, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 0},
+	{.x =  8, .y =  55, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 1},
+	{.x =  8, .y =  82, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 2},
+	{.x =  8, .y = 108, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 3},
 	/* Right F1 to F2 vertical */
-	{.x = 95, .y =  28, .w = 16,  .h = 8, .flags = BTN, .fb_id = 4},
-	{.x = 95, .y =  55, .w = 16,  .h = 8, .flags = BTN, .fb_id = 5},
-	{.x = 95, .y =  82, .w = 16,  .h = 8, .flags = BTN, .fb_id = 6},
-	{.x = 95, .y = 108, .w = 16,  .h = 8, .flags = BTN, .fb_id = 7},
+	{.x = 95, .y =  28, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 4},
+	{.x = 95, .y =  55, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 5},
+	{.x = 95, .y =  82, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 6},
+	{.x = 95, .y = 108, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 7},
 	/* fx select left to right */
-	{.x =  11, .y = 129, .w = 8, .h = 8, .flags = BTN, .fb_id = 8},
-	{.x =  25, .y = 129, .w = 8, .h = 8, .flags = BTN, .fb_id = 9},
-	{.x =  88, .y = 129, .w = 8, .h = 8, .flags = BTN, .fb_id = 14},
-	{.x = 102, .y = 129, .w = 8, .h = 8, .flags = BTN, .fb_id = 15},
+	{.x =  11, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 8},
+	{.x =  25, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 9},
+	{.x =  88, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 14},
+	{.x = 102, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 15},
 	/* left, shift right */
-	{.x = 37, .y = 163, .w = 8, .h = 8, .flags = BTN, .fb_id = 16},
-	{.x = 51, .y = 163, .w = 16, .h = 8, .flags = BTN, .fb_id = 17},
-	{.x = 74, .y = 163, .w = 8, .h = 8, .flags = BTN, .fb_id = 18},
+	{.x = 37, .y = 163, .w = 8, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 16},
+	{.x = 51, .y = 163, .w = 16, .h = 8, .flags = BTN,.colour = 0xff000000, .fb_id = 17},
+	{.x = 74, .y = 163, .w = 8, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 18},
 	/* TODO: encoder press right */
 	{.x = 88, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
 	/* right hotcues 1,2  3,4 */
@@ -163,20 +165,20 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 71, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 25},
 	{.x = 96, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 26},
 	/* right flux, sync, cue play */
-	{.x = 71, .y = 239, .w = 16, .h = 12, .flags = BTN, .fb_id = 29},
-	{.x = 96, .y = 239, .w = 16, .h = 12, .flags = BTN, .fb_id = 30},
-	{.x = 71, .y = 256, .w = 16, .h = 12, .flags = BTN, .fb_id = 33},
-	{.x = 96, .y = 256, .w = 16, .h = 12, .flags = BTN, .fb_id = 34},
+	{.x = 71, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 29},
+	{.x = 96, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 30},
+	{.x = 71, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 33},
+	{.x = 96, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 34},
 	/* left hotcues 1,2  3,4 */
 	{.x =  8, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 19},
 	{.x = 33, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 20},
 	{.x =  8, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 23},
 	{.x = 33, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 24},
 	/* left flux, sync, cue play */
-	{.x =  8, .y = 239, .w = 16, .h = 12, .flags = BTN, .fb_id = 27},
-	{.x = 33, .y = 239, .w = 16, .h = 12, .flags = BTN, .fb_id = 28},
-	{.x =  8, .y = 256, .w = 16, .h = 12, .flags = BTN, .fb_id = 31},
-	{.x = 33, .y = 256, .w = 16, .h = 12, .flags = BTN, .fb_id = 32},
+	{.x =  8, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 27},
+	{.x = 33, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 28},
+	{.x =  8, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 31},
+	{.x = 33, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 32},
 	/* enc touch, Right, Mid, Left */
 	{.x = 88, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
 	{.x = 47, .y = 133, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
