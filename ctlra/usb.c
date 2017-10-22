@@ -611,7 +611,7 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 {
 	int transferred;
 	struct ctlra_t *ctlra = dev->ctlra_context;
-	const uint32_t timeout = 100;
+	const uint32_t timeout = 0;
 
 	int inf = dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE];
 	if(inf >= CTLRA_ASYNC_READ_MAX) {
