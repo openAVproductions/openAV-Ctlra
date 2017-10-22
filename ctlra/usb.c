@@ -384,10 +384,11 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 			CTLRA_ERROR(ctlra, "DRIVER ERROR: USB READ CB = %d\n", 0);
 			break;
 		}
-		if(dev->usb_xfer_outstanding == 0) {
+		int inf_reads = dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ];
+		if(inf_reads == 0) {
 			CTLRA_ERROR(ctlra,
 				    "oustanding xfers going negative %d\n",
-				    dev->usb_xfer_outstanding);
+				    inf_reads);
 		}
 		dev->usb_read_cb(dev, xfr->endpoint, xfr->buffer,
 				 xfr->actual_length);
@@ -417,7 +418,7 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		break;
 	}
 
-	dev->usb_xfer_outstanding--;
+	dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ]--;
 
 	/* get async from xfr->buffer address, see usb_async_t struct */
 	struct usb_async_t *async = (struct usb_async_t *)
@@ -461,7 +462,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		CTLRA_DRIVER(ctlra, "xfr == %p\n", xfr);
 	}
 
-	if(dev->usb_xfer_outstanding >= CTLRA_ASYNC_READ_MAX) {
+	int inf_reads = dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ]--;
+	if(inf_reads >= CTLRA_ASYNC_READ_MAX) {
 		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return 0;
 	}
@@ -518,7 +520,8 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		return -1;
 	}
 
-	dev->usb_xfer_outstanding++;
+
+	dev->usb_xfer_counts[USB_XFER_INFLIGHT_READ]--;
 	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
 	CTLRA_DRIVER(ctlra, "async int read @ %p\n", async);
 
@@ -691,15 +694,16 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 		"Int. Write",
 		"Bulk Write",
 		"Cancelled",
+		"Cancelled",
 		"Error",
+		"Inflight Read",
+		"Inflight Write",
 	};
 	for(int i = 0; i < USB_XFER_COUNT; i++) {
 		CTLRA_INFO(ctlra, "[%s] usb %s count (type %d) = %d\n",
 			   dev->info.device, usb_xfer_str[i], i,
 			   dev->usb_xfer_counts[i]);
 	}
-	CTLRA_INFO(ctlra, "[%s] outstanding xfers: %d\n",
-		   dev->info.device, dev->usb_xfer_outstanding);
 }
 
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra)

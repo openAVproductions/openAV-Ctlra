@@ -132,10 +132,10 @@ struct ctlra_dev_t {
 #define USB_XFER_BULK_WRITE 2
 #define USB_XFER_CANCELLED 3
 #define USB_XFER_ERROR 4
-#define USB_XFER_COUNT 5
+#define USB_XFER_INFLIGHT_READ 5
+#define USB_XFER_INFLIGHT_WRITE 6
+#define USB_XFER_COUNT 7
 	uint32_t usb_xfer_counts[USB_XFER_COUNT];
-	/* TODO: refactor into above statistics */
-	uint32_t usb_xfer_outstanding;
 
 
 	/* TODO; remove the belowusb xfer pointers */
