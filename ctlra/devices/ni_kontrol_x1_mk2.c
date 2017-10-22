@@ -415,8 +415,6 @@ ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 	int ret;
 
-	printf("light set %d, %08x\n", light_id, light_status);
-
 	if(!dev || light_id >= NI_KONTROL_X1_MK2_LED_COUNT)
 		return;
 
