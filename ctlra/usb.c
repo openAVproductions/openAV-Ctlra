@@ -11,7 +11,7 @@
 #define USB_PATH_MAX 256
 
 #define CTLRA_USE_ASYNC_XFER 1
-#define CTLRA_ASYNC_READ_MAX 1
+#define CTLRA_ASYNC_READ_MAX 10
 
 #ifndef LIBUSB_HOTPLUG_MATCH_ANY
 #define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xcafe
@@ -448,15 +448,14 @@ static void ctlra_usb_xfr_done_generic(struct libusb_transfer *xfr,
 	if(next)
 		next->prev = prev;
 	if(prev) {
-		prev->next = prev;
+		prev->next = next;
 	} else {
 		dev->usb_async_next = next;
 	}
 
 	XFER_VALIDATE(dev);
 
-	if(read == 1)
-		free(async);
+	free(async);
 
 	libusb_free_transfer(xfr);
 }
