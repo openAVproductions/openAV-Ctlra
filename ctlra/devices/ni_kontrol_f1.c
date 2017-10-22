@@ -70,7 +70,7 @@ static const char *ni_kontrol_f1_names_buttons[] = {
 	"Type",
 	"Size",
 	"Browse",
-	"Encoder Press",
+	"Enc. Press",
 	"Stop 1",
 	"Stop 2",
 	"Stop 3",
@@ -97,6 +97,20 @@ static const struct ni_kontrol_f1_ctlra_t sliders[] = {
 };
 #define SLIDERS_SIZE (sizeof(sliders) / sizeof(sliders[0]))
 
+#define DIAL_CENTER (CTLRA_ITEM_DIAL | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t sliders_info[] = {
+	/* Filter dials up top */
+	{.x =  8, .y = 22, .w = 22, .h = 22, .flags = DIAL_CENTER},
+	{.x = 35, .y = 22, .w = 22, .h = 22, .flags = DIAL_CENTER},
+	{.x = 62, .y = 22, .w = 22, .h = 22, .flags = DIAL_CENTER},
+	{.x = 90, .y = 22, .w = 22, .h = 22, .flags = DIAL_CENTER},
+	/* sliders */
+	{.x =  8, .y = 56, .w = 22, .h = 56, .flags = CTLRA_ITEM_FADER},
+	{.x = 35, .y = 56, .w = 22, .h = 56, .flags = CTLRA_ITEM_FADER},
+	{.x = 62, .y = 56, .w = 22, .h = 56, .flags = CTLRA_ITEM_FADER},
+	{.x = 90, .y = 56, .w = 22, .h = 56, .flags = CTLRA_ITEM_FADER},
+};
+
 static const struct ni_kontrol_f1_ctlra_t buttons[] = {
 	{NI_KONTROL_F1_BTN_SHIFT        , 3, 0x80},
 	{NI_KONTROL_F1_BTN_REVERSE      , 3, 0x40},
@@ -114,6 +128,29 @@ static const struct ni_kontrol_f1_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
+#define F1_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* shift */
+	{.x =   8, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 19},
+	/* reverse, type, size */
+	{.x =  30, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 18},
+	{.x =  52, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 17},
+	{.x =  74, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 16},
+	/* browse */
+	{.x =  96, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0x00ff0000, .fb_id = 15},
+	/* enc press */
+	{.x =  96, .y = 126, .w = 16,  .h = 16, .flags = CTLRA_ITEM_BUTTON},
+	/* stop left -> right */
+	{.x =  8, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 42},
+	{.x = 35, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 41},
+	{.x = 62, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 40},
+	{.x = 90, .y = 260, .w = 22,  .h = 6, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 39},
+	/* sync, quant, capture */
+	{.x =   8, .y = 126, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 22},
+	{.x =  30, .y = 126, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 21},
+	{.x =  52, .y = 126, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 20},
+};
+
 #define GRID_SIZE 16
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE + GRID_SIZE)
@@ -128,10 +165,10 @@ struct ni_kontrol_f1_t {
 	uint8_t lights_dirty;
 	uint8_t encoder;
 
+	/* LED SIZE is the number of bytes to the device */
+#define LED_SIZE 79
 	uint8_t lights_interface;
-	// TODO FIXME: Lights size can be improved to actually reserve the
-	// exact right amount, instead of grossly over-estimating :)
-	uint8_t lights[NI_KONTROL_F1_LED_COUNT+100];
+	uint8_t lights[LED_SIZE];
 };
 
 static const char *
@@ -278,22 +315,46 @@ static void ni_kontrol_f1_light_set(struct ctlra_dev_t *base,
 	struct ni_kontrol_f1_t *dev = (struct ni_kontrol_f1_t *)base;
 	int ret;
 
-	if(!dev || light_id > NI_KONTROL_F1_LED_COUNT)
+	/* zero-th byte seems useless, so skip it :) */
+	light_id += 1;
+
+#define NUM_LED_IN (23 + 16 + 4)
+	if(!dev || light_id > NUM_LED_IN)
 		return;
 
-	/* write brighness to all LEDs */
+	/* Lights:
+	 * 0 ..15: digit displays, 8 is * in the top left.
+	 * 16..23 Browse, Size, Type, Reverse, Shift, capture, quant, sync
+	 * 24..71 BRG, BRG, BRG for all pads, top left -> top right ... 
+	 * (72,73), (74,75) .. 79. RIGHT lowest buttons, in pairs
+	 */
+	/* brighness only, direct mapping */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
-
-	/* FX ON buttons have orange and blue */
-	if(light_id == NI_KONTROL_F1_LED_FX_ON_LEFT ||
-	   light_id == NI_KONTROL_F1_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
+	if(light_id < 24) {
+		dev->lights[light_id] = bright;
+		goto fin;
+	};
+	/* pad buttons, 24 .. 71 */
+	if(light_id >= 24 && light_id < 40) {
+		uint32_t r      = (light_status >> 16) & 0x7F;
+		uint32_t g      = (light_status >>  8) & 0x7F;
+		uint32_t b      = (light_status >>  0) & 0x7F;
+		/* amend ID to skip over red/green bytes per pad */
+		light_id += (light_id - 24) * 2;
+		/* Pads are BRG ordered */
+		dev->lights[light_id  ] = b;
+		dev->lights[light_id+1] = r;
+		dev->lights[light_id+2] = g;
+		goto fin;
+	}
+	/* lowest buttons "double up" on bytes */
+	if(light_id >= 40) {
+		int idx = 72 + (light_id - 40) * 2;
+		dev->lights[idx  ] = bright;
+		dev->lights[idx+1] = bright;
 	}
 
+fin:
 	dev->lights_dirty = 1;
 }
 
@@ -306,25 +367,14 @@ ni_kontrol_f1_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	dev->lights_interface = 0x80;
 	uint8_t *data = &dev->lights_interface;
-	/*
-	//for(unsigned i = 0; i < sizeof(dev->lights); i++) {
-	for(unsigned i = 0; i < 25; i++) {
-		dev->lights[i] = 0x02;
-	}
-	*/
-
-#if 0
-	// 25 + (i*3) = BRG pads
-	for(int i = 0; i < 24; i++)
-		dev->lights[25+i*3] = 0xf;
-#endif
 
 	dev->lights[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data, 81);
-	if(ret < 0)
-		printf("%s write failed!\n", __func__);
+	if(ret < 0) {
+		//base->usb_xfer_counts[USB_XFER_ERROR]++;
+	}
 }
 
 static int32_t
@@ -343,6 +393,8 @@ ni_kontrol_f1_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_f1_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
 			    void *future)
@@ -351,15 +403,6 @@ ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
 	struct ni_kontrol_f1_t *dev = calloc(1, sizeof(struct ni_kontrol_f1_t));
 	if(!dev)
 		goto fail;
-
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol F1");
-
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE;
-	dev->base.info.get_name = ni_kontrol_f1_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,
@@ -374,6 +417,8 @@ ctlra_ni_kontrol_f1_connect(ctlra_event_func event_func, void *userdata,
 		free(dev);
 		return 0;
 	}
+
+	dev->base.info = ctlra_ni_kontrol_f1_info;
 
 	dev->base.poll = ni_kontrol_f1_poll;
 	dev->base.disconnect = ni_kontrol_f1_disconnect;
@@ -399,14 +444,33 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_f1_info = {
 	.size_y    = 294,
 
 	/* TODO: expose info */
-#if 0
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
-	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
-	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+#if 0
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 #endif
+
+	.control_count[CTLRA_EVENT_GRID] = 1,
+	.grid_info[0] = {
+		.rgb = 1,
+		.velocity = 1,
+		.pressure = 1,
+		.x = 4,
+		.y = 4,
+		.info = {
+			.x =   8,
+			.y = 166,
+			.w = 100,
+			.h =  86,
+			/* start light id */
+			.params[0] = 23,
+			/* end light id */
+			.params[1] = 38,
+		}
+	},
 
 	.get_name = ni_kontrol_f1_control_get_name,
 };
