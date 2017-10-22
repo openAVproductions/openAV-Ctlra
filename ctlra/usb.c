@@ -566,9 +566,6 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
                                        uint32_t endpoint, uint8_t *data,
                                        uint32_t size)
 {
-	return 0;
-
-#if 0
 	int transferred;
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	const uint32_t timeout = 100;
@@ -579,16 +576,23 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	if(xfr == 0)
 		CTLRA_ERROR(ctlra, "write xfr == %p!\n", xfr);
 
-	/* Malloc space for the USB transaction - not ideal, but we have
-	 * to pass ownership of the data to the USB library, and we can't
-	 * pass the actual dev_t owned data, since the application may
-	 * update it again before the USB transaction completes. */
-	void *usb_data = malloc(size);
-	if(!usb_data) {
+	/* see comment in interrupt read for malloc() and async details */
+	struct usb_async_t *async = malloc(size + sizeof(struct usb_async_t));
+	if(!async) {
 		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return -ENOSPC;
 	}
+	struct usb_async_t *dev_current = dev->usb_async_next;
+	if(dev_current)
+		dev_current->prev = async;
+	async->next = dev_current;
+	async->prev = 0;
+	dev->usb_async_next = async;
 
+	/* back-pointer from async to xfer */
+	async->xfer = xfr;
+
+	void *usb_data = async->malloc_mem;
 	memcpy(usb_data, data, size);
 
 	libusb_fill_interrupt_transfer(xfr,
@@ -630,8 +634,6 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	dev->usb_xfer_counts[USB_XFER_INT_WRITE]++;
 	return transferred;
 #endif /* CTLRA_USE_ASYNC_XFER */
-
-#endif /* DISABLED FOR NOW */
 }
 
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
