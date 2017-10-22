@@ -11,6 +11,7 @@
 #define USB_PATH_MAX 256
 
 #define CTLRA_USE_ASYNC_XFER 1
+#define CTLRA_ASYNC_READ_MAX 10
 
 #ifndef LIBUSB_HOTPLUG_MATCH_ANY
 #define LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT 0xcafe
@@ -52,6 +53,10 @@ ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
 				    libusb_strerror(ret));
 
 		dev->usb_async_next = del->next;
+		/* TODO: improve this */
+		if(i > CTLRA_ASYNC_READ_MAX)
+			break;
+		i++;
 	}
 }
 
@@ -419,7 +424,6 @@ static void ctlra_usb_xfr_done_cb(struct libusb_transfer *xfr)
 		next->prev = prev;
 	if(prev)
 		prev->next = prev;
-	printf("async remove %p, next = %p, prev = %p\n", async, next, prev);
 
 	free(async);
 	libusb_free_transfer(xfr);
@@ -450,7 +454,7 @@ int ctlra_dev_impl_usb_interrupt_read(struct ctlra_dev_t *dev, uint32_t idx,
 		CTLRA_DRIVER(ctlra, "xfr == %p\n", xfr);
 	}
 
-	if(dev->usb_xfer_outstanding >= 1) {
+	if(dev->usb_xfer_outstanding >= CTLRA_ASYNC_READ_MAX) {
 		dev->usb_xfer_counts[USB_XFER_ERROR]++;
 		return 0;
 	}
