@@ -65,6 +65,22 @@ static const char *ni_kontrol_x1_mk2_slider_names[] = {
 #define SLIDER_SIZE (sizeof(ni_kontrol_x1_mk2_slider_names) /\
 			    sizeof(ni_kontrol_x1_mk2_slider_names[0]))
 
+#define DIAL_CENTER (CTLRA_ITEM_DIAL | CTLRA_ITEM_CENTER_NOTCH)
+static struct ctlra_item_info_t sliders_info[] = {
+	/* left */
+	{.x = 32, .y =  22, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 32, .y =  49, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 32, .y =  76, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 32, .y = 104, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	/* right */
+	{.x = 69, .y =  22, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 69, .y =  49, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 69, .y =  76, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	{.x = 69, .y = 104, .w = 16,  .h = 16, .flags = DIAL_CENTER},
+	/* touchstrip */
+	{.x =  8, .y = 184, .w = 104,  .h = 10, .flags = CTLRA_ITEM_FADER},
+};
+
 static const char *ni_kontrol_x1_mk2_encoder_names[] = {
 	/* Encoders */
 	"Encoder Rotate (Middle)",
@@ -116,6 +132,61 @@ static const char *ni_kontrol_x1_mk2_button_names[] = {
 };
 #define BUTTON_SIZE (sizeof(ni_kontrol_x1_mk2_button_names) /\
 			     sizeof(ni_kontrol_x1_mk2_button_names[0]))
+
+#define BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+#define BTN_COL (BTN | CTLRA_ITEM_LED_COLOR)
+#define DEF_COL .colour = 0xff000000
+#define ORG_COL .colour = 0xffff5100
+static struct ctlra_item_info_t buttons_info[] = {
+	/* Left F1 to F4 vertial */
+	{.x =  8, .y =  28, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 0},
+	{.x =  8, .y =  55, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 1},
+	{.x =  8, .y =  82, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 2},
+	{.x =  8, .y = 108, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 3},
+	/* Right F1 to F2 vertical */
+	{.x = 95, .y =  28, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 4},
+	{.x = 95, .y =  55, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 5},
+	{.x = 95, .y =  82, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 6},
+	{.x = 95, .y = 108, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 7},
+	/* fx select left to right */
+	{.x =  11, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 8},
+	{.x =  25, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 9},
+	{.x =  88, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 14},
+	{.x = 102, .y = 129, .w = 8, .h = 8, .flags = BTN, ORG_COL, .fb_id = 15},
+	/* left, shift right */
+	{.x = 37, .y = 163, .w = 8, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 16},
+	{.x = 51, .y = 163, .w = 16, .h = 8, .flags = BTN,.colour = 0xff000000, .fb_id = 17},
+	{.x = 74, .y = 163, .w = 8, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 18},
+	/* TODO: encoder press right */
+	{.x = 88, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+	/* right hotcues 1,2  3,4 */
+	{.x = 71, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 21},
+	{.x = 96, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 22},
+	{.x = 71, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 25},
+	{.x = 96, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 26},
+	/* right flux, sync, cue play */
+	{.x = 71, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 29},
+	{.x = 96, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 30},
+	{.x = 71, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 33},
+	{.x = 96, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 34},
+	/* left hotcues 1,2  3,4 */
+	{.x =  8, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 19},
+	{.x = 33, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 20},
+	{.x =  8, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 23},
+	{.x = 33, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 24},
+	/* left flux, sync, cue play */
+	{.x =  8, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 27},
+	{.x = 33, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 28},
+	{.x =  8, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 31},
+	{.x = 33, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 32},
+	/* enc touch, Right, Mid, Left */
+	{.x = 88, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 47, .y = 133, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 10, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+	/* enc press middle, left */
+	{.x = 47, .y = 133, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+	{.x = 10, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
+};
 
 #define CONTROL_NAMES_SIZE (SLIDER_SIZE_SIZE + \
 			    ENCODER_SIZE +\
@@ -408,6 +479,8 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	return 0;
 }
 
+struct ctlra_dev_info_t ctlra_ni_kontrol_x1_mk2_info;
+
 struct ctlra_dev_t *
 ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 				void *userdata, void *future)
@@ -416,16 +489,6 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	struct ni_kontrol_x1_mk2_t *dev = calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
 	if(!dev)
 		return 0;
-
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Kontrol X1 Mk2");
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON]  = BUTTONS_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE;
-	dev->base.info.control_count[CTLRA_EVENT_SLIDER]  = SLIDER_SIZE;
-	dev->base.info.get_name = ni_kontrol_x1_mk2_control_get_name;
 
 	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
@@ -439,6 +502,8 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 		free(dev);
 		return 0;
 	}
+
+	dev->base.info = ctlra_ni_kontrol_x1_mk2_info;
 
 	dev->base.poll = ni_kontrol_x1_mk2_poll;
 	dev->base.disconnect = ni_kontrol_x1_mk2_disconnect;
@@ -460,14 +525,13 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_x1_mk2_info = {
 	.size_x    = 120,
 	.size_y    = 294,
 
-	/* TODO: expose info */
-#if 0
-	.control_count[CTLRA_EVENT_BUTTON] = BUTTON_SIZE,
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDER_SIZE,
+	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTON_SIZE,
+	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+#if 0
 	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE,
 	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
-	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
-	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
 	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 #endif
 

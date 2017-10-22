@@ -81,7 +81,13 @@ avtka_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	/* TODO: figure out how to display feedback */
 	struct avtka_t *a = dev->a;
-	//avtka_item_value(a, light_id, v);
+
+	for(int i = 0; i < MAX_ITEMS; i++) {
+		if(dev->id_to_ctlra[i].fb_id == light_id) {
+			avtka_item_colour32(a, i, light_status);
+			break;
+		}
+	}
 	avtka_redraw(a);
 }
 
@@ -301,18 +307,13 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			return 0;
 		}
 
-		/* register and set the item colour if its not only bw */
-		if(item->colour != 0xff000000) {
-			if(0x00ff0000 & item->colour)
-				avtka_item_colour(a, idx, col_red);
-			if(0x0000ff00 & item->colour)
-				avtka_item_colour(a, idx, col_green);
-			if(0x000000ff & item->colour)
-				avtka_item_colour(a, idx, col_blue);
-		}
+		/* TODO: store the colour somewhere, and later allow it to
+		 * "return" eg: when value() is set... how to do this? */
+		avtka_item_colour32(a, idx, item->colour);
 
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_BUTTON;
 		dev->id_to_ctlra[idx].id   = i;
+		dev->id_to_ctlra[idx].fb_id = item->fb_id;
 	}
 
 	dev->type_to_item_offset[CTLRA_EVENT_SLIDER] = i;
