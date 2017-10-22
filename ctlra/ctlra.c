@@ -209,11 +209,6 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 	struct ctlra_t *ctlra = dev->ctlra_context;
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 
-	for(int i = 0; i < USB_XFER_COUNT; i++) {
-		CTLRA_INFO(ctlra, "usb xfer count (type %d) = %d\n", i,
-			   dev->usb_xfer_counts[i]);
-	}
-
 	if(dev && dev->disconnect) {
 		/* call the application remove_func() to inform app */
 		if(dev->remove_func)
@@ -237,6 +232,7 @@ int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
 		int ret = dev->disconnect(dev);
 		return ret;
 	}
+
 	return -ENOTSUP;
 }
 

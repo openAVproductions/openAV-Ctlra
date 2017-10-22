@@ -82,6 +82,9 @@ struct ctlra_t;
 #define CTLRA_DEBUG_NONE  1
 #define CTLRA_DEBUG_WARN  2
 #define CTLRA_DEBUG_INFO  3
+#define CTLRA_DEBUG_LEVEL_MASK (0x0f)
+#define CTLRA_DEBUG_DRIVER (1 << 6)
+#define CTLRA_DEBUG_BACKEND (1 << 7)
 
 /** Struct for forward compatibility, allowing various options to be passed
  * to ctlra, without breaking all the function calls */

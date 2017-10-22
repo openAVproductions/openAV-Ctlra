@@ -39,22 +39,30 @@ extern "C" {
 #include "ctlra.h"
 #include "event.h"
 
+#define debug_print_check(c, level)					\
+	((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level)
+
 #define CTLRA_STRERROR(ctlra, err)					\
 	do { ctlra->strerror = err; } while (0)
 
 #define CTLRA_ERROR(ctlra, fmt, ...)					\
-	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_ERROR)		\
+	do { if (debug_print_check(ctlra, CTLRA_DEBUG_ERROR))		\
 	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 #define CTLRA_WARN(ctlra, fmt, ...)					\
-	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_WARN)		\
+	do { if (debug_print_check(ctlra, CTLRA_DEBUG_WARN))		\
 	fprintf(stderr, "[\033[1;33m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 #define CTLRA_INFO(ctlra, fmt, ...)					\
-	do { if (ctlra->opts.debug_level >= CTLRA_DEBUG_INFO)		\
+	do { if (debug_print_check(ctlra, CTLRA_DEBUG_INFO))		\
 	fprintf(stderr, "[\033[1;32m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+#define CTLRA_DRIVER(ctlra, fmt, ...)					\
+	do { if (ctlra->opts.debug_level & CTLRA_DEBUG_DRIVER)		\
+	fprintf(stderr, "[\033[1;36m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 
@@ -114,12 +122,31 @@ struct ctlra_dev_t {
 	 * are on bulk/interrupt interfaces). The controller is responsible
 	 * for providing the correct interface_id to the usb_read/write()
 	 * functions */
-	void *usb_interface[CTLRA_USB_IFACE_PER_DEV];
+	void *usb_handle[CTLRA_USB_IFACE_PER_DEV];
+	uint8_t usb_interface[CTLRA_USB_IFACE_PER_DEV];
+	/* linked list of outstanding async transfers */
+	void *usb_async_next;
+	/* statistics of USB backend */
 #define USB_XFER_INT_READ 0
 #define USB_XFER_INT_WRITE 1
 #define USB_XFER_BULK_WRITE 2
-#define USB_XFER_COUNT 3
-	uint32_t usb_xfer_counts[4];
+#define USB_XFER_CANCELLED 3
+#define USB_XFER_TIMEOUT 4
+#define USB_XFER_ERROR 5
+#define USB_XFER_INFLIGHT_READ 6
+#define USB_XFER_INFLIGHT_WRITE 7
+#define USB_XFER_INFLIGHT_CANCEL 8
+#define USB_XFER_COUNT 9
+	uint32_t usb_xfer_counts[USB_XFER_COUNT];
+
+
+	/* TODO; remove the belowusb xfer pointers */
+	uint8_t usb_xfer_head;
+	uint8_t usb_xfer_tail;
+#define CTLRA_USB_XFER_COUNT 32 /*UINT8_MAX*/
+	void *usb_xfer_ptr[CTLRA_USB_XFER_COUNT];
+
+
 
 	/* MIDI I/O pointer */
 	void *midi_in;
