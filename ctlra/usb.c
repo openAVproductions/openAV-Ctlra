@@ -59,9 +59,13 @@ ctlra_usb_impl_xfer_validate(struct ctlra_dev_t *dev)
 	return i;
 }
 
+#ifdef XFER_VALIDATE_DEBUG
 #define XFER_VALIDATE(dev)						\
 	printf("from %s, %d\n", __func__, __LINE__);			\
 	ctlra_usb_impl_xfer_validate(dev)
+#else
+#define XFER_VALIDATE(dev)
+#endif
 
 static inline void
 ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
@@ -444,7 +448,7 @@ static void ctlra_usb_xfr_done_generic(struct libusb_transfer *xfr,
 	/* remove node from double linked list*/
 	struct usb_async_t *next = async->next;
 	struct usb_async_t *prev = async->prev;
-	printf("async = %p, next %p, prev %p\n", async, next, prev);
+	CTLRA_DRIVER(ctlra, "async = %p, next %p, prev %p\n", async, next, prev);
 	if(next)
 		next->prev = prev;
 	if(prev) {
