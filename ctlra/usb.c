@@ -80,9 +80,8 @@ ctlra_usb_impl_xfer_release(struct ctlra_dev_t *dev)
 		if(ret) {
 			CTLRA_ERROR(c, "usb cancel xfer failed: %s, async %p\n",
 				    libusb_strerror(ret), current);
-		} else {
-			dev->usb_xfer_counts[USB_XFER_INFLIGHT_CANCEL]++;
 		}
+		dev->usb_xfer_counts[USB_XFER_INFLIGHT_CANCEL]++;
 
 		if(current == current->next) {
 			CTLRA_ERROR(c, "list corrupt, cur %p == cur->next %p\n",
@@ -721,12 +720,15 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 	ctlra_usb_impl_xfer_release(dev);
 
-	printf("inf cancel count = %d\n",
-	       dev->usb_xfer_counts[USB_XFER_INFLIGHT_CANCEL]);
 	libusb_context *ctx = ctlra->ctx;
 
 	int ret = libusb_handle_events_completed(ctlra->ctx, 0);
-	printf("events compl blocking, ret = %d\n", ret);
+	int32_t inf_cancels = dev->usb_xfer_counts[USB_XFER_INFLIGHT_CANCEL];
+	if(ret || inf_cancels) {
+		CTLRA_WARN(ctlra,
+			   "[%s] inflight cancels at close = %d, ret %d\n",
+			   dev->info.device, inf_cancels, ret);
+	}
 
 	for(int i = 0; i < CTLRA_USB_IFACE_PER_DEV; i++) {
 
