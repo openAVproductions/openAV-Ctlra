@@ -78,6 +78,9 @@ typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,
 typedef void (*ctlra_dev_impl_feedback_set)(struct ctlra_dev_t *dev,
 					    uint32_t fb_id,
 					    float value);
+typedef void (*ctlra_dev_impl_feedback_digits)(struct ctlra_dev_t *dev,
+					    uint32_t fb_id,
+					    float value);
 typedef void (*ctlra_dev_impl_light_flush)(struct ctlra_dev_t *dev,
 					  uint32_t force);
 typedef void (*ctlra_dev_impl_usb_read_cb)(struct ctlra_dev_t *dev,
@@ -164,6 +167,7 @@ struct ctlra_dev_t {
 	/* Function pointers to write feedback to device */
 	ctlra_dev_impl_light_set light_set;
 	ctlra_dev_impl_feedback_set feedback_set;
+	ctlra_dev_impl_feedback_digits feedback_digits;
 	ctlra_dev_impl_grid_light_set grid_light_set;
 	ctlra_dev_impl_light_flush light_flush;
 	ctlra_dev_impl_usb_read_cb usb_read_cb;

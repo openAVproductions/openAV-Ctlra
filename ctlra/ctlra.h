@@ -376,6 +376,11 @@ void ctlra_dev_feedback_set(struct ctlra_dev_t *dev,
 			    uint32_t fb_id,
 			    float value);
 
+/** Feedback item set: sets the value for a feedback item */
+void ctlra_dev_feedback_digits(struct ctlra_dev_t *dev,
+			       uint32_t feedback_id,
+			       float value);
+
 /** Flush the bytes with the Lights/LEDs info over the cable. The device
  * implementation must track which lights are actually dirty, and only
  * flush the bytes needed. If *force* is set, force flush everything.

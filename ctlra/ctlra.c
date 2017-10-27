@@ -250,6 +250,14 @@ void ctlra_dev_feedback_set(struct ctlra_dev_t *dev, uint32_t fb_id,
 		dev->feedback_set(dev, fb_id, value);
 }
 
+void ctlra_dev_feedback_digits(struct ctlra_dev_t *dev,
+			       uint32_t feedback_id,
+			       float value)
+{
+	if(dev && dev->feedback_digits)
+		dev->feedback_digits(dev, feedback_id, value);
+}
+
 void ctlra_dev_light_flush(struct ctlra_dev_t *dev, uint32_t force)
 {
 	if(dev && dev->light_flush)

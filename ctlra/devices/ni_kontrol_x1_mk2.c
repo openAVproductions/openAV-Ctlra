@@ -483,6 +483,76 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	}
 }
 
+void ni_kontrol_x1_mk2_feedback_digits(struct ctlra_dev_t *base,
+				       uint32_t feedback_id,
+				       float value)
+{
+	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
+	static const uint8_t digits[] = {
+		0b00111111, /* 0 */
+		0b00110000,
+		0b01011011,
+		0b01111001,
+		0b01110100,
+		0b01101101, /* 5 */
+		0b01101111,
+		0b00111000,
+		0b01111111,
+		0b01111100,
+	};
+
+	int display_id;
+	switch(feedback_id) {
+	case 0: /* left */
+		display_id = 0;
+		break;
+	case 1: /* right */
+		display_id = 3 * 8;
+		break;
+	default:
+		CTLRA_WARN(base->ctlra_context, "%s Invalid id", __func__);
+		return;
+	}
+
+	int neg = 0;
+	if(value < 0) {
+		value = -value;
+		neg = 1;
+	}
+
+	uint32_t v = value;
+	int t = v;
+	int32_t darray[3] = {0};
+	for(int i = 0; i < 3; i++) {
+		if (t != 0) {
+			int r = t % 10;
+			int s = s + r;
+			t = t / 10;
+			darray[2-i] = r;
+		}
+	}
+
+	int d0_zero = 0;
+	for(int d = 0; d < 3; d++) {
+		int n = darray[d] % 10;
+		uint8_t fin_dig = digits[n] |
+			((neg && d == 0) ? 0b10000001 : 0);
+		for(int i = 0; i < 8; i++) {
+			int idx = (1 + display_id) + d * 8 + 7 - i;
+			uint8_t lit = (1 << i) & fin_dig;
+			/* poor mans "dont show pre-zeros" */
+			if(d == 0 && n == 0) {
+				lit = 0;
+				d0_zero = 1;
+			}
+			if(d0_zero && d == 1 && n == 0) {
+				lit = 0;
+			}
+			dev->lights_81[idx] = lit ? 0xff : 0x1;
+		}
+	}
+}
+
 static int32_t
 ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 {
@@ -535,6 +605,7 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_kontrol_x1_mk2_light_set;
 	dev->base.light_flush = ni_kontrol_x1_mk2_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_x1_mk2_usb_read_cb;
+	dev->base.feedback_digits = ni_kontrol_x1_mk2_feedback_digits;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
