@@ -40,7 +40,7 @@ extern "C" {
 #include "event.h"
 
 #define debug_print_check(c, level)					\
-	((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level)
+	(!c || ((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level))
 
 #define CTLRA_STRERROR(ctlra, err)					\
 	do { ctlra->strerror = err; } while (0)
@@ -61,7 +61,7 @@ extern "C" {
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 #define CTLRA_DRIVER(ctlra, fmt, ...)					\
-	do { if (ctlra->opts.debug_level & CTLRA_DEBUG_DRIVER)		\
+	do { if (!ctlra || ctlra->opts.debug_level & CTLRA_DEBUG_DRIVER)\
 	fprintf(stderr, "[\033[1;36m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
