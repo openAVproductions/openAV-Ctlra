@@ -273,6 +273,7 @@ struct ni_kontrol_x1_mk2_t {
 
 	uint8_t lights_interface;
 	uint8_t lights[LIGHTS_SIZE];
+	uint8_t lights_81[LIGHTS_SIZE+100];
 };
 
 static const char *
@@ -444,6 +445,8 @@ ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
 		dev->lights[idx] = bright;
 	}
 
+	/* TODO: 7 digit displays, and touch strip leds to lights_81 */
+
 	dev->lights_dirty = 1;
 }
 
@@ -456,10 +459,41 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0x80;
-	ctlra_dev_impl_usb_interrupt_write(base,
+	uint32_t size = LIGHTS_SIZE + 1;
+	int ret = ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
-					   data, LIGHTS_SIZE+1);
+					   data, size);
+
+#define IFACE_Ox81 (1)
+#define LEDS_P_DIG (8)
+#define NUM_DIGITS (6)
+#define NUM_DIGIT_LEDS (LEDS_P_DIG * NUM_DIGITS)
+#define TOUCHSTRIP (42)
+#define IFACE_Ox81_TOTAL (IFACE_Ox81 + NUM_DIGIT_LEDS + TOUCHSTRIP)
+#if 1
+	uint8_t leds_on = 0x0;
+	int j;
+	for(j = 1; j < (LEDS_P_DIG * NUM_DIGITS) + 1; j++)
+		dev->lights_81[j] = leds_on;
+
+	/* touchstrip */
+	for(; j < IFACE_Ox81_TOTAL; j += 2) {
+		dev->lights_81[j  ] = leds_on; /* orange */
+		dev->lights_81[j+1] = 0x0; /* blue */
+	}
+#endif
+
+	dev->lights_81[0] = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   dev->lights_81,
+					   IFACE_Ox81_TOTAL);
+	if(ret != IFACE_Ox81_TOTAL) {
+		printf("%s: %d ret = %d, size =\n", __func__,
+		       dev->lights_interface, ret);
+	}
 }
 
 static int32_t
@@ -469,9 +503,11 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 
 	/* Turn off all lights */
 	memset(&dev->lights[1], 0, NI_KONTROL_X1_MK2_LED_COUNT);
-	dev->lights[0] = 0x80;
-	if(!base->banished)
+	//dev->lights[0] = 0x80;
+	if(!base->banished) {
+		printf("flushing lights to zero\n");
 		ni_kontrol_x1_mk2_light_flush(base, 1);
+	}
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
