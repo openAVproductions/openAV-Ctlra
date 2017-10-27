@@ -49,6 +49,7 @@ struct id_to_ctlra_t {
 	uint16_t encoder_float_delta : 1;
 	uint32_t id;
 	uint32_t fb_id;
+	uint32_t col;
 };
 
 /* Represents the the virtual AVTK UI */
@@ -112,6 +113,7 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 	struct cavtka_t *dev = (struct cavtka_t *)userdata;
 	uint32_t type = dev->id_to_ctlra[item].type;
 	uint32_t id   = dev->id_to_ctlra[item].id;
+	uint32_t col  = dev->id_to_ctlra[item].col;
 
 	/* default type is button */
 	struct ctlra_event_t event = {
@@ -124,6 +126,15 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 
 	/* modify to other type as required */
 	switch(type) {
+	case CTLRA_EVENT_BUTTON: {
+		/* update virtual UI */
+		//id = e->button.id + 1;
+		//avtka_item_value(a, item, e->button.pressed);
+		//avtka_item_label_show(a, id, e->button.pressed);
+		uint32_t p = event.button.pressed;
+		avtka_item_colour32(dev->a, item, col * p);
+		printf("item %d: col %08x\n", id, col);
+		} break;
 	case CTLRA_EVENT_SLIDER:
 		event.slider.id = id;
 		event.slider.value = value;
@@ -158,15 +169,19 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 	/* loop over each event, calculate item id, and set value based
 	 * on type of the event */
+	printf("%s: events %d\n", __func__, num_events);
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		uint32_t id;
 		switch(e->type) {
-		case CTLRA_EVENT_BUTTON:
+		case CTLRA_EVENT_BUTTON: {
 			id = e->button.id + 1;
 			avtka_item_value(a, id, e->button.pressed);
 			avtka_item_label_show(a, id, e->button.pressed);
-			break;
+			uint32_t col = (0xffffffff) * e->button.pressed;
+			avtka_item_colour32(a, id, col);
+			//printf("item %d: col %08x\n", id, col);
+			} break;
 		case CTLRA_EVENT_SLIDER:
 			id = dev->type_to_item_offset[CTLRA_EVENT_SLIDER] +
 				e->slider.id;
@@ -185,7 +200,10 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 		case CTLRA_EVENT_GRID:
 			id = dev->type_to_item_offset[CTLRA_EVENT_GRID] +
 				e->grid.pos;
-			avtka_item_value(a, id + 1, e->grid.pressed);
+			printf("grid item %d, id %d, press = %d\n", e->grid.pos,
+			       id, e->grid.pressed);
+			//avtka_item_value(a, id + 1, e->grid.pressed);
+			avtka_item_colour32(a, id + 1, 0xffffffff * e->grid.pressed);
 			break;
 		case CTLRA_FEEDBACK_ITEM:
 		default: break;
@@ -315,6 +333,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		dev->id_to_ctlra[idx].type = CTLRA_EVENT_BUTTON;
 		dev->id_to_ctlra[idx].id   = i;
 		dev->id_to_ctlra[idx].fb_id = item->fb_id;
+		dev->id_to_ctlra[idx].col = item->colour;
 	}
 
 	dev->type_to_item_offset[CTLRA_EVENT_SLIDER] = i;
