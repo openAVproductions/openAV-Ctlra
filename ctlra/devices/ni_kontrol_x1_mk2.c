@@ -44,6 +44,13 @@
 #define USB_ENDPOINT_READ  (0x81)
 #define USB_ENDPOINT_WRITE (0x01)
 
+#define IFACE_Ox81 (1)
+#define LEDS_P_DIG (8)
+#define NUM_DIGITS (6)
+#define NUM_DIGIT_LEDS (LEDS_P_DIG * NUM_DIGITS)
+#define TOUCHSTRIP (42)
+#define IFACE_Ox81_TOTAL (IFACE_Ox81 + NUM_DIGIT_LEDS + TOUCHSTRIP)
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_kontrol_x1_mk2_ctlra_t {
 	int event_id;
@@ -273,6 +280,7 @@ struct ni_kontrol_x1_mk2_t {
 
 	uint8_t lights_interface;
 	uint8_t lights[LIGHTS_SIZE];
+	uint8_t lights_81[IFACE_Ox81_TOTAL];
 };
 
 static const char *
@@ -382,7 +390,7 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				};
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
+						dev->base.event_func_userdata);
 			}
 		}
 
@@ -444,6 +452,8 @@ ni_kontrol_x1_mk2_light_set(struct ctlra_dev_t *base,
 		dev->lights[idx] = bright;
 	}
 
+	/* TODO: 7 digit displays, and touch strip leds to lights_81 */
+
 	dev->lights_dirty = 1;
 }
 
@@ -456,10 +466,88 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0x80;
-	ctlra_dev_impl_usb_interrupt_write(base,
+	const uint32_t size = LIGHTS_SIZE + 1;
+	int ret = ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
-					   data, LIGHTS_SIZE+1);
+					   data, size);
+
+	dev->lights_81[0] = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   dev->lights_81,
+					   IFACE_Ox81_TOTAL);
+}
+
+void ni_kontrol_x1_mk2_feedback_digits(struct ctlra_dev_t *base,
+				       uint32_t feedback_id,
+				       float value)
+{
+	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
+	static const uint8_t digits[] = {
+		0b00111111, /* 0 */
+		0b00110000,
+		0b01011011,
+		0b01111001,
+		0b01110100,
+		0b01101101, /* 5 */
+		0b01101111,
+		0b00111000,
+		0b01111111,
+		0b01111100,
+	};
+
+	int display_id;
+	switch(feedback_id) {
+	case 0: /* left */
+		display_id = 0;
+		break;
+	case 1: /* right */
+		display_id = 3 * 8;
+		break;
+	default:
+		CTLRA_WARN(base->ctlra_context, "%s Invalid id", __func__);
+		return;
+	}
+
+	int neg = 0;
+	if(value < 0) {
+		value = -value;
+		neg = 1;
+	}
+
+	uint32_t v = value;
+	int t = v;
+	int32_t darray[3] = {0};
+	for(int i = 0; i < 3; i++) {
+		if (t != 0) {
+			int r = t % 10;
+			int s = s + r;
+			t = t / 10;
+			darray[2-i] = r;
+		}
+	}
+
+	int d0_zero = 0;
+	for(int d = 0; d < 3; d++) {
+		int n = darray[d] % 10;
+		uint8_t fin_dig = digits[n] |
+			((neg && d == 0) ? 0b10000001 : 0);
+		for(int i = 0; i < 8; i++) {
+			int idx = (1 + display_id) + d * 8 + 7 - i;
+			uint8_t lit = (1 << i) & fin_dig;
+			/* poor mans "dont show pre-zeros" */
+			if(d == 0 && n == 0) {
+				lit = 0;
+				d0_zero = 1;
+			}
+			if(d0_zero && d == 1 && n == 0) {
+				lit = 0;
+			}
+			dev->lights_81[idx] = lit ? 0xff : 0x1;
+		}
+	}
 }
 
 static int32_t
@@ -468,8 +556,8 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	struct ni_kontrol_x1_mk2_t *dev = (struct ni_kontrol_x1_mk2_t *)base;
 
 	/* Turn off all lights */
-	memset(&dev->lights[1], 0, NI_KONTROL_X1_MK2_LED_COUNT);
-	dev->lights[0] = 0x80;
+	memset(dev->lights, 0, NI_KONTROL_X1_MK2_LED_COUNT);
+	memset(dev->lights_81, 0, sizeof(dev->lights_81));
 	if(!base->banished)
 		ni_kontrol_x1_mk2_light_flush(base, 1);
 
@@ -486,7 +574,8 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 				void *userdata, void *future)
 {
 	(void)future;
-	struct ni_kontrol_x1_mk2_t *dev = calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
+	struct ni_kontrol_x1_mk2_t *dev =
+		calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
 	if(!dev)
 		return 0;
 
@@ -497,7 +586,9 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
-	err = ctlra_dev_impl_usb_open_interface(&dev->base, USB_INTERFACE_ID, USB_HANDLE_IDX);
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+						USB_INTERFACE_ID,
+						USB_HANDLE_IDX);
 	if(err) {
 		free(dev);
 		return 0;
@@ -510,9 +601,21 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_kontrol_x1_mk2_light_set;
 	dev->base.light_flush = ni_kontrol_x1_mk2_light_flush;
 	dev->base.usb_read_cb = ni_kontrol_x1_mk2_usb_read_cb;
+	dev->base.feedback_digits = ni_kontrol_x1_mk2_feedback_digits;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	const uint8_t leds_on = 0x1;
+	int j;
+	for(j = 1; j < (LEDS_P_DIG * NUM_DIGITS) + 1; j++)
+		dev->lights_81[j] = leds_on;
+
+	/* touchstrip */
+	for(; j < IFACE_Ox81_TOTAL; j += 2) {
+		dev->lights_81[j  ] = leds_on; /* orange */
+		dev->lights_81[j+1] = 0x0; /* blue */
+	}
 
 	return (struct ctlra_dev_t *)dev;
 }

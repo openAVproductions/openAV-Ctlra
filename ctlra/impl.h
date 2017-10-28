@@ -40,7 +40,7 @@ extern "C" {
 #include "event.h"
 
 #define debug_print_check(c, level)					\
-	((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level)
+	(!c || ((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level))
 
 #define CTLRA_STRERROR(ctlra, err)					\
 	do { ctlra->strerror = err; } while (0)
@@ -61,7 +61,7 @@ extern "C" {
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 #define CTLRA_DRIVER(ctlra, fmt, ...)					\
-	do { if (ctlra->opts.debug_level & CTLRA_DEBUG_DRIVER)		\
+	do { if (!ctlra || ctlra->opts.debug_level & CTLRA_DEBUG_DRIVER)\
 	fprintf(stderr, "[\033[1;36m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
@@ -76,6 +76,9 @@ typedef void (*ctlra_dev_impl_light_set)(struct ctlra_dev_t *dev,
 					   uint32_t light_id,
 					   uint32_t light_status);
 typedef void (*ctlra_dev_impl_feedback_set)(struct ctlra_dev_t *dev,
+					    uint32_t fb_id,
+					    float value);
+typedef void (*ctlra_dev_impl_feedback_digits)(struct ctlra_dev_t *dev,
 					    uint32_t fb_id,
 					    float value);
 typedef void (*ctlra_dev_impl_light_flush)(struct ctlra_dev_t *dev,
@@ -164,6 +167,7 @@ struct ctlra_dev_t {
 	/* Function pointers to write feedback to device */
 	ctlra_dev_impl_light_set light_set;
 	ctlra_dev_impl_feedback_set feedback_set;
+	ctlra_dev_impl_feedback_digits feedback_digits;
 	ctlra_dev_impl_grid_light_set grid_light_set;
 	ctlra_dev_impl_light_flush light_flush;
 	ctlra_dev_impl_usb_read_cb usb_read_cb;

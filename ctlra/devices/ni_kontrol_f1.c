@@ -137,7 +137,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x =  52, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 17},
 	{.x =  74, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0xff000000, .fb_id = 16},
 	/* browse */
-	{.x =  96, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0x00ff0000, .fb_id = 15},
+	{.x =  96, .y = 147, .w = 16,  .h = 8, .flags = F1_BTN, .colour = 0x000000ff, .fb_id = 15},
 	/* enc press */
 	{.x =  96, .y = 126, .w = 16,  .h = 16, .flags = CTLRA_ITEM_BUTTON},
 	/* stop left -> right */
