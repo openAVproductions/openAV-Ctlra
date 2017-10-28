@@ -390,7 +390,7 @@ void ni_kontrol_x1_mk2_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 				};
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
+						dev->base.event_func_userdata);
 			}
 		}
 
@@ -478,9 +478,6 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 					   USB_ENDPOINT_WRITE,
 					   dev->lights_81,
 					   IFACE_Ox81_TOTAL);
-	if(ret != IFACE_Ox81_TOTAL) {
-		//printf("%s: %d ret = %d, size =\n", __func__, dev->lights_interface, ret);
-	}
 }
 
 void ni_kontrol_x1_mk2_feedback_digits(struct ctlra_dev_t *base,
@@ -561,12 +558,8 @@ ni_kontrol_x1_mk2_disconnect(struct ctlra_dev_t *base)
 	/* Turn off all lights */
 	memset(dev->lights, 0, NI_KONTROL_X1_MK2_LED_COUNT);
 	memset(dev->lights_81, 0, sizeof(dev->lights_81));
-	if(!base->banished) {
+	if(!base->banished)
 		ni_kontrol_x1_mk2_light_flush(base, 1);
-	}
-	if(!base->banished) {
-		ni_kontrol_x1_mk2_light_flush(base, 1);
-	}
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
@@ -581,7 +574,8 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 				void *userdata, void *future)
 {
 	(void)future;
-	struct ni_kontrol_x1_mk2_t *dev = calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
+	struct ni_kontrol_x1_mk2_t *dev =
+		calloc(1, sizeof(struct ni_kontrol_x1_mk2_t));
 	if(!dev)
 		return 0;
 
@@ -592,7 +586,9 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
-	err = ctlra_dev_impl_usb_open_interface(&dev->base, USB_INTERFACE_ID, USB_HANDLE_IDX);
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+						USB_INTERFACE_ID,
+						USB_HANDLE_IDX);
 	if(err) {
 		free(dev);
 		return 0;
@@ -609,8 +605,8 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
-#if 1
-	uint8_t leds_on = 0x1;
+
+	const uint8_t leds_on = 0x1;
 	int j;
 	for(j = 1; j < (LEDS_P_DIG * NUM_DIGITS) + 1; j++)
 		dev->lights_81[j] = leds_on;
@@ -620,8 +616,6 @@ ctlra_ni_kontrol_x1_mk2_connect(ctlra_event_func event_func,
 		dev->lights_81[j  ] = leds_on; /* orange */
 		dev->lights_81[j+1] = 0x0; /* blue */
 	}
-#endif
-
 
 	return (struct ctlra_dev_t *)dev;
 }
