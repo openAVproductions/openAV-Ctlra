@@ -144,6 +144,7 @@ static const char *ni_kontrol_x1_mk2_button_names[] = {
 #define BTN_COL (BTN | CTLRA_ITEM_LED_COLOR)
 #define DEF_COL .colour = 0xff000000
 #define ORG_COL .colour = 0xffff5100
+#define ALL_COL .colour = 0xffffffff
 static struct ctlra_item_info_t buttons_info[] = {
 	/* Left F1 to F4 vertial */
 	{.x =  8, .y =  28, .w = 16,  .h = 8, .flags = BTN, ORG_COL, .fb_id = 0},
@@ -167,23 +168,23 @@ static struct ctlra_item_info_t buttons_info[] = {
 	/* TODO: encoder press right */
 	{.x = 88, .y = 154, .w = 22, .h = 22, .flags = CTLRA_ITEM_BUTTON},
 	/* right hotcues 1,2  3,4 */
-	{.x = 71, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 21},
-	{.x = 96, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 22},
-	{.x = 71, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 25},
-	{.x = 96, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 26},
+	{.x = 71, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 21},
+	{.x = 96, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 22},
+	{.x = 71, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 25},
+	{.x = 96, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 26},
 	/* right flux, sync, cue play */
-	{.x = 71, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 29},
-	{.x = 96, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 30},
+	{.x = 71, .y = 239, .w = 16, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 29},
+	{.x = 96, .y = 239, .w = 16, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 30},
 	{.x = 71, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 33},
 	{.x = 96, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 34},
 	/* left hotcues 1,2  3,4 */
-	{.x =  8, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 19},
-	{.x = 33, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 20},
-	{.x =  8, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 23},
-	{.x = 33, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, .fb_id = 24},
+	{.x =  8, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 19},
+	{.x = 33, .y = 206, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 20},
+	{.x =  8, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 23},
+	{.x = 33, .y = 223, .w = 16, .h = 8, .flags = BTN_COL, ALL_COL, .fb_id = 24},
 	/* left flux, sync, cue play */
-	{.x =  8, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 27},
-	{.x = 33, .y = 239, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 28},
+	{.x =  8, .y = 239, .w = 16, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 27},
+	{.x = 33, .y = 239, .w = 16, .h = 8, .flags = BTN, .colour = 0xff0000ff, .fb_id = 28},
 	{.x =  8, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff0000ff, .fb_id = 31},
 	{.x = 33, .y = 256, .w = 16, .h = 12, .flags = BTN, .colour = 0xff00ff00, .fb_id = 32},
 	/* enc touch, Right, Mid, Left */
@@ -467,13 +468,13 @@ ni_kontrol_x1_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_interface;
 	dev->lights_interface = 0x80;
 	const uint32_t size = LIGHTS_SIZE + 1;
-	int ret = ctlra_dev_impl_usb_interrupt_write(base,
+	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
 					   data, size);
 
 	dev->lights_81[0] = 0x81;
-	ret = ctlra_dev_impl_usb_interrupt_write(base,
+	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
 					   dev->lights_81,
