@@ -524,7 +524,6 @@ void ni_kontrol_x1_mk2_feedback_digits(struct ctlra_dev_t *base,
 	for(int i = 0; i < 3; i++) {
 		if (t != 0) {
 			int r = t % 10;
-			int s = s + r;
 			t = t / 10;
 			darray[2-i] = r;
 		}
