@@ -76,13 +76,13 @@ static struct ctlra_item_info_t sliders_info[] = {
 	/* left top gain, hi, mid, low, filter */
 	{.x = 14, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
 	{.x = 12, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
-	{.x = 12, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 12, .y = 76, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
 	{.x = 12, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
 	{.x = 10, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
 	/* right top gain, hi, mid, low, filter */
 	{.x = 92, .y = 24, .w = 15,  .h = 15, .flags = Z1_DIAL},
 	{.x = 90, .y = 50, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
-	{.x = 90, .y = 72, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
+	{.x = 90, .y = 76, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
 	{.x = 90, .y =103, .w = 18,  .h = 18, .flags = Z1_DIAL_CENTER},
 	{.x = 88, .y =132, .w = 22,  .h = 22, .flags = Z1_DIAL_CENTER},
 	/* cue */
