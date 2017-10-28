@@ -75,6 +75,14 @@ executable('vegas_mode',
            dependencies: [jack, cairo, sndfile, fluid])
 endif
 
+gtkdep = dependency('gtk+-3.0')
+if gtkdep.found()
+  executable('select_device',
+      'examples/select_device/main.c',
+      link_with : ctlra,
+      dependencies : gtkdep)
+endif
+
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
               description: 'OpenAV Ctlra Library',
