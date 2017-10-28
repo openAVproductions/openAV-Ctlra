@@ -141,7 +141,6 @@ ctlra_dev_virtualize(struct ctlra_t *c, const char *vendor,
 		if(__ctlra_devices[i].info &&
 		   strcmp(vendor, __ctlra_devices[i].info->vendor) == 0 &&
 		   strcmp(device, __ctlra_devices[i].info->device) == 0) {
-			printf("found device @ %d\n", i);
 			info = __ctlra_devices[i].info;
 			break;
 		}
