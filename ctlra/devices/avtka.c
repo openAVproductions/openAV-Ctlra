@@ -165,6 +165,7 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 		case CTLRA_EVENT_BUTTON:
 			id = e->button.id + 1;
 			avtka_item_value(a, id, e->button.pressed);
+			avtka_item_label_show(a, id, e->button.pressed);
 			break;
 		case CTLRA_EVENT_SLIDER:
 			id = dev->type_to_item_offset[CTLRA_EVENT_SLIDER] +
