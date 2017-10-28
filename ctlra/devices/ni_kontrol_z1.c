@@ -109,11 +109,11 @@ static const char *ni_kontrol_z1_names_buttons[] = {
 #define Z1_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
 #define Z1_BTN_COL (Z1_BTN | CTLRA_ITEM_LED_COLOR)
 static struct ctlra_item_info_t buttons_info[] = {
-	{.x = 44, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_CUE_A},
-	{.x = 68, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_CUE_B},
-	{.x = 53, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN, .fb_id = NI_KONTROL_Z1_LED_MODE},
-	{.x = 13, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .fb_id = NI_KONTROL_Z1_LED_FX_ON_LEFT},
-	{.x = 90, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .fb_id = NI_KONTROL_Z1_LED_FX_ON_RIGHT},
+	{.x = 44, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .colour = 0x000000ff, .fb_id = NI_KONTROL_Z1_LED_CUE_A},
+	{.x = 68, .y = 120, .w = 8,  .h = 8, .flags = Z1_BTN, .colour = 0x000000ff,.fb_id = NI_KONTROL_Z1_LED_CUE_B},
+	{.x = 53, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .colour = 0xffffffff, .fb_id = NI_KONTROL_Z1_LED_MODE},
+	{.x = 13, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .colour = 0xffffffff, .fb_id = NI_KONTROL_Z1_LED_FX_ON_LEFT},
+	{.x = 90, .y = 165, .w = 18, .h = 8, .flags = Z1_BTN_COL, .colour = 0xffffffff, .fb_id = NI_KONTROL_Z1_LED_FX_ON_RIGHT},
 };
 
 static const struct ni_kontrol_z1_ctlra_t sliders[] = {
