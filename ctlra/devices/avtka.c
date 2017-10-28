@@ -144,6 +144,7 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 		event.grid.pos = id;
 		event.grid.pressed = (value == 1.0);
 		event.grid.flags |= CTLRA_EVENT_GRID_FLAG_BUTTON;
+		break;
 	case CTLRA_EVENT_ENCODER:
 		event.encoder.id = id;
 		if(dev->id_to_ctlra[item].encoder_float_delta)
@@ -254,6 +255,9 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata,
 	dev->a = ctlra_build_avtka_ui(dev, info);
 	if(!dev->a)
 		goto fail;
+
+	CTLRA_INFO(dev->base.ctlra_context, "avtka based '%s' '%s' created\n",
+		   dev->base.info.vendor, dev->base.info.device);
 
 	return (struct ctlra_dev_t *)dev;
 fail:
