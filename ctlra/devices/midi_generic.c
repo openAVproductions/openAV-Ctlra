@@ -77,7 +77,8 @@ midi_generic_midi_input_cb(uint8_t nbytes, uint8_t * buf, void *ud)
 			.button  = {
 				.id = buf[1],
 				.pressed = buf[0] >= 0x90,
-				//."velocity" = buf[2] / 127.f;
+				.has_pressure = 1,
+				.pressure = buf[2] / 127.f,
 			},
 		};
 		struct ctlra_event_t *e = {&event};

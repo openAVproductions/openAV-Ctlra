@@ -48,13 +48,19 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		const char *pressed = 0;
 		const char *name = 0;
 		switch(e->type) {
-		case CTLRA_EVENT_BUTTON:
+		case CTLRA_EVENT_BUTTON: {
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_BUTTON,
 						   e->button.id);
+			char pressure[16] = {0};
+			if(e->button.has_pressure) {
+				snprintf(pressure, sizeof(pressure),
+					 "%0.01f", e->button.pressure);
+			}
 			printf("[%s] button %s (%d)\n",
-			       e->button.pressed ? " X " : "   ",
-			       name, e->button.id);
-			break;
+				e->button.has_pressure ?  pressure :
+				(e->button.pressed ? " X " : "   "),
+				name, e->button.id);
+			} break;
 
 		case CTLRA_EVENT_ENCODER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
