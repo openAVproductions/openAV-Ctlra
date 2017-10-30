@@ -1,5 +1,6 @@
 devices_src = files('3dconnexion.c',
                     'firmata.c',
+                    'midi_generic.c',
                     'ni_kontrol_f1.c',
                     'ni_kontrol_d2.c',
                     'ni_kontrol_x1_mk2.c',
