@@ -42,7 +42,7 @@ struct usb_async_t {
 
 #include <assert.h>
 
-static inline int
+static inline int __attribute__ ((unused))
 ctlra_usb_impl_xfer_validate(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *c = dev->ctlra_context;
