@@ -197,9 +197,6 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 		case CTLRA_EVENT_GRID:
 			id = dev->type_to_item_offset[CTLRA_EVENT_GRID] +
 				e->grid.pos;
-			printf("grid item %d, id %d, press = %d\n", e->grid.pos,
-			       id, e->grid.pressed);
-			//avtka_item_value(a, id + 1, e->grid.pressed);
 			avtka_item_colour32(a, id + 1, 0xffffffff * e->grid.pressed);
 			break;
 		case CTLRA_FEEDBACK_ITEM:
