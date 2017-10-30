@@ -54,19 +54,18 @@ struct midi_generic_t {
 	struct ctlra_dev_t base;
 	/* midi i/o */
 	struct ctlra_midi_t *midi;
-	/* current value of each controller is stored here */
-	float hw_values[CONTROLS_SIZE];
-	uint8_t lights[LIGHTS_SIZE];
 };
 
-static uint32_t midi_generic_poll(struct ctlra_dev_t *base)
+static uint32_t
+midi_generic_poll(struct ctlra_dev_t *base)
 {
 	struct midi_generic_t *dev = (struct midi_generic_t *)base;
 	ctlra_midi_input_poll(dev->midi);
 	return 0;
 }
 
-int midi_generic_midi_input_cb(uint8_t nbytes, uint8_t * buf, void *ud)
+int
+midi_generic_midi_input_cb(uint8_t nbytes, uint8_t * buf, void *ud)
 {
 	struct midi_generic_t *dev = (struct midi_generic_t *)ud;
 
@@ -101,13 +100,6 @@ int midi_generic_midi_input_cb(uint8_t nbytes, uint8_t * buf, void *ud)
 		break;
 	};
 
-	/*
-	// TODO: figure out how to do feedback to the device
-	if(buf[1] == 0x37) {
-		uint8_t out[] = {0x90, 0x37, 1 + 2 * (buf[0] == 0x80)};
-		ctlra_midi_output_write(dev->midi, 3, out);
-	}
-	*/
 	return 0;
 }
 
@@ -123,6 +115,25 @@ static void midi_generic_light_set(struct ctlra_dev_t *base,
 				    uint32_t light_status)
 {
 	struct midi_generic_t *dev = (struct midi_generic_t *)base;
+
+	uint8_t out[3];
+
+	if(light_id == -1) {
+		out[2] = (light_status >> 16) & 0xff;
+		out[1] = (light_status >>  8) & 0xff;
+		out[0] = (light_status >>  0) & 0xff;
+	} else {
+		uint8_t b3 = 0;
+		b3 |= light_status >> 24;
+		b3 |= light_status >> 16;
+		b3 |= light_status >>  8;
+
+		out[0] = 0x90;
+		out[1] = light_id;
+		out[2] = b3;
+	}
+
+	ctlra_midi_output_write(dev->midi, 3, out);
 }
 
 void
@@ -135,7 +146,6 @@ static int32_t
 midi_generic_disconnect(struct ctlra_dev_t *base)
 {
 	struct midi_generic_t *dev = (struct midi_generic_t *)base;
-	memset(dev->lights, 0, sizeof(dev->lights));
 	free(dev);
 	return 0;
 }
@@ -143,7 +153,7 @@ midi_generic_disconnect(struct ctlra_dev_t *base)
 struct ctlra_dev_info_t ctlra_midi_generic_info;
 
 struct ctlra_dev_t *
-ctlra_midi_generic_connect(ctlra_event_func event_func,void *userdata,
+ctlra_midi_generic_connect(ctlra_event_func event_func, void *userdata,
 			   void *future)
 {
 	(void)future;
@@ -151,7 +161,7 @@ ctlra_midi_generic_connect(ctlra_event_func event_func,void *userdata,
 	if(!dev)
 		goto fail;
 
-	dev->midi = ctlra_midi_open("Ctlra Midi Generic",
+	dev->midi = ctlra_midi_open("Ctlra Generic",
 				    midi_generic_midi_input_cb, dev);
 	if(dev->midi == 0) {
 		printf("Ctlra: error opening midi i/o\n");
