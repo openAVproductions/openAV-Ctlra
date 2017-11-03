@@ -63,7 +63,11 @@ struct ctlra_event_button_t {
 	/** The id of the button */
 	uint32_t id;
 	/** The state of the button */
-	uint8_t pressed;
+	uint8_t pressed : 1;
+	uint8_t has_pressure : 1;
+	uint8_t unused : 6;
+	/** Pressure or velocity of the button press/release */
+	float pressure;
 };
 
 #define CTLRA_EVENT_ENCODER_FLAG_INT   (1<<0)
