@@ -40,13 +40,10 @@
 #define CONTROLS_SIZE 512
 #define LIGHTS_SIZE 512
 
-#define AKAI    0x09e8
-#define APC40   0x0073
-#define MPKMINI 0x007c
+#define GENERIC 0x1
 
-#define CTLRA_DRIVER_VENDOR AKAI
-#define CTLRA_DRIVER_DEVICE MPKMINI
-
+#define CTLRA_DRIVER_VENDOR GENERIC
+#define CTLRA_DRIVER_DEVICE GENERIC
 
 /* Represents the the hardware device */
 struct midi_generic_t {
