@@ -179,7 +179,7 @@ ctlra_midi_generic_connect(ctlra_event_func event_func, void *userdata,
 	return (struct ctlra_dev_t *)dev;
 fail:
 	free(dev);
-	return 0;
+	return NULL;
 }
 
 
