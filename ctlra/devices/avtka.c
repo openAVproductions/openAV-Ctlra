@@ -147,6 +147,8 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 	uint32_t id   = dev->id_to_ctlra[item].id;
 	uint32_t col  = dev->id_to_ctlra[item].col;
 
+	printf("%s : event\n", __func__);
+
 	/* default type is button */
 	struct ctlra_event_t event = {
 		.type = type,
