@@ -52,6 +52,20 @@ struct id_to_ctlra_t {
 	uint32_t col;
 };
 
+struct avtka_screent_t {
+	uint32_t h_px;
+	uint32_t w_px;
+
+	/* TODO: Should this be the value of the Ctlra #define for screen
+	 * bytes-per-pixel, or "data format" type? Need to figure out how
+	 * we want to represent the data type of a screen through the API,
+	 * or what to do there. */
+	uint32_t data_type;
+	/* TODO: how to represent bits/bytes per pixel, based on format?
+	 */
+	uint8_t bits_per_pixel;
+};
+
 /* Represents the the virtual AVTK UI */
 struct cavtka_t {
 	/* base handles usb i/o etc */
@@ -64,6 +78,9 @@ struct cavtka_t {
 
 	/* ctlra id offsets for each event type */
 	uint32_t type_to_item_offset[CTLRA_EVENT_T_COUNT];
+
+	/* screen info */
+	struct avtka_screent_t screen[CTLRA_NUM_SCREENS_MAX];
 };
 
 uint32_t
@@ -212,6 +229,32 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 	avtka_redraw(a);
 }
 
+
+int32_t
+avtka_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
+		      uint32_t *bytes, uint8_t flush)
+{
+	struct cavtka_t *dev = (struct cavtka_t *)base;
+	struct avtka_t *a = dev->a;
+
+	if(!pixels || !bytes)
+		return -1;
+
+	/* TODO update Ctlra API to return screen data for ID */
+	uint8_t screen = 0;
+	if(screen >= CTLRA_NUM_SCREENS_MAX)
+		return -2;
+
+	struct avtka_screent_t *scr = &dev->screen[screen];
+	*pixels = avtka_screen_get_data_ptr(a, screen);
+	/* TODO: fix hard coded size */
+	*bytes = ((scr->h_px * scr->w_px) * scr->bits_per_pixel) / 8;
+	//*bytes = (128 * 64 / 8);
+
+	return 0;
+}
+
+
 #define CTLRA_RESIZE 2
 static inline void
 ctlra_item_scale(struct avtka_item_opts_t *i)
@@ -250,6 +293,7 @@ ctlra_avtka_connect(ctlra_event_func event_func, void *userdata,
 	dev->base.poll = avtka_poll;
 	dev->base.disconnect = avtka_disconnect;
 	dev->base.light_set = avtka_light_set;
+	dev->base.screen_get_data = avtka_screen_get_data;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
@@ -471,9 +515,30 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			ai.params[1] = item->params[2];
 		}
 
+		ai.interact = 0;
+
 		/* Screen */
+		int no_create_item = 0;
 		if(item->flags & CTLRA_ITEM_FB_SCREEN) {
-			ai.draw = AVTKA_DRAW_BUTTON;
+			struct avtka_screen_opts_t opts = {
+				.x = ai.x,
+				.y = ai.y,
+				.w = ai.w,
+				.h = ai.h,
+				/* TODO: detect screen caps */
+				.px_x = 128,
+				.px_y = 64,
+				.flags_1bit = 1,
+			};
+			int32_t screen_id = avtka_screen_create(a, &opts);
+			if(screen_id < 0)
+				CTLRA_ERROR(dev->base.ctlra_context,
+					    "Failed to create screen; ret %d\n",
+					    screen_id);
+
+			/* don't create an item for the screen, as it is
+			 * already handled by screen_create() */
+			continue;
 		}
 
 		if(item->flags & CTLRA_ITEM_FB_7_SEGMENT) {
