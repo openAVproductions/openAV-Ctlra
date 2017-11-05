@@ -126,7 +126,7 @@ typedef const char *(*ctlra_info_get_name_func)(enum ctlra_event_type_t type,
 #define CTLRA_ITEM_LED_COLOR     (1<< 6)
 
 #define CTLRA_ITEM_FB_LED_STRIP  (1<< 7)
-#define CTLRA_ITEM_FB_SCREEN     (1<< 7)
+#define CTLRA_ITEM_FB_SCREEN     (1<< 8)
 
 #define CTLRA_ITEM_HAS_FB_ID     (1<<31)
 struct ctlra_item_info_t {

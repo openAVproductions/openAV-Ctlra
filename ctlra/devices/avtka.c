@@ -456,6 +456,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 
 		/* default draws a button if it is not understood */
 		ai.draw = AVTKA_DRAW_BUTTON;
+
 		/* LED strip */
 		if(item->flags & CTLRA_ITEM_FB_LED_STRIP) {
 			ai.draw = AVTKA_DRAW_LED_STRIP;
@@ -463,6 +464,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			ai.params[0] = item->params[1] - item->params[0];
 			ai.params[1] = item->params[2];
 		}
+
 		/* Screen */
 		if(item->flags & CTLRA_ITEM_FB_SCREEN) {
 			ai.draw = AVTKA_DRAW_BUTTON;
