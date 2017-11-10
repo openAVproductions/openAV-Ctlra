@@ -52,8 +52,6 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
-#define USE_LIBUSB 1
-
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
 	"Song",
@@ -410,21 +408,9 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024];
 	int32_t nbytes;
 
-#ifdef USE_LIBUSB
 	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 						   USB_ENDPOINT_READ,
 						   buf, 1024);
-#else
-	do {
-		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
-			break;
-		}
-		/* call read cb directly */
-		//printf("got %d\n", nbytes);
-		ni_machine_jam_usb_read_cb(base, USB_ENDPOINT_READ,
-					   buf, nbytes);
-	} while (nbytes > 0);
-#endif
 	return 0;
 }
 
@@ -676,7 +662,6 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	lights[10] = 20;
 	ni_maschine_jam_touchstrip_led(base, 3, lights);
 
-#ifdef USE_LIBUSB
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
@@ -698,50 +683,6 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						     64+1);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
-#else
-#if 0
-	data[0] = 0x80;
-	int ret = write(dev->fd, data, 65);
-	ret = write(dev->fd, data, 65+16);
-	printf("write 1: ret %d\n", ret);
-
-	data[0] = 0x81;
-	ret = write(dev->fd, data, 8*10+1);
-	printf("write 2: ret %d\n", ret);
-
-	data[0] = 0x82;
-	ret = write(dev->fd, data, 64+1);
-	printf("write 3: ret %d\n", ret);
-	//write(dev->fd, data, 2);
-	
-/#else
-	/* try sending one huge message */
-
-	dev->lights[0] = 0x80;
-	int ret = write(dev->fd, dev->lights, 81);
-	write(dev->fd, dev->lights, 81);
-	//write(dev->fd, data, 81);
-
-#if 0
-	dev->lights[0] = 0x81;
-	ret = write(dev->fd, dev->lights, 81);
-	//write(dev->fd, data, 81);
-	write(dev->fd, dev->lights, 81);
-#endif /* write Grids */
-
-#if 0
-	dev->lights[0] = 0x82;
-	/*
-	ret = write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
-	write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
-	*/
-	ret = write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
-	write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
-#endif /* write touchstrips */
-
-#endif
-
-#endif
 }
 
 static int32_t
@@ -754,10 +695,7 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		ni_maschine_jam_light_flush(base, 1);
 
-#ifdef USE_LIBUSB
 	ctlra_dev_impl_usb_close(base);
-#endif
-	printf("dev disco %p\n", base);
 	free(dev);
 	return 0;
 }
@@ -769,74 +707,20 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 			      void *userdata, void *future)
 {
 	(void)future;
-	struct ni_maschine_jam_t *dev = calloc(1, sizeof(struct ni_maschine_jam_t));
+	struct ni_maschine_jam_t *dev =
+		calloc(1, sizeof(struct ni_maschine_jam_t));
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Maschine Jam");
-
-
-#ifdef USE_LIBUSB
 	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
-	if(err) {
-		free(dev);
-		return 0;
-	}
+	if(err)
+		goto fail;
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 					 USB_INTERFACE_ID, USB_HANDLE_IDX);
-	if(err) {
-		free(dev);
-		return 0;
-	}
-#else
-
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <linux/hidraw.h>
-
-	int fd, i, res, found = 0;
-	char buf[256];
-	struct hidraw_devinfo info;
-
-	for(i = 0; i < 64; i++) {
-		const char *device = "/dev/hidraw";
-		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
-		if(fd < 0)
-			continue;
-
-		memset(&info, 0x0, sizeof(info));
-		res = ioctl(fd, HIDIOCGRAWINFO, &info);
-
-		if (res < 0) {
-			perror("HIDIOCGRAWINFO");
-		} else {
-			if(info.vendor  == CTLRA_DRIVER_VENDOR  &&
-			   info.product == CTLRA_DRIVER_DEVICE) {
-				found = 1;
-				break;
-			}
-		}
-		close(fd);
-		/* continue searching next HID dev */
-	}
-
-	if(!found) {
-		free(dev);
-		return 0;
-	}
-
-	dev->fd = fd;
-	printf("jam on fd %d\n", fd);
-#endif
+	if(err)
+		goto fail;
 
 	dev->base.info = ctlra_ni_maschine_jam_info;
 
