@@ -470,6 +470,11 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			uint16_t t1 = *((uint16_t *)&data[offset+2]);
 			uint16_t t2 = *((uint16_t *)&data[offset+4]);
 
+			if(t1 == 0) {
+				/* touch departed event here? */
+				continue;
+			}
+
 			if(dev->hw_values[offset  ] != ts ||
 			   dev->hw_values[offset+1] != t1 ||
 			   dev->hw_values[offset+2] != t2) {
