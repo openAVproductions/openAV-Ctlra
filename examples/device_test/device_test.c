@@ -1,5 +1,6 @@
 #define _DEFAULT_SOURCE
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -184,6 +185,11 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	led_count = info->control_count[CTLRA_FEEDBACK_ITEM];
 	if(led_count > NUM_LEDS)
 		led_count = NUM_LEDS;
+
+	/* dont device test a generic MIDI device - makes no sense! */
+	if(strcmp(info->vendor, "OpenAV") == 0 &&
+			strcmp(info->device, "Midi Generic") == 0)
+		return 0;
 
 	if(!avtka_ui) {
 		avtka_ui = ctlra_avtka_connect(simple_event_func,
