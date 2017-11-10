@@ -670,26 +670,32 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	}
 	//memset(data, 0, sizeof(dev->lights));
 
+	uint8_t lights[11];
+	for(int i = 0; i < 11; i++)
+		lights[i] = 30 * i > (11 * dev->hw_values[1]);
+	lights[10] = 20;
+	ni_maschine_jam_touchstrip_led(base, 3, lights);
+
 #ifdef USE_LIBUSB
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     640+1);
+						     64+1);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
 	data[0] = 0x81;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     640+1);
+						     64+1);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
 	data[0] = 0x82;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     640+1);
+						     64+1);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
 #else
@@ -708,7 +714,7 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	printf("write 3: ret %d\n", ret);
 	//write(dev->fd, data, 2);
 	
-#else
+/#else
 	/* try sending one huge message */
 
 	dev->lights[0] = 0x80;
@@ -722,14 +728,6 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	//write(dev->fd, data, 81);
 	write(dev->fd, dev->lights, 81);
 #endif /* write Grids */
-
-	/*
-	uint8_t lights[11];
-	for(int i = 0; i < 11; i++)
-		lights[i] = 30 * i > (11 * dev->hw_values[1]);
-	lights[10] = 20;
-	ni_maschine_jam_touchstrip_led(base, 3, lights);
-	*/
 
 #if 0
 	dev->lights[0] = 0x82;
@@ -867,11 +865,13 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE - 1,
 	.control_count[CTLRA_EVENT_SLIDER] = 8,
-	.control_count[CTLRA_EVENT_ENCODER] = 1,
 	.control_count[CTLRA_EVENT_GRID] = 1,
 
 	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
 	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	/* Todo: fix AVTKA ui on rotate left
+	.control_count[CTLRA_EVENT_ENCODER] = 1,
+	*/
 	.control_info[CTLRA_EVENT_ENCODER] = encoder_info,
 
 	/* TODO: feedback items:
