@@ -650,45 +650,44 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	82: touch leds
 #endif
 
+	int ret;
+
 	data[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
 						     64+2);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
 
-
-#if 0
-	for(int i = 0; i < 11; i++)
-		dev->touchstrips[1+i] = 30 + i;// * i > (11 * dev->hw_values[1]);
-#endif
-
-	usleep(1000);
-
-#if 0
-	/* grid */
-	dev->touchstrips[0] = 0x81;
-	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     dev->touchstrips,
-						     64+2);
-	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-#endif
-
-	usleep(1000);
-
-#if 1
 	/* touchstrips */
 	dev->touchstrips[0] = 0x82;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     dev->touchstrips,
-						     87+2);
+						     88+2);
 	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-#endif
+		printf("%s touchstrip write failed, ret %d\n", __func__, ret);
+
+	/* writing the LED button a *second time* (see above) allows grid
+	 * messages to work afterwards. If this 2nd button data is removed,
+	 * the grid message later is ignored for some reason */
+	data[0] = 0x80;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     data,
+						     64+2);
+	if(ret < 0)
+		printf("%s 2nd btn write failed, ret %d\n", __func__, ret);
+
+	/* grid */
+	dev->touchstrips[0] = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     dev->touchstrips,
+						     79+2);
+	if(ret < 0)
+		printf("%s grid write failed, ret %d\n", __func__, ret);
 }
 
 static int32_t
