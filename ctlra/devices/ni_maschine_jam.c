@@ -608,7 +608,8 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
+/* base brightness */
+	dev->lights[light_id] = bright | 0x2;
 
 	dev->lights_dirty = 1;
 }
@@ -649,40 +650,45 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	82: touch leds
 #endif
 
-	static uint8_t col;
-
-	for(int i = 0; i <NI_MASCHINE_JAM_LED_COUNT; i++) {
-		//data[i] = 0x06;// 0b11110 * something_presssed;
-	}
-	//memset(data, 0, sizeof(dev->lights));
-
-	uint8_t lights[11];
-	for(int i = 0; i < 11; i++)
-		lights[i] = 30 * i > (11 * dev->hw_values[1]);
-	lights[10] = 20;
-	ni_maschine_jam_touchstrip_led(base, 3, lights);
-
 	data[0] = 0x80;
 	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     64+1);
+						     64+2);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x81;
+
+
+#if 0
+	for(int i = 0; i < 11; i++)
+		dev->touchstrips[1+i] = 30 + i;// * i > (11 * dev->hw_values[1]);
+#endif
+
+	usleep(1000);
+
+#if 0
+	/* grid */
+	dev->touchstrips[0] = 0x81;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
-						     data,
-						     64+1);
+						     dev->touchstrips,
+						     64+2);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x82;
+#endif
+
+	usleep(1000);
+
+#if 1
+	/* touchstrips */
+	dev->touchstrips[0] = 0x82;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
-						     data,
-						     64+1);
+						     dev->touchstrips,
+						     87+2);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
+#endif
 }
 
 static int32_t
@@ -732,6 +738,11 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	uint8_t *data = &dev->lights_interface;
+	for(int i = 0; i < NI_MASCHINE_JAM_LED_COUNT; i++) {
+		data[i] = 0x06;
+	}
 
 	return (struct ctlra_dev_t *)dev;
 fail:
