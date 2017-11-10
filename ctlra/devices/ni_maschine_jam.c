@@ -52,8 +52,7 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
-// WIP: we can use HIDRAW or LibUSB backends
-//#define USE_LIBUSB 1
+#define USE_LIBUSB 1
 
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
@@ -625,17 +624,6 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 	uint32_t bright = (light_status >> 24) & 0x7F;
 	dev->lights[light_id] = bright;
 
-	/* FX ON buttons have orange and blue */
-#if 0
-	if(light_id == NI_MASCHINE_JAM_LED_FX_ON_LEFT ||
-	   light_id == NI_MASCHINE_JAM_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
-	}
-#endif
-
 	dev->lights_dirty = 1;
 }
 
@@ -768,6 +756,9 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		ni_maschine_jam_light_flush(base, 1);
 
+#ifdef USE_LIBUSB
+	ctlra_dev_impl_usb_close(base);
+#endif
 	printf("dev disco %p\n", base);
 	free(dev);
 	return 0;
