@@ -874,9 +874,8 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 	.size_x    = 320,
 	.size_y    = 295,
 
-	/* TODO: expose info */
-	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
-	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE - 1,
+	.control_count[CTLRA_EVENT_SLIDER] = 8,
 	.control_count[CTLRA_EVENT_ENCODER] = 1,
 	.control_count[CTLRA_EVENT_GRID] = 1,
 
