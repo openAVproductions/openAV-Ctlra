@@ -1,8 +1,10 @@
+#define _BSD_SOURCE
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <unistd.h>
 
 #include "impl.h"
 
@@ -165,6 +167,7 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 					  buf, 255);
 		if(ret)
 			snprintf((char *)buf, sizeof(buf), "---");
+
 		CTLRA_INFO(ctlra, "Device attached: %04x:%04x, serial %s\n",
 			   desc.idVendor, desc.idProduct, buf);
 		/* Quirks:
@@ -388,6 +391,9 @@ static void ctlra_usb_xfr_done_generic(struct libusb_transfer *xfr,
 	struct ctlra_dev_t *dev = xfr->user_data;
 	struct ctlra_t *ctlra = dev->ctlra_context;
 
+	const int stat_idx =
+		read ?  USB_XFER_INFLIGHT_READ : USB_XFER_INFLIGHT_WRITE;
+
 	switch(xfr->status) {
 	/* Success */
 	case LIBUSB_TRANSFER_COMPLETED: {
@@ -399,7 +405,6 @@ static void ctlra_usb_xfr_done_generic(struct libusb_transfer *xfr,
 			break;
 		}
 
-		int stat_idx = USB_XFER_INFLIGHT_READ + (read == 0);
 		int inflight_xfers = dev->usb_xfer_counts[stat_idx];
 		if(inflight_xfers == 0) {
 			CTLRA_ERROR(ctlra,
@@ -433,7 +438,6 @@ static void ctlra_usb_xfr_done_generic(struct libusb_transfer *xfr,
 		break;
 	}
 
-	int stat_idx = USB_XFER_INFLIGHT_READ + (read == 0);
 	dev->usb_xfer_counts[stat_idx]--;
 
 	/* get async from xfr->buffer address, see usb_async_t struct */
@@ -717,6 +721,25 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
+
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 10;
+
+	/* if there are inflight writes, these are often to disable any
+	 * LEDs or lights on the device. If so, wait a bit, to be nice :)
+	 */
+	int wait_count = 0;
+	do {
+		libusb_handle_events_timeout(ctlra->ctx, &tv);
+	} while(dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE] &&
+		wait_count++ < 100);
+
+	int32_t inf_writes = dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE];
+	if(inf_writes)
+		CTLRA_WARN(ctlra, "[%s] inflight writes at close = %d\n"
+				  "     Some lights on the device may still be on\n",
+			   dev->info.device, inf_writes);
 
 	ctlra_usb_impl_xfer_release(dev);
 
