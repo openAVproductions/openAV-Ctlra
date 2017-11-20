@@ -450,19 +450,12 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
-static double worst_write;
-	struct timeval tv1, tv2;
-	gettimeofday(&tv1, NULL);
-	write(dev->fd, data, LIGHTS_SIZE);
-	gettimeofday(&tv2, NULL);
-	double delta =
-		(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
-		(double) (tv2.tv_sec - tv1.tv_sec);
-	if(delta > worst_write) {
-		printf ("worst write %f\n", delta);
-		worst_write = delta;
-	}
-
+	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   LIGHTS_SIZE + 1);
 }
 
 static int32_t
