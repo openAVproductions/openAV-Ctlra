@@ -189,9 +189,9 @@ static struct ctlra_item_info_t feedback_info[] = {
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
-#define KERNEL_LENGTH          (16)
+#define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (150)
+#define PAD_SENSITIVITY        (650)
 #define PAD_PRESS_BRIGHTNESS   (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS (0.25f)
 
@@ -269,27 +269,36 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 		}
 		uint8_t *data = &buf[1];
 #endif
-
-		/* super hack: numbers expect "1" offset for endpoint # */
 		uint8_t *buf = data;
 
 		switch(nbytes) {
 		case 65: {
 			int i;
 			for (i = 0; i < NPADS; i++) {
-				uint16_t data1_mask = (data[1] & 0x0F);
-				uint16_t new = data[0] | ( data1_mask << 8);
-				data += 2;
+				uint16_t new = ((data[i+2] & 0xf) << 8) |
+						 data[i+1];
 
-				uint8_t idx = dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
+				uint8_t idx =
+					dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
 
 				uint16_t total = 0;
 				for(int j = 0; j < KERNEL_LENGTH; j++) {
-					total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+					int idx = i*KERNEL_LENGTH + j;
+					total += dev->pad_pressures[idx];
 				}
-				dev->pad_avg[i] = total / KERNEL_LENGTH;
 
+				dev->pad_avg[i] = total / KERNEL_LENGTH;
 				dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
+
+				/*
+				const uint16_t trigger_sense = PAD_SENSITIVITY;
+				if((new - dev->pad_avg[i]) < trigger_sense)
+					break;
+
+				printf("TRIGGER: new %d\tavg %d\n", new,
+				       dev->pad_avg[i]);
+				dev->pads[i] = new;
+				*/
 
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_GRID,
@@ -322,6 +331,7 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
+				break;
 			}
 		}
 		break;
@@ -381,7 +391,6 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 		else
 			break;
 	} while (nbytes > 0);
-	printf("done..\n");
 }
 
 static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
