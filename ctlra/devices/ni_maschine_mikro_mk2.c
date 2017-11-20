@@ -48,6 +48,8 @@
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
 
+#define USE_LIBUSB 1
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mikro_mk2_ctlra_t {
 	int event_id;
@@ -230,13 +232,29 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	uint8_t buf[1024];
-	int32_t nbytes;
+	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+					  USB_ENDPOINT_READ,
+					  buf, 1024);
+	return 0;
+}
 
-static double worst_poll;
+
+void
+ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
+				  uint32_t endpoint, uint8_t *data,
+				  uint32_t size)
+{
+	struct ni_maschine_mikro_mk2_t *dev =
+		(struct ni_maschine_mikro_mk2_t *)base;
+	static double worst_poll;
+	int32_t nbytes = size;
+
+	int count = 0;
 
 	do {
 		struct timeval tv1, tv2;
 		gettimeofday(&tv1, NULL);
+#ifndef USE_LIBUSB
 		nbytes = read(dev->fd, &buf, sizeof(buf));
 		if (nbytes < 0) {
 			break;
@@ -249,9 +267,11 @@ static double worst_poll;
 			printf ("worst poll %f\n", delta);
 			worst_poll = delta;
 		}
-
-
 		uint8_t *data = &buf[1];
+#endif
+
+		/* super hack: numbers expect "1" offset for endpoint # */
+		uint8_t *buf = data;
 
 		switch(nbytes) {
 		case 65: {
@@ -354,9 +374,14 @@ static double worst_poll;
 			break;
 		}
 		}
-	} while (nbytes > 0);
 
-	return 0;
+		/* LIBUSB - no re-reading! */
+		if(count++ < 10)
+			ni_maschine_mikro_mk2_poll(base);
+		else
+			break;
+	} while (nbytes > 0);
+	printf("done..\n");
 }
 
 static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
@@ -460,6 +485,25 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
 	         "%s", "Maschine Mikro Mk2");
 
+#ifdef USE_LIBUSB
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+					 USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		printf("error opening interface\n");
+		free(dev);
+		return 0;
+	}
+
+	dev->base.usb_read_cb = ni_maschine_mikro_mk2_usb_read_cb;
+#else
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -500,6 +544,7 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	}
 
 	dev->fd = fd;
+#endif
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
 		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
