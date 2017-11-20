@@ -458,6 +458,36 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 					   LIGHTS_SIZE + 1);
 }
 
+static void
+maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
+{
+	uint8_t buf[1 + 8 + 256] = { 0 };
+	buf[0] = 0xE0;
+	buf[5] = 0x20;
+	buf[7] = 0x08;
+	buf[8] = 0x0;
+
+	int i;
+	for (i = 0; i < 4; i++) {
+		buf[1] = i * 32;
+		ctlra_dev_impl_usb_interrupt_write(&dev->base,
+						   USB_HANDLE_IDX,
+						   USB_ENDPOINT_WRITE,
+						   buf,
+						   sizeof(buf));
+	}
+}
+
+int32_t
+ni_maschine_mikro_mk2_screen_get_data(struct ctlra_dev_t *base,
+				      uint8_t **pixels,
+				      uint32_t *bytes,
+				      uint8_t flush)
+{
+	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
+	return 0;
+}
+
 static int32_t
 ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 {
@@ -467,6 +497,7 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	if(!base->banished)
 		ni_maschine_mikro_mk2_light_flush(base, 1);
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -505,6 +536,8 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	}
 
 	dev->base.usb_read_cb = ni_maschine_mikro_mk2_usb_read_cb;
+
+	maschine_mikro_mk2_blit_to_screen(dev);
 #else
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -570,6 +603,7 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
 	dev->base.light_flush = ni_maschine_mikro_mk2_light_flush;
+	dev->base.screen_get_data = ni_maschine_mikro_mk2_screen_get_data;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
