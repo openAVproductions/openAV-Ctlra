@@ -464,7 +464,7 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 static void
 maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
 {
-	uint8_t xfer_header[9] = {
+	const uint8_t xfer_header[9] = {
 		0xE0, /* 0 */
 		   0, /* 1: overwritten by "segment offset" */
 		   0, /* 2 */
@@ -490,12 +490,14 @@ maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
 		 * over-written by the header for the next segment, which
 		 * allows sending the data without memcpy(). 9 is the
 		 * number of bytes required for the endpoint + header */
-		int off = -(i * 9);
-		uint8_t *data = &dev->screen_data[i*SCREEN_XFER_SIZE+off];
+		int offset = -(i * 9);
+		int idx = i * SCREEN_XFER_SIZE + offset;
+		uint8_t *data = &dev->screen_data[idx];
 
 		/* write header + segment directly to data buffer */
 		for (j = 0; j < 9; j++)
 			data[j] = xfer_header[j];
+
 		data[1] = i * 32;
 
 		ctlra_dev_impl_usb_interrupt_write(&dev->base,
@@ -513,6 +515,15 @@ ni_maschine_mikro_mk2_screen_get_data(struct ctlra_dev_t *base,
 				      uint8_t flush)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
+
+	if(flush)
+		maschine_mikro_mk2_blit_to_screen(dev);
+
+	/* skip past the first header */
+	*pixels = &dev->screen_data[9];
+	/* 128 * 64 pixels, but / 8 pixels per byte */
+	*bytes = (128 * 64) / 8;
+
 	return 0;
 }
 
@@ -522,8 +533,11 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
-	if(!base->banished)
+	if(!base->banished) {
 		ni_maschine_mikro_mk2_light_flush(base, 1);
+		memset(&dev->screen_data[9], 0, sizeof(SCREEN_XFER_SIZE*4));
+		maschine_mikro_mk2_blit_to_screen(dev);
+	}
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
