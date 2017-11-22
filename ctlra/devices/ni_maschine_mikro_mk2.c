@@ -194,6 +194,9 @@ static struct ctlra_item_info_t feedback_info[] = {
 #define PAD_SENSITIVITY        (650)
 #define PAD_PRESS_BRIGHTNESS   (0.9999f)
 #define PAD_RELEASE_BRIGHTNESS (0.25f)
+/* Screen: 1 byte endpoint, 8 bytes header, 256 bytes binary data */
+#define SCREEN_XFER_SIZE (1 + 8 + 256)
+
 
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk2_t {
@@ -216,7 +219,7 @@ struct ni_maschine_mikro_mk2_t {
 	uint16_t pad_avg[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 
-	int fd;
+	uint8_t screen_data[SCREEN_XFER_SIZE*4];
 };
 
 static const char *
@@ -461,20 +464,45 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 static void
 maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
 {
-	uint8_t buf[1 + 8 + 256] = { 0 };
-	buf[0] = 0xE0;
-	buf[5] = 0x20;
-	buf[7] = 0x08;
-	buf[8] = 0x0;
+	uint8_t xfer_header[9] = {
+		0xE0, /* 0 */
+		   0, /* 1: overwritten by "segment offset" */
+		   0, /* 2 */
+		   0, /* 3 */
+		   0, /* 4 */
+		0x20, /* 5 */
+		   0, /* 6 */
+		 0x8, /* 7 */
+		   0, /* 8 */
+	};
 
-	int i;
+	/* "Stripe" test the screen for accuracy of markings:
+	dev->screen_data[9+0*SCREEN_XFER_SIZE] = -1;
+	dev->screen_data[9+1*SCREEN_XFER_SIZE-9] = -1;
+	dev->screen_data[9+2*SCREEN_XFER_SIZE-18] = -1;
+	dev->screen_data[9+3*SCREEN_XFER_SIZE-27] = -1;
+	*/
+
+	int i, j;
 	for (i = 0; i < 4; i++) {
-		buf[1] = i * 32;
+		/* offset magic: to avoid using multiple buffers, we
+		 * over-write the already sent bitmap data. It is
+		 * over-written by the header for the next segment, which
+		 * allows sending the data without memcpy(). 9 is the
+		 * number of bytes required for the endpoint + header */
+		int off = -(i * 9);
+		uint8_t *data = &dev->screen_data[i*SCREEN_XFER_SIZE+off];
+
+		/* write header + segment directly to data buffer */
+		for (j = 0; j < 9; j++)
+			data[j] = xfer_header[j];
+		data[1] = i * 32;
+
 		ctlra_dev_impl_usb_interrupt_write(&dev->base,
 						   USB_HANDLE_IDX,
 						   USB_ENDPOINT_WRITE,
-						   buf,
-						   sizeof(buf));
+						   data,
+						   SCREEN_XFER_SIZE);
 	}
 }
 
