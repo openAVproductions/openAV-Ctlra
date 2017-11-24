@@ -305,7 +305,7 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 
 				if(med > 550 && dev->pads[i] == 0) {
 					/* TODO: improve velocity linearity */
-					float velo = (dev->pad_avg[i] - 200) / 200.f;
+					float velo = (med - 550) / 3500.f;
 					float v2 = velo * velo * velo * velo;
 					float fin = (velo - v2) * 3;
 					fin = fin > 1.0f ? 1.0f : fin;
