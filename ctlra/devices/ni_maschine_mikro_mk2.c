@@ -192,8 +192,6 @@ static struct ctlra_item_info_t feedback_info[] = {
 #define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
 #define PAD_SENSITIVITY        (650)
-#define PAD_PRESS_BRIGHTNESS   (0.9999f)
-#define PAD_RELEASE_BRIGHTNESS (0.25f)
 /* Screen: 1 byte endpoint, 8 bytes header, 256 bytes binary data */
 #define SCREEN_XFER_SIZE (1 + 8 + 256)
 
@@ -241,6 +239,21 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 	return 0;
 }
 
+void
+ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force);
+
+typedef uint16_t elem_type;
+
+int compare(const void *f1, const void *f2)
+{
+	return ( *(elem_type*)f1 > *(elem_type*)f2) ? 1 : -1;
+}
+
+elem_type qsort_median(elem_type * array, int n)
+{
+	qsort(array, n, sizeof(elem_type), compare);
+	return array[n/2];
+}
 
 void
 ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
@@ -293,16 +306,6 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 				dev->pad_avg[i] = total / KERNEL_LENGTH;
 				dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
 
-				/*
-				const uint16_t trigger_sense = PAD_SENSITIVITY;
-				if((new - dev->pad_avg[i]) < trigger_sense)
-					break;
-
-				printf("TRIGGER: new %d\tavg %d\n", new,
-				       dev->pad_avg[i]);
-				dev->pads[i] = new;
-				*/
-
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_GRID,
 					.grid  = {
@@ -313,7 +316,10 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 					},
 				};
 				struct ctlra_event_t *e = {&event};
-				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
+
+				uint16_t med = qsort_median(&dev->pad_pressures[i*KERNEL_LENGTH], KERNEL_LENGTH);
+
+				if(med > 350 && dev->pads[i] == 0) {
 					/* detect velocity over limit */
 					float velo = (dev->pad_avg[i] - 200) / 200.f;
 					float v2 = velo * velo * velo * velo;
@@ -325,16 +331,24 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 					//printf("%d pressed\n", i);
+					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0x7f;
+					dev->lights_dirty = 1;
+					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 					dev->pads[i] = 2000;
-				} else if(dev->pad_avg[i] < 150 && dev->pads[i] > 0) {
+				} else if(med < 100 && dev->pads[i] > 0) {
 					//printf("%d release\n", i);
+					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0;
+					dev->lights_dirty = 1;
+					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 					dev->pads[i] = 0;
 					event.grid.pressed = 0;
 					event.grid.pressure = 0.f;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
-				break;
+
+				//if(i > 2)
+					break;
 			}
 		}
 		break;
