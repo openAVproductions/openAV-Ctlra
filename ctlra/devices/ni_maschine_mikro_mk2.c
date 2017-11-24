@@ -268,34 +268,16 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 	int count = 0;
 
 	do {
-		struct timeval tv1, tv2;
-		gettimeofday(&tv1, NULL);
-#ifndef USE_LIBUSB
-		nbytes = read(dev->fd, &buf, sizeof(buf));
-		if (nbytes < 0) {
-			break;
-		}
-		gettimeofday(&tv2, NULL);
-		double delta =
-			(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
-			(double) (tv2.tv_sec - tv1.tv_sec);
-		if(delta > worst_poll) {
-			printf ("worst poll %f\n", delta);
-			worst_poll = delta;
-		}
-		uint8_t *data = &buf[1];
-#endif
 		uint8_t *buf = data;
 
 		switch(nbytes) {
 		case 65: {
 			int i;
 			for (i = 0; i < NPADS; i++) {
-				uint16_t new = ((data[i+2] & 0xf) << 8) |
-						 data[i+1];
+				uint16_t new = ((data[i*2+2] & 0xf) << 8) |
+						 data[i*2+1];
 
-				uint8_t idx =
-					dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
+				uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
 
 				uint16_t total = 0;
 				for(int j = 0; j < KERNEL_LENGTH; j++) {
@@ -317,26 +299,25 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 				};
 				struct ctlra_event_t *e = {&event};
 
-				uint16_t med = qsort_median(&dev->pad_pressures[i*KERNEL_LENGTH], KERNEL_LENGTH);
+				uint16_t med = qsort_median(
+					&dev->pad_pressures[i*KERNEL_LENGTH],
+					KERNEL_LENGTH);
 
-				if(med > 350 && dev->pads[i] == 0) {
-					/* detect velocity over limit */
+				if(med > 550 && dev->pads[i] == 0) {
+					/* TODO: improve velocity linearity */
 					float velo = (dev->pad_avg[i] - 200) / 200.f;
 					float v2 = velo * velo * velo * velo;
 					float fin = (velo - v2) * 3;
 					fin = fin > 1.0f ? 1.0f : fin;
 					fin = fin < 0.0f ? 0.0f : fin;
-					//printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
 					e->grid.pressure = fin;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
-					//printf("%d pressed\n", i);
 					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0x7f;
 					dev->lights_dirty = 1;
 					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 					dev->pads[i] = 2000;
 				} else if(med < 100 && dev->pads[i] > 0) {
-					//printf("%d release\n", i);
 					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0;
 					dev->lights_dirty = 1;
 					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
@@ -346,9 +327,6 @@ ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
 				}
-
-				//if(i > 2)
-					break;
 			}
 		}
 		break;
@@ -565,16 +543,11 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 				    void *userdata, void *future)
 {
 	(void)future;
-	struct ni_maschine_mikro_mk2_t *dev = calloc(1, sizeof(struct ni_maschine_mikro_mk2_t));
+	struct ni_maschine_mikro_mk2_t *dev =
+		calloc(1,sizeof(struct ni_maschine_mikro_mk2_t));
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-	         "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-	         "%s", "Maschine Mikro Mk2");
-
-#ifdef USE_LIBUSB
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
@@ -591,51 +564,9 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
+	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
+
 	dev->base.usb_read_cb = ni_maschine_mikro_mk2_usb_read_cb;
-
-	maschine_mikro_mk2_blit_to_screen(dev);
-#else
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <linux/hidraw.h>
-
-	int fd, i, res, found = 0;
-	char buf[256];
-	struct hidraw_devinfo info;
-
-	for(i = 0; i < 64; i++) {
-		const char *device = "/dev/hidraw";
-		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
-		if(fd < 0)
-			continue;
-
-		memset(&info, 0x0, sizeof(info));
-		res = ioctl(fd, HIDIOCGRAWINFO, &info);
-
-		if (res < 0) {
-			perror("HIDIOCGRAWINFO");
-		} else {
-			if(info.vendor  == CTLRA_DRIVER_VENDOR &&
-			   info.product == CTLRA_DRIVER_DEVICE) {
-				found = 1;
-				break;
-			}
-		}
-		close(fd);
-		/* continue searching next HID dev */
-	}
-
-	if(!found) {
-		free(dev);
-		return 0;
-	}
-
-	dev->fd = fd;
-#endif
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
 		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
@@ -653,8 +584,6 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
 	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
 
-	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
-
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
@@ -663,6 +592,8 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	maschine_mikro_mk2_blit_to_screen(dev);
 
 	return (struct ctlra_dev_t *)dev;
 fail:
