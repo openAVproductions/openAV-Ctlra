@@ -262,6 +262,33 @@ static const struct ni_kontrol_x1_mk2_ctlra_t buttons[] = {
 
 #define CONTROLS_SIZE (SLIDERS_SIZE + BUTTONS_SIZE)
 
+
+static struct ctlra_item_info_t feedback_info[] = {
+	/* horizontal LED strip */
+	{	.x = 10, .y = 180, .w = 100, .h = 3,
+		.flags = CTLRA_ITEM_FB_LED_STRIP,
+		.params = {0, 1, 1, 0},
+	},
+	/* Left 7 segs */
+	{	.x = 10, .y = 141, .w = (3 * 7) + 2, .h = 10,
+		.flags = CTLRA_ITEM_FB_7_SEGMENT,
+		.params = {3, 0, 0, 0},
+	},
+	/* Right 7 segs */
+	{	.x = 88, .y = 141, .w = (3 * 7) + 2, .h = 10,
+		.flags = CTLRA_ITEM_FB_7_SEGMENT,
+		.params = {3, 0, 0, 0},
+	},
+};
+#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
+
+static const char *ni_kontrol_x1_mk2_feedback_names[] = {
+	/* Encoders */
+	"LED Strip",
+	"7-seg L",
+	"7-seg R",
+};
+
 /* Multi-colour lights take multiple bytes for colour, but only one
  * enum value - hence lights size is > led count */
 #define LIGHTS_SIZE (NI_KONTROL_X1_MK2_LED_COUNT+16)
@@ -292,6 +319,7 @@ ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
 	num_of_type[CTLRA_EVENT_SLIDER]  = SLIDER_SIZE;
 	num_of_type[CTLRA_EVENT_BUTTON]  = BUTTON_SIZE;
 	num_of_type[CTLRA_EVENT_ENCODER] = ENCODER_SIZE;
+	num_of_type[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE;
 
 	uint16_t n = num_of_type[type];
 	if(control >= n)
@@ -301,6 +329,7 @@ ni_kontrol_x1_mk2_control_get_name(enum ctlra_event_type_t type,
 	name_by_type[CTLRA_EVENT_SLIDER]  = ni_kontrol_x1_mk2_slider_names;
 	name_by_type[CTLRA_EVENT_BUTTON]  = ni_kontrol_x1_mk2_button_names;
 	name_by_type[CTLRA_EVENT_ENCODER] = ni_kontrol_x1_mk2_encoder_names;
+	name_by_type[CTLRA_FEEDBACK_ITEM] = ni_kontrol_x1_mk2_feedback_names;
 
 	return name_by_type[type][control];
 }
@@ -632,10 +661,10 @@ struct ctlra_dev_info_t ctlra_ni_kontrol_x1_mk2_info = {
 	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTON_SIZE,
 	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 #if 0
 	.control_count[CTLRA_EVENT_ENCODER] = ENCODER_SIZE,
-	//.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
-	.control_info[CTLRA_FEEDBACK_ITEM] = feedback_info,
 #endif
 
 	.get_name = ni_kontrol_x1_mk2_control_get_name,
