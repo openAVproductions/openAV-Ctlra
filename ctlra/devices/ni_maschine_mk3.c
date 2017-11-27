@@ -1,0 +1,708 @@
+/*
+ * Copyright (c) 2017, OpenAV Productions,
+ * Harry van Haaren <harryhaaren@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ * TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
+
+#include "impl.h"
+
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1600)
+#define USB_INTERFACE_ID      (0x04)
+#define USB_HANDLE_IDX        (0x00)
+#define USB_ENDPOINT_READ     (0x83)
+#define USB_ENDPOINT_WRITE    (0x03)
+
+/* This struct is a generic struct to identify hw controls */
+struct ni_maschine_mk3_ctlra_t {
+	int event_id;
+	int buf_byte_offset;
+	uint32_t mask;
+};
+
+static const char *ni_maschine_mk3_control_names[] = {
+	"Enc. Press",
+	"Enc. Right",
+	"Enc. Up",
+	"Enc. Left",
+	"Enc. Down",
+	"Shift",
+	"Top 8",
+	"A",
+	"B",
+	"C",
+	"D",
+	"E",
+	"F",
+	"G",
+	"H",
+	"Notes",
+	"Volume",
+	"Swing",
+	"Tempo",
+	"Note Repeat",
+	"Lock",
+	"Pad Mode",
+	"Keyboard",
+	"Chords",
+	"Step",
+	"Fixed Vel.",
+	"Scene",
+	"Pattern",
+	"Events",
+	"Variations",
+	"Duplicate",
+	"Select",
+	"Solo",
+	"Mute",
+	"Pitch",
+	"Mod",
+	"Perform",
+	"Restart",
+	"Erase",
+	"Tap",
+	"Follow",
+	"Play",
+	"Rec",
+	"Stop",
+	"Macro",
+	"Settings",
+	"Arrow Right",
+	"Sampling",
+	"Mixer",
+	"Plug-in",
+	"Channel",
+	"Arranger",
+	"Browser",
+	"Arrow Left",
+	"File",
+	"Auto",
+	"Top 1",
+	"Top 2",
+	"Top 3",
+	"Top 4",
+	"Top 5",
+	"Top 6",
+	"Top 7",
+	"Enc. Touch",
+	"Dial Touch 8",
+	"Dial Touch 7",
+	"Dial Touch 6",
+	"Dial Touch 5",
+	"Dial Touch 4",
+	"Dial Touch 3",
+	"Dial Touch 2",
+	"Dial Touch 1",
+};
+#define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mk3_control_names) /\
+			    sizeof(ni_maschine_mk3_control_names[0]))
+
+static const struct ni_maschine_mk3_ctlra_t buttons[] = {
+	/* encoder */
+	{1, 1, 0x01},
+	{1, 1, 0x08},
+	{1, 1, 0x04},
+	{1, 1, 0x20},
+	{1, 1, 0x10},
+	/* shift, top right above screen */
+	{1, 1, 0x40},
+	{1, 1, 0x80},
+	/* group buttons ABCDEFGH */
+	{1, 2, 0x01},
+	{1, 2, 0x02},
+	{1, 2, 0x04},
+	{1, 2, 0x08},
+	{1, 2, 0x10},
+	{1, 2, 0x20},
+	{1, 2, 0x40},
+	{1, 2, 0x80},
+	/* notes, volume, swing, tempo */
+	{1, 3, 0x01},
+	{1, 3, 0x02},
+	{1, 3, 0x04},
+	{1, 3, 0x08},
+	/* Note Repeat, Lock */
+	{1, 3, 0x10},
+	{1, 3, 0x20},
+	/* Pad mode, keyboard, chords, step */
+	{1, 4, 0x01},
+	{1, 4, 0x02},
+	{1, 4, 0x04},
+	{1, 4, 0x08},
+	/* Fixed Vel, Scene, Pattern, Events */
+	{1, 4, 0x10},
+	{1, 4, 0x20},
+	{1, 4, 0x40},
+	{1, 4, 0x80},
+	/* Variation, Dupliate, Select, Solo, Mute */
+	/* 0x1 missing? */
+	{1, 5, 0x02},
+	{1, 5, 0x04},
+	{1, 5, 0x08},
+	{1, 5, 0x10},
+	{1, 5, 0x20},
+	/* Pitch, Mod */
+	{1, 5, 0x40},
+	{1, 5, 0x80},
+	/* Perform, restart, erase, tap */
+	{1, 6, 0x01},
+	{1, 6, 0x02},
+	{1, 6, 0x04},
+	{1, 6, 0x08},
+	/* Follow, Play, Rec, Stop */
+	{1, 6, 0x10},
+	{1, 6, 0x20},
+	{1, 6, 0x40},
+	{1, 6, 0x80},
+	/* Macro, settings, > sampling mixer plugin */
+	{1, 7, 0x01},
+	{1, 7, 0x02},
+	{1, 7, 0x04},
+	{1, 7, 0x08},
+	{1, 7, 0x10},
+	{1, 7, 0x20},
+	/* Channel, Arranger, Browser, <, File, Auto */
+	{1, 8, 0x01},
+	{1, 8, 0x02},
+	{1, 8, 0x04},
+	{1, 8, 0x08},
+	{1, 8, 0x10},
+	{1, 8, 0x20},
+	/* "Top" buttons */
+	{1, 9, 0x01},
+	{1, 9, 0x02},
+	{1, 9, 0x04},
+	{1, 9, 0x08},
+	{1, 9, 0x10},
+	{1, 9, 0x20},
+	{1, 9, 0x40},
+	/* Encoder Touch */
+	{1, 9, 0x80},
+	/* Dial touch 8 - 1 */
+	{1, 10, 0x01},
+	{1, 10, 0x02},
+	{1, 10, 0x04},
+	{1, 10, 0x08},
+	{1, 10, 0x10},
+	{1, 10, 0x20},
+	{1, 10, 0x40},
+	{1, 10, 0x80},
+#if 0
+#endif
+};
+#define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
+
+#define MK3_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+static struct ctlra_item_info_t buttons_info[] = {
+	/* restart -> grid */
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
+};
+
+static struct ctlra_item_info_t feedback_info[] = {
+	/* Screen */
+	//{.x = 20, .y =  44, .w = 70,  .h = 35, .flags = CTLRA_ITEM_FB_SCREEN},
+};
+#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
+
+#define ENCODERS_SIZE (0)
+
+#define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
+
+#define LIGHTS_SIZE (80)
+
+#define NPADS                  (16)
+/* KERNEL_LENGTH must be a power of 2 for masking */
+#define KERNEL_LENGTH          (8)
+#define KERNEL_MASK            (KERNEL_LENGTH-1)
+#define PAD_SENSITIVITY        (650)
+/* Screen: 1 byte endpoint, 8 bytes header, 256 bytes binary data */
+#define SCREEN_XFER_SIZE (1 + 8 + 256)
+
+
+/* Represents the the hardware device */
+struct ni_maschine_mk3_t {
+	/* base handles usb i/o etc */
+	struct ctlra_dev_t base;
+	/* current value of each controller is stored here */
+	float hw_values[CONTROLS_SIZE];
+	/* current state of the lights, only flush on dirty */
+	uint8_t lights_dirty;
+
+	/* Lights endpoint used to transfer with hidapi */
+	uint8_t lights_endpoint;
+	uint8_t lights[LIGHTS_SIZE];
+
+	/* Store the current encoder value */
+	uint8_t encoder_value;
+	/* Pressure filtering for note-onset detection */
+	uint8_t pad_idx[NPADS];
+	uint16_t pads[NPADS];
+	uint16_t pad_avg[NPADS];
+	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
+
+	uint8_t screen_data[SCREEN_XFER_SIZE*4];
+};
+
+static const char *
+ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
+                                       uint32_t control_id)
+{
+	if(control_id < CONTROL_NAMES_SIZE)
+		return ni_maschine_mk3_control_names[control_id];
+	return 0;
+}
+
+static uint32_t ni_maschine_mk3_poll(struct ctlra_dev_t *base)
+{
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
+	uint8_t buf[1024];
+	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+					  USB_ENDPOINT_READ,
+					  buf, 1024);
+	return 0;
+}
+
+void
+ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force);
+
+typedef uint16_t elem_type;
+
+static int compare(const void *f1, const void *f2)
+{
+	return ( *(elem_type*)f1 > *(elem_type*)f2) ? 1 : -1;
+}
+
+static elem_type qsort_median(elem_type * array, int n)
+{
+	qsort(array, n, sizeof(elem_type), compare);
+	return array[n/2];
+}
+
+void
+ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
+				  uint32_t endpoint, uint8_t *data,
+				  uint32_t size)
+{
+	struct ni_maschine_mk3_t *dev =
+		(struct ni_maschine_mk3_t *)base;
+	static double worst_poll;
+	int32_t nbytes = size;
+
+	int count = 0;
+
+	uint8_t *buf = data;
+
+	switch(nbytes) {
+	case 65: {
+		int i;
+		for (i = 0; i < NPADS; i++) {
+			uint16_t new = ((data[i*2+2] & 0xf) << 8) |
+					 data[i*2+1];
+
+			uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
+
+			uint16_t total = 0;
+			for(int j = 0; j < KERNEL_LENGTH; j++) {
+				int idx = i*KERNEL_LENGTH + j;
+				total += dev->pad_pressures[idx];
+			}
+
+			dev->pad_avg[i] = total / KERNEL_LENGTH;
+			dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
+
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_GRID,
+				.grid  = {
+					.id = 0,
+					.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+					.pos = i,
+					.pressed = 1
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+
+			uint16_t med = qsort_median(
+				&dev->pad_pressures[i*KERNEL_LENGTH],
+				KERNEL_LENGTH);
+
+			if(med > 550 && dev->pads[i] == 0) {
+				/* TODO: improve velocity linearity */
+				float velo = (med - 550) / 3500.f;
+				float v2 = velo * velo * velo * velo;
+				float fin = (velo - v2) * 3;
+				fin = fin > 1.0f ? 1.0f : fin;
+				fin = fin < 0.0f ? 0.0f : fin;
+				e->grid.pressure = fin;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				/*
+				dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0x7f;
+				dev->lights_dirty = 1;
+				ni_maschine_mk3_light_flush(&dev->base, 1);
+				dev->pads[i] = 2000;
+				*/
+			} else if(med < 100 && dev->pads[i] > 0) {
+				/*
+				dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0;
+				dev->lights_dirty = 1;
+				ni_maschine_mk3_light_flush(&dev->base, 1);
+				*/
+				dev->pads[i] = 0;
+				event.grid.pressed = 0;
+				event.grid.pressure = 0.f;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+			}
+		}
+	}
+	break;
+	case 42: {
+		int i;
+		static uint8_t old[48];
+		for(i = 41; i >= 0; i--) {
+			printf("%s%02x%s ", old[i] != buf[i] ? "\x1b[32m" : "",
+			       buf[i], "\x1b[0m");
+			old[i] = buf[i];
+		}
+		printf("\n");
+
+		/* Buttons */
+		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+			int id     = buttons[i].event_id;
+			int offset = buttons[i].buf_byte_offset;
+			int mask   = buttons[i].mask;
+
+			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+			int value_idx = i;
+
+			if(dev->hw_values[value_idx] != v) {
+				printf("%s %d\n", ni_maschine_mk3_control_names[i], i);
+				dev->hw_values[value_idx] = v;
+
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_BUTTON,
+					.button  = {
+						.id = id,
+						.pressed = v > 0
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				/*
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				*/
+			}
+		}
+		break;
+#if 0
+		/* Encoder */
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_ENCODER,
+			.encoder = {
+				.id = 0,
+				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+				.delta = 0,
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+		int8_t enc   = ((buf[5] & 0x0f)     ) & 0xf;
+		if(enc != dev->encoder_value) {
+			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+			event.encoder.delta = dir;
+			dev->encoder_value = enc;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
+
+		break;
+#endif
+		}
+	}
+}
+
+static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
+                uint32_t light_id,
+                uint32_t light_status)
+{
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
+	int ret;
+
+	if(!dev)
+		return;
+	if(light_id > LIGHTS_SIZE) {
+		return;
+	}
+
+	/* TODO: can we clean up the light_id handling somehow?
+	 * There's a lot of branching / strange math per LED here */
+	int idx = light_id;
+
+#if 0
+	/* Group takes up 3 bytes, so add 2 if we're past the group */
+	idx += 2 * (light_id > NI_MASCHINE_MIKRO_MK2_LED_GROUP);
+	uint32_t r = (light_status >> 16) & 0x7F;
+	uint32_t g = (light_status >>  8) & 0x7F;
+	uint32_t b = (light_status >>  0) & 0x7F;
+
+	/* Group btn and all pads */
+	if(light_id == NI_MASCHINE_MIKRO_MK2_LED_GROUP) {
+		dev->lights[ 8] = r;
+		dev->lights[ 9] = g;
+		dev->lights[10] = b;
+	}
+	else if (light_id >= NI_MASCHINE_MIKRO_MK2_LED_PAD_1 &&
+		 light_id < NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16) {
+		int pad_id = light_id - NI_MASCHINE_MIKRO_MK2_LED_PAD_1;
+		int p = NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + (pad_id*3) + 2;
+		dev->lights[p+0] = r;
+		dev->lights[p+1] = g;
+		dev->lights[p+2] = b;
+	} else {
+		 if(light_id > NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16)
+			return;
+		/* write brighness to all LEDs */
+		uint32_t bright = (light_status >> 24) & 0x7F;
+		dev->lights[idx] = bright;
+	}
+#endif
+
+	dev->lights_dirty = 1;
+}
+
+void
+ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
+{
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
+	if(!dev->lights_dirty && !force)
+		return;
+
+	uint8_t *data = &dev->lights_endpoint;
+	dev->lights_endpoint = 0x80;
+
+	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   LIGHTS_SIZE + 1);
+}
+
+static void
+maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev)
+{
+	const uint8_t xfer_header[9] = {
+		0xE0, /* 0 */
+		   0, /* 1: overwritten by "segment offset" */
+		   0, /* 2 */
+		   0, /* 3 */
+		   0, /* 4 */
+		0x20, /* 5 */
+		   0, /* 6 */
+		 0x8, /* 7 */
+		   0, /* 8 */
+	};
+
+	/* "Stripe" test the screen for accuracy of markings:
+	dev->screen_data[9+0*SCREEN_XFER_SIZE] = -1;
+	dev->screen_data[9+1*SCREEN_XFER_SIZE-9] = -1;
+	dev->screen_data[9+2*SCREEN_XFER_SIZE-18] = -1;
+	dev->screen_data[9+3*SCREEN_XFER_SIZE-27] = -1;
+	*/
+
+	int i, j;
+	for (i = 0; i < 4; i++) {
+		/* offset magic: to avoid using multiple buffers, we
+		 * over-write the already sent bitmap data. It is
+		 * over-written by the header for the next segment, which
+		 * allows sending the data without memcpy(). 9 is the
+		 * number of bytes required for the endpoint + header */
+		int offset = -(i * 9);
+		int idx = i * SCREEN_XFER_SIZE + offset;
+		uint8_t *data = &dev->screen_data[idx];
+
+		/* write header + segment directly to data buffer */
+		for (j = 0; j < 9; j++)
+			data[j] = xfer_header[j];
+
+		data[1] = i * 32;
+
+		ctlra_dev_impl_usb_interrupt_write(&dev->base,
+						   USB_HANDLE_IDX,
+						   USB_ENDPOINT_WRITE,
+						   data,
+						   SCREEN_XFER_SIZE);
+	}
+}
+
+int32_t
+ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
+				      uint8_t **pixels,
+				      uint32_t *bytes,
+				      uint8_t flush)
+{
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
+
+	if(flush)
+		maschine_mk3_blit_to_screen(dev);
+
+	/* skip past the first header */
+	*pixels = &dev->screen_data[9];
+	/* 128 * 64 pixels, but / 8 pixels per byte */
+	*bytes = (128 * 64) / 8;
+
+	return 0;
+}
+
+static int32_t
+ni_maschine_mk3_disconnect(struct ctlra_dev_t *base)
+{
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
+
+	memset(dev->lights, 0x0, LIGHTS_SIZE);
+	if(!base->banished) {
+		ni_maschine_mk3_light_flush(base, 1);
+		memset(&dev->screen_data[9], 0, sizeof(SCREEN_XFER_SIZE*4));
+		maschine_mk3_blit_to_screen(dev);
+	}
+
+	ctlra_dev_impl_usb_close(base);
+	free(dev);
+	return 0;
+}
+
+struct ctlra_dev_info_t ctlra_ni_maschine_mk3_info;
+
+struct ctlra_dev_t *
+ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
+				    void *userdata, void *future)
+{
+	(void)future;
+	struct ni_maschine_mk3_t *dev =
+		calloc(1,sizeof(struct ni_maschine_mk3_t));
+	if(!dev)
+		goto fail;
+
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
+	if(err) {
+		free(dev);
+		return 0;
+	}
+
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+					 USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		printf("error opening interface\n");
+		free(dev);
+		return 0;
+	}
+
+	dev->base.info = ctlra_ni_maschine_mk3_info;
+
+	dev->base.usb_read_cb = ni_maschine_mk3_usb_read_cb;
+
+	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
+		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
+	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = 1;
+	dev->base.info.control_count[CTLRA_EVENT_GRID] = 1;
+	dev->base.info.get_name = ni_maschine_mk3_control_get_name;
+
+	struct ctlra_grid_info_t *grid = &dev->base.info.grid_info[0];
+	grid->rgb = 1;
+	grid->velocity = 1;
+	grid->pressure = 1;
+	grid->x = 4;
+	grid->y = 4;
+
+	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
+	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
+
+	dev->base.poll = ni_maschine_mk3_poll;
+	dev->base.disconnect = ni_maschine_mk3_disconnect;
+	dev->base.light_set = ni_maschine_mk3_light_set;
+	dev->base.light_flush = ni_maschine_mk3_light_flush;
+	dev->base.screen_get_data = ni_maschine_mk3_screen_get_data;
+
+	dev->base.event_func = event_func;
+	dev->base.event_func_userdata = userdata;
+
+	maschine_mk3_blit_to_screen(dev);
+
+	return (struct ctlra_dev_t *)dev;
+fail:
+	free(dev);
+	return 0;
+}
+
+struct ctlra_dev_info_t ctlra_ni_maschine_mk3_info = {
+	.vendor    = "Native Instruments",
+	.device    = "Maschine Mk3",
+	.vendor_id = CTLRA_DRIVER_VENDOR,
+	.device_id = CTLRA_DRIVER_DEVICE,
+	.size_x    = 320,
+	.size_y    = 195,
+
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
+	.control_info [CTLRA_EVENT_BUTTON] = buttons_info,
+
+	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
+
+	.control_count[CTLRA_EVENT_GRID] = 1,
+	.grid_info[0] = {
+		.rgb = 1,
+		.velocity = 1,
+		.pressure = 1,
+		.x = 4,
+		.y = 4,
+		.info = {
+			.x = 168,
+			.y = 29,
+			.w = 138,
+			.h = 138,
+			/* start light id */
+			.params[0] = 0,
+			/* end light id */
+			.params[1] = 1,
+		}
+	},
+
+	.get_name = ni_maschine_mk3_control_get_name,
+};
+
+CTLRA_DEVICE_REGISTER(ni_maschine_mk3)
