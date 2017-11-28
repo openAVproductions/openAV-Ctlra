@@ -221,8 +221,6 @@ static const struct ni_maschine_mk3_ctlra_t buttons[] = {
 	{1, 10, 0x20},
 	{1, 10, 0x40},
 	{1, 10, 0x80},
-#if 0
-#endif
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -238,7 +236,7 @@ static struct ctlra_item_info_t feedback_info[] = {
 };
 #define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
 
-#define ENCODERS_SIZE (0)
+#define ENCODERS_SIZE (8)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
@@ -269,10 +267,8 @@ struct ni_maschine_mk3_t {
 	/* Store the current encoder value */
 	uint8_t encoder_value;
 	/* Pressure filtering for note-onset detection */
-	uint8_t pad_idx[NPADS];
-	uint16_t pads[NPADS];
-	uint16_t pad_avg[NPADS];
-	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
+	uint16_t pad_hit[NPADS];
+	uint16_t pad_pressure[NPADS];
 
 	uint8_t screen_data[SCREEN_XFER_SIZE*4];
 };
@@ -289,10 +285,10 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 static uint32_t ni_maschine_mk3_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
-	uint8_t buf[1024];
+	uint8_t buf[128];
 	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 					  USB_ENDPOINT_READ,
-					  buf, 1024);
+					  buf, 128);
 	return 0;
 }
 
@@ -326,7 +322,35 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 
 	uint8_t *buf = data;
 
+	//printf("%d\n", size);
+
 	switch(nbytes) {
+	case 128: {
+		/*
+		int i;
+		static uint8_t old[82];
+		for(i = 82; i >= 0; i--) {
+			printf("%02x ", buf[i]);
+		}
+		printf("\n");
+		*/
+
+		if(buf[0] != 2) {
+			printf("not a pad message\n");
+			break;
+		}
+
+		for(int i = 0; i < 16; i++)
+			dev->pad_hit[i] = 0;
+
+		for(int i = 0; i < 16; i++) {
+			uint8_t pad = buf[1+i*3];
+			if(i > 0 && pad == 0)
+				break;
+			dev->pad_hit[pad] = 1;
+		}
+	} break;
+#if 0
 	case 65: {
 		int i;
 		for (i = 0; i < NPADS; i++) {
@@ -389,8 +413,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			}
 		}
 	}
+#endif
 	break;
 	case 42: {
+		/*
 		int i;
 		static uint8_t old[48];
 		for(i = 41; i >= 0; i--) {
@@ -399,6 +425,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			old[i] = buf[i];
 		}
 		printf("\n");
+		*/
 
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
@@ -410,21 +437,41 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			int value_idx = i;
 
 			if(dev->hw_values[value_idx] != v) {
-				printf("%s %d\n", ni_maschine_mk3_control_names[i], i);
 				dev->hw_values[value_idx] = v;
 
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_BUTTON,
 					.button  = {
-						.id = id,
+						.id = i,
 						.pressed = v > 0
 					},
 				};
 				struct ctlra_event_t *e = {&event};
-				/*
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
-				*/
+			}
+		}
+
+		for(uint32_t i = 0; i < 8; i++) {
+			uint16_t v = *((uint16_t *)&buf[12+i*2]);
+			const float value = v / 1000.f;
+			const uint8_t idx = BUTTONS_SIZE + i;
+
+			if(dev->hw_values[idx] != value) {
+				const float d = -(dev->hw_values[idx] - value);
+				struct ctlra_event_t event = {
+					.type = CTLRA_EVENT_ENCODER,
+					.encoder  = {
+						.id = i,
+						.flags =
+							CTLRA_EVENT_ENCODER_FLAG_FLOAT,
+						.delta_float = d,
+					},
+				};
+				struct ctlra_event_t *e = {&event};
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				dev->hw_values[idx] = value;
 			}
 		}
 		break;
@@ -512,8 +559,50 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
+	static uint16_t c;
+	for(int i= 0; i < 62; i++) {
+		dev->lights[i] = (0b1101 << ((c++ / 4000)%8));
+			//0b00100000;
+			//0x2a;
+	}
+	dev->lights[29] = 0b10000000;
+	dev->lights[30] = 0b10000001;
+	dev->lights[30] = 0b01000001;
+	dev->lights[31] = 0b00101000;
+	dev->lights[32] = 0b00010011;
+	dev->lights[33] = 0b00001011;
+	dev->lights[34] = 0b00000101;
+	dev->lights[35] = 0b00001101;
+	dev->lights[36] = 0b00011101;
 
 	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   LIGHTS_SIZE + 1);
+
+	for(int i = 0; i < 4; i++)
+		dev->lights[25+i] = 0b10001 << i;
+	for(int i = 0; i < 4; i++) {
+		dev->lights[37+i] = 0b1100 << i;
+		//printf("%d = %02x\n", i, 0b1100 << i);
+	}
+
+	dev->lights[29] = 0b10000000;
+	dev->lights[30] = 0b10000001;
+	dev->lights[30] = 0b01000001;
+	dev->lights[31] = 0b00100011;
+	dev->lights[32] = 0b00010011;
+	dev->lights[33] = 0b00001011;
+	dev->lights[34] = 0b00000101;
+	dev->lights[35] = 0b00001101;
+	dev->lights[36] = 0b00011101;
+
+	for(int i = 0; i < 16; i++)
+		dev->lights[25+i] &= dev->pad_hit[i] > 0 ? (uint8_t)-1 : 0;
+
+	dev->lights_endpoint = 0x81;
 	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
