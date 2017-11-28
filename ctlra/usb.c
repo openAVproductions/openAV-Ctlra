@@ -646,8 +646,6 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 	dev->usb_async_next = async;
 	XFER_VALIDATE(dev);
 
-	CTLRA_DRIVER(ctlra, "alloc write async @ %p\n", async);
-
 	/* back-pointer from async to xfer */
 	async->xfer = xfr;
 
