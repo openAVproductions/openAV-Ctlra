@@ -266,6 +266,7 @@ struct ni_maschine_mk3_t {
 
 	uint8_t lights_pads_endpoint;
 	uint8_t lights_pads[LIGHTS_SIZE];
+	uint8_t pad_colour;
 
 	/* Store the current encoder value */
 	uint8_t encoder_value;
@@ -379,7 +380,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			event.grid.pressed = (pad_pressed & (1 << i)) > 0;
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
-			dev->lights_pads[25+i] = 0x2a * event.grid.pressed;
+			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 			flush_lights = 1;
 		}
 		if(flush_lights)
@@ -434,6 +435,20 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
+
+				/* ABCDEFGH Pad colour */
+				static const uint8_t cols[] = {
+					0x2a, 0b11101, 0x11000011, 0x5e,
+					0b11011,
+					0b1111,
+					0b1011,
+					0b101,
+				};
+				if(i > 6 && i <= 6 + 8) {
+					dev->pad_colour   = cols[i-7];
+					dev->lights[22+i] = cols[i-7];;
+					dev->lights_dirty;
+				}
 			}
 		}
 
