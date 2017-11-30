@@ -312,6 +312,15 @@ static elem_type qsort_median(elem_type * array, int n)
 	return array[n/2];
 }
 
+/* ABCDEFGH Pad colour */
+static const uint8_t pad_cols[] = {
+	0x2a, 0b11101, 0x11000011, 0x5e,
+	0b11011,
+	0b1111,
+	0b1011,
+	0b101,
+};
+
 void
 ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				  uint32_t endpoint, uint8_t *data,
@@ -380,6 +389,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			event.grid.pressed = (pad_pressed & (1 << i)) > 0;
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
+			printf("pad col %d\n", dev->pad_colour);
 			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 			flush_lights = 1;
 		}
@@ -436,17 +446,9 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
 
-				/* ABCDEFGH Pad colour */
-				static const uint8_t cols[] = {
-					0x2a, 0b11101, 0x11000011, 0x5e,
-					0b11011,
-					0b1111,
-					0b1011,
-					0b101,
-				};
 				if(i > 6 && i <= 6 + 8) {
-					dev->pad_colour   = cols[i-7];
-					dev->lights[22+i] = cols[i-7];;
+					dev->pad_colour   = pad_cols[i-7];
+					dev->lights[22+i] = pad_cols[i-7];;
 					dev->lights_dirty;
 				}
 			}
@@ -709,6 +711,9 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 		free(dev);
 		return 0;
 	}
+
+	dev->pad_colour = pad_cols[0];
+	dev->lights_dirty = 1;
 
 	dev->base.info = ctlra_ni_maschine_mk3_info;
 
