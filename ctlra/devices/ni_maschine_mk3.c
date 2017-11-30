@@ -264,10 +264,13 @@ struct ni_maschine_mk3_t {
 	uint8_t lights_endpoint;
 	uint8_t lights[LIGHTS_SIZE];
 
+	uint8_t lights_pads_endpoint;
+	uint8_t lights_pads[LIGHTS_SIZE];
+
 	/* Store the current encoder value */
 	uint8_t encoder_value;
 	/* Pressure filtering for note-onset detection */
-	uint16_t pad_hit[NPADS];
+	uint16_t pad_hit;
 	uint16_t pad_pressure[NPADS];
 
 	uint8_t screen_data[SCREEN_XFER_SIZE*4];
@@ -322,99 +325,81 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 
 	uint8_t *buf = data;
 
-	//printf("%d\n", size);
-
 	switch(nbytes) {
-	case 128: {
-		/*
+	case 81: {
+		/* Return of LED state, after update written to device */
+#if 0
 		int i;
 		static uint8_t old[82];
-		for(i = 82; i >= 0; i--) {
+		for(i = 81; i >= 0; i--) {
 			printf("%02x ", buf[i]);
 		}
 		printf("\n");
-		*/
-
-		if(buf[0] != 2) {
-			printf("not a pad message\n");
-			break;
-		}
-
-		for(int i = 0; i < 16; i++)
-			dev->pad_hit[i] = 0;
-
-		for(int i = 0; i < 16; i++) {
-			uint8_t pad = buf[1+i*3];
-			if(i > 0 && pad == 0)
-				break;
-			dev->pad_hit[pad] = 1;
-		}
-	} break;
-#if 0
-	case 65: {
-		int i;
-		for (i = 0; i < NPADS; i++) {
-			uint16_t new = ((data[i*2+2] & 0xf) << 8) |
-					 data[i*2+1];
-
-			uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
-
-			uint16_t total = 0;
-			for(int j = 0; j < KERNEL_LENGTH; j++) {
-				int idx = i*KERNEL_LENGTH + j;
-				total += dev->pad_pressures[idx];
-			}
-
-			dev->pad_avg[i] = total / KERNEL_LENGTH;
-			dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
-
-			struct ctlra_event_t event = {
-				.type = CTLRA_EVENT_GRID,
-				.grid  = {
-					.id = 0,
-					.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
-					.pos = i,
-					.pressed = 1
-				},
-			};
-			struct ctlra_event_t *e = {&event};
-
-			uint16_t med = qsort_median(
-				&dev->pad_pressures[i*KERNEL_LENGTH],
-				KERNEL_LENGTH);
-
-			if(med > 550 && dev->pads[i] == 0) {
-				/* TODO: improve velocity linearity */
-				float velo = (med - 550) / 3500.f;
-				float v2 = velo * velo * velo * velo;
-				float fin = (velo - v2) * 3;
-				fin = fin > 1.0f ? 1.0f : fin;
-				fin = fin < 0.0f ? 0.0f : fin;
-				e->grid.pressure = fin;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-				/*
-				dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0x7f;
-				dev->lights_dirty = 1;
-				ni_maschine_mk3_light_flush(&dev->base, 1);
-				dev->pads[i] = 2000;
-				*/
-			} else if(med < 100 && dev->pads[i] > 0) {
-				/*
-				dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0;
-				dev->lights_dirty = 1;
-				ni_maschine_mk3_light_flush(&dev->base, 1);
-				*/
-				dev->pads[i] = 0;
-				event.grid.pressed = 0;
-				event.grid.pressure = 0.f;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-		}
-	}
 #endif
-	break;
+		} break;
+	case 128: {
+		/* ensure a pad message */
+		if(buf[0] != 2)
+			break;
+
+		/* pre-process pressed pads into bitmask */
+		uint16_t pad_pressed = 0;
+		for(int i = 0; i < 16; i++) {
+			/* skip over pressure values */
+			uint8_t p = buf[1+i*3];
+			/* pad is zero when list of pads has ended */
+			if(i > 0 && p == 0)
+				break;
+
+			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
+			pad_pressed |= (pressure > 800) << p;
+		}
+
+		/* dev-pad_hit never as its "dropped" bits sent as events */
+		uint16_t old_pressed = dev->pad_hit;
+		dev->pad_hit = pad_pressed;
+
+		struct ctlra_event_t event = {
+			.type = CTLRA_EVENT_GRID,
+			.grid  = {
+				.id = 0,
+				.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+				.pos = 0,
+				.pressed = 1
+			},
+		};
+		struct ctlra_event_t *e = {&event};
+
+#if 1
+		int flush_lights = 0;
+		for(int i = 0; i < 16; i++) {
+			if (!((pad_pressed ^ old_pressed) & (1 << i)))
+				continue;
+			event.grid.pos = i;
+			event.grid.pressed = (pad_pressed & (1 << i)) > 0;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->lights_pads[25+i] = 0x2a * event.grid.pressed;
+			flush_lights = 1;
+		}
+		if(flush_lights)
+			ni_maschine_mk3_light_flush(&dev->base, 1);
+#else
+		/* alternative implementation using bitmasks for loop */
+		uint16_t delta = old_pressed ^ pad_pressed;
+		const uint32_t count = __builtin_popcount(delta);
+		for(int i = 0; i < count; i++) {
+			int p = ffs(delta);
+			event.grid.pos = p - 1;
+			event.grid.pressed = (pad_pressed & (1 << p));
+			printf("pop: %d, ffs %d, press = %d, pressed %02x\n",
+			       i, p, pad_pressed & (1<<p), pad_pressed);
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
+#endif
+
+	} break;
 	case 42: {
 		/*
 		int i;
@@ -514,38 +499,23 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 		return;
 	}
 
-	/* TODO: can we clean up the light_id handling somehow?
-	 * There's a lot of branching / strange math per LED here */
 	int idx = light_id;
 
-#if 0
-	/* Group takes up 3 bytes, so add 2 if we're past the group */
-	idx += 2 * (light_id > NI_MASCHINE_MIKRO_MK2_LED_GROUP);
 	uint32_t r = (light_status >> 16) & 0x7F;
 	uint32_t g = (light_status >>  8) & 0x7F;
 	uint32_t b = (light_status >>  0) & 0x7F;
-
-	/* Group btn and all pads */
-	if(light_id == NI_MASCHINE_MIKRO_MK2_LED_GROUP) {
-		dev->lights[ 8] = r;
-		dev->lights[ 9] = g;
-		dev->lights[10] = b;
-	}
-	else if (light_id >= NI_MASCHINE_MIKRO_MK2_LED_PAD_1 &&
-		 light_id < NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16) {
-		int pad_id = light_id - NI_MASCHINE_MIKRO_MK2_LED_PAD_1;
-		int p = NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + (pad_id*3) + 2;
-		dev->lights[p+0] = r;
-		dev->lights[p+1] = g;
-		dev->lights[p+2] = b;
-	} else {
-		 if(light_id > NI_MASCHINE_MIKRO_MK2_LED_PAD_1 + 16)
-			return;
-		/* write brighness to all LEDs */
-		uint32_t bright = (light_status >> 24) & 0x7F;
+	uint32_t bright = (light_status >> 27);
+	
+	switch(idx) {
+	case 5: /* Sampling */
+		dev->lights_dirty = r;
+		break;
+	default:
+		/* brighness 2 bits at the start of the uint8_t for the light */
 		dev->lights[idx] = bright;
-	}
-#endif
+		dev->lights_pads[idx] = bright;
+		break;
+	};
 
 	dev->lights_dirty = 1;
 }
@@ -559,12 +529,14 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
+#if 0
 	static uint16_t c;
-	for(int i= 0; i < 62; i++) {
-		dev->lights[i] = (0b1101 << ((c++ / 4000)%8));
+	for(int i= 0; i < 1; i++) {
+		dev->lights[i] = 0x21 | 0b11;//(0b1101 << ((c++ / 4000)%8));
 			//0b00100000;
 			//0x2a;
 	}
+
 	dev->lights[29] = 0b10000000;
 	dev->lights[30] = 0b10000001;
 	dev->lights[30] = 0b01000001;
@@ -575,12 +547,6 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	dev->lights[35] = 0b00001101;
 	dev->lights[36] = 0b00011101;
 
-	/* error handling in USB subsystem */
-	ctlra_dev_impl_usb_interrupt_write(base,
-					   USB_HANDLE_IDX,
-					   USB_ENDPOINT_WRITE,
-					   data,
-					   LIGHTS_SIZE + 1);
 
 	for(int i = 0; i < 4; i++)
 		dev->lights[25+i] = 0b10001 << i;
@@ -601,8 +567,16 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	for(int i = 0; i < 16; i++)
 		dev->lights[25+i] &= dev->pad_hit[i] > 0 ? (uint8_t)-1 : 0;
+#endif
+	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   LIGHTS_SIZE + 1);
 
-	dev->lights_endpoint = 0x81;
+	data = &dev->lights_pads_endpoint;
+	dev->lights_pads_endpoint = 0x81;
 	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
