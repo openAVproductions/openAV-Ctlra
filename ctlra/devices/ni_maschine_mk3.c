@@ -47,6 +47,10 @@
 #define USB_ENDPOINT_READ     (0x83)
 #define USB_ENDPOINT_WRITE    (0x03)
 
+#define USB_HANDLE_SCREEN_IDX     (0x1)
+#define USB_INTERFACE_SCREEN      (0x5)
+#define USB_ENDPOINT_SCREEN_WRITE (0x4)
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mk3_ctlra_t {
 	int event_id;
@@ -247,9 +251,32 @@ static struct ctlra_item_info_t feedback_info[] = {
 #define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
 #define PAD_SENSITIVITY        (650)
-/* Screen: 1 byte endpoint, 8 bytes header, 256 bytes binary data */
-#define SCREEN_XFER_SIZE (1 + 8 + 256)
 
+
+/* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ? */
+/* Screen blit commands - no need to have publicly in header */
+static const uint8_t header[] = {
+	0x84,  0x0, 0x0, 0x60,
+	0x0,  0x0, 0x0,  0x0,
+	0x0,  0x0, 0x0,  0x0,
+	0x1, 0xe0, 0x1, 0x10,
+};
+static const uint8_t command[] = {
+	/* num_px/2: 0xff00 is the (total_px/2) */
+	0x00, 0x0, 0xff, 0x00,
+};
+static const uint8_t footer[] = {
+	0x03, 0x00, 0x00, 0x00,
+	0x40, 0x00, 0x00, 0x00
+};
+/* 565 encoding, hence 2 bytes per px */
+#define NUM_PX (480 * 272 * 2)
+struct ni_screen_t {
+	uint8_t header [sizeof(header)];
+	uint8_t command[sizeof(command)];
+	uint8_t pixels [NUM_PX]; // 565 uses 2 bytes per pixel
+	uint8_t footer [sizeof(footer)];
+};
 
 /* Represents the the hardware device */
 struct ni_maschine_mk3_t {
@@ -274,7 +301,8 @@ struct ni_maschine_mk3_t {
 	uint16_t pad_hit;
 	uint16_t pad_pressure[NPADS];
 
-	uint8_t screen_data[SCREEN_XFER_SIZE*4];
+	struct ni_screen_t screen_left;
+	struct ni_screen_t screen_right;
 };
 
 static const char *
@@ -314,7 +342,7 @@ static elem_type qsort_median(elem_type * array, int n)
 
 /* ABCDEFGH Pad colour */
 static const uint8_t pad_cols[] = {
-	0x2a, 0b11101, 0x11000011, 0x5e,
+	0x2a, 0b11101, 0b11000011, 0x5e,
 	0b11011,
 	0b1111,
 	0b1011,
@@ -449,7 +477,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				if(i > 6 && i <= 6 + 8) {
 					dev->pad_colour   = pad_cols[i-7];
 					dev->lights[22+i] = pad_cols[i-7];;
-					dev->lights_dirty;
+					dev->lights_dirty = 1;
 				}
 			}
 		}
@@ -602,50 +630,18 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 }
 
 static void
-maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev)
+maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev, int scr)
 {
-	const uint8_t xfer_header[9] = {
-		0xE0, /* 0 */
-		   0, /* 1: overwritten by "segment offset" */
-		   0, /* 2 */
-		   0, /* 3 */
-		   0, /* 4 */
-		0x20, /* 5 */
-		   0, /* 6 */
-		 0x8, /* 7 */
-		   0, /* 8 */
-	};
+	uint8_t *data = (uint8_t *)
+		(scr == 1) ? &dev->screen_right : &dev->screen_left;
 
-	/* "Stripe" test the screen for accuracy of markings:
-	dev->screen_data[9+0*SCREEN_XFER_SIZE] = -1;
-	dev->screen_data[9+1*SCREEN_XFER_SIZE-9] = -1;
-	dev->screen_data[9+2*SCREEN_XFER_SIZE-18] = -1;
-	dev->screen_data[9+3*SCREEN_XFER_SIZE-27] = -1;
-	*/
-
-	int i, j;
-	for (i = 0; i < 4; i++) {
-		/* offset magic: to avoid using multiple buffers, we
-		 * over-write the already sent bitmap data. It is
-		 * over-written by the header for the next segment, which
-		 * allows sending the data without memcpy(). 9 is the
-		 * number of bytes required for the endpoint + header */
-		int offset = -(i * 9);
-		int idx = i * SCREEN_XFER_SIZE + offset;
-		uint8_t *data = &dev->screen_data[idx];
-
-		/* write header + segment directly to data buffer */
-		for (j = 0; j < 9; j++)
-			data[j] = xfer_header[j];
-
-		data[1] = i * 32;
-
-		ctlra_dev_impl_usb_interrupt_write(&dev->base,
-						   USB_HANDLE_IDX,
-						   USB_ENDPOINT_WRITE,
-						   data,
-						   SCREEN_XFER_SIZE);
-	}
+	int ret = ctlra_dev_impl_usb_bulk_write(&dev->base,
+						USB_HANDLE_SCREEN_IDX,
+						USB_ENDPOINT_SCREEN_WRITE,
+						data,
+						sizeof(dev->screen_left));
+	if(ret < 0)
+		printf("%s screen write failed!\n", __func__);
 }
 
 int32_t
@@ -656,15 +652,9 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
-	if(flush)
-		maschine_mk3_blit_to_screen(dev);
+	/* TODO: Support this */
 
-	/* skip past the first header */
-	*pixels = &dev->screen_data[9];
-	/* 128 * 64 pixels, but / 8 pixels per byte */
-	*bytes = (128 * 64) / 8;
-
-	return 0;
+	return -1;
 }
 
 static int32_t
@@ -675,8 +665,9 @@ ni_maschine_mk3_disconnect(struct ctlra_dev_t *base)
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
 	if(!base->banished) {
 		ni_maschine_mk3_light_flush(base, 1);
-		memset(&dev->screen_data[9], 0, sizeof(SCREEN_XFER_SIZE*4));
-		maschine_mk3_blit_to_screen(dev);
+		memset(dev->screen_left.pixels, 0x0,
+		       sizeof(dev->screen_left.pixels));
+		maschine_mk3_blit_to_screen(dev, 0);
 	}
 
 	ctlra_dev_impl_usb_close(base);
@@ -712,6 +703,29 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+	                                        USB_INTERFACE_SCREEN,
+	                                        USB_HANDLE_SCREEN_IDX);
+	if(err) {
+		printf("%s: failed to open screen usb interface\n", __func__);
+		goto fail;
+	}
+
+	/* initialize blit mem in driver */
+	memcpy(dev->screen_left.header , header , sizeof(dev->screen_left.header));
+	memcpy(dev->screen_left.command, command, sizeof(dev->screen_left.command));
+	memcpy(dev->screen_left.footer , footer , sizeof(dev->screen_left.footer));
+
+	/* blit stuff to screen */
+	uint8_t col = 0x2a;
+	for(int i = 0; i < NUM_PX; i++) {
+		if((i % (480 * 10)) == 0)
+			col = rand();
+		dev->screen_left.pixels[i] = col;
+	}
+	maschine_mk3_blit_to_screen(dev, 0);
+
+
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
 
@@ -743,8 +757,6 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
-
-	maschine_mk3_blit_to_screen(dev);
 
 	return (struct ctlra_dev_t *)dev;
 fail:
