@@ -255,8 +255,14 @@ static struct ctlra_item_info_t feedback_info[] = {
 
 /* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ? */
 /* Screen blit commands - no need to have publicly in header */
-static const uint8_t header[] = {
-	0x84,  0x0, 0x0, 0x60,
+static const uint8_t header_right[] = {
+	0x84,  0x0, 0x01, 0x60,
+	0x0,  0x0, 0x0,  0x0,
+	0x0,  0x0, 0x0,  0x0,
+	0x1, 0xe0, 0x1, 0x10,
+};
+static const uint8_t header_left[] = {
+	0x84,  0x0, 0x00, 0x60,
 	0x0,  0x0, 0x0,  0x0,
 	0x0,  0x0, 0x0,  0x0,
 	0x1, 0xe0, 0x1, 0x10,
@@ -272,7 +278,7 @@ static const uint8_t footer[] = {
 /* 565 encoding, hence 2 bytes per px */
 #define NUM_PX (480 * 272 * 2)
 struct ni_screen_t {
-	uint8_t header [sizeof(header)];
+	uint8_t header [sizeof(header_left)];
 	uint8_t command[sizeof(command)];
 	uint8_t pixels [NUM_PX]; // 565 uses 2 bytes per pixel
 	uint8_t footer [sizeof(footer)];
@@ -667,7 +673,10 @@ ni_maschine_mk3_disconnect(struct ctlra_dev_t *base)
 		ni_maschine_mk3_light_flush(base, 1);
 		memset(dev->screen_left.pixels, 0x0,
 		       sizeof(dev->screen_left.pixels));
+		memset(dev->screen_right.pixels, 0x0,
+		       sizeof(dev->screen_right.pixels));
 		maschine_mk3_blit_to_screen(dev, 0);
+		maschine_mk3_blit_to_screen(dev, 1);
 	}
 
 	ctlra_dev_impl_usb_close(base);
@@ -712,18 +721,24 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	}
 
 	/* initialize blit mem in driver */
-	memcpy(dev->screen_left.header , header , sizeof(dev->screen_left.header));
+	memcpy(dev->screen_left.header , header_left, sizeof(dev->screen_left.header));
 	memcpy(dev->screen_left.command, command, sizeof(dev->screen_left.command));
 	memcpy(dev->screen_left.footer , footer , sizeof(dev->screen_left.footer));
+	/* right */
+	memcpy(dev->screen_right.header , header_right, sizeof(dev->screen_right.header));
+	memcpy(dev->screen_right.command, command, sizeof(dev->screen_right.command));
+	memcpy(dev->screen_right.footer , footer , sizeof(dev->screen_right.footer));
 
 	/* blit stuff to screen */
 	uint8_t col = 0x2a;
 	for(int i = 0; i < NUM_PX; i++) {
 		if((i % (480 * 10)) == 0)
 			col = rand();
-		dev->screen_left.pixels[i] = col;
+		dev->screen_left.pixels[i]  = col;
+		dev->screen_right.pixels[i] = col;
 	}
 	maschine_mk3_blit_to_screen(dev, 0);
+	maschine_mk3_blit_to_screen(dev, 1);
 
 
 	dev->pad_colour = pad_cols[0];
