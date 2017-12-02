@@ -699,10 +699,8 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 	memset(dev->lights, 0, sizeof(dev->lights));
 	memset(dev->grid, 0, sizeof(dev->grid));
 	memset(dev->touchstrips, 0, sizeof(dev->touchstrips));
-	if(!base->banished) {
+	if(!base->banished)
 		ni_maschine_jam_light_flush(base, 1);
-		usleep(100000);
-	}
 
 	ctlra_dev_impl_usb_close(base);
 	free(dev);
