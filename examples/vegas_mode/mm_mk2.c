@@ -47,9 +47,7 @@ void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 
 	uint8_t *pixel_data;
 	uint32_t bytes;
-	int has_screen = ctlra_dev_screen_get_data(dev,
-						   &pixel_data,
-						   &bytes, 0);
+	ctlra_dev_screen_get_data(dev, &pixel_data, &bytes, 0);
 
 	/* TODO: fix the bytes parameter, once a decision on the
 	 * general approach is made; see here for details:
