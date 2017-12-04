@@ -163,8 +163,10 @@ CTLRA_DEVICE_DECL(avtka);
 		   info->vendor, info->device);
 	struct ctlra_dev_t *dev = ctlra_dev_connect(c, ctlra_avtka_connect,
 						    0x0, 0x0, info);
-	if(!dev)
-		CTLRA_WARN(c, "avtka dev returned %p\n", dev);
+	if(!dev) {
+		CTLRA_ERROR(c, "avtka dev returned %p\n", dev);
+		return -EINVAL;
+	}
 
 	/* assuming info setup is ok, call accept dev callback in app */
 	int accepted = c->accept_dev_func(&dev->info,

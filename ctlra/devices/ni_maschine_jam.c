@@ -52,9 +52,6 @@ struct ni_maschine_jam_ctlra_t {
 	uint32_t mask;
 };
 
-// WIP: we can use HIDRAW or LibUSB backends
-//#define USE_LIBUSB 1
-
 static const char *ni_maschine_jam_control_names[] = {
 	/* Faders / Dials */
 	"Song",
@@ -411,21 +408,9 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 	uint8_t buf[1024];
 	int32_t nbytes;
 
-#ifdef USE_LIBUSB
 	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 						   USB_ENDPOINT_READ,
 						   buf, 1024);
-#else
-	do {
-		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
-			break;
-		}
-		/* call read cb directly */
-		//printf("got %d\n", nbytes);
-		ni_machine_jam_usb_read_cb(base, USB_ENDPOINT_READ,
-					   buf, nbytes);
-	} while (nbytes > 0);
-#endif
 	return 0;
 }
 
@@ -469,6 +454,11 @@ void ni_machine_jam_usb_read_cb(struct ctlra_dev_t *base, uint32_t endpoint,
 			uint16_t ts = *((uint16_t *)&data[offset]);
 			uint16_t t1 = *((uint16_t *)&data[offset+2]);
 			uint16_t t2 = *((uint16_t *)&data[offset+4]);
+
+			if(t1 == 0) {
+				/* touch departed event here? */
+				continue;
+			}
 
 			if(dev->hw_values[offset  ] != ts ||
 			   dev->hw_values[offset+1] != t1 ||
@@ -618,18 +608,8 @@ static void ni_maschine_jam_light_set(struct ctlra_dev_t *base,
 
 	/* write brighness to all LEDs */
 	uint32_t bright = (light_status >> 24) & 0x7F;
-	dev->lights[light_id] = bright;
-
-	/* FX ON buttons have orange and blue */
-#if 0
-	if(light_id == NI_MASCHINE_JAM_LED_FX_ON_LEFT ||
-	   light_id == NI_MASCHINE_JAM_LED_FX_ON_RIGHT) {
-		uint32_t r      = (light_status >> 16) & 0xFF;
-		uint32_t b      = (light_status >>  0) & 0xFF;
-		dev->lights[light_id  ] = r;
-		dev->lights[light_id+1] = b;
-	}
-#endif
+/* base brightness */
+	dev->lights[light_id] = bright | 0x2;
 
 	dev->lights_dirty = 1;
 }
@@ -670,87 +650,44 @@ ni_maschine_jam_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	82: touch leds
 #endif
 
-	static uint8_t col;
+	int ret;
 
-	for(int i = 0; i <NI_MASCHINE_JAM_LED_COUNT; i++) {
-		//data[i] = 0x06;// 0b11110 * something_presssed;
-	}
-	//memset(data, 0, sizeof(dev->lights));
-
-#ifdef USE_LIBUSB
 	data[0] = 0x80;
-	int ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
-						     USB_ENDPOINT_WRITE,
-						     data,
-						     640+1);
-	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x81;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     640+1);
+						     64+2);
 	if(ret < 0)
 		printf("%s write failed, ret %d\n", __func__, ret);
-	data[0] = 0x82;
+
+	/* touchstrips */
+	dev->touchstrips[0] = 0x82;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     dev->touchstrips,
+						     88+2);
+	if(ret < 0)
+		printf("%s touchstrip write failed, ret %d\n", __func__, ret);
+
+	/* writing the LED button a *second time* (see above) allows grid
+	 * messages to work afterwards. If this 2nd button data is removed,
+	 * the grid message later is ignored for some reason */
+	data[0] = 0x80;
 	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
 						     USB_ENDPOINT_WRITE,
 						     data,
-						     640+1);
+						     64+2);
 	if(ret < 0)
-		printf("%s write failed, ret %d\n", __func__, ret);
-#else
-#if 0
-	data[0] = 0x80;
-	int ret = write(dev->fd, data, 65);
-	ret = write(dev->fd, data, 65+16);
-	printf("write 1: ret %d\n", ret);
+		printf("%s 2nd btn write failed, ret %d\n", __func__, ret);
 
-	data[0] = 0x81;
-	ret = write(dev->fd, data, 8*10+1);
-	printf("write 2: ret %d\n", ret);
-
-	data[0] = 0x82;
-	ret = write(dev->fd, data, 64+1);
-	printf("write 3: ret %d\n", ret);
-	//write(dev->fd, data, 2);
-	
-#else
-	/* try sending one huge message */
-
-	dev->lights[0] = 0x80;
-	int ret = write(dev->fd, dev->lights, 81);
-	write(dev->fd, dev->lights, 81);
-	//write(dev->fd, data, 81);
-
-#if 0
-	dev->lights[0] = 0x81;
-	ret = write(dev->fd, dev->lights, 81);
-	//write(dev->fd, data, 81);
-	write(dev->fd, dev->lights, 81);
-#endif /* write Grids */
-
-	/*
-	uint8_t lights[11];
-	for(int i = 0; i < 11; i++)
-		lights[i] = 30 * i > (11 * dev->hw_values[1]);
-	lights[10] = 20;
-	ni_maschine_jam_touchstrip_led(base, 3, lights);
-	*/
-
-#if 0
-	dev->lights[0] = 0x82;
-	/*
-	ret = write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
-	write(dev->fd, dev->touchstrips, TOUCHSTRIP_LEDS_SIZE);
-	*/
-	ret = write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
-	write(dev->fd, dev->lights, TOUCHSTRIP_LEDS_SIZE);
-#endif /* write touchstrips */
-
-#endif
-
-#endif
+	/* grid */
+	dev->touchstrips[0] = 0x81;
+	ret = ctlra_dev_impl_usb_interrupt_write(base, USB_HANDLE_IDX,
+						     USB_ENDPOINT_WRITE,
+						     dev->touchstrips,
+						     79+2);
+	if(ret < 0)
+		printf("%s grid write failed, ret %d\n", __func__, ret);
 }
 
 static int32_t
@@ -758,12 +695,14 @@ ni_maschine_jam_disconnect(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_jam_t *dev = (struct ni_maschine_jam_t *)base;
 
-	/* Turn off all lights */
-	//memset(dev->lights, 0, NI_MASCHINE_JAM_LED_COUNT);
+	/* Turn off all lights, flush and allow to retire */
+	memset(dev->lights, 0, sizeof(dev->lights));
+	memset(dev->grid, 0, sizeof(dev->grid));
+	memset(dev->touchstrips, 0, sizeof(dev->touchstrips));
 	if(!base->banished)
 		ni_maschine_jam_light_flush(base, 1);
 
-	printf("dev disco %p\n", base);
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -775,74 +714,20 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 			      void *userdata, void *future)
 {
 	(void)future;
-	struct ni_maschine_jam_t *dev = calloc(1, sizeof(struct ni_maschine_jam_t));
+	struct ni_maschine_jam_t *dev =
+		calloc(1, sizeof(struct ni_maschine_jam_t));
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-		 "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-		 "%s", "Maschine Jam");
-
-
-#ifdef USE_LIBUSB
 	int err = ctlra_dev_impl_usb_open(&dev->base, CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
-	if(err) {
-		free(dev);
-		return 0;
-	}
+	if(err)
+		goto fail;
 
 	err = ctlra_dev_impl_usb_open_interface(&dev->base,
 					 USB_INTERFACE_ID, USB_HANDLE_IDX);
-	if(err) {
-		free(dev);
-		return 0;
-	}
-#else
-
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <linux/hidraw.h>
-
-	int fd, i, res, found = 0;
-	char buf[256];
-	struct hidraw_devinfo info;
-
-	for(i = 0; i < 64; i++) {
-		const char *device = "/dev/hidraw";
-		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
-		if(fd < 0)
-			continue;
-
-		memset(&info, 0x0, sizeof(info));
-		res = ioctl(fd, HIDIOCGRAWINFO, &info);
-
-		if (res < 0) {
-			perror("HIDIOCGRAWINFO");
-		} else {
-			if(info.vendor  == CTLRA_DRIVER_VENDOR  &&
-			   info.product == CTLRA_DRIVER_DEVICE) {
-				found = 1;
-				break;
-			}
-		}
-		close(fd);
-		/* continue searching next HID dev */
-	}
-
-	if(!found) {
-		free(dev);
-		return 0;
-	}
-
-	dev->fd = fd;
-	printf("jam on fd %d\n", fd);
-#endif
+	if(err)
+		goto fail;
 
 	dev->base.info = ctlra_ni_maschine_jam_info;
 
@@ -854,6 +739,11 @@ ctlra_ni_maschine_jam_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	uint8_t *data = &dev->lights_interface;
+	for(int i = 0; i < NI_MASCHINE_JAM_LED_COUNT; i++) {
+		data[i] = 0x06;
+	}
 
 	return (struct ctlra_dev_t *)dev;
 fail:
@@ -869,14 +759,15 @@ struct ctlra_dev_info_t ctlra_ni_maschine_jam_info = {
 	.size_x    = 320,
 	.size_y    = 295,
 
-	/* TODO: expose info */
-	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
-	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
-	.control_count[CTLRA_EVENT_ENCODER] = 1,
+	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE - 1,
+	.control_count[CTLRA_EVENT_SLIDER] = 8,
 	.control_count[CTLRA_EVENT_GRID] = 1,
 
 	.control_info[CTLRA_EVENT_BUTTON] = buttons_info,
 	.control_info[CTLRA_EVENT_SLIDER] = sliders_info,
+	/* Todo: fix AVTKA ui on rotate left
+	.control_count[CTLRA_EVENT_ENCODER] = 1,
+	*/
 	.control_info[CTLRA_EVENT_ENCODER] = encoder_info,
 
 	/* TODO: feedback items:

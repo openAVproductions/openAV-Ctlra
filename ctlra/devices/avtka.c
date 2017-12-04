@@ -102,6 +102,12 @@ avtka_light_set(struct ctlra_dev_t *base, uint32_t light_id,
 }
 
 void
+avtka_feedback_digits(struct ctlra_dev_t *base, uint32_t feedback_id,
+		      float value)
+{
+}
+
+void
 avtka_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
@@ -470,6 +476,11 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			ai.draw = AVTKA_DRAW_BUTTON;
 		}
 
+		if(item->flags & CTLRA_ITEM_FB_7_SEGMENT) {
+			ai.draw = AVTKA_DRAW_7_SEG;
+			ai.params[0] = item->params[0];
+		}
+
 		ai.interact = 0;
 
 		//snprintf(ai.name, sizeof(ai.name), "%s", name);
@@ -480,7 +491,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 			return 0;
 		}
 		dev->id_to_ctlra[idx].type = CTLRA_FEEDBACK_ITEM;
-		dev->id_to_ctlra[idx].id   = 6;
+		dev->id_to_ctlra[idx].id   = i;
 	}
 
 	/* return the pointer to the new UI instance */
