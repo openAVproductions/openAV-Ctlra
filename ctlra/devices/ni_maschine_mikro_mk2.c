@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
@@ -45,6 +47,8 @@
 #define USB_HANDLE_IDX        (0x00)
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
+
+#define USE_LIBUSB 1
 
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mikro_mk2_ctlra_t {
@@ -185,11 +189,12 @@ static struct ctlra_item_info_t feedback_info[] = {
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
-#define KERNEL_LENGTH          (16)
+#define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (150)
-#define PAD_PRESS_BRIGHTNESS   (0.9999f)
-#define PAD_RELEASE_BRIGHTNESS (0.25f)
+#define PAD_SENSITIVITY        (650)
+/* Screen: 1 byte endpoint, 8 bytes header, 256 bytes binary data */
+#define SCREEN_XFER_SIZE (1 + 8 + 256)
+
 
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk2_t {
@@ -212,7 +217,7 @@ struct ni_maschine_mikro_mk2_t {
 	uint16_t pad_avg[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 
-	int fd;
+	uint8_t screen_data[SCREEN_XFER_SIZE*4];
 };
 
 static const char *
@@ -228,31 +233,59 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 	uint8_t buf[1024];
-	int32_t nbytes;
+	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
+					  USB_ENDPOINT_READ,
+					  buf, 1024);
+	return 0;
+}
+
+void
+ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force);
+
+typedef uint16_t elem_type;
+
+int compare(const void *f1, const void *f2)
+{
+	return ( *(elem_type*)f1 > *(elem_type*)f2) ? 1 : -1;
+}
+
+elem_type qsort_median(elem_type * array, int n)
+{
+	qsort(array, n, sizeof(elem_type), compare);
+	return array[n/2];
+}
+
+void
+ni_maschine_mikro_mk2_usb_read_cb(struct ctlra_dev_t *base,
+				  uint32_t endpoint, uint8_t *data,
+				  uint32_t size)
+{
+	struct ni_maschine_mikro_mk2_t *dev =
+		(struct ni_maschine_mikro_mk2_t *)base;
+	static double worst_poll;
+	int32_t nbytes = size;
+
+	int count = 0;
 
 	do {
-		if ((nbytes = read(dev->fd, &buf, sizeof(buf))) < 0) {
-			break;
-		}
-
-		uint8_t *data = &buf[1];
+		uint8_t *buf = data;
 
 		switch(nbytes) {
 		case 65: {
 			int i;
 			for (i = 0; i < NPADS; i++) {
-				uint16_t data1_mask = (data[1] & 0x0F);
-				uint16_t new = data[0] | ( data1_mask << 8);
-				data += 2;
+				uint16_t new = ((data[i*2+2] & 0xf) << 8) |
+						 data[i*2+1];
 
-				uint8_t idx = dev->pad_idx[i]++ & (KERNEL_LENGTH-1);
+				uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
 
 				uint16_t total = 0;
 				for(int j = 0; j < KERNEL_LENGTH; j++) {
-					total += dev->pad_pressures[i*KERNEL_LENGTH + j];
+					int idx = i*KERNEL_LENGTH + j;
+					total += dev->pad_pressures[idx];
 				}
-				dev->pad_avg[i] = total / KERNEL_LENGTH;
 
+				dev->pad_avg[i] = total / KERNEL_LENGTH;
 				dev->pad_pressures[i*KERNEL_LENGTH + idx] = new;
 
 				struct ctlra_event_t event = {
@@ -265,21 +298,29 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 					},
 				};
 				struct ctlra_event_t *e = {&event};
-				if(dev->pad_avg[i] > 200 && dev->pads[i] == 0) {
-					/* detect velocity over limit */
-					float velo = (dev->pad_avg[i] - 200) / 200.f;
+
+				uint16_t med = qsort_median(
+					&dev->pad_pressures[i*KERNEL_LENGTH],
+					KERNEL_LENGTH);
+
+				if(med > 550 && dev->pads[i] == 0) {
+					/* TODO: improve velocity linearity */
+					float velo = (med - 550) / 3500.f;
 					float v2 = velo * velo * velo * velo;
 					float fin = (velo - v2) * 3;
 					fin = fin > 1.0f ? 1.0f : fin;
 					fin = fin < 0.0f ? 0.0f : fin;
-					//printf("\nfin: %f\tvelo: %f\tv2: %f\n", fin, velo, v2);
 					e->grid.pressure = fin;
 					dev->base.event_func(&dev->base, 1, &e,
 					                     dev->base.event_func_userdata);
-					//printf("%d pressed\n", i);
+					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0x7f;
+					dev->lights_dirty = 1;
+					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 					dev->pads[i] = 2000;
-				} else if(dev->pad_avg[i] < 150 && dev->pads[i] > 0) {
-					//printf("%d release\n", i);
+				} else if(med < 100 && dev->pads[i] > 0) {
+					dev->lights[NI_MASCHINE_MIKRO_MK2_LED_PAD_1+3+i*3] = 0;
+					dev->lights_dirty = 1;
+					ni_maschine_mikro_mk2_light_flush(&dev->base, 1);
 					dev->pads[i] = 0;
 					event.grid.pressed = 0;
 					event.grid.pressure = 0.f;
@@ -338,9 +379,13 @@ static uint32_t ni_maschine_mikro_mk2_poll(struct ctlra_dev_t *base)
 			break;
 		}
 		}
-	} while (nbytes > 0);
 
-	return 0;
+		/* LIBUSB - no re-reading! */
+		if(count++ < 10)
+			ni_maschine_mikro_mk2_poll(base);
+		else
+			break;
+	} while (nbytes > 0);
 }
 
 static void ni_maschine_mikro_mk2_light_set(struct ctlra_dev_t *base,
@@ -400,7 +445,78 @@ ni_maschine_mikro_mk2_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
 
-	write(dev->fd, data, LIGHTS_SIZE);
+	/* error handling in USB subsystem */
+	ctlra_dev_impl_usb_interrupt_write(base,
+					   USB_HANDLE_IDX,
+					   USB_ENDPOINT_WRITE,
+					   data,
+					   LIGHTS_SIZE + 1);
+}
+
+static void
+maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
+{
+	const uint8_t xfer_header[9] = {
+		0xE0, /* 0 */
+		   0, /* 1: overwritten by "segment offset" */
+		   0, /* 2 */
+		   0, /* 3 */
+		   0, /* 4 */
+		0x20, /* 5 */
+		   0, /* 6 */
+		 0x8, /* 7 */
+		   0, /* 8 */
+	};
+
+	/* "Stripe" test the screen for accuracy of markings:
+	dev->screen_data[9+0*SCREEN_XFER_SIZE] = -1;
+	dev->screen_data[9+1*SCREEN_XFER_SIZE-9] = -1;
+	dev->screen_data[9+2*SCREEN_XFER_SIZE-18] = -1;
+	dev->screen_data[9+3*SCREEN_XFER_SIZE-27] = -1;
+	*/
+
+	int i, j;
+	for (i = 0; i < 4; i++) {
+		/* offset magic: to avoid using multiple buffers, we
+		 * over-write the already sent bitmap data. It is
+		 * over-written by the header for the next segment, which
+		 * allows sending the data without memcpy(). 9 is the
+		 * number of bytes required for the endpoint + header */
+		int offset = -(i * 9);
+		int idx = i * SCREEN_XFER_SIZE + offset;
+		uint8_t *data = &dev->screen_data[idx];
+
+		/* write header + segment directly to data buffer */
+		for (j = 0; j < 9; j++)
+			data[j] = xfer_header[j];
+
+		data[1] = i * 32;
+
+		ctlra_dev_impl_usb_interrupt_write(&dev->base,
+						   USB_HANDLE_IDX,
+						   USB_ENDPOINT_WRITE,
+						   data,
+						   SCREEN_XFER_SIZE);
+	}
+}
+
+int32_t
+ni_maschine_mikro_mk2_screen_get_data(struct ctlra_dev_t *base,
+				      uint8_t **pixels,
+				      uint32_t *bytes,
+				      uint8_t flush)
+{
+	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
+
+	if(flush)
+		maschine_mikro_mk2_blit_to_screen(dev);
+
+	/* skip past the first header */
+	*pixels = &dev->screen_data[9];
+	/* 128 * 64 pixels, but / 8 pixels per byte */
+	*bytes = (128 * 64) / 8;
+
+	return 0;
 }
 
 static int32_t
@@ -409,9 +525,13 @@ ni_maschine_mikro_mk2_disconnect(struct ctlra_dev_t *base)
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;
 
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
-	if(!base->banished)
+	if(!base->banished) {
 		ni_maschine_mikro_mk2_light_flush(base, 1);
+		memset(&dev->screen_data[9], 0, sizeof(SCREEN_XFER_SIZE*4));
+		maschine_mikro_mk2_blit_to_screen(dev);
+	}
 
+	ctlra_dev_impl_usb_close(base);
 	free(dev);
 	return 0;
 }
@@ -423,55 +543,30 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 				    void *userdata, void *future)
 {
 	(void)future;
-	struct ni_maschine_mikro_mk2_t *dev = calloc(1, sizeof(struct ni_maschine_mikro_mk2_t));
+	struct ni_maschine_mikro_mk2_t *dev =
+		calloc(1,sizeof(struct ni_maschine_mikro_mk2_t));
 	if(!dev)
 		goto fail;
 
-	snprintf(dev->base.info.vendor, sizeof(dev->base.info.vendor),
-	         "%s", "Native Instruments");
-	snprintf(dev->base.info.device, sizeof(dev->base.info.device),
-	         "%s", "Maschine Mikro Mk2");
-
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <linux/hidraw.h>
-
-	int fd, i, res, found = 0;
-	char buf[256];
-	struct hidraw_devinfo info;
-
-	for(i = 0; i < 64; i++) {
-		const char *device = "/dev/hidraw";
-		snprintf(buf, sizeof(buf), "%s%d", device, i);
-		fd = open(buf, O_RDWR|O_NONBLOCK); // |O_NONBLOCK
-		if(fd < 0)
-			continue;
-
-		memset(&info, 0x0, sizeof(info));
-		res = ioctl(fd, HIDIOCGRAWINFO, &info);
-
-		if (res < 0) {
-			perror("HIDIOCGRAWINFO");
-		} else {
-			if(info.vendor  == CTLRA_DRIVER_VENDOR &&
-			   info.product == CTLRA_DRIVER_DEVICE) {
-				found = 1;
-				break;
-			}
-		}
-		close(fd);
-		/* continue searching next HID dev */
-	}
-
-	if(!found) {
+	int err = ctlra_dev_impl_usb_open(&dev->base,
+					  CTLRA_DRIVER_VENDOR,
+					  CTLRA_DRIVER_DEVICE);
+	if(err) {
 		free(dev);
 		return 0;
 	}
 
-	dev->fd = fd;
+	err = ctlra_dev_impl_usb_open_interface(&dev->base,
+					 USB_INTERFACE_ID, USB_HANDLE_IDX);
+	if(err) {
+		printf("error opening interface\n");
+		free(dev);
+		return 0;
+	}
+
+	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
+
+	dev->base.usb_read_cb = ni_maschine_mikro_mk2_usb_read_cb;
 
 	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
 		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
@@ -489,15 +584,16 @@ ctlra_ni_maschine_mikro_mk2_connect(ctlra_event_func event_func,
 	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
 	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
 
-	dev->base.info = ctlra_ni_maschine_mikro_mk2_info;
-
 	dev->base.poll = ni_maschine_mikro_mk2_poll;
 	dev->base.disconnect = ni_maschine_mikro_mk2_disconnect;
 	dev->base.light_set = ni_maschine_mikro_mk2_light_set;
 	dev->base.light_flush = ni_maschine_mikro_mk2_light_flush;
+	dev->base.screen_get_data = ni_maschine_mikro_mk2_screen_get_data;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+	maschine_mikro_mk2_blit_to_screen(dev);
 
 	return (struct ctlra_dev_t *)dev;
 fail:
