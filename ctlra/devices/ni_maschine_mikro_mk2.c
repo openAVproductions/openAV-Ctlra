@@ -177,7 +177,12 @@ static struct ctlra_item_info_t buttons_info[] = {
 
 static struct ctlra_item_info_t feedback_info[] = {
 	/* Screen */
-	{.x = 20, .y =  44, .w = 70,  .h = 35, .flags = CTLRA_ITEM_FB_SCREEN},
+	{.x = 20, .y =  44, .w = 70,  .h = 35,
+		.flags = CTLRA_ITEM_FB_SCREEN,
+		.params[0] = 128, /* width px */
+		.params[1] = 64, /* height px */
+		.params[2] = 1, /* bits per pixel (not bytes) */
+	},
 };
 #define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
 

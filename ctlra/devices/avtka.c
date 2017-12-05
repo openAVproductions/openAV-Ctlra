@@ -52,6 +52,20 @@ struct id_to_ctlra_t {
 	uint32_t col;
 };
 
+struct avtka_screent_t {
+	uint32_t h_px;
+	uint32_t w_px;
+
+	/* TODO: Should this be the value of the Ctlra #define for screen
+	 * bytes-per-pixel, or "data format" type? Need to figure out how
+	 * we want to represent the data type of a screen through the API,
+	 * or what to do there. */
+	uint32_t data_type;
+	/* TODO: how to represent bits/bytes per pixel, based on format?
+	 */
+	uint8_t bits_per_pixel;
+};
+
 /* Represents the the virtual AVTK UI */
 struct cavtka_t {
 	/* base handles usb i/o etc */
@@ -64,6 +78,9 @@ struct cavtka_t {
 
 	/* ctlra id offsets for each event type */
 	uint32_t type_to_item_offset[CTLRA_EVENT_T_COUNT];
+
+	/* screen info */
+	struct avtka_screent_t screen[CTLRA_NUM_SCREENS_MAX];
 };
 
 uint32_t
@@ -224,9 +241,15 @@ avtka_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
 		return -1;
 
 	/* TODO update Ctlra API to return screen data for ID */
-	*pixels = avtka_screen_get_data_ptr(a, 0);
+	uint8_t screen = 0;
+	if(screen >= CTLRA_NUM_SCREENS_MAX)
+		return -2;
+
+	struct avtka_screent_t *scr = &dev->screen[screen];
+	*pixels = avtka_screen_get_data_ptr(a, screen);
 	/* TODO: fix hard coded size */
-	*bytes = (128 * 64 / 8);
+	*bytes = ((scr->h_px * scr->w_px) * scr->bits_per_pixel) / 8;
+	//*bytes = (128 * 64 / 8);
 
 	return 0;
 }

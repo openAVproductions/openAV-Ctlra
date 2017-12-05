@@ -68,6 +68,7 @@ extern "C" {
 #define CTLRA_STR_MAX        32
 #define CTLRA_DEV_SERIAL_MAX 64
 #define CTLRA_NUM_GRIDS_MAX   8
+#define CTLRA_NUM_SCREENS_MAX 2
 
 /** Ctlra context forward declaration. This struct is opaque to the user
  * of the ctlra library. It provides a handle for ctlra internals such as
