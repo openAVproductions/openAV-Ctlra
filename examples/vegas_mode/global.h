@@ -11,6 +11,7 @@
 
 struct soffa_t;
 struct mikro_t;
+struct maschine3_t;
 
 struct dummy_data {
 	uint8_t print_events;
@@ -21,6 +22,7 @@ struct dummy_data {
 	int buttons[VEGAS_BTN_COUNT];
 	struct soffa_t *soffa;
 	struct mikro_t *mikro;
+	struct maschine3_t *maschine3;
 };
 
 /* "useful" parts of the program */
@@ -52,6 +54,10 @@ void kontrol_f1_func(struct ctlra_dev_t* dev, uint32_t num_events,
 
 void mm_update_state(struct ctlra_dev_t *dev, void *d);
 void mm_func(struct ctlra_dev_t* dev, uint32_t num_events,
+	     struct ctlra_event_t** events, void *userdata);
+
+void maschine3_update_state(struct ctlra_dev_t *dev, void *d);
+void maschine3_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	     struct ctlra_event_t** events, void *userdata);
 
 void jam_update_state(struct ctlra_dev_t *dev, void *d);
