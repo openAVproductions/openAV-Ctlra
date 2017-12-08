@@ -38,6 +38,13 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
+
 #include "ni_maschine_mikro_mk2.h"
 #include "impl.h"
 
