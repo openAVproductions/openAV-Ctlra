@@ -139,14 +139,14 @@ static const char *ni_maschine_mk3_control_names[] = {
 	"Top 6",
 	"Top 7",
 	"Enc. Touch",
-	"Dial Touch 8",
-	"Dial Touch 7",
-	"Dial Touch 6",
-	"Dial Touch 5",
-	"Dial Touch 4",
-	"Dial Touch 3",
-	"Dial Touch 2",
-	"Dial Touch 1",
+	"Enc. Touch 8",
+	"Enc. Touch 7",
+	"Enc. Touch 6",
+	"Enc. Touch 5",
+	"Enc. Touch 4",
+	"Enc. Touch 3",
+	"Enc. Touch 2",
+	"Enc. Touch 1",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mk3_control_names) /\
 			    sizeof(ni_maschine_mk3_control_names[0]))
@@ -256,7 +256,19 @@ static struct ctlra_item_info_t feedback_info[] = {
 };
 #define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
 
-#define ENCODERS_SIZE (8)
+static const char *encoder_names[] = {
+	"Enc. Turn",
+	"Enc. 1 Turn",
+	"Enc. 2 Turn",
+	"Enc. 3 Turn",
+	"Enc. 4 Turn",
+	"Enc. 5 Turn",
+	"Enc. 6 Turn",
+	"Enc. 7 Turn",
+	"Enc. 8 Turn",
+};
+
+#define ENCODERS_SIZE (9)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
@@ -332,8 +344,10 @@ static const char *
 ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
                                        uint32_t control_id)
 {
-	if(control_id < CONTROL_NAMES_SIZE)
+	if(type == CTLRA_EVENT_BUTTON && control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mk3_control_names[control_id];
+	if(type == CTLRA_EVENT_ENCODER && control_id < ENCODERS_SIZE )
+		return encoder_names[control_id];
 	return 0;
 }
 
@@ -497,17 +511,6 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 
 	} break;
 	case 42: {
-		/*
-		int i;
-		static uint8_t old[48];
-		for(i = 41; i >= 0; i--) {
-			printf("%s%02x%s ", old[i] != buf[i] ? "\x1b[32m" : "",
-			       buf[i], "\x1b[0m");
-			old[i] = buf[i];
-		}
-		printf("\n");
-		*/
-
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 			int id     = buttons[i].event_id;
@@ -539,6 +542,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			}
 		}
 
+		/* 8 float-style endless encoders under screen */
 		for(uint32_t i = 0; i < 8; i++) {
 			uint16_t v = *((uint16_t *)&buf[12+i*2]);
 			const float value = v / 1000.f;
@@ -549,7 +553,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_ENCODER,
 					.encoder  = {
-						.id = i,
+						.id = i + 1,
 						.flags =
 							CTLRA_EVENT_ENCODER_FLAG_FLOAT,
 						.delta_float = d,
@@ -561,9 +565,8 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				dev->hw_values[idx] = value;
 			}
 		}
-		break;
-#if 0
-		/* Encoder */
+
+		/* Main Encoder */
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_ENCODER,
 			.encoder = {
@@ -573,7 +576,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			},
 		};
 		struct ctlra_event_t *e = {&event};
-		int8_t enc   = ((buf[5] & 0x0f)     ) & 0xf;
+		int8_t enc   = buf[11] & 0x0f;
 		if(enc != dev->encoder_value) {
 			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
 			event.encoder.delta = dir;
@@ -581,10 +584,8 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
 		}
-
 		break;
-#endif
-		}
+		} /* case 42: buttons */
 	}
 }
 
