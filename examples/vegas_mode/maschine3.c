@@ -56,7 +56,66 @@ struct maschine3_t
 	/* changes between note-ons and other functions */
 	int mode;
 	uint8_t pads[16];
+
+	int file_selected;
+
+
+#define NUM_ENCODERS 8
+	float encoder_value[NUM_ENCODERS];
 };
+
+static
+void maschin3_file_browser(struct dummy_data *d,
+			   cairo_t *cr,
+			   const char *path)
+{
+	struct maschine3_t *m = d->maschine3;
+
+#define NUM_FILES 12
+	/* contains filenames */
+	char filenames[NUM_FILES*64];
+	/* Table of pointers to filenames */
+	char *files[NUM_FILES];
+	for(int i = 0; i < NUM_FILES; i++) {
+		files[i] = &filenames[i*64];
+		snprintf(files[i], 64, "file number %d", i);
+	}
+	//int nfiles = djmxa_get_file_list(djmxa, "tunes/", files, NUM_FILES);
+	int nfiles = 3;
+
+	/* blank background */
+	cairo_set_source_rgb(cr, 8/255.,8/255.,8/255.);
+	cairo_rectangle(cr, 0, 0, 480, 272);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 12/255.,12/255.,12/255.);
+	cairo_rectangle(cr, 1, 1, 478, 18);
+	cairo_fill(cr);
+
+	int selected = m->file_selected % nfiles;
+
+	cairo_move_to(cr, 9, 15 );
+	cairo_set_source_rgba(cr, 1,1,1, 0.8);
+	cairo_show_text(cr, "Load File...");
+
+	for(int i = 0; i < NUM_FILES; i++) {
+		/* Draw each file */
+		if(i == selected && i < nfiles)
+			cairo_set_source_rgb(cr, 60/255., 60/255.,255/255.);
+		else if(i & 1)
+			cairo_set_source_rgb(cr, 18/255.,18/255.,18/255.);
+		else
+			cairo_set_source_rgb(cr, 28/255.,28/255.,28/255.);
+		cairo_rectangle(cr, 5, 20 + (25 * i), 450, 25);
+		cairo_fill(cr);
+	}
+
+	for(int i = 0; i < nfiles; i++) {
+		cairo_move_to(cr, 9, 20 + 25*i + 18);
+		cairo_set_source_rgba(cr, 1,1,1, 0.8);
+		cairo_show_text(cr, files[i]);
+	}
+}
 
 void draw_stuff(struct dummy_data *d)
 {
@@ -94,6 +153,8 @@ void draw_stuff(struct dummy_data *d)
 			cairo_stroke(cr);
 	}
 	cairo_stroke(cr);
+
+	if(1) maschin3_file_browser(d, cr, "test");
 
 	cairo_surface_flush(surface);
 	(void)m;
@@ -246,6 +307,22 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_BUTTON:
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
+		case CTLRA_EVENT_ENCODER: {
+			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
+			float sens = 6.f;
+			m->encoder_value[e->encoder.id] +=
+				e->encoder.delta_float * sens;
+			if(m->encoder_value[e->encoder.id] > 1.0f) {
+				m->encoder_value[e->encoder.id] -= 1.0f;
+				//m->file_selected++;
+				printf("next %d\n", ++m->file_selected);
+			}
+			if(m->encoder_value[e->encoder.id] < 0.0f) {
+				m->encoder_value[e->encoder.id] += 1.0f;
+				//m->file_selected--;
+				printf("back %d\n", --m->file_selected);
+			}
+			} break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				dummy->buttons[e->grid.pos] = e->grid.pressed;
