@@ -1,0 +1,50 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   fun:jack_*
+   ...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   obj:/lib/x86_64-linux-gnu/libc-2.21.so
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   fun:jack_port_register
+   fun:audio_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   obj:/lib/x86_64-linux-gnu/libc-2.21.so
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   fun:jack_client_open
+   fun:audio_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   obj:/lib/x86_64-linux-gnu/libc-2.21.so
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   obj:/usr/lib/x86_64-linux-gnu/libjack.so.0.1.0
+   fun:jack_client_open
+   fun:audio_init
+   fun:main
+}
