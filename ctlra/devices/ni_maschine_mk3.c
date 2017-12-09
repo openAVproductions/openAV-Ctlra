@@ -40,6 +40,22 @@
 
 #include "impl.h"
 
+static inline uint64_t rdtsc(void)
+{
+	union {
+		uint64_t tsc_64;
+		struct {
+			uint32_t lo_32;
+			uint32_t hi_32;
+		};
+	} tsc;
+
+	__asm__ volatile("rdtscp" :
+		     "=a" (tsc.lo_32),
+		     "=d" (tsc.hi_32));
+	return tsc.tsc_64;
+}
+
 #define CTLRA_DRIVER_VENDOR (0x17cc)
 #define CTLRA_DRIVER_DEVICE (0x1600)
 #define USB_INTERFACE_ID      (0x04)
@@ -250,7 +266,6 @@ static struct ctlra_item_info_t feedback_info[] = {
 /* KERNEL_LENGTH must be a power of 2 for masking */
 #define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
-#define PAD_SENSITIVITY        (650)
 
 
 /* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ? */
@@ -304,8 +319,10 @@ struct ni_maschine_mk3_t {
 	/* Store the current encoder value */
 	uint8_t encoder_value;
 	/* Pressure filtering for note-onset detection */
+	uint64_t pad_last_msg_time;
 	uint16_t pad_hit;
-	uint16_t pad_pressure[NPADS];
+	uint16_t pad_idx[NPADS];
+	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 
 	struct ni_screen_t screen_left;
 	struct ni_screen_t screen_right;
@@ -385,26 +402,17 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		} break;
 	case 128: {
 		/* ensure a pad message */
-		if(buf[0] != 2)
+		if(buf[0] != 2) {
+			printf("128 but not 2\n");
 			break;
-
-		/* pre-process pressed pads into bitmask */
-		uint16_t pad_pressed = 0;
-		for(int i = 0; i < 16; i++) {
-			/* skip over pressure values */
-			uint8_t p = buf[1+i*3];
-			/* pad is zero when list of pads has ended */
-			if(i > 0 && p == 0)
-				break;
-
-			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
-			pad_pressed |= (pressure > 800) << p;
 		}
 
-		/* dev-pad_hit never as its "dropped" bits sent as events */
-		uint16_t old_pressed = dev->pad_hit;
-		dev->pad_hit = pad_pressed;
+		uint64_t now = rdtsc();
+		printf("delta between msgs = %ld\n",
+		       now - dev->pad_last_msg_time);
+		dev->pad_last_msg_time = now;
 
+		/* Template event */
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_GRID,
 			.grid  = {
@@ -416,21 +424,62 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		};
 		struct ctlra_event_t *e = {&event};
 
-#if 1
+		/* pre-process pressed pads into bitmask */
+		uint16_t rpt_pressed = 0;
 		int flush_lights = 0;
 		for(int i = 0; i < 16; i++) {
-			if (!((pad_pressed ^ old_pressed) & (1 << i)))
+			/* skip over pressure values */
+			uint8_t p = buf[1+i*3];
+			/* pad is zero when list of pads has ended */
+			if(i > 0 && p == 0)
+				break;
+			rpt_pressed |= 1 << p;
+		}
+
+		printf("rpt %d\n", rpt_pressed);
+#if 0
+		{
+			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
+			pad_pressed |= (pressure > 200) << p;
+
+			uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
+			uint16_t total = 0;
+			for(int j = 0; j < KERNEL_LENGTH; j++) {
+				int idx = i*KERNEL_LENGTH + j;
+				total += dev->pad_pressures[idx];
+			}
+			dev->pad_pressures[i*KERNEL_LENGTH + idx] = pressure;
+
+			uint16_t med = qsort_median(&dev->pad_pressures[i*KERNEL_LENGTH],
+						    KERNEL_LENGTH);
+		}
+
+		for(int i = 0; i < 16; i++) {
+			/* already pressed */
+			if(dev->pad_hit & (1 << i)) {
+				dev->pad_hit &= ~(1 << i);
+				dev->lights_pads[25+i] = 0;
+				flush_lights = 1;
 				continue;
-			event.grid.pos = i;
-			event.grid.pressed = (pad_pressed & (1 << i)) > 0;
+			}
+
+			dev->pad_hit |= (1 << i);
+
+			/* rotate grid to match order on device (but zero
+			 * based counting instead of 1 based). */
+			event.grid.pos = (3-(i/4))*4 + (i%4);
+
+			event.grid.pressed = ((1 << i)) > 0;
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
-			printf("pad col %d\n", dev->pad_colour);
 			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 			flush_lights = 1;
 		}
 		if(flush_lights)
 			ni_maschine_mk3_light_flush(&dev->base, 1);
+#endif
+
+#if 1
 #else
 		/* alternative implementation using bitmasks for loop */
 		uint16_t delta = old_pressed ^ pad_pressed;
