@@ -345,24 +345,11 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_BUTTON:
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
-		case CTLRA_EVENT_ENCODER: {
+		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
-			if(e->encoder.id == 0) {
+			if(e->encoder.id == 0)
 				m->file_selected += e->encoder.delta;
-				break;
-			}
-			float sens = 6.f;
-			m->encoder_value[e->encoder.id] +=
-				e->encoder.delta_float * sens;
-			if(m->encoder_value[e->encoder.id] > 1.0f) {
-				m->encoder_value[e->encoder.id] -= 1.0f;
-				m->file_selected++;
-			}
-			if(m->encoder_value[e->encoder.id] < 0.0f) {
-				m->encoder_value[e->encoder.id] += 1.0f;
-				m->file_selected--;
-			}
-			} break;
+			break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				dummy->buttons[e->grid.pos] = e->grid.pressed;
