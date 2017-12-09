@@ -57,7 +57,7 @@ struct maschine3_t
 	int mode;
 	uint8_t pads[16];
 
-	int file_selected;
+	uint8_t file_selected;
 
 
 #define NUM_ENCODERS 8
@@ -309,18 +309,20 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			break;
 		case CTLRA_EVENT_ENCODER: {
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
+			if(e->encoder.id == 0) {
+				m->file_selected += e->encoder.delta;
+				break;
+			}
 			float sens = 6.f;
 			m->encoder_value[e->encoder.id] +=
 				e->encoder.delta_float * sens;
 			if(m->encoder_value[e->encoder.id] > 1.0f) {
 				m->encoder_value[e->encoder.id] -= 1.0f;
-				//m->file_selected++;
-				printf("next %d\n", ++m->file_selected);
+				m->file_selected++;
 			}
 			if(m->encoder_value[e->encoder.id] < 0.0f) {
 				m->encoder_value[e->encoder.id] += 1.0f;
-				//m->file_selected--;
-				printf("back %d\n", --m->file_selected);
+				m->file_selected--;
 			}
 			} break;
 		case CTLRA_EVENT_GRID:
