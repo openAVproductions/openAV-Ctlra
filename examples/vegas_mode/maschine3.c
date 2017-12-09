@@ -79,10 +79,12 @@ void maschin3_item_browser(struct dummy_data *d,
 	if(!m->items_init) {
 		printf("init now\n");
 		char filename[64];
-		for(int i = 0; i < NUM_ITEMS; i++) {
-			snprintf(filename, 64, "img_%d.png", i);
+		for(int i = 0; i < 4; i++) {
+			snprintf(filename, 64, "item_%d.png", i + 1);
 			m->item_surfaces[i] =
 				cairo_image_surface_create_from_png(filename);
+			printf("item load %d: ciaro surface status : %s\n", i,
+			       cairo_status_to_string(cairo_surface_status(m->item_surfaces[i])));
 		}
 		/*
 		cairo_surface_flush(st->surface);
@@ -91,10 +93,18 @@ void maschin3_item_browser(struct dummy_data *d,
 		m->items_init = 1;
 	}
 
-	for(int i = 0; i < NUM_ITEMS; i++) {
-		cairo_set_source_surface(cr, m->item_surfaces[i], i * 40, 0);
+	cairo_save(cr);
+	cairo_scale(cr, 0.35, 0.35);
+	for(int i = 0; i < 4; i++) {
+		cairo_save(cr);
+		float off = ((m->file_selected % 4) == i) ? 0 : 1;
+		//cairo_scale(cr, off, off);
+		cairo_translate(cr, 100 * i, 150 + off * 100);
+		cairo_set_source_surface(cr, m->item_surfaces[i], i * 220, 0);
 		cairo_paint(cr);
+		cairo_restore(cr);
 	}
+	cairo_restore(cr);
 }
 
 static
@@ -103,8 +113,6 @@ void maschin3_file_browser(struct dummy_data *d,
 			   const char *path)
 {
 	struct maschine3_t *m = d->maschine3;
-
-	return;
 
 	const uint8_t NUM_FILES = 12;
 	/* contains filenames */
@@ -162,6 +170,7 @@ void draw_stuff(struct dummy_data *d)
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
+#if 0
 	/* draw on surface */
 	cairo_set_source_rgb(cr, 1, 0, 0);
 	cairo_rectangle(cr, 0, 0, 4, 4);
@@ -188,11 +197,10 @@ void draw_stuff(struct dummy_data *d)
 			cairo_stroke(cr);
 	}
 	cairo_stroke(cr);
+#endif
 
-	/*
-	if(1) maschin3_file_browser(d, cr, "test");
+	//if(1) maschin3_file_browser(d, cr, "test");
 	if(1) maschin3_item_browser(d, cr, "blah");
-	*/
 
 	cairo_surface_flush(surface);
 	(void)m;
