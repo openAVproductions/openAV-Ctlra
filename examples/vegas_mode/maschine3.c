@@ -18,7 +18,7 @@ static cairo_t *cr = 0;
 #define WIDTH  480
 #define HEIGHT 272
 
-//#define SCALAR_ARGB32 1
+#define SCALAR_ARGB32 1
 
 void maschine3_screen_init()
 {
@@ -63,15 +63,25 @@ void draw_stuff(struct dummy_data *d)
 	struct maschine3_t *m = d->maschine3;
 
 	/* blank background */
-	cairo_set_source_rgb(cr, 8/255.,8/255.,8/255.);
+	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
+	//cairo_set_source_rgb(cr, 0/255., 0/255., 8/255.);
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
 	/* draw on surface */
-	cairo_set_source_rgb(cr, 0, 0, 1);
-	cairo_rectangle(cr, 0, 0, 480, 20);
+	cairo_set_source_rgb(cr, 1, 0, 0);
+	cairo_rectangle(cr, 0, 0, 4, 4);
 	cairo_fill(cr);
-	cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+
+	cairo_set_source_rgb(cr, 0, 1, 0);
+	cairo_rectangle(cr, 4, 0, 4, 4);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 0, 0, 1);
+	cairo_rectangle(cr, 8, 0, 4, 4);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
 	cairo_rectangle(cr, 0, 252, 480, 2);
 	cairo_fill(cr);
 
@@ -197,10 +207,13 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 		__m128i blue  = _mm_and_si128(input, blue_mask);
 		__m128i green = _mm_and_si128(input, green_mask);
 
-		__m128i red_shift_amt = _mm_set1_epi64x(11);
+		__m128i red_shift_amt = _mm_set1_epi64x(6);
 		__m128i red_shifted = _mm_srl_epi16(red, red_shift_amt);
 
-		__m128i finished = _mm_or_si128(green, red_shifted);
+		__m128i green_shift_amt = _mm_set1_epi64x(5);
+		__m128i green_shifted = _mm_srl_epi16(green, green_shift_amt);
+
+		__m128i finished = _mm_or_si128(green_shifted, red_shifted);
 
 		__m128i blue_shift_amt = _mm_set1_epi64x(11);
 		__m128i blue_shifted = _mm_sll_epi16(blue, blue_shift_amt);
@@ -211,7 +224,7 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 
 #endif
 	uint64_t end = rdtsc();
-	printf("convert = %ld\n", end - start);
+	if(0) printf("convert = %ld\n", end - start);
 
 	ret = ctlra_dev_screen_get_data(dev, &pixels, &bytes, 1);
 
