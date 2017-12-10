@@ -709,10 +709,22 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
-	if(flush)
+	if(flush > 3)
+		return -1;
+
+	if(flush == 1) {
 		maschine_mk3_blit_to_screen(dev, 0);
+		maschine_mk3_blit_to_screen(dev, 1);
+		return 0;
+	}
 
 	*pixels = (uint8_t *)&dev->screen_left.pixels;
+
+	/* hack - re use flush to screen select */
+	if(flush == 2) {
+		*pixels = (uint8_t *)&dev->screen_right.pixels;
+	}
+
 	*bytes = NUM_PX * 2;
 
 	return 0;
