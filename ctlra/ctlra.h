@@ -417,7 +417,11 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
  *
  * When *flush* is non-zero, the driver will flush the pixel data
  * from the driver to the device */
-int32_t DEPRECATED
+
+int32_t
+#ifndef CTLRA_INTERNAL
+DEPRECATED
+#endif
 ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t **pixel_data,
 					 uint32_t *bytes,
