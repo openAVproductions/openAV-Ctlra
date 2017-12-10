@@ -162,17 +162,18 @@ void maschin3_file_browser(struct dummy_data *d,
 	}
 }
 
-void draw_stuff(struct dummy_data *d, uint32_t screen_idx)
+int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 {
 	struct maschine3_t *m = d->maschine3;
 
 	static uint64_t rev;
 	if(d->revision == rev) {
 		printf("app not redrawing\n");
-		return;
+		return 0;
 	}
 
 	rev = d->revision;
+	printf("app IS redrawing, %d\n", rev);
 
 	/* blank background */
 	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
@@ -213,7 +214,9 @@ void draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	if(1) maschin3_item_browser(d, cr, "blah", screen_idx);
 
 	cairo_surface_flush(surface);
-	(void)m;
+
+	/* redraw */
+	return 1;
 }
 
 static inline uint64_t rdtsc(void)
@@ -280,25 +283,29 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	}
 }
 
-void maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
+int maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
 			     uint32_t bytes, void *ud)
 {
 	struct dummy_data *d = ud;
 	struct maschine3_t *m = d->maschine3;
 
 	int ret;
+	int flush;
 
 	{
 		uint64_t start = rdtsc();
-		draw_stuff(d, screen_idx);
+		flush = draw_stuff(d, screen_idx);
 		uint64_t end = rdtsc();
 		if(0) printf("draw = %ld\n", end - start);
 	}
 
+	if(flush == 0)
+		return 0;
+
 	unsigned char * data = cairo_image_surface_get_data(surface);
 	if(!data) {
 		printf("error data == 0\n");
-		return;
+		return -1;
 	}
 
 	uint64_t start = rdtsc();
@@ -350,9 +357,7 @@ void maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
 	uint64_t end = rdtsc();
 	if(0) printf("convert = %ld\n", end - start);
 
-	//ret = ctlra_dev_screen_get_data(dev, &pixels, &bytes, 1);
-
-	return;
+	return flush;
 }
 
 void maschine3_pads(struct ctlra_dev_t* dev,
@@ -389,18 +394,18 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		default:
 			break;
 		};
+		printf("increasing dummy rev\n");
+		dummy->revision++;
 	}
-
-	dummy->revision++;
 }
 
-void maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
+int maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
 				uint32_t screen_idx,
 				uint8_t *pixel_data,
 				uint32_t bytes,
 				void *userdata)
 {
-	maschine3_redraw_screen(screen_idx, pixel_data, bytes, userdata);
+	return maschine3_redraw_screen(screen_idx, pixel_data, bytes, userdata);
 }
 
 void maschine3_func(struct ctlra_dev_t* dev,
