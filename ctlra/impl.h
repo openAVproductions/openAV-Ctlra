@@ -174,6 +174,8 @@ struct ctlra_dev_t {
 
 	/* Screen related functions */
 	ctlra_dev_impl_screen_get_data screen_get_data;
+	ctlra_screen_redraw_cb screen_redraw_cb[CTLRA_NUM_SCREENS_MAX];
+	void *screen_redraw_ud[CTLRA_NUM_SCREENS_MAX];
 
 	/* Function pointer to retrive info about a particular control */
 	ctlra_dev_impl_control_get_name control_get_name;
