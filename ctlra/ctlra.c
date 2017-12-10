@@ -284,18 +284,15 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 
 int32_t
 ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
-				   uint32_t screen_idx,
 				   uint32_t target_fps,
 				   ctlra_screen_redraw_cb callback,
 				   void *userdata)
 {
-	if(screen_idx >= CTLRA_NUM_SCREENS_MAX ||
-			!dev ||
-			!callback)
+	if(!dev || !callback)
 		return -EINVAL;
 
-	dev->screen_redraw_cb[screen_idx] = callback;
-	dev->screen_redraw_ud[screen_idx] = userdata;
+	dev->screen_redraw_cb = callback;
+	dev->screen_redraw_ud = userdata;
 
 	/* TODO: fps support */
 
@@ -439,19 +436,24 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 				dev_iter->feedback_func(dev_iter,
 					dev_iter->event_func_userdata);
 			}
-			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
-				if(dev_iter->screen_redraw_cb[i]) {
+			if(dev_iter->screen_redraw_cb) {
+				for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 					uint8_t *pixel;
 					uint32_t bytes;
-					ctlra_dev_screen_get_data(dev_iter,
+					int ret = ctlra_dev_screen_get_data(dev_iter,
 								  &pixel,
 								  &bytes,
-								  0);
-					dev_iter->screen_redraw_cb[i](
+								  //0);
+								  i == 1 ? 0 : 2);
+					if(ret)
+						continue;
+
+					dev_iter->screen_redraw_cb(
 						dev_iter,
+						i, /* screen idx */
 						pixel,
 						bytes,
-						dev_iter->screen_redraw_ud[i]);
+						dev_iter->screen_redraw_ud);
 					ctlra_dev_screen_get_data(dev_iter,
 								  &pixel,
 								  &bytes,
