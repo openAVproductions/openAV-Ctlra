@@ -7,7 +7,6 @@
 #include "impl.h"
 #include "usb.h"
 
-
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
 uint32_t __ctlra_device_count;
@@ -414,6 +413,21 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
+static inline uint64_t rdtsc(void)
+{
+	union {
+		uint64_t tsc_64;
+		struct {
+			uint32_t lo_32;
+			uint32_t hi_32;
+		};
+	} tsc;
+
+	__asm__ volatile("rdtscp" :
+		     "=a" (tsc.lo_32),
+		     "=d" (tsc.hi_32));
+	return tsc.tsc_64;
+}
 
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
@@ -431,34 +445,44 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		if(!dev_iter->banished) {
-			if(dev_iter->feedback_func) {
-				dev_iter->feedback_func(dev_iter,
-					dev_iter->event_func_userdata);
-			}
-			if(dev_iter->screen_redraw_cb) {
-				for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
-					uint8_t *pixel;
-					uint32_t bytes;
-					int ret = ctlra_dev_screen_get_data(dev_iter,
-								  &pixel,
-								  &bytes,
-								  //0);
-								  i == 1 ? 0 : 2);
-					if(ret)
-						continue;
+		if(dev_iter->banished) {
+			dev_iter = dev_iter->dev_list_next;
+			continue;
+		}
 
-					dev_iter->screen_redraw_cb(
-						dev_iter,
-						i, /* screen idx */
-						pixel,
-						bytes,
-						dev_iter->screen_redraw_ud);
-					ctlra_dev_screen_get_data(dev_iter,
-								  &pixel,
-								  &bytes,
-								  1);
-				}
+		if(dev_iter->feedback_func) {
+			dev_iter->feedback_func(dev_iter,
+				dev_iter->event_func_userdata);
+		}
+
+		uint64_t now = rdtsc();
+		if(dev_iter->screen_redraw_cb &&
+		   dev_iter->screen_last_redraw + 300000000 < now) {
+			dev_iter->screen_last_redraw = now;
+			printf("redraw now = %ld\n", now);
+			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
+				uint8_t *pixel;
+				uint32_t bytes;
+				int ret = ctlra_dev_screen_get_data(dev_iter,
+							  &pixel,
+							  &bytes,
+							  //0);
+							  i == 1 ? 0 : 2);
+				if(ret)
+					continue;
+
+				dev_iter->screen_redraw_cb(
+					dev_iter,
+					i, /* screen idx */
+					pixel,
+					bytes,
+					dev_iter->screen_redraw_ud);
+#if 1
+				ctlra_dev_screen_get_data(dev_iter,
+							  &pixel,
+							  &bytes,
+							  1);
+#endif
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
