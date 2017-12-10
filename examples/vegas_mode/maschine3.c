@@ -164,16 +164,13 @@ void maschin3_file_browser(struct dummy_data *d,
 
 int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 {
-	struct maschine3_t *m = d->maschine3;
-
+	//struct maschine3_t *m = d->maschine3;
 	static uint64_t rev;
 	if(d->revision == rev) {
-		printf("app not redrawing\n");
 		return 0;
 	}
 
 	rev = d->revision;
-	printf("app IS redrawing, %d\n", rev);
 
 	/* blank background */
 	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
@@ -210,7 +207,7 @@ int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	cairo_stroke(cr);
 #endif
 
-	//if(1) maschin3_file_browser(d, cr, "test");
+	if(0) maschin3_file_browser(d, cr, "test");
 	if(1) maschin3_item_browser(d, cr, "blah", screen_idx);
 
 	cairo_surface_flush(surface);
@@ -287,9 +284,7 @@ int maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
 			     uint32_t bytes, void *ud)
 {
 	struct dummy_data *d = ud;
-	struct maschine3_t *m = d->maschine3;
 
-	int ret;
 	int flush;
 
 	{
@@ -394,7 +389,6 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		default:
 			break;
 		};
-		printf("increasing dummy rev\n");
 		dummy->revision++;
 	}
 }
@@ -426,6 +420,8 @@ void maschine3_func(struct ctlra_dev_t* dev,
 								 30,
 						 maschine3_screen_redraw_cb,
 								 dummy);
+		if(ret)
+			printf("WARNING: Failed to register screen callback\n");
 	}
 
 	maschine3_screen_init();
