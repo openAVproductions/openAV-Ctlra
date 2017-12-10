@@ -459,29 +459,29 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		if(dev_iter->screen_redraw_cb &&
 		   dev_iter->screen_last_redraw + 300000000 < now) {
 			dev_iter->screen_last_redraw = now;
-			printf("redraw now = %ld\n", now);
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 				uint8_t *pixel;
 				uint32_t bytes;
 				int ret = ctlra_dev_screen_get_data(dev_iter,
 							  &pixel,
 							  &bytes,
-							  //0);
 							  i == 1 ? 0 : 2);
 				if(ret)
 					continue;
 
-				dev_iter->screen_redraw_cb(
+				int32_t flush = dev_iter->screen_redraw_cb(
 					dev_iter,
 					i, /* screen idx */
 					pixel,
 					bytes,
 					dev_iter->screen_redraw_ud);
+				printf("redraw flush ? %d\n", flush);
 #if 1
-				ctlra_dev_screen_get_data(dev_iter,
-							  &pixel,
-							  &bytes,
-							  1);
+				if(flush)
+					ctlra_dev_screen_get_data(dev_iter,
+								  &pixel,
+								  &bytes,
+								  1);
 #endif
 			}
 		}
