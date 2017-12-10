@@ -432,11 +432,11 @@ ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
  * the location provided in *pixel_data. The data written must be formatted
  * in the devices native screen data type.
  */
-typedef void (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
-				       uint32_t screen_idx,
-				       uint8_t *pixel_data,
-				       uint32_t bytes,
-				       void *userdata);
+typedef int32_t (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
+					  uint32_t screen_idx,
+					  uint8_t *pixel_data,
+					  uint32_t bytes,
+					  void *userdata);
 
 /** Register a callback function to be called when a screen needs to
  * be redrawn. The *dev* and *screen_idx* select the screen from the
