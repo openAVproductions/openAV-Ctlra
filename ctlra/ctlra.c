@@ -459,12 +459,11 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 				int ret = ctlra_dev_screen_get_data(dev_iter,
 							  &pixel,
 							  &bytes,
-							  //0);
 							  i == 1 ? 0 : 2);
 				if(ret)
 					continue;
 
-				dev_iter->screen_redraw_cb(
+				int32_t flush = dev_iter->screen_redraw_cb(
 					dev_iter,
 					i, /* screen idx */
 					pixel,
