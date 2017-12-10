@@ -431,9 +431,9 @@ ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
  * The application must write exactly the number of *bytes* specified, to
  * the location provided in *pixel_data. The data written must be formatted
  * in the devices native screen data type.
- *
  */
 typedef void (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
+				       uint32_t screen_idx,
 				       uint8_t *pixel_data,
 				       uint32_t bytes,
 				       void *userdata);
@@ -452,7 +452,6 @@ typedef void (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
  */
 int32_t
 ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
-				   uint32_t screen_idx,
 				   uint32_t target_fps,
 				   ctlra_screen_redraw_cb callback,
 				   void *userdata);
