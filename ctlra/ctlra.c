@@ -452,6 +452,10 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 						pixel,
 						bytes,
 						dev_iter->screen_redraw_ud[i]);
+					ctlra_dev_screen_get_data(dev_iter,
+								  &pixel,
+								  &bytes,
+								  1);
 				}
 			}
 		}
