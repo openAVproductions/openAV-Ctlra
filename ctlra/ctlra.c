@@ -7,7 +7,6 @@
 #include "impl.h"
 #include "usb.h"
 
-
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
 uint32_t __ctlra_device_count;
@@ -414,7 +413,6 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
-
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
@@ -431,34 +429,52 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		if(!dev_iter->banished) {
-			if(dev_iter->feedback_func) {
-				dev_iter->feedback_func(dev_iter,
-					dev_iter->event_func_userdata);
-			}
-			if(dev_iter->screen_redraw_cb) {
-				for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
-					uint8_t *pixel;
-					uint32_t bytes;
-					int ret = ctlra_dev_screen_get_data(dev_iter,
-								  &pixel,
-								  &bytes,
-								  //0);
-								  i == 1 ? 0 : 2);
-					if(ret)
-						continue;
+		if(dev_iter->banished) {
+			dev_iter = dev_iter->dev_list_next;
+			continue;
+		}
 
-					dev_iter->screen_redraw_cb(
-						dev_iter,
-						i, /* screen idx */
-						pixel,
-						bytes,
-						dev_iter->screen_redraw_ud);
+		if(dev_iter->feedback_func) {
+			dev_iter->feedback_func(dev_iter,
+				dev_iter->event_func_userdata);
+		}
+
+		struct timespec now;
+		int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+		if(err)
+			CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
+				    err);
+
+		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
+		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
+		uint64_t nanos_elapsed = secs * 10e9 + nanos;
+		uint64_t fps_in_nanos = 300000000;
+
+		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
+			dev_iter->screen_last_redraw = now;
+			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
+				uint8_t *pixel;
+				uint32_t bytes;
+				/* TODO: improve screen_flush() functionality */
+				int ret = ctlra_dev_screen_get_data(dev_iter,
+							  &pixel,
+							  &bytes,
+							  //0);
+							  i == 1 ? 0 : 2);
+				if(ret)
+					continue;
+
+				dev_iter->screen_redraw_cb(
+					dev_iter,
+					i, /* screen idx */
+					pixel,
+					bytes,
+					dev_iter->screen_redraw_ud);
+				if(flush)
 					ctlra_dev_screen_get_data(dev_iter,
 								  &pixel,
 								  &bytes,
 								  1);
-				}
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
