@@ -475,14 +475,11 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 					pixel,
 					bytes,
 					dev_iter->screen_redraw_ud);
-				printf("redraw flush ? %d\n", flush);
-#if 1
 				if(flush)
 					ctlra_dev_screen_get_data(dev_iter,
 								  &pixel,
 								  &bytes,
 								  1);
-#endif
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
