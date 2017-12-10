@@ -36,6 +36,8 @@
 extern "C" {
 #endif
 
+#define CTLRA_INTERNAL 1
+
 #include "ctlra.h"
 #include "event.h"
 
