@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "ctlra.h"
 #include "impl.h"
 #include "usb.h"
 
