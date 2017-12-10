@@ -100,7 +100,8 @@ void maschin3_item_browser(struct dummy_data *d,
 		float off = ((m->file_selected % 4) == i) ? 0 : 1;
 		//cairo_scale(cr, off, off);
 		cairo_translate(cr, 100 * i, 150 + off * 100);
-		cairo_set_source_surface(cr, m->item_surfaces[i], i * 220, 0);
+		cairo_set_source_surface(cr, m->item_surfaces[i],
+					 i * 220, 0);
 		cairo_paint(cr);
 		cairo_restore(cr);
 	}
@@ -268,15 +269,21 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 			ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
 		break;
 	}
+}
 
-	uint8_t *pixels;
-	uint32_t bytes;
-	int32_t ret = ctlra_dev_screen_get_data(dev, &pixels,
-						&bytes, 0);
-	if(ret)
-		printf("error from get_data()\n");
+void maschine3_redraw_screen(uint8_t *pixels, uint32_t bytes, void *ud)
+{
+	struct dummy_data *d = ud;
+	struct maschine3_t *m = d->maschine3;
 
-	draw_stuff(d);
+	int ret;
+
+	{
+		uint64_t start = rdtsc();
+		draw_stuff(d);
+		uint64_t end = rdtsc();
+		if(1) printf("draw = %ld\n", end - start);
+	}
 
 	unsigned char * data = cairo_image_surface_get_data(surface);
 	if(!data) {
@@ -333,7 +340,7 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	uint64_t end = rdtsc();
 	if(0) printf("convert = %ld\n", end - start);
 
-	ret = ctlra_dev_screen_get_data(dev, &pixels, &bytes, 1);
+	//ret = ctlra_dev_screen_get_data(dev, &pixels, &bytes, 1);
 
 	return;
 }
@@ -377,6 +384,13 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 	dummy->revision++;
 }
 
+void maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
+				uint8_t *pixel_data, uint32_t bytes,
+				void *userdata)
+{
+	maschine3_redraw_screen(pixel_data, bytes, userdata);
+}
+
 void maschine3_func(struct ctlra_dev_t* dev,
 	     uint32_t num_events,
 	     struct ctlra_event_t** events,
@@ -390,6 +404,13 @@ void maschine3_func(struct ctlra_dev_t* dev,
 			printf("failed to allocate maschine3 struct\n");
 			exit(-1);
 		}
+
+		int32_t ret = ctlra_dev_screen_register_callback(dev,
+								 0,
+								 30,
+						 maschine3_screen_redraw_cb,
+								 dummy);
+		printf("screen cb register ret = %d\n", ret);
 	}
 
 	maschine3_screen_init();
