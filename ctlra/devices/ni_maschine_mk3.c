@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 #include <sys/time.h>
 
 #include "impl.h"
@@ -549,7 +550,12 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			const uint8_t idx = BUTTONS_SIZE + i;
 
 			if(dev->hw_values[idx] != value) {
-				const float d = -(dev->hw_values[idx] - value);
+				const float d = (value - dev->hw_values[idx]);
+				if(fabsf(d) > 0.7) {
+					/* wrap around */
+					dev->hw_values[idx] = value;
+					continue;
+				}
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_ENCODER,
 					.encoder  = {
