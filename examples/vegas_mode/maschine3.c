@@ -18,7 +18,7 @@ static cairo_t *cr = 0;
 #define WIDTH  480
 #define HEIGHT 272
 
-#define SCALAR_ARGB32 1
+//#define SCALAR_ARGB32 1
 
 void maschine3_screen_init()
 {
@@ -29,6 +29,12 @@ void maschine3_screen_init()
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 					      WIDTH, HEIGHT);
 #else
+	/* Blitting a PNG surface made from ARGB data onto this format
+	 * keeps pixels ratio, but doesn't correctly do the required color
+	 * space conversion (ARGB32 -> RGB 565). If working in 565, we must
+	 * manually convert the ARGB32 surface to a 565 surface, and keep
+	 * the 565 version in cache (or that seems the best solution..)
+	 */
 	surface = cairo_image_surface_create (CAIRO_FORMAT_RGB16_565,
 					      WIDTH, HEIGHT);
 #endif
@@ -164,7 +170,6 @@ void maschin3_file_browser(struct dummy_data *d,
 
 int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 {
-	//struct maschine3_t *m = d->maschine3;
 	static uint64_t rev;
 	if(d->revision == rev) {
 		return 0;
@@ -178,7 +183,8 @@ int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
-#if 0
+#if 1
+	struct maschine3_t *m = d->maschine3;
 	/* draw on surface */
 	cairo_set_source_rgb(cr, 1, 0, 0);
 	cairo_rectangle(cr, 0, 0, 4, 4);
@@ -192,13 +198,17 @@ int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	cairo_rectangle(cr, 8, 0, 4, 4);
 	cairo_fill(cr);
 
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, 12, 0, 4, 4);
+	cairo_fill(cr);
+
 	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
 	cairo_rectangle(cr, 0, 252, 480, 2);
 	cairo_fill(cr);
 
 	for(int i = 0; i < 16; i++) {
-		cairo_set_source_rgb(cr, 0, 71, 1);
-		cairo_rectangle(cr, 10 + 22 * i, 20, 20, 20);
+		cairo_set_source_rgb(cr, 1, 1, 1);
+		cairo_rectangle(cr, 10 + 26 * i, 20, 20, 20);
 		if(m->pads[i])
 			cairo_fill(cr);
 		else
@@ -313,36 +323,29 @@ int maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
 	/* rgb 565 -> bgr 565 */
 	uint16_t *rgb565 = (uint16_t *)cairo_image_surface_get_data(surface);
 	uint16_t *pixels_565 = (uint16_t *)pixels;
-	__m128i red_mask;
 	__m128i green_mask;
-	__m128i blue_mask;
-	uint16_t *rm = (uint16_t *)&red_mask;
 	uint16_t *gm = (uint16_t *)&green_mask;
-	uint16_t *bm = (uint16_t *)&blue_mask;
 
 	for(int i = 0; i < 8; i++) {
-		rm[i] = (0b11111000 << 8);
 		gm[i] = (0b00000111 << 8) | 0b11100000;
-		bm[i] =  0b00011111;
 	}
+
+	__m128i red_shift_amt = _mm_set1_epi64x(6);
+	__m128i green_shift_amt = _mm_set1_epi64x(6);
+	__m128i blue_shift_amt = _mm_set1_epi64x(11);
 
 	for(int i = 0; i < (HEIGHT * WIDTH); i += 8) {
 		__m128i input = _mm_loadu_si128((__m128i*)&rgb565[i]);
 
-		__m128i red   = _mm_and_si128(input, red_mask);
-		__m128i blue  = _mm_and_si128(input, blue_mask);
-		__m128i green = _mm_and_si128(input, green_mask);
+		//__m128i red = _mm_and_si128(input, green_mask);
 
-		__m128i red_shift_amt = _mm_set1_epi64x(6);
-		__m128i red_shifted = _mm_srl_epi16(red, red_shift_amt);
+		__m128i red_shifted = _mm_srl_epi16(input, red_shift_amt);
 
-		__m128i green_shift_amt = _mm_set1_epi64x(5);
-		__m128i green_shifted = _mm_srl_epi16(green, green_shift_amt);
+		//__m128i green_shifted = _mm_srl_epi16(red_shifted, green_shift_amt);
 
-		__m128i finished = _mm_or_si128(green_shifted, red_shifted);
+		__m128i finished = red_shifted; // _mm_or_si128(green_shifted, red_shifted);
 
-		__m128i blue_shift_amt = _mm_set1_epi64x(11);
-		__m128i blue_shifted = _mm_sll_epi16(blue, blue_shift_amt);
+		__m128i blue_shifted = _mm_sll_epi16(input, blue_shift_amt);
 
 		finished = _mm_or_si128(blue_shifted, finished);
 		_mm_storeu_si128((__m128i *)&pixels_565[i], finished);
