@@ -38,6 +38,12 @@ executable('simple',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
+executable('avtka',
+           example_avtka,
+           include_directories: ctlra_includes,
+           link_with: ctlra,
+           dependencies: avtka_dep)
+
 executable('daemon',
            example_daemon,
            include_directories: ctlra_includes,
