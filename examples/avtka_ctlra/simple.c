@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 	while(!done) {
 		ctlra_idle_iter(ctlra);
 		avtka_iterate(a);
-		usleep(10 * 1000);
+		usleep(100);
 	}
 
 	ctlra_exit(ctlra);
