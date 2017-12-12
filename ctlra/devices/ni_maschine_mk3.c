@@ -41,22 +41,6 @@
 
 #include "impl.h"
 
-static inline uint64_t rdtsc(void)
-{
-	union {
-		uint64_t tsc_64;
-		struct {
-			uint32_t lo_32;
-			uint32_t hi_32;
-		};
-	} tsc;
-
-	__asm__ volatile("rdtscp" :
-		     "=a" (tsc.lo_32),
-		     "=d" (tsc.hi_32));
-	return tsc.tsc_64;
-}
-
 #define CTLRA_DRIVER_VENDOR (0x17cc)
 #define CTLRA_DRIVER_DEVICE (0x1600)
 #define USB_INTERFACE_ID      (0x04)
@@ -450,64 +434,39 @@ ni_maschine_mk3_decode_pads(struct ni_maschine_mk3_t *dev, uint8_t *buf)
 
 void
 ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
-				  uint32_t endpoint, uint8_t *data,
+				  uint32_t endpoint, uint8_t *buf,
 				  uint32_t size)
 {
-	struct ni_maschine_mk3_t *dev =
-		(struct ni_maschine_mk3_t *)base;
-	static double worst_poll;
-	int32_t nbytes = size;
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
-	int count = 0;
-
-	uint8_t *buf = data;
-
-	switch(nbytes) {
-	case 81: {
-		/* Return of LED state, after update written to device */
+	switch(size) {
+	case 81:
+		/* Return of LED state, after update written to device.
+		 * This could be used as the next buffer to submit to the
+		 * USB infrastructure, as it has the most recent lights
+		 * state? That would avoid writing all the lights on every
+		 * iteration?
+		 */
 #if 0
-		int i;
-		static uint8_t old[82];
-		for(i = 81; i >= 0; i--) {
-			printf("%02x ", buf[i]);
+		{
+			int i;
+			static uint8_t old[82];
+			for(i = 81; i >= 0; i--) {
+				printf("%02x ", buf[i]);
+			}
+			printf("\n");
 		}
-		printf("\n");
 #endif
-		} break;
+		break;
 	case 128: {
-		/* ensure a pad message */
-		if(buf[0] != 2) {
-			printf("128 but not 2\n");
-			break;
-		}
-
-		int pv = buf[67];
-		//printf("=== pressed ? %s\n", pv > 0 ? "YES" : "NO");
-
-		//buf += 64;
-#if 0
-		int i;
-		static uint8_t old[82];
-		for(i = 64; i >= 0; i--) {
-			printf("%02x ", buf[i]);
-		}
-		printf("\n");
-#endif
-
-		uint64_t now = rdtsc();
-		//printf("delta between msgs = %ld\n", now - dev->pad_last_msg_time);
-		dev->pad_last_msg_time = now;
-
 		int flush_lights;
-
 		flush_lights  = ni_maschine_mk3_decode_pads(dev, &buf[0]);
 		flush_lights += ni_maschine_mk3_decode_pads(dev, &buf[64]);
-
 		if(flush_lights)
 			ni_maschine_mk3_light_flush(&dev->base, 1);
 #if 0
-			//rpt_pressed |= (pressure > 200) << p;
-
+		/* one attempt at pressure data with filtering */
+		{
 			uint8_t idx = dev->pad_idx[p]++ & KERNEL_MASK;
 			uint16_t total = 0;
 			for(int j = 0; j < KERNEL_LENGTH; j++) {
@@ -515,7 +474,6 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				total += dev->pad_pressures[idx];
 			}
 			dev->pad_pressures[p*KERNEL_LENGTH + idx] = pressure;
-
 			uint16_t med = qsort_median(&dev->pad_pressures[p*KERNEL_LENGTH],
 						    KERNEL_LENGTH);
 			if(med < 50) {
@@ -528,50 +486,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			}
 		}
 #endif
-
-#if 0
-		for(int i = 0; i < 16; i++) {
-			/* already pressed */
-			if(dev->pad_hit & (1 << i)) {
-				dev->pad_hit &= ~(1 << i);
-				dev->lights_pads[25+i] = 0;
-				flush_lights = 1;
-				continue;
-			}
-
-			dev->pad_hit |= (1 << i);
-
-			/* rotate grid to match order on device (but zero
-			 * based counting instead of 1 based). */
-			event.grid.pos = (3-(i/4))*4 + (i%4);
-			event.grid.pressed = (dev-> pad_hit & (1 << i)) > 0;
-			/*
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-			dev->lights_pads[25+i] = dev->pad_colour *
-				(dev->pad_hit & ((1 << i)>0) );//* event.grid.pressed;
-			flush_lights = 1;
-			*/
-		}
-#endif
-
-#if 1
-#else
-		/* alternative implementation using bitmasks for loop */
-		uint16_t delta = old_pressed ^ pad_pressed;
-		const uint32_t count = __builtin_popcount(delta);
-		for(int i = 0; i < count; i++) {
-			int p = ffs(delta);
-			event.grid.pos = p - 1;
-			event.grid.pressed = (pad_pressed & (1 << p));
-			printf("pop: %d, ffs %d, press = %d, pressed %02x\n",
-			       i, p, pad_pressed & (1<<p), pad_pressed);
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-		}
-#endif
-
-	} break;
+		} break; /* pad data */
 	case 42: {
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
