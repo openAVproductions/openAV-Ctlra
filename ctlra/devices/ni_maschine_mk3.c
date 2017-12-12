@@ -389,6 +389,65 @@ static const uint8_t pad_cols[] = {
 	0b101,
 };
 
+/* decode pads from *buf*, and return 1 if the lights need updating */
+int
+ni_maschine_mk3_decode_pads(struct ni_maschine_mk3_t *dev, uint8_t *buf)
+{
+	int flush_lights = 0;
+
+	/* Template event */
+	struct ctlra_event_t event = {
+		.type = CTLRA_EVENT_GRID,
+		.grid  = {
+			.id = 0,
+			.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+			.pos = 0,
+			.pressed = 1
+		},
+	};
+	struct ctlra_event_t *e = {&event};
+
+	int pressed_cnt = 0;
+	for(int i = 0; i < 16; i++) {
+		/* skip over pressure values */
+		uint8_t p = buf[1+i*3];
+		/* pad is zero when list of pads has ended */
+		if(i > 0 && p == 0)
+			break;
+
+		if((dev->pad_hit & (1 << p)) == 0) {
+			dev->pad_hit |= (1 << p);
+			event.grid.pos = p;
+			event.grid.pressed = 1;
+			event.grid.pressure = 0.5;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+
+			dev->lights_pads[25+p] = dev->pad_colour;
+			flush_lights = 1;
+		}
+		pressed_cnt++;
+	}
+
+	for(int i = 0; i < pressed_cnt; i++) {
+		uint8_t p = buf[1+i*3];
+		int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
+
+		/* last byte is zero if note off on that pad */
+		if(buf[3+i*3] == 0) {
+			event.grid.pos = p;
+			dev->pad_hit &= ~(1 << p);
+			event.grid.pressed = 0;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->lights_pads[25+p] = 0;
+			flush_lights = 1;
+		}
+	}
+
+	return flush_lights;
+}
+
 void
 ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				  uint32_t endpoint, uint8_t *data,
@@ -425,7 +484,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		int pv = buf[67];
 		//printf("=== pressed ? %s\n", pv > 0 ? "YES" : "NO");
 
-		buf += 64;
+		//buf += 64;
 #if 0
 		int i;
 		static uint8_t old[82];
@@ -439,61 +498,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		//printf("delta between msgs = %ld\n", now - dev->pad_last_msg_time);
 		dev->pad_last_msg_time = now;
 
-		/* Template event */
-		struct ctlra_event_t event = {
-			.type = CTLRA_EVENT_GRID,
-			.grid  = {
-				.id = 0,
-				.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
-				.pos = 0,
-				.pressed = 1
-			},
-		};
-		struct ctlra_event_t *e = {&event};
+		int flush_lights;
 
-		/* pre-process pressed pads into bitmask */
-		uint16_t rpt_pressed = 0;
-		int flush_lights = 0;
-
-		static int pressed;
-
-		int new_pressed = 0;
-		for(int i = 0; i < 16; i++) {
-			/* skip over pressure values */
-			uint8_t p = buf[1+i*3];
-			/* pad is zero when list of pads has ended */
-			if(i > 0 && p == 0)
-				break;
-
-			if((dev->pad_hit & (1 << p)) == 0) {
-				dev->pad_hit |= (1 << p);
-				event.grid.pos = p;
-				event.grid.pressed = 1;
-				event.grid.pressure = 0.5;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-
-				dev->lights_pads[25+p] = dev->pad_colour;
-				flush_lights = 1;
-			}
-			new_pressed++;
-		}
-
-		for(int i = 0; i < new_pressed; i++) {
-			uint8_t p = buf[1+i*3];
-			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
-
-			/* last byte is zero if note off on that pad */
-			if(buf[3+i*3] == 0) {
-				event.grid.pos = p;
-				dev->pad_hit &= ~(1 << p);
-				event.grid.pressed = 0;
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-				dev->lights_pads[25+p] = 0;
-				flush_lights = 1;
-			}
-		}
+		flush_lights  = ni_maschine_mk3_decode_pads(dev, &buf[0]);
+		flush_lights += ni_maschine_mk3_decode_pads(dev, &buf[64]);
 
 		if(flush_lights)
 			ni_maschine_mk3_light_flush(&dev->base, 1);
