@@ -313,8 +313,8 @@ struct ni_maschine_mk3_t {
 	uint8_t lights_pads[LIGHTS_SIZE];
 	uint8_t pad_colour;
 
-	/* Store the current encoder value */
 	uint8_t encoder_value;
+	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
 	uint64_t pad_last_msg_time;
 	uint16_t pad_hit;
@@ -333,6 +333,8 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 		return ni_maschine_mk3_control_names[control_id];
 	if(type == CTLRA_EVENT_ENCODER && control_id < ENCODERS_SIZE )
 		return encoder_names[control_id];
+	if(type == CTLRA_EVENT_SLIDER && control_id == 0)
+		return "Touchstrip";
 	return 0;
 }
 
@@ -488,6 +490,22 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 #endif
 		} break; /* pad data */
 	case 42: {
+		/* touchstrip: dont send event if 0, as this is release */
+		uint16_t v = *((uint16_t *)&buf[30]);
+		if(v && v != dev->touchstrip_value) {
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_SLIDER,
+				.slider = {
+					.id = 0,
+					.value = v / 1024.f,
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->touchstrip_value = v;
+		}
+
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 			int id     = buttons[i].event_id;
