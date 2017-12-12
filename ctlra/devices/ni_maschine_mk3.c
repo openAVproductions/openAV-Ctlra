@@ -355,7 +355,7 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 static uint32_t ni_maschine_mk3_poll(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
-	uint8_t buf[128];
+	uint8_t buf[512];
 	ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 					  USB_ENDPOINT_READ,
 					  buf, 128);
@@ -422,9 +422,21 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			break;
 		}
 
+		int pv = buf[67];
+		//printf("=== pressed ? %s\n", pv > 0 ? "YES" : "NO");
+
+		buf += 64;
+#if 0
+		int i;
+		static uint8_t old[82];
+		for(i = 64; i >= 0; i--) {
+			printf("%02x ", buf[i]);
+		}
+		printf("\n");
+#endif
+
 		uint64_t now = rdtsc();
-		printf("delta between msgs = %ld\n",
-		       now - dev->pad_last_msg_time);
+		//printf("delta between msgs = %ld\n", now - dev->pad_last_msg_time);
 		dev->pad_last_msg_time = now;
 
 		/* Template event */
@@ -442,33 +454,74 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		/* pre-process pressed pads into bitmask */
 		uint16_t rpt_pressed = 0;
 		int flush_lights = 0;
+
+		static int pressed;
+
+		int new_pressed = 0;
 		for(int i = 0; i < 16; i++) {
 			/* skip over pressure values */
 			uint8_t p = buf[1+i*3];
 			/* pad is zero when list of pads has ended */
 			if(i > 0 && p == 0)
 				break;
-			rpt_pressed |= 1 << p;
+
+			if((dev->pad_hit & (1 << p)) == 0) {
+				dev->pad_hit |= (1 << p);
+				event.grid.pos = p;
+				event.grid.pressed = 1;
+				event.grid.pressure = 0.5;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+
+				dev->lights_pads[25+p] = dev->pad_colour;
+				flush_lights = 1;
+			}
+			new_pressed++;
 		}
 
-		printf("rpt %d\n", rpt_pressed);
-#if 0
-		{
+		for(int i = 0; i < new_pressed; i++) {
+			uint8_t p = buf[1+i*3];
 			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
-			pad_pressed |= (pressure > 200) << p;
 
-			uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
+			/* last byte is zero if note off on that pad */
+			if(buf[3+i*3] == 0) {
+				event.grid.pos = p;
+				dev->pad_hit &= ~(1 << p);
+				event.grid.pressed = 0;
+				dev->base.event_func(&dev->base, 1, &e,
+						     dev->base.event_func_userdata);
+				dev->lights_pads[25+p] = 0;
+				flush_lights = 1;
+			}
+		}
+
+		if(flush_lights)
+			ni_maschine_mk3_light_flush(&dev->base, 1);
+#if 0
+			//rpt_pressed |= (pressure > 200) << p;
+
+			uint8_t idx = dev->pad_idx[p]++ & KERNEL_MASK;
 			uint16_t total = 0;
 			for(int j = 0; j < KERNEL_LENGTH; j++) {
 				int idx = i*KERNEL_LENGTH + j;
 				total += dev->pad_pressures[idx];
 			}
-			dev->pad_pressures[i*KERNEL_LENGTH + idx] = pressure;
+			dev->pad_pressures[p*KERNEL_LENGTH + idx] = pressure;
 
-			uint16_t med = qsort_median(&dev->pad_pressures[i*KERNEL_LENGTH],
+			uint16_t med = qsort_median(&dev->pad_pressures[p*KERNEL_LENGTH],
 						    KERNEL_LENGTH);
+			if(med < 50) {
+				dev->pad_hit &= ~(1 << p);
+				printf("pad %d off, med %d\n", p, med);
+			} else {
+				if((dev->pad_hit & (1 << p)) > 0) {
+					printf("pad %d ON, med %d\n", p, med);
+				}
+			}
 		}
+#endif
 
+#if 0
 		for(int i = 0; i < 16; i++) {
 			/* already pressed */
 			if(dev->pad_hit & (1 << i)) {
@@ -483,15 +536,15 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			/* rotate grid to match order on device (but zero
 			 * based counting instead of 1 based). */
 			event.grid.pos = (3-(i/4))*4 + (i%4);
-
-			event.grid.pressed = ((1 << i)) > 0;
+			event.grid.pressed = (dev-> pad_hit & (1 << i)) > 0;
+			/*
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
-			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
+			dev->lights_pads[25+i] = dev->pad_colour *
+				(dev->pad_hit & ((1 << i)>0) );//* event.grid.pressed;
 			flush_lights = 1;
+			*/
 		}
-		if(flush_lights)
-			ni_maschine_mk3_light_flush(&dev->base, 1);
 #endif
 
 #if 1
@@ -805,6 +858,9 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	maschine_mk3_blit_to_screen(dev, 0);
 	maschine_mk3_blit_to_screen(dev, 1);
 
+	for(int i = 0; i < LIGHTS_SIZE; i++) {
+		//dev->lights[i]= 0b11;
+	}
 
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
