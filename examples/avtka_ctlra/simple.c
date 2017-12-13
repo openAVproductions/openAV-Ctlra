@@ -16,6 +16,14 @@ static uint32_t led_set;
 struct avtka_t *a;
 static uint32_t revision;
 
+static uint32_t slider_id;
+
+struct pad_t {
+	uint32_t item_id;
+	uint8_t pressed;
+};
+static struct pad_t pads[16];
+
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* feedback like LEDs and Screen drawing based on application
@@ -158,6 +166,9 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("[%03d] slider %s (%d)\n",
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
+			avtka_item_value(a, slider_id, e->slider.value);
+			avtka_redraw(a);
+			revision++;
 			break;
 
 		case CTLRA_EVENT_GRID:
@@ -172,6 +183,12 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
+			int it = pads[e->grid.pos].item_id;
+			avtka_item_value(a, pads[e->grid.pos].item_id,
+					 e->grid.pressed);
+			avtka_redraw(a);
+			revision++;
+
 			break;
 		default:
 			break;
@@ -239,6 +256,7 @@ int main(int argc, char **argv)
 	struct avtka_opts_t opts = {
 		.w = 480,
 		.h = 272,
+		.flag_no_resize = 1,
 		.event_callback = event_cb,
 		.event_callback_userdata = 0,
 	};
@@ -255,7 +273,6 @@ int main(int argc, char **argv)
 		.interact = AVTKA_INTERACT_DRAG_V,
 	};
 	int id = avtka_item_create(a, &item);
-	printf("dial id = %d\n", id);
 
 	item.x = 10;
 	item.y = 10;
@@ -265,7 +282,29 @@ int main(int argc, char **argv)
 	item.interact = AVTKA_INTERACT_DRAG_V;
 	snprintf(item.name, sizeof(item.name), "Filter");
 	id = avtka_item_create(a, &item);
-	printf("filter id = %d\n", id);
+
+	item.x = 210;
+	item.y =  10;
+	item.w =  20;
+	item.h =  80;
+	item.draw = AVTKA_DRAW_SLIDER;
+	item.interact = AVTKA_INTERACT_DRAG_V;
+	snprintf(item.name, sizeof(item.name), "TS");
+	slider_id = avtka_item_create(a, &item);
+
+	for(int i = 0; i < 16; i++) {
+		struct avtka_item_opts_t item = {
+			.name = "Pad",
+			.x = 120 + ((i%4)) * 30,
+			.y = 180 + -(3-(i/4)) * 30,
+			.w = 39, .h = 39,
+			.draw = AVTKA_DRAW_DIAL,
+			.interact = AVTKA_INTERACT_TOGGLE,
+			.params[0] = 1,
+		};
+		pads[i].item_id = avtka_item_create(a, &item);
+		avtka_item_value(a, pads[i].item_id, 0);
+	}
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
