@@ -80,6 +80,28 @@ void script_reset(struct script_t *s)
 		free(s->program);
 }
 
+struct loopa_symbol_t {
+	char name[64];
+	void *func_ptr;
+};
+
+static struct loopa_symbol_t loopa_symbols[] = {
+	{"loopa_reset", loopa_reset},
+	{"loopa_playing_toggle", loopa_playing_toggle},
+	{"loopa_record_toggle", loopa_record_toggle},
+	{"loopa_play_get", loopa_play_get},
+	{"loopa_rec_get", loopa_rec_get},
+	{"loopa_vol_get", loopa_vol_get},
+	{"loopa_vol_set", loopa_vol_set},
+	{"loopa_playing", loopa_playing},
+	{"loopa_recording", loopa_recording},
+	{"ctlra_dev_light_set", ctlra_dev_light_set},
+	{"ctlra_dev_light_flush", ctlra_dev_light_flush},
+	{"ctlra_dev_screen_get_data", ctlra_dev_screen_get_data},
+};
+
+#define LOOPA_SYMBOLS_SIZE (sizeof(loopa_symbols) / sizeof(loopa_symbols[0]))
+
 int script_compile_file(struct script_t *script)
 {
 	script_reset(script);
@@ -98,15 +120,28 @@ int script_compile_file(struct script_t *script)
 	tcc_set_options(s, "-g");
 	tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
 
-	int ret = tcc_add_file(s, script->filepath);
+	for(int i = 0; i < LOOPA_SYMBOLS_SIZE; i++) {
+		if (tcc_add_symbol(s, loopa_symbols[i].name,
+					 loopa_symbols[i].func_ptr)) {
+			error("failed to insert get rec() symbol\n");
+			tcc_delete(s);
+			return -1;
+		}
+	}
+
+	int ret;
+	ret = tcc_add_file(s, script->filepath);
 	if(ret < 0) {
 		printf("gracefully handling error now... \n");
 		return -1;
 	}
 
 	script->program = malloc(tcc_relocate(s, NULL));
-	if(!script->program)
+	if(!script->program) {
 		error("failed to alloc mem for program\n");
+		return -1;
+	}
+
 	ret = tcc_relocate(s, script->program);
 	if(ret < 0)
 		error("failed to relocate code to program memory\n");
@@ -125,23 +160,6 @@ int script_compile_file(struct script_t *script)
 	                      tcc_get_symbol(s, "script_feedback_func");
 	if(!script->feedback_func)
 		error("failed to find script_feedback_func\n");
-
-	/* add ctlra hooks */
-	tcc_add_symbol(s, "ctlra_dev_light_set", (void *)ctlra_dev_light_set);
-	if(ret < 0) {
-		error("failed to insert ctlra light set() symbol\n");
-		return -1;
-	}
-	tcc_add_symbol(s, "ctlra_dev_light_flush", (void *)ctlra_dev_light_flush);
-	if(ret < 0) {
-		error("failed to insert ctlra light set() symbol\n");
-		return -1;
-	}
-	tcc_add_symbol(s, "ctlra_dev_screen_get_data", (void *)ctlra_dev_screen_get_data);
-	if(ret < 0) {
-		error("failed to insert ctlra screen get data() symbol\n");
-		return -1;
-	}
 
 	tcc_delete(s);
 
