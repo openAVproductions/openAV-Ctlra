@@ -8,6 +8,11 @@
 
 static int chan;
 const char *patch_name;
+const uint8_t NUM_FILES = 128;
+/* contains filenames */
+char filenames[NUM_FILES*64];
+/* Table of pointers to filenames */
+const char *files[NUM_FILES];
 
 /* for drawing graphics to screen */
 #include <cairo/cairo.h>
@@ -18,7 +23,7 @@ static cairo_t *cr = 0;
 #define WIDTH  480
 #define HEIGHT 272
 
-//#define SCALAR_ARGB32 1
+#define SCALAR_ARGB32 1
 
 void maschine3_screen_init()
 {
@@ -121,18 +126,12 @@ void maschin3_file_browser(struct dummy_data *d,
 			   const char *path)
 {
 	struct maschine3_t *m = d->maschine3;
-
-	const uint8_t NUM_FILES = 12;
-	/* contains filenames */
-	char filenames[NUM_FILES*64];
-	/* Table of pointers to filenames */
-	char *files[NUM_FILES];
 	for(int i = 0; i < NUM_FILES; i++) {
 		files[i] = &filenames[i*64];
-		snprintf(files[i], 64, "file number %d", i);
+		//snprintf(files[i], 64, "file number %d", i);
 	}
 	//int nfiles = djmxa_get_file_list(djmxa, "tunes/", files, NUM_FILES);
-	int nfiles = 3;
+	int nfiles = NUM_FILES;
 
 	/* blank background */
 	cairo_set_source_rgb(cr, 8/255.,8/255.,8/255.);
@@ -143,7 +142,8 @@ void maschin3_file_browser(struct dummy_data *d,
 	cairo_rectangle(cr, 1, 1, 478, 18);
 	cairo_fill(cr);
 
-	int selected = m->file_selected % nfiles;
+	//int selected = m->file_selected % nfiles;
+	int selected = chan % nfiles;
 
 	cairo_move_to(cr, 9, 15 );
 	cairo_set_source_rgba(cr, 1,1,1, 0.8);
@@ -152,7 +152,7 @@ void maschin3_file_browser(struct dummy_data *d,
 	for(int i = 0; i < NUM_FILES; i++) {
 		/* Draw each file */
 		if(i == selected && i < nfiles)
-			cairo_set_source_rgb(cr, 60/255., 60/255.,255/255.);
+			cairo_set_source_rgb(cr, 0/255., 0x7c/255.,255/255.);
 		else if(i & 1)
 			cairo_set_source_rgb(cr, 18/255.,18/255.,18/255.);
 		else
@@ -217,8 +217,8 @@ int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	cairo_stroke(cr);
 #endif
 
-	if(0) maschin3_file_browser(d, cr, "test");
-	if(1) maschin3_item_browser(d, cr, "blah", screen_idx);
+	if(1) maschin3_file_browser(d, cr, "test");
+	if(0) maschin3_item_browser(d, cr, "blah", screen_idx);
 
 	cairo_surface_flush(surface);
 
@@ -375,8 +375,20 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			break;
 		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
-			if(e->encoder.id == 0)
-				m->file_selected += e->encoder.delta;
+			//if(e->encoder.id == 0) m->file_selected += e->encoder.delta;
+
+			if(e->encoder.delta > 0)
+				chan++;
+			else
+				chan--;
+			if(chan < 0)   chan =   0;
+			if(chan > 127) chan = 127;
+			soffa_set_patch(dummy->soffa, 0, 0, chan, &patch_name);
+			printf("maschine: patch switched to %s (%d)\n",
+			       patch_name, chan);
+			snprintf(&filenames[chan*64], 64, "%s", patch_name);
+			break;
+
 			break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
