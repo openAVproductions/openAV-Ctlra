@@ -608,10 +608,49 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 
 	int idx = light_id;
 
-	uint32_t r = (light_status >> 16) & 0x7F;
-	uint32_t g = (light_status >>  8) & 0x7F;
-	uint32_t b = (light_status >>  0) & 0x7F;
+	float r = ((light_status >> 16) & 0xFF) / 255.f;
+	float g = ((light_status >>  8) & 0xFF) / 255.f;
+	float b = ((light_status >>  0) & 0xFF) / 255.f;
 	uint32_t bright = (light_status >> 27);
+
+	/* rgb to hsv calc */
+	float max = r > g ? r : g;
+	max = b > max ? b : max;
+
+	float min = r < g ? r : g;
+	min = b < min ? b : min;
+
+	float delta = max - min;
+
+	float h = 0;
+	uint8_t hue = 0;
+	if (delta != 0.0f) {
+		if (r > g && r > b) { /* red */
+			float tmp = (float)(g - b);
+			h = tmp / delta;
+			if(h == 0)
+				h += 0.1;
+		} else if (g > r && g > b) { /* green */
+			float tmp = (float)(b - r);
+			h = 2.f + tmp / delta;
+		} else {
+			float tmp = (float)(r - g);
+			h = 4.f + tmp / delta;
+		}
+	}
+
+	/* scale out full angle, and correct for the Mk3 16 values */
+	h *= 60;
+	if (h < 0.0)
+		h = h + 360;
+
+	//printf("r %d, g %d, b %d\n", r, g, b); printf("h calc = %f, max %f, min %f, del %f\n", h, max, min, delta);
+	hue = (uint8_t)((h / 360.f) * 16);
+
+	/* value zero should be red, but device turns off LEDs with colour
+	 * set to zero, so use 1 as red instead */
+	if(hue == 0)
+		hue = 1;
 
 	/* normal LEDs */
 	if(idx < 58) {
@@ -629,7 +668,9 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 		dev->lights_dirty = 1;
 	} else {
 		/* 25 strip + 16 pads */
-		dev->lights_pads[idx - 58] = light_status;
+		uint8_t v = (hue << 2) | 0x2;
+		//printf("in %08x : h %04x, v %04x\n", light_status, hue, v);
+		dev->lights_pads[idx - 58] = v;
 		dev->lights_pads_dirty = 1;
 	}
 }
@@ -661,10 +702,12 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	for(int i = 0; i < 4; i++)
 		dev->lights[25+i] = 0b10001 << i;
+	/*
 	for(int i = 0; i < 4; i++) {
 		dev->lights[37+i] = 0b1100 << i;
 		//printf("%d = %02x\n", i, 0b1100 << i);
 	}
+	*/
 
 	dev->lights[29] = 0b10000000;
 	dev->lights[30] = 0b10000001;
@@ -675,12 +718,36 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	dev->lights[34] = 0b00000101;
 	dev->lights[35] = 0b00001101;
 	dev->lights[36] = 0b00011101;
+#endif
+
+	static int counter;
 
 	for(int i = 0; i < 16; i++)
-		dev->lights[25+i] &= dev->pad_hit[i] > 0 ? (uint8_t)-1 : 0;
+		dev->lights_pads[25+i] = ((((counter >> 4) & 0xf) +1) << 2) | ((counter & 0xf) == i ? 0x2 : 0);
+	dev->lights_pads_dirty = 1;
+
+	counter++;
+	usleep(1000 * 140);
+
+#if 0
+	ni_maschine_mk3_light_set(base, 83, 0x00ff0000);
+	ni_maschine_mk3_light_set(base, 84, 0x0000ff00);
+	ni_maschine_mk3_light_set(base, 85, 0x000000ff);
+
+	ni_maschine_mk3_light_set(base, 87, 0x00fff000);
+	ni_maschine_mk3_light_set(base, 88, 0x00001f00);
+	ni_maschine_mk3_light_set(base, 89, 0x000050ff);
+
+	ni_maschine_mk3_light_set(base, 91, 0x00ffff00);
+	ni_maschine_mk3_light_set(base, 92, 0x00000000);
+	ni_maschine_mk3_light_set(base, 93, 0x00ff00ff);
+
+	ni_maschine_mk3_light_set(base, 97, 0x00ffffff);
+	ni_maschine_mk3_light_set(base, 98, 0x00);
 #endif
+
 	/* error handling in USB subsystem */
-	if(dev->lights_dirty) {
+	if(dev->lights_dirty && 0) {
 		uint8_t *data = &dev->lights_endpoint;
 		dev->lights_endpoint = 0x80;
 		ctlra_dev_impl_usb_interrupt_write(base,
@@ -700,6 +767,8 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						   data,
 						   LIGHTS_SIZE + 1);
 	}
+
+	//usleep(1000 * 100);
 }
 
 static void
