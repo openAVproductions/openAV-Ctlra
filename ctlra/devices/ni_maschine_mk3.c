@@ -602,7 +602,7 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 
 	if(!dev)
 		return;
-	if(light_id > LIGHTS_SIZE) {
+	if(light_id > (57 + 25 + 16)) {
 		return;
 	}
 
@@ -629,6 +629,7 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 	} else {
 		/* 25 strip + 16 pads */
 		dev->lights_pads[idx - 58] = light_status;
+		dev->lights_pads[idx - 58 + 25] = light_status;
 		dev->lights_pads_dirty = 1;
 	}
 }
@@ -639,9 +640,6 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 	if(!dev->lights_dirty && !dev->lights_pads_dirty && !force)
 		return;
-
-	uint8_t *data = &dev->lights_endpoint;
-	dev->lights_endpoint = 0x80;
 #if 0
 	static uint16_t c;
 	for(int i= 0; i < 1; i++) {
@@ -683,6 +681,8 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 #endif
 	/* error handling in USB subsystem */
 	if(dev->lights_dirty) {
+		uint8_t *data = &dev->lights_endpoint;
+		dev->lights_endpoint = 0x80;
 		ctlra_dev_impl_usb_interrupt_write(base,
 						   USB_HANDLE_IDX,
 						   USB_ENDPOINT_WRITE,
@@ -692,7 +692,7 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	}
 
 	if(dev->lights_pads_dirty) {
-		data = &dev->lights_pads_endpoint;
+		uint8_t *data = &dev->lights_pads_endpoint;
 		dev->lights_pads_endpoint = 0x81;
 		ctlra_dev_impl_usb_interrupt_write(base,
 						   USB_HANDLE_IDX,
@@ -707,13 +707,10 @@ maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev, int scr)
 {
 	void *data = (scr == 1) ? &dev->screen_right : &dev->screen_left;
 
-	int ret = ctlra_dev_impl_usb_bulk_write(&dev->base,
-						USB_HANDLE_SCREEN_IDX,
+	ctlra_dev_impl_usb_bulk_write(&dev->base, USB_HANDLE_SCREEN_IDX,
 						USB_ENDPOINT_SCREEN_WRITE,
 						data,
 						sizeof(dev->screen_left));
-	if(ret < 0)
-		printf("%s screen write failed!\n", __func__);
 }
 
 int32_t
