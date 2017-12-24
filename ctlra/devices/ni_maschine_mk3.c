@@ -52,6 +52,10 @@
 #define USB_INTERFACE_SCREEN      (0x5)
 #define USB_ENDPOINT_SCREEN_WRITE (0x4)
 
+/* Uncomment to have the driver light up the pad lights itself. This is
+ * useful to testing the pad response and accuracy. */
+//#define PAD_TESTING 1
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mk3_ctlra_t {
 	int event_id;
@@ -409,10 +413,11 @@ ni_maschine_mk3_decode_pads(struct ni_maschine_mk3_t *dev, uint8_t *buf)
 			event.grid.pressure = 0.5;
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
-
+#if PAD_TESTING
 			dev->lights_pads[25+p] = dev->pad_colour;
 			dev->lights_pads_dirty = 1;
 			flush_lights = 1;
+#endif
 		}
 		pressed_cnt++;
 	}
@@ -428,9 +433,11 @@ ni_maschine_mk3_decode_pads(struct ni_maschine_mk3_t *dev, uint8_t *buf)
 			event.grid.pressed = 0;
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
+#if PAD_TESTING
 			dev->lights_pads[25+p] = 0;
 			dev->lights_pads_dirty = 1;
 			flush_lights = 1;
+#endif
 		}
 	}
 
