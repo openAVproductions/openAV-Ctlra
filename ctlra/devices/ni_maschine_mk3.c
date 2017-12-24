@@ -617,6 +617,7 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 	if(idx < 58) {
 		switch(idx) {
 		case 5: /* Sampling */
+			dev->lights[idx] = light_status;
 			dev->lights_dirty = r;
 			break;
 		default:
@@ -629,7 +630,6 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 	} else {
 		/* 25 strip + 16 pads */
 		dev->lights_pads[idx - 58] = light_status;
-		dev->lights_pads[idx - 58 + 25] = light_status;
 		dev->lights_pads_dirty = 1;
 	}
 }
@@ -828,11 +828,13 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	maschine_mk3_blit_to_screen(dev, 1);
 
 	for(int i = 0; i < LIGHTS_SIZE; i++) {
-		dev->lights[i]= 0b1000001;
+		dev->lights[i]= 0b1001;
+		dev->lights_pads[i]= 0b1001;
 	}
 
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
+	dev->lights_pads_dirty = 1;
 
 	dev->base.info = ctlra_ni_maschine_mk3_info;
 
