@@ -280,7 +280,10 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	switch(m->mode) {
 	case 0:
 		ctlra_dev_light_set(dev, 22, UINT32_MAX);
+		for(i = 0; i < 16; i++)
+			ctlra_dev_light_set(dev, 58 + 25 + i, m->pads[i] * 0xbf0000ff);
 		ctlra_dev_light_flush(dev, 0);
+
 		break;
 	default:
 		ctlra_dev_light_set(dev, 22, 0);
@@ -375,7 +378,11 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			break;
 		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
-			//if(e->encoder.id == 0) m->file_selected += e->encoder.delta;
+			if(e->encoder.id != 0) {
+				printf("encoder %d: %f\n", e->encoder.id,
+				       e->encoder.delta_float);
+				continue;
+			}
 
 			if(e->encoder.delta > 0)
 				chan++;
