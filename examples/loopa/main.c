@@ -58,6 +58,7 @@ struct script_t {
 	script_event_func event_func;
 	/* Function pointer to the scripts feedback handling function */
 	script_feedback_func feedback_func;
+	script_screen_redraw_func screen_redraw_func;
 
 	/* The malloc() / free() memory from the script */
 	void *script_ud;
@@ -90,6 +91,7 @@ static struct loopa_symbol_t loopa_symbols[] = {
 	{"loopa_playing_toggle", loopa_playing_toggle},
 	{"loopa_record_toggle", loopa_record_toggle},
 	{"loopa_play_get", loopa_play_get},
+	{"loopa_reverb", loopa_reverb},
 	{"loopa_rec_get", loopa_rec_get},
 	{"loopa_vol_get", loopa_vol_get},
 	{"loopa_vol_set", loopa_vol_set},
@@ -161,6 +163,11 @@ int script_compile_file(struct script_t *script)
 	if(!script->feedback_func)
 		error("failed to find script_feedback_func\n");
 
+	script->screen_redraw_func = (script_screen_redraw_func)
+	                      tcc_get_symbol(s, "script_screen_redraw_func");
+	if(!script->feedback_func)
+		error("failed to find script_feedback_func\n");
+
 	tcc_delete(s);
 
 	int err = file_modify_time(script->filepath,
@@ -185,6 +192,21 @@ void tcc_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 		script->feedback_func(dev, userdata);
 }
 
+
+int tcc_screen_redraw_proxy(struct ctlra_dev_t *dev, uint32_t screen_idx,
+			    uint8_t *pixel_data, uint32_t bytes,
+			    void *userdata)
+{
+	struct script_t *script = userdata;
+
+	if(script->screen_redraw_func)
+		return script->screen_redraw_func(dev, screen_idx,
+						  pixel_data, bytes, userdata);
+
+	/* zero means no redraw */
+	return 0;
+}
+
 void tcc_event_proxy(struct ctlra_dev_t* dev,
                      uint32_t num_events,
                      struct ctlra_event_t** events,
@@ -198,6 +220,16 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * has, it can swap the pointer for the event-func here, and then
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
+
+	static int do_once;
+	if(!do_once) {
+		int32_t ret = ctlra_dev_screen_register_callback(dev, 30,
+								 tcc_screen_redraw_proxy,
+								 script);
+		if(ret)
+			printf("WARNING: Failed to register screen callback\n");
+	}
+
 
 	/* Check if we need to recompile script based on modified time of
 	 * the script file, comparing with the compiled modified time */

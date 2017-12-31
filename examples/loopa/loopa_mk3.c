@@ -10,6 +10,7 @@ typedef int int32_t;
 
 struct mk3_loopa_t {
 	int loop_id;
+	float v;
 };
 
 static struct mk3_loopa_t self;
@@ -31,6 +32,31 @@ void script_get_vid_pid(int *out_vid, int *out_pid)
 {
 	*out_vid = 0x17cc;
 	*out_pid = 0x1600;
+}
+
+int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
+			      uint8_t *pixel_data, uint32_t bytes,
+			      void *userdata)
+{
+	int flush = 1;
+
+	if(screen_idx == 1)
+		return 0;
+
+	for(int i = 0; i < bytes; i++) {
+		pixel_data[i] = 0;
+	}
+
+	float v = 1 - self.v;
+	for(int i = 0; i < 272; i++) {
+		pixel_data[(480*2) * i+110] = (i / 270.f) < v ? 0 : 0xff;
+		pixel_data[(480*2) * i+111] = (i / 270.f) < v ? 0 : 0xff;
+		pixel_data[(480*2) * i+112] = (i / 270.f) < v ? 0 : 0xff;
+	}
+
+	//printf("self.v = %f\n", self.v);
+
+	return flush;
 }
 
 void script_event_func(struct ctlra_dev_t* dev,
@@ -64,8 +90,15 @@ void script_event_func(struct ctlra_dev_t* dev,
 			}
 			break;
 		case CTLRA_EVENT_ENCODER:
-			if(e->encoder.id != 0)
+			if(e->encoder.id == 0)
 				loopa_vol_set(0, 1.0f);
+			else {
+				self.v += e->encoder.delta_float;
+				if(self.v > 1.f) self.v = 1.0f;
+				if(self.v < 0.f) self.v = 0.0f;
+				printf("%f\n", self.v);
+				loopa_reverb(self.v);
+			}
 			break;
 		case CTLRA_EVENT_SLIDER:
 			switch(e->slider.id) {

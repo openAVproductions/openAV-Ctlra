@@ -23,6 +23,13 @@ static uint32_t playing;
 
 roomy_t *roomy;
 
+void loopa_reverb(float v)
+{
+	// dB gain for reverb
+	roomy->fVslider1 = (v * 2.f) - 1.f;// - 30;
+	printf("vslider1 = %f, v = %f\n", roomy->fVslider1, v);
+}
+
 int
 process(jack_nframes_t nframes, void *arg)
 {

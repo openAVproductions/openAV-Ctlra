@@ -7,6 +7,8 @@ void loopa_playing(int r);
 void loopa_recording(int r);
 void loopa_reset();
 
+void loopa_reverb(float v);
+
 /* getters */
 int loopa_play_get(int c);
 int loopa_rec_get(int c);

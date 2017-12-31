@@ -15,3 +15,9 @@ typedef void (*script_event_func)(struct ctlra_dev_t* dev,
 /* The script function that handles feedback to the device. */
 typedef void (*script_feedback_func)(struct ctlra_dev_t *dev,
 				    void *userdata);
+
+/* The script function to redraw a screen */
+typedef int (*script_screen_redraw_func)(struct ctlra_dev_t *dev,
+				       uint32_t screen_idx,
+				       uint8_t *pixel_data, uint32_t bytes,
+				       void *userdata);
