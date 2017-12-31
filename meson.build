@@ -75,12 +75,15 @@ executable('vegas_mode',
            dependencies: [jack, cairo, sndfile, fluid])
 endif
 
+# FAUST code requires powf()
+m_dep = cc.find_library('m', required : false)
+
 executable('loopa',
            example_loopa,
            include_directories: ctlra_includes,
            link_with: ctlra,
            link_args : ['-ltcc', '-ldl'],
-           dependencies: [jack, cairo, sndfile, fluid])
+           dependencies: [jack, cairo, sndfile, fluid, m_dep])
 
 gtkdep = dependency('gtk+-3.0')
 if gtkdep.found()

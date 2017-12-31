@@ -3,6 +3,7 @@
 #include <string.h>
 #include <jack/jack.h>
 
+#include "oav_reverb.h"
 
 static jack_port_t *input_port;
 static jack_port_t *output_port;
@@ -19,6 +20,8 @@ static uint32_t length;
 static uint32_t audio_present;
 static uint32_t recording;
 static uint32_t playing;
+
+roomy_t *roomy;
 
 int
 process(jack_nframes_t nframes, void *arg)
@@ -48,7 +51,19 @@ process(jack_nframes_t nframes, void *arg)
 				playhead = 0;
 			}
 		}
+
+		/* reverb */
+		float wasteL[1] = {0};
+		float wasteR[1] = {0};
+		float tmp_in = out[i];
+		float tmp_out = 0;
+		float *ins[] = {&tmp_in, wasteL};
+		float *outs[] = {&tmp_out, wasteR};
+		computeroomy_t(roomy, 1, ins, outs);
+
+		out[i] = tmp_out;
 	}
+
 
 	return 0;
 }
@@ -145,8 +160,9 @@ int loopa_init()
 	jack_set_process_callback (client, process, 0);
 	jack_on_shutdown (client, jack_shutdown, 0);
 
-	printf ("engine sample rate: %" PRIu32 "\n",
-	        jack_get_sample_rate (client));
+	uint32_t sr = jack_get_sample_rate(client);
+	printf ("engine sample rate: %" PRIu32 "\n", sr);
+
 	input_port = jack_port_register (client, "input",
 	                                 JACK_DEFAULT_AUDIO_TYPE,
 	                                 JackPortIsInput, 0);
@@ -179,6 +195,10 @@ int loopa_init()
 	}
 
 	free (ports);
+
+
+	roomy = newroomy_t();
+	initroomy_t(roomy, sr);
 
 	return 0;
 }

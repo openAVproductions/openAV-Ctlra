@@ -248,7 +248,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 	struct script_t *script = calloc(1, sizeof(struct script_t));
 	if(!script) return 0;
 
-	script->filepath = strdup("loopa_jam.c");
+	script->filepath = strdup("loopa_mk3.c");
 
 	script_compile_file(script);
 	if(script->compile_failed) {
