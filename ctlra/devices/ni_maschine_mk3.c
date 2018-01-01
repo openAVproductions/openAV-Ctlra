@@ -318,6 +318,9 @@ struct ni_maschine_mk3_t {
 	uint8_t lights_pads[LIGHTS_SIZE];
 	uint8_t pad_colour;
 
+	/* state of the pedal, according to the hardware */
+	uint8_t pedal;
+
 	uint8_t encoder_value;
 	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
@@ -491,6 +494,31 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 #endif
 		} break; /* pad data */
 	case 42: {
+		/* pedal */
+		int pedal = buf[3] > 0;
+		if(pedal != dev->pedal) {
+			printf("PEDAL: %d, inv = %d\n", pedal, !pedal);
+			struct ctlra_event_t event[] = {
+				{ .type = CTLRA_EVENT_BUTTON,
+				  .button  = {
+					.id = BUTTONS_SIZE,
+					.pressed = pedal, },
+				},
+				{ .type = CTLRA_EVENT_BUTTON,
+				  .button  = {
+					.id = BUTTONS_SIZE + 1,
+					.pressed = !pedal, },
+				}
+			};
+			struct ctlra_event_t *e = &event[0];
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			e = &event[1];
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->pedal = pedal;
+		}
+
 		/* touchstrip: dont send event if 0, as this is release */
 		uint16_t v = *((uint16_t *)&buf[30]);
 		if(v && v != dev->touchstrip_value) {
