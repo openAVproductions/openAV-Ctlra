@@ -672,6 +672,11 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
 			dev->lights[idx] = v;
 			} break;
+		case 29: case 30: case 31: case 32:
+		case 33: case 34: case 35: case 36: {
+			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
+			dev->lights[idx] = v;
+			} break;
 		default:
 			/* brighness 2 bits at the start of the
 			 * uint8_t for the light */
