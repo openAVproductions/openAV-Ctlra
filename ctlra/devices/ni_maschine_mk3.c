@@ -261,7 +261,9 @@ static const char *encoder_names[] = {
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
-#define LIGHTS_SIZE (80)
+#define LIGHTS_SIZE (62)
+/* 25 + 16 bytes enough, but padding required for USB message */
+#define LIGHTS_PADS_SIZE (80)
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
@@ -315,7 +317,7 @@ struct ni_maschine_mk3_t {
 	uint8_t lights[LIGHTS_SIZE];
 
 	uint8_t lights_pads_endpoint;
-	uint8_t lights_pads[LIGHTS_SIZE];
+	uint8_t lights_pads[LIGHTS_PADS_SIZE];
 	uint8_t pad_colour;
 
 	/* state of the pedal, according to the hardware */
@@ -621,9 +623,10 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 
 	if(!dev)
 		return;
-	if(light_id > (57 + 25 + 16)) {
+
+	// TODO: debug the -1, why is it required to get the right size?
+	if(light_id > (LIGHTS_SIZE + 25 + 16) - 1)
 		return;
-	}
 
 	int idx = light_id;
 	const uint8_t r = ((light_status >> 16) & 0xFF);
@@ -666,17 +669,19 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 		hue = 0;
 
 	/* normal LEDs */
-	if(idx < 58) {
+	if(idx < LIGHTS_SIZE) {
 		switch(idx) {
-		case 5: { /* Sampling */
-			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
-			dev->lights[idx] = v;
-			} break;
+		/* Sampling */
+		case 5:
+		/* ABCDEFGH */
 		case 29: case 30: case 31: case 32:
-		case 33: case 34: case 35: case 36: {
+		case 33: case 34: case 35: case 36:
+		/* Encoder up, left, right, down */
+		case 58: case 59: case 60: case 61:
+		{
 			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
 			dev->lights[idx] = v;
-			} break;
+		} break;
 		default:
 			/* brighness 2 bits at the start of the
 			 * uint8_t for the light */
@@ -687,7 +692,7 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 	} else {
 		/* 25 strip + 16 pads */
 		uint8_t v = (hue << 2) | (bright & 0x3);
-		dev->lights_pads[idx - 58] = v;
+		dev->lights_pads[idx - LIGHTS_SIZE] = v;
 		dev->lights_pads_dirty = 1;
 	}
 }
@@ -786,7 +791,7 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 						   USB_HANDLE_IDX,
 						   USB_ENDPOINT_WRITE,
 						   data,
-						   LIGHTS_SIZE + 1);
+						   LIGHTS_PADS_SIZE + 1);
 		dev->lights_pads_dirty = 0;
 	}
 
@@ -840,7 +845,7 @@ ni_maschine_mk3_disconnect(struct ctlra_dev_t *base)
 
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
 	dev->lights_dirty = 1;
-	memset(dev->lights_pads, 0x0, LIGHTS_SIZE);
+	memset(dev->lights_pads, 0x0, LIGHTS_PADS_SIZE);
 	dev->lights_pads_dirty = 1;
 
 	if(!base->banished) {
@@ -918,10 +923,11 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	maschine_mk3_blit_to_screen(dev, 0);
 	maschine_mk3_blit_to_screen(dev, 1);
 
-	for(int i = 0; i < LIGHTS_SIZE; i++) {
+	for(int i = 0; i < LIGHTS_SIZE; i++)
 		dev->lights[i] = 0b11111101;
+
+	for(int i = 0; i < LIGHTS_PADS_SIZE; i++)
 		dev->lights_pads[i] = 0b11111000;
-	}
 
 	dev->lights_dirty = 1;
 	dev->lights_pads_dirty = 1;
