@@ -23,11 +23,22 @@ static uint32_t playing;
 
 roomy_t *roomy;
 
+#define NUM_INPUTS 2
+float input_max[NUM_INPUTS];
+
 void loopa_reverb(float v)
 {
 	// dB gain for reverb
 	roomy->fVslider1 = (v * 2.f) - 1.f;// - 30;
 	printf("vslider1 = %f, v = %f\n", roomy->fVslider1, v);
+}
+
+float loopa_input_max(int channel)
+{
+	if(channel < NUM_INPUTS)
+		return input_max[channel];
+
+	return -1.0f;
 }
 
 int
@@ -41,7 +52,12 @@ process(jack_nframes_t nframes, void *arg)
 
 	memset(out, 0, sizeof (jack_default_audio_sample_t) * nframes);
 
+	input_max[0] = 0.f;
 	for(int i = 0; i < nframes; i++) {
+		float in_abs = fabsf(in[i]);
+		if(input_max[0] < in_abs)
+			input_max[0] = in_abs;
+
 		if(recording) {
 			audio[playhead] += in[i];
 			if(!audio_present) {
@@ -99,7 +115,6 @@ int loopa_rec_get(int c)
 
 void loopa_vol_set(int t, float v)
 {
-	printf("set vols %f\n", v);
 	vols[t] = v;
 }
 
@@ -110,7 +125,6 @@ void loopa_playing_toggle()
 
 void loopa_recording(int r)
 {
-	printf("recording %d\n", r);
 	if(recording && r == 0)
 		audio_present = 1;
 
@@ -124,7 +138,6 @@ void loopa_record_toggle()
 
 void loopa_reset()
 {
-	printf("reset()\n");
 	playhead = 0;
 	length = 0;
 	recording = 0;
@@ -146,6 +159,8 @@ int loopa_init()
 	const char *server_name = NULL;
 	jack_options_t options = JackNullOption;
 	jack_status_t status;
+
+	roomy = newroomy_t();
 
 	/* open a client connection to the JACK server */
 	client = jack_client_open (client_name, options, &status, server_name);
@@ -182,6 +197,14 @@ int loopa_init()
 		fprintf(stderr, "no more JACK ports available\n");
 		exit (1);
 	}
+
+	/* init DSP */
+	initroomy_t(roomy, sr);
+
+	for(int i = 0; i < 8; i++)
+		vols[i] = 1.0f;
+
+	/* activate JACK */
 	if (jack_activate (client)) {
 		fprintf (stderr, "cannot activate client");
 		exit (1);
@@ -202,10 +225,6 @@ int loopa_init()
 	}
 
 	free (ports);
-
-
-	roomy = newroomy_t();
-	initroomy_t(roomy, sr);
 
 	return 0;
 }

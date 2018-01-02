@@ -9,6 +9,8 @@ void loopa_reset();
 
 void loopa_reverb(float v);
 
+float loopa_input_max(int channel);
+
 /* getters */
 int loopa_play_get(int c);
 int loopa_rec_get(int c);
