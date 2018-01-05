@@ -60,9 +60,42 @@ struct maschine3_t
 	uint8_t file_selected;
 
 
+	/* item browser cache */
+	uint8_t items_init;
+#define NUM_ITEMS 8
+	cairo_surface_t *item_surfaces[NUM_ITEMS];
+
 #define NUM_ENCODERS 8
 	float encoder_value[NUM_ENCODERS];
 };
+
+static
+void maschin3_item_browser(struct dummy_data *d,
+			   cairo_t *cr,
+			   const char *path)
+{
+	struct maschine3_t *m = d->maschine3;
+
+	if(!m->items_init) {
+		printf("init now\n");
+		char filename[64];
+		for(int i = 0; i < NUM_ITEMS; i++) {
+			snprintf(filename, 64, "img_%d.png", i);
+			m->item_surfaces[i] =
+				cairo_image_surface_create_from_png(filename);
+		}
+		/*
+		cairo_surface_flush(st->surface);
+		cairo_surface_destroy(surf);
+		*/
+		m->items_init = 1;
+	}
+
+	for(int i = 0; i < NUM_ITEMS; i++) {
+		cairo_set_source_surface(cr, m->item_surfaces[i], i * 40, 0);
+		cairo_paint(cr);
+	}
+}
 
 static
 void maschin3_file_browser(struct dummy_data *d,
@@ -71,7 +104,9 @@ void maschin3_file_browser(struct dummy_data *d,
 {
 	struct maschine3_t *m = d->maschine3;
 
-#define NUM_FILES 12
+	return;
+
+	const uint8_t NUM_FILES = 12;
 	/* contains filenames */
 	char filenames[NUM_FILES*64];
 	/* Table of pointers to filenames */
@@ -154,7 +189,10 @@ void draw_stuff(struct dummy_data *d)
 	}
 	cairo_stroke(cr);
 
+	/*
 	if(1) maschin3_file_browser(d, cr, "test");
+	if(1) maschin3_item_browser(d, cr, "blah");
+	*/
 
 	cairo_surface_flush(surface);
 	(void)m;
@@ -307,24 +345,11 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_BUTTON:
 			ctlra_dev_light_set(dev, e->button.id, UINT32_MAX);
 			break;
-		case CTLRA_EVENT_ENCODER: {
+		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
-			if(e->encoder.id == 0) {
+			if(e->encoder.id == 0)
 				m->file_selected += e->encoder.delta;
-				break;
-			}
-			float sens = 6.f;
-			m->encoder_value[e->encoder.id] +=
-				e->encoder.delta_float * sens;
-			if(m->encoder_value[e->encoder.id] > 1.0f) {
-				m->encoder_value[e->encoder.id] -= 1.0f;
-				m->file_selected++;
-			}
-			if(m->encoder_value[e->encoder.id] < 0.0f) {
-				m->encoder_value[e->encoder.id] += 1.0f;
-				m->file_selected--;
-			}
-			} break;
+			break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
 				dummy->buttons[e->grid.pos] = e->grid.pressed;
