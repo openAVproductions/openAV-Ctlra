@@ -41,6 +41,17 @@ float loopa_input_max(int channel)
 	return -1.0f;
 }
 
+void loopa_progress_set(float p)
+{
+	playhead = p * (float)length;
+	printf("playhead after %d, progress in %f\n", playhead, p);
+}
+
+float loopa_progress()
+{
+	return playhead / (float)length;
+}
+
 int
 process(jack_nframes_t nframes, void *arg)
 {

@@ -36,7 +36,6 @@ struct mk3_loopa_t {
 static struct mk3_loopa_t self;
 
 static const uint32_t col_lut[] = {
-	0xFF0000,
 	0x00A2FF,
 	0xFF5f00,
 	0x0040FF,
@@ -44,6 +43,7 @@ static const uint32_t col_lut[] = {
 	0x8000FF,
 	0x00FF4f,
 	0xFF00BF,
+	0xFF0000,
 };
 
 
@@ -69,9 +69,9 @@ static const uint32_t col_lut_16[] = {
 
 void script_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 {
-	uint32_t l = loopa_rec_get(0) ? -1 : 0;
+	uint32_t l = loopa_rec_get(0) ? -1 : LOW;
 	ctlra_dev_light_set(dev, 42, l);
-	l = loopa_play_get(0) ? -1 : 0;
+	l = loopa_play_get(0) ? -1 : LOW;
 	ctlra_dev_light_set(dev, 41, l);
 
 	float m = loopa_input_max(self.selected_input_channel);
@@ -112,8 +112,11 @@ void script_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 	}
 
 	if(self.mode == MODE_ARRANGE) {
-		for(int i = 0; i < 25; i++)
-			ctlra_dev_light_set(dev, 62 + i, self.col);
+		for(int i = 0; i < 25; i++) {
+			float p = loopa_progress();
+			uint32_t col = i > (p * 25) ? 0 : self.col;
+			ctlra_dev_light_set(dev, 62 + i, col);
+		}
 		for(int i = 0; i < 16; i++)
 			ctlra_dev_light_set(dev, 62 + 25 + i, self.col);
 	}
@@ -147,8 +150,8 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 				pixel_data[480*0  + i + off] = 0b111000;
 				pixel_data[480*22 + i + off] = 0b111000;
 			}
+			return 1;
 		}
-		return 1;
 	}
 
 	if(screen_idx == 1)
@@ -165,8 +168,6 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 		pixel_data[(480*2) * i+112] = (i / 270.f) < v ? 0 : 0xff;
 	}
 
-	//printf("self.v = %f\n", self.v);
-
 	return flush;
 }
 
@@ -176,7 +177,6 @@ void script_event_func(struct ctlra_dev_t* dev,
                        void *userdata)
 {
 
-	//printf("script func, num events %d\n", num_events);
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		int pr = e->button.pressed;
@@ -188,7 +188,6 @@ void script_event_func(struct ctlra_dev_t* dev,
 				/* a b c d .. buttons */
 				if(pr) {
 					self.loop_id = e->button.id - 7;
-					printf("loop id = %d\n", self.loop_id);
 					self.col = col_lut[self.loop_id];
 				} break;
 
@@ -197,7 +196,7 @@ void script_event_func(struct ctlra_dev_t* dev,
 			case 42: if(pr) loopa_record_toggle(); break;
 
 			case 47: self.mode = MODE_SAMPLING;
-				 self.col = 0x20407fff;
+				 self.col = col_lut[2];
 				 break;
 			case 48: self.mode = MODE_INPUT; break;
 			case 49: self.mode = MODE_PLUGIN; break;
@@ -211,8 +210,8 @@ void script_event_func(struct ctlra_dev_t* dev,
 			case 57: self.selected_input_channel = 1;
 				break;
 
-			case 73: printf("boo\n");
-				if(!pr) {
+			case 73:
+				if(pr) {
 					if(loopa_rec_get(0) && !loopa_play_get(0)) {
 						loopa_playing_toggle();
 					}
@@ -228,7 +227,6 @@ void script_event_func(struct ctlra_dev_t* dev,
 				self.v += e->encoder.delta_float;
 				if(self.v > 1.f) self.v = 1.0f;
 				if(self.v < 0.f) self.v = 0.0f;
-				printf("%f\n", self.v);
 				loopa_reverb(self.v);
 			}
 			break;
@@ -238,6 +236,16 @@ void script_event_func(struct ctlra_dev_t* dev,
 			default: printf("slider %d\n", e->slider.id); break;
 			}
 			break;
+		case CTLRA_EVENT_GRID: {
+			if(!e->grid.pressed)
+				break;
+			int pos = e->grid.pos;
+			int r = pos % 4;
+			int c = 3 - (pos / 4);
+			int npos = c * 4 + r;
+			float prog = npos / 16.f;
+			loopa_progress_set(prog);
+			} break;
 		default: break;
 		}
 	}
