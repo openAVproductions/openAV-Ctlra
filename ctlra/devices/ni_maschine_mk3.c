@@ -253,7 +253,7 @@ static const char *encoder_names[] = {
 	"Enc. 8 Turn",
 };
 
-#define ENCODERS_SIZE (9)
+#define ENCODERS_SIZE (8)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
@@ -331,7 +331,7 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 {
 	if(type == CTLRA_EVENT_BUTTON && control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mk3_control_names[control_id];
-	if(type == CTLRA_EVENT_ENCODER && control_id < ENCODERS_SIZE )
+	if(type == CTLRA_EVENT_ENCODER && control_id < 9)
 		return encoder_names[control_id];
 	if(type == CTLRA_EVENT_SLIDER && control_id == 0)
 		return "Touchstrip";
