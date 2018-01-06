@@ -250,7 +250,7 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 
 	int i;
 	for(i = 0; i < VEGAS_BTN_COUNT; i++)
-		ctlra_dev_light_set(dev, i, 0);
+		ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
 
 	if(!m) {
 		ctlra_dev_light_set(dev, 22, UINT32_MAX);
