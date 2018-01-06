@@ -71,6 +71,7 @@ void convert_scalar(unsigned char *data, uint8_t *pixels, uint32_t stride)
 
 int32_t screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			 uint8_t *pixel_data, uint32_t bytes,
+			 struct ctlra_screen_zone_t *damage,
 			 void *userdata)
 {
 	static int redraw;

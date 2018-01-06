@@ -136,6 +136,7 @@ void script_get_vid_pid(int *out_vid, int *out_pid)
 
 int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			      uint8_t *pixel_data, uint32_t bytes,
+			      struct ctlra_screen_zone_t *damage,
 			      void *userdata)
 {
 	int flush = 1;

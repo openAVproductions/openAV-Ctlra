@@ -20,4 +20,5 @@ typedef void (*script_feedback_func)(struct ctlra_dev_t *dev,
 typedef int (*script_screen_redraw_func)(struct ctlra_dev_t *dev,
 				       uint32_t screen_idx,
 				       uint8_t *pixel_data, uint32_t bytes,
+				       struct ctlra_screen_zone_t *damage,
 				       void *userdata);

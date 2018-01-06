@@ -294,7 +294,9 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 }
 
 int maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
-			     uint32_t bytes, void *ud)
+			     uint32_t bytes,
+			     struct ctlra_screen_zone_t *damage,
+			     void *ud)
 {
 	struct dummy_data *d = ud;
 
@@ -419,9 +421,11 @@ int maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
 				uint32_t screen_idx,
 				uint8_t *pixel_data,
 				uint32_t bytes,
+				struct ctlra_screen_zone_t *damage,
 				void *userdata)
 {
-	return maschine3_redraw_screen(screen_idx, pixel_data, bytes, userdata);
+	return maschine3_redraw_screen(screen_idx, pixel_data, bytes,
+				       damage, userdata);
 }
 
 void maschine3_func(struct ctlra_dev_t* dev,

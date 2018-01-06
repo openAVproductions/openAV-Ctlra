@@ -462,11 +462,13 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 				if(ret)
 					continue;
 
+				struct ctlra_screen_zone_t redraw;
 				int32_t flush = dev_iter->screen_redraw_cb(
 					dev_iter,
 					i, /* screen idx */
 					pixel,
 					bytes,
+					&redraw,
 					dev_iter->screen_redraw_ud);
 				if(flush)
 					ctlra_dev_screen_get_data(dev_iter,

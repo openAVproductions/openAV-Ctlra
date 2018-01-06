@@ -198,13 +198,17 @@ void tcc_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 
 int tcc_screen_redraw_proxy(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			    uint8_t *pixel_data, uint32_t bytes,
+			    struct ctlra_screen_zone_t *zone,
 			    void *userdata)
 {
 	struct script_t *script = userdata;
 
-	if(script->screen_redraw_func)
-		return script->screen_redraw_func(dev, screen_idx,
-						  pixel_data, bytes, userdata);
+	if(script->screen_redraw_func) {
+		int ret = script->screen_redraw_func(dev, screen_idx,
+						  pixel_data, bytes,
+						  zone, userdata);
+		return ret;
+	}
 
 	/* zero means no redraw */
 	return 0;
