@@ -162,7 +162,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
 			avtka_item_value_inc(a, 1, e->encoder.delta_float);
-			avtka_item_value_inc(a, 2, e->encoder.delta_float);
+			//avtka_item_value_inc(a, 2, e->encoder.delta_float);
 			redraw = 1;
 			revision++;
 			break;
@@ -248,8 +248,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 void event_cb(struct avtka_t *avtka, uint32_t item, float v, void *userdata)
 {
 	//printf("event on item %d, value %f\n", item, v);
-	avtka_item_value(a, 2, v);
-	avtka_item_value(a, 1, v);
+	//avtka_item_value(a, 2, v);
 	revision++;
 }
 
@@ -266,6 +265,7 @@ int main(int argc, char **argv)
 	struct avtka_opts_t opts = {
 		.w = 480,
 		.h = 272,
+		.debug_redraws = 1,
 		//.flag_no_resize = 1,
 		.event_callback = event_cb,
 		.event_callback_userdata = 0,
