@@ -440,6 +440,8 @@ ni_maschine_mk3_decode_pads(struct ni_maschine_mk3_t *dev, uint8_t *buf)
 	return flush_lights;
 }
 
+static int hack_redraw;
+
 void
 ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				  uint32_t endpoint, uint8_t *buf,
@@ -535,6 +537,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
 			dev->touchstrip_value = v;
+			hack_redraw = 1;
 		}
 
 		/* Buttons */
@@ -817,7 +820,7 @@ ni_screen_skip(uint8_t *data, uint32_t *idx, uint32_t num_px)
 	data[(*idx)++] = 0x2;
 	data[(*idx)++] = 0x0;
 	data[(*idx)++] = (skip & 0xff00) >> 8;
-	data[(*idx)++] = skip & 0x00ff;
+	data[(*idx)++] = (skip & 0x00ff);
 }
 
 static inline void
@@ -832,9 +835,23 @@ ni_screen_line(uint8_t *data, uint32_t *idx, uint32_t length_px,
 	/* px 1 colour */
 	data[(*idx)++] = px1_col >> 8;
 	data[(*idx)++] = px1_col;
+	/* px2 colour */
 	data[(*idx)++] = px2_col >> 8;
 	data[(*idx)++] = px2_col;
-	//printf("skip %x %x\n", data[*idx-2], data[*idx-1]);
+}
+
+static inline void
+ni_screen_var_px(uint8_t *data, uint32_t *idx, uint32_t num_px,
+		 uint8_t *px_data)
+{
+	uint32_t len = num_px / 2;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (len & 0xff00) >> 8;
+	data[(*idx)++] = (len & 0x00ff);
+	/* iterate provided pixels */
+	for(int i = 0; i < num_px * 2; i++)
+		data[(*idx)++] = px_data[i];
 }
 
 int32_t
@@ -854,20 +871,67 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 		flush = 1;
 
 	if(flush == 2) {
-		printf("partial redraw %d %d %d %d - currently unsupported!\n",
+		printf("partial redraw %d %d %d %d -  experimental!\n",
 		       zone->x, zone->y, zone->w, zone->h);
 		/* create a new buffer on the stack, to build up the
 		 * required commands to do a partial update */
-		uint8_t cmd[1024];
+		uint8_t cmd[1024*1024];
 
 		uint32_t idx = 0;
 		for(; idx < sizeof(dev->screen_left.header); idx++)
 			cmd[idx] = dev->screen_left.header[idx];
 
-		int skip_start = ((480 * zone->x) + zone->y) & (~0x1);
-		int cmd_skip = skip_start / 2;
-		int cmd_skip_1 = 0xff;
-		int cmd_skip_2 = 0x0;
+#if 1
+
+#if 1
+		if(hack_redraw) {
+			ni_screen_line(cmd, &idx, 480 * 272,
+				       0b11,
+				       0b11);
+			hack_redraw = 0;
+		} else {
+			/* skip foward the required amount from zero */
+			int skip_px = ((480 * zone->y) + zone->x) & (~0x1);
+			ni_screen_skip(cmd, &idx, skip_px);
+
+			for(int i = 0; i < zone->h; i++) {
+				int width = zone->w & (~1);
+				ni_screen_line(cmd, &idx, width,
+					       0b1111100000000000,
+					       0b1111100000000000);
+				//printf("i = %d, idx = %d, zone w %d\n", i, idx, zone->w);
+				ni_screen_skip(cmd, &idx, 480 - width);
+			}
+		}
+#endif
+		//ni_screen_var_px(cmd, &idx, 10, *pixels);
+
+		/* for each horizontal line, plot X pixels, and re-skip */
+		printf("starting loop\n");
+#if 0
+		for(int i = 0; i < zone->h; i++) {
+			uint32_t px_idx = ((zone->y + i) * 480) + zone->x;
+			printf("i %d, px_idx = %d\n", i, px_idx);
+			ni_screen_var_px(cmd, &idx, zone->w, cmd);
+			ni_screen_line(cmd, &idx, zone->w,
+				       0b11111,
+				       0b11111);
+			//ni_screen_skip(cmd, &idx, 480 - zone->w);
+		}
+#endif
+#else
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		uint8_t test[] = {
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+		};
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
 
 		ni_screen_skip(cmd, &idx, 480 * 20);
 
@@ -886,6 +950,7 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 		ni_screen_line(cmd, &idx, 480 * 20,
 			       0b11111,
 			       0b11111);
+#endif
 
 		for(int i = 0; i < sizeof(dev->screen_left.footer); i++, idx++)
 			cmd[idx] = dev->screen_left.footer[i];
