@@ -63,6 +63,7 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 			printf("App: accepting %s %s (%x:%x)\n",
 			       info->vendor, info->device,
 			       info->vendor_id, info->device_id);
+
 			/* Accept */
 			return 1;
 		}
