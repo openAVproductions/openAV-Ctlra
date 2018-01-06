@@ -822,10 +822,50 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 	if(screen_idx > 1)
 		return -1;
 
+	if(flush == 3)
+		flush = 1;
+
 	if(flush == 2) {
 		printf("partial redraw %d %d %d %d - currently unsupported!\n",
 		       zone->x, zone->y, zone->w, zone->h);
-		flush = 1;
+		/* create a new buffer on the stack, to build up the
+		 * required commands to do a partial update */
+		uint8_t cmd[1024];
+
+		uint32_t idx = 0;
+		for(; idx < sizeof(dev->screen_left.header); idx++)
+			cmd[idx] = dev->screen_left.header[idx];
+
+		int skip_start = ((480 * zone->x) + zone->y) & (~0x1);
+		int cmd_skip = skip_start / 2;
+		int cmd_skip_1 = 0xff;
+		int cmd_skip_2 = 0x0;
+
+		/* initial skip  0x02, 0x0, 0x0f, 0x00, */
+		cmd[idx++] = 0x2;
+		cmd[idx++] = 0x0;
+		cmd[idx++] = 0xf;
+		cmd[idx++] = 0x00;
+
+		/* test colour line */
+		cmd[idx++] = 0x01;
+		cmd[idx++] = 0x00;
+		cmd[idx++] = 0xf0;
+		cmd[idx++] = 0x05;
+
+		cmd[idx++] = 0xf8;
+		cmd[idx++] = 0x00;
+		cmd[idx++] = 0xf8;
+		cmd[idx++] = 0x00;
+
+		for(int i = 0; i < sizeof(dev->screen_left.footer); i++, idx++)
+			cmd[idx] = dev->screen_left.footer[i];
+
+		ctlra_dev_impl_usb_bulk_write(&dev->base, USB_HANDLE_SCREEN_IDX,
+							USB_ENDPOINT_SCREEN_WRITE,
+							cmd, idx);
+
+		return 0;
 	}
 
 	if(flush == 1) {
