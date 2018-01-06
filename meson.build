@@ -80,7 +80,7 @@ executable('vegas_mode',
            dependencies: [jack, cairo, sndfile, fluid])
 endif
 
-gtkdep = dependency('gtk+-3.0')
+gtkdep = dependency('gtk+-3.0', required: false)
 if gtkdep.found()
   executable('select_device',
       'examples/select_device/main.c',
