@@ -1,5 +1,5 @@
 project('openav_ctlra', 'c')
-add_project_arguments('-std=c99', language : 'c')
+add_project_arguments('-std=gnu99', language : 'c')
 
 conf_data = configuration_data()
 conf_data.set('version', '0.1')
@@ -91,7 +91,7 @@ executable('loopa',
            link_args : ['-ltcc', '-ldl'],
            dependencies: [jack, cairo, sndfile, fluid, m_dep])
 
-gtkdep = dependency('gtk+-3.0')
+gtkdep = dependency('gtk+-3.0', required: false)
 if gtkdep.found()
   executable('select_device',
       'examples/select_device/main.c',

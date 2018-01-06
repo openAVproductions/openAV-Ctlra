@@ -36,6 +36,8 @@
 extern "C" {
 #endif
 
+#include <time.h>
+
 #define CTLRA_INTERNAL 1
 
 #include "ctlra.h"
@@ -179,7 +181,7 @@ struct ctlra_dev_t {
 	ctlra_dev_impl_screen_get_data screen_get_data;
 	ctlra_screen_redraw_cb screen_redraw_cb;
 	void *screen_redraw_ud;
-	uint64_t screen_last_redraw;
+	struct timespec screen_last_redraw;
 
 	/* Function pointer to retrive info about a particular control */
 	ctlra_dev_impl_control_get_name control_get_name;

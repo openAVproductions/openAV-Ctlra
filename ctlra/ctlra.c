@@ -412,22 +412,6 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
-static inline uint64_t rdtsc(void)
-{
-	union {
-		uint64_t tsc_64;
-		struct {
-			uint32_t lo_32;
-			uint32_t hi_32;
-		};
-	} tsc;
-
-	__asm__ volatile("rdtscp" :
-		     "=a" (tsc.lo_32),
-		     "=d" (tsc.hi_32));
-	return tsc.tsc_64;
-}
-
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
@@ -454,13 +438,23 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 				dev_iter->event_func_userdata);
 		}
 
-		uint64_t now = rdtsc();
-		if(dev_iter->screen_redraw_cb &&
-		   dev_iter->screen_last_redraw + 300000000 < now) {
+		struct timespec now;
+		int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+		if(err)
+			CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
+				    err);
+
+		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
+		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
+		uint64_t nanos_elapsed = secs * 10e9 + nanos;
+		uint64_t fps_in_nanos = 300000000;
+
+		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
 			dev_iter->screen_last_redraw = now;
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 				uint8_t *pixel;
 				uint32_t bytes;
+				/* TODO: improve screen_flush() functionality */
 				int ret = ctlra_dev_screen_get_data(dev_iter,
 							  &pixel,
 							  &bytes,
