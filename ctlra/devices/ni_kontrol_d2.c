@@ -518,8 +518,12 @@ ni_kontrol_d2_screen_blit(struct ctlra_dev_t *base)
 }
 
 int32_t
-ni_kontrol_d2_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
-			      uint32_t *bytes, uint8_t flush)
+ni_kontrol_d2_screen_get_data(struct ctlra_dev_t *base,
+			      uint32_t screen_idx,
+			      uint8_t **pixels,
+			      uint32_t *bytes,
+			      struct ctlra_screen_zone_t *redraw,
+			      uint8_t flush)
 {
 	struct ni_kontrol_d2_t *dev = (struct ni_kontrol_d2_t *)base;
 	/* fill in out params */

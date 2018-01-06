@@ -811,27 +811,31 @@ maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev, int scr)
 
 int32_t
 ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
-				      uint8_t **pixels,
-				      uint32_t *bytes,
-				      uint8_t flush)
+				uint32_t screen_idx,
+				uint8_t **pixels,
+				uint32_t *bytes,
+				struct ctlra_screen_zone_t *zone,
+				uint8_t flush)
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
-	if(flush > 3)
+	if(screen_idx > 1)
 		return -1;
 
+	if(flush == 2) {
+		printf("partial redraw %d %d %d %d - currently unsupported!\n",
+		       zone->x, zone->y, zone->w, zone->h);
+		flush = 1;
+	}
+
 	if(flush == 1) {
-		maschine_mk3_blit_to_screen(dev, 0);
-		maschine_mk3_blit_to_screen(dev, 1);
+		maschine_mk3_blit_to_screen(dev, screen_idx);
 		return 0;
 	}
 
 	*pixels = (uint8_t *)&dev->screen_left.pixels;
-
-	/* hack - re use flush to screen select */
-	if(flush == 2) {
+	if(screen_idx == 1)
 		*pixels = (uint8_t *)&dev->screen_right.pixels;
-	}
 
 	*bytes = NUM_PX * 2;
 

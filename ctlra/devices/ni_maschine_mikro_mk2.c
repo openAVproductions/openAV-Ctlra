@@ -514,8 +514,10 @@ maschine_mikro_mk2_blit_to_screen(struct ni_maschine_mikro_mk2_t *dev)
 
 int32_t
 ni_maschine_mikro_mk2_screen_get_data(struct ctlra_dev_t *base,
+				      uint32_t screen_idx,
 				      uint8_t **pixels,
 				      uint32_t *bytes,
+				      struct ctlra_screen_zone_t *zone,
 				      uint8_t flush)
 {
 	struct ni_maschine_mikro_mk2_t *dev = (struct ni_maschine_mikro_mk2_t *)base;

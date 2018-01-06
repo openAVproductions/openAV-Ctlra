@@ -92,9 +92,11 @@ typedef void (*ctlra_dev_impl_usb_read_cb)(struct ctlra_dev_t *dev,
 					   uint8_t *data,
 					   uint32_t size);
 typedef int32_t (*ctlra_dev_impl_screen_get_data)(struct ctlra_dev_t *dev,
-					   uint8_t **pixels,
-					   uint32_t *bytes,
-					   uint8_t flush);
+						  uint32_t screen_idx,
+						  uint8_t **pixels,
+						  uint32_t *bytes,
+						  struct ctlra_screen_zone_t *redraw,
+						  uint8_t flush);
 typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,

@@ -71,7 +71,7 @@ void convert_scalar(unsigned char *data, uint8_t *pixels, uint32_t stride)
 
 int32_t screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			 uint8_t *pixel_data, uint32_t bytes,
-			 struct ctlra_screen_zone_t *damage,
+			 struct ctlra_screen_zone_t *zone,
 			 void *userdata)
 {
 	static int redraw;
@@ -97,7 +97,11 @@ int32_t screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
 	/* convert from ARGB32 to 565 */
 	convert_scalar(data, pixel_data, stride);
 
-	return 1;
+	/* fill in redraw co-ords */
+	avtka_redraw_get_damaged_area(a, &zone->x, &zone->y,
+				         &zone->w, &zone->h);
+
+	return 2;
 }
 
 void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
@@ -130,6 +134,8 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 
+	int redraw = 0;
+
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		const char *pressed = 0;
@@ -157,7 +163,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			       name, e->button.id);
 			avtka_item_value_inc(a, 1, e->encoder.delta_float);
 			avtka_item_value_inc(a, 2, e->encoder.delta_float);
-			avtka_redraw(a);
+			redraw = 1;
 			revision++;
 			break;
 
@@ -168,7 +174,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			       (int)(e->slider.value * 100.f),
 			       name, e->slider.id);
 			avtka_item_value(a, slider_id, e->slider.value);
-			avtka_redraw(a);
+			redraw = 1;
 			revision++;
 			break;
 
@@ -184,10 +190,9 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
 				printf(", pressure %1.3f", e->grid.pressure);
 			printf("\n");
-			int it = pads[e->grid.pos].item_id;
 			avtka_item_value(a, pads[e->grid.pos].item_id,
 					 e->grid.pressed);
-			avtka_redraw(a);
+			redraw = 1;
 			revision++;
 
 			break;
@@ -195,6 +200,10 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			break;
 		};
 	}
+
+	if(redraw)
+		avtka_redraw(a);
+
 }
 
 void sighndlr(int signal)
@@ -257,7 +266,7 @@ int main(int argc, char **argv)
 	struct avtka_opts_t opts = {
 		.w = 480,
 		.h = 272,
-		.flag_no_resize = 1,
+		//.flag_no_resize = 1,
 		.event_callback = event_cb,
 		.event_callback_userdata = 0,
 	};
