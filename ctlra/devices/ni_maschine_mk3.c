@@ -809,6 +809,34 @@ maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev, int scr)
 						sizeof(dev->screen_left));
 }
 
+/** Skip forward in the screen by *num_px* amount of pixels. */
+static inline void
+ni_screen_skip(uint8_t *data, uint32_t *idx, uint32_t num_px)
+{
+	uint32_t skip = num_px / 2;
+	data[(*idx)++] = 0x2;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (skip & 0xff00) >> 8;
+	data[(*idx)++] = skip & 0x00ff;
+}
+
+static inline void
+ni_screen_line(uint8_t *data, uint32_t *idx, uint32_t length_px,
+	       uint16_t px1_col, uint16_t px2_col)
+{
+	uint32_t len = length_px / 2;
+	data[(*idx)++] = 0x1;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (len & 0xff00) >> 8;
+	data[(*idx)++] = (len & 0x00ff);
+	/* px 1 colour */
+	data[(*idx)++] = px1_col >> 8;
+	data[(*idx)++] = px1_col;
+	data[(*idx)++] = px2_col >> 8;
+	data[(*idx)++] = px2_col;
+	//printf("skip %x %x\n", data[*idx-2], data[*idx-1]);
+}
+
 int32_t
 ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 				uint32_t screen_idx,
@@ -841,22 +869,23 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 		int cmd_skip_1 = 0xff;
 		int cmd_skip_2 = 0x0;
 
-		/* initial skip  0x02, 0x0, 0x0f, 0x00, */
-		cmd[idx++] = 0x2;
-		cmd[idx++] = 0x0;
-		cmd[idx++] = 0xf;
-		cmd[idx++] = 0x00;
+		ni_screen_skip(cmd, &idx, 480 * 20);
 
-		/* test colour line */
-		cmd[idx++] = 0x01;
-		cmd[idx++] = 0x00;
-		cmd[idx++] = 0xf0;
-		cmd[idx++] = 0x05;
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b1111100000000000,
+			       0b1111100000000000);
 
-		cmd[idx++] = 0xf8;
-		cmd[idx++] = 0x00;
-		cmd[idx++] = 0xf8;
-		cmd[idx++] = 0x00;
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b11111100000,
+			       0b11111100000);
+
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b11111,
+			       0b11111);
 
 		for(int i = 0; i < sizeof(dev->screen_left.footer); i++, idx++)
 			cmd[idx] = dev->screen_left.footer[i];
