@@ -15,7 +15,16 @@ static cairo_t *cr = 0;
 #define WIDTH  480
 #define HEIGHT 272
 
-void d2_screen_init()
+
+int32_t d2_screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
+			    uint8_t *pixel_data, uint32_t bytes,
+			    void *userdata)
+{
+	//printf("in %s\n", __func__);
+	return 0;
+}
+
+void d2_screen_init(struct ctlra_dev_t *dev)
 {
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 					      WIDTH, HEIGHT);
@@ -24,6 +33,11 @@ void d2_screen_init()
 	cr = cairo_create (surface);
 	if(!cr)
 		printf("!cr\n");
+
+	int32_t ret = ctlra_dev_screen_register_callback(dev, 30,
+							 d2_screen_redraw_cb,
+							 NULL);
+	printf("d2: screen cb register ret = %d\n", ret);
 }
 
 static inline
@@ -41,7 +55,7 @@ void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
 void d2_screen_draw(struct ctlra_dev_t *dev, struct dummy_data *d)
 {
 	if(surface == 0)
-		d2_screen_init();
+		d2_screen_init(dev);
 
 	/* blank background */
 	cairo_set_source_rgb(cr, 8/255.,8/255.,8/255.);
