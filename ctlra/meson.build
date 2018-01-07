@@ -1,5 +1,9 @@
 ctlra_hdr = files('ctlra.h', 'event.h')
-ctlra_src = files('ctlra.c', 'event.c', 'usb.c', 'midi.c')
+ctlra_src = files('ctlra.c', 'event.c', 'usb.c')
+
+if get_option('midi')
+  ctlra_src += files('midi.c')
+endif
 
 jack   = dependency('jack', required: false)
 conf_data.set('jack', jack.found())

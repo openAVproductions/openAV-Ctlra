@@ -41,15 +41,17 @@ executable('simple',
            include_directories: ctlra_includes,
            link_with: ctlra)
 
-executable('daemon',
-           example_daemon,
-           include_directories: ctlra_includes,
-           link_with: ctlra)
+if get_option('midi')
+  executable('daemon',
+             example_daemon,
+             include_directories: ctlra_includes,
+             link_with: ctlra)
 
-executable('sequencer',
-           example_seq,
-           include_directories: ctlra_includes,
-           link_with: ctlra)
+  executable('sequencer',
+             example_seq,
+             include_directories: ctlra_includes,
+             link_with: ctlra)
+endif
 
 if(get_option('avtka') == true)
  if(avtka_dep.found())
