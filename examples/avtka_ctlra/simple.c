@@ -101,7 +101,7 @@ int32_t screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
 	avtka_redraw_get_damaged_area(a, &zone->x, &zone->y,
 				         &zone->w, &zone->h);
 
-	return 2;
+	return 1;
 }
 
 void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
@@ -161,7 +161,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
-			avtka_item_value_inc(a, 1, e->encoder.delta_float);
+			avtka_item_value_inc(a, 1, e->encoder.delta_float * 1.5);
 			//avtka_item_value_inc(a, 2, e->encoder.delta_float);
 			redraw = 1;
 			revision++;

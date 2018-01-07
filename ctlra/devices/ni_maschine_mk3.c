@@ -844,12 +844,12 @@ static inline void
 ni_screen_var_px(uint8_t *data, uint32_t *idx, uint32_t num_px,
 		 uint8_t *px_data)
 {
-	uint32_t len = num_px / 2;
+	uint32_t len = num_px;
 	data[(*idx)++] = 0x0;
 	data[(*idx)++] = 0x0;
 	data[(*idx)++] = (len & 0xff00) >> 8;
 	data[(*idx)++] = (len & 0x00ff);
-	/* iterate provided pixels */
+	/* iterate provided pixels: 565 has 2 bpp, hence *2 */
 	for(int i = 0; i < num_px * 2; i++)
 		data[(*idx)++] = px_data[i];
 }
@@ -890,35 +890,48 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 				       0b11);
 			hack_redraw = 0;
 		} else {
+#if 1
 			/* skip foward the required amount from zero */
 			int skip_px = ((480 * zone->y) + zone->x) & (~0x1);
 			ni_screen_skip(cmd, &idx, skip_px);
 
+			int width = zone->w & (~1);
+
+			uint8_t test_px[480];
+			for(int i = 0; i < 480; i++)
+				test_px[i] = 0xf;
+
+			uint32_t px_idx = ((zone->y + 0) * 480) + zone->x;
+			printf("px idx = %d\n", px_idx);
+			uint8_t *px_in_data = (uint8_t *)&dev->screen_left.pixels[px_idx];
+
+			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			ni_screen_line(cmd, &idx, 12, 0b11111100000, 0b11111100000);
+			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			//ni_screen_var_px(cmd, &idx, 12, test_px);
+
 			for(int i = 0; i < zone->h; i++) {
-				int width = zone->w & (~1);
 				ni_screen_line(cmd, &idx, width,
 					       0b1111100000000000,
 					       0b1111100000000000);
 				//printf("i = %d, idx = %d, zone w %d\n", i, idx, zone->w);
 				ni_screen_skip(cmd, &idx, 480 - width);
 			}
+			/* for each horizontal line, plot X pixels, and re-skip */
+#else
+			for(int i = 0; i < zone->h; i++) {
+				uint32_t px_idx = ((zone->y + i) * 480) + zone->x;
+				printf("i %d, px_idx = %d\n", i, px_idx);
+				ni_screen_var_px(cmd, &idx, zone->w, cmd);
+				ni_screen_line(cmd, &idx, zone->w,
+					       0b11111,
+					       0b11111);
+				ni_screen_skip(cmd, &idx, 480 - zone->w);
+			}
+#endif
 		}
 #endif
-		//ni_screen_var_px(cmd, &idx, 10, *pixels);
 
-		/* for each horizontal line, plot X pixels, and re-skip */
-		printf("starting loop\n");
-#if 0
-		for(int i = 0; i < zone->h; i++) {
-			uint32_t px_idx = ((zone->y + i) * 480) + zone->x;
-			printf("i %d, px_idx = %d\n", i, px_idx);
-			ni_screen_var_px(cmd, &idx, zone->w, cmd);
-			ni_screen_line(cmd, &idx, zone->w,
-				       0b11111,
-				       0b11111);
-			//ni_screen_skip(cmd, &idx, 480 - zone->w);
-		}
-#endif
 #else
 		ni_screen_skip(cmd, &idx, 480 * 20);
 
