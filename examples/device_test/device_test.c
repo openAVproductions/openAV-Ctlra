@@ -43,7 +43,8 @@ void avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 #define LIGHT_SET(light, status)					\
 	do {								\
 		ctlra_dev_light_set(dev, light, status);		\
-		ctlra_dev_light_set(avtka_ui, light, status);		\
+		if(avtka_ui)						\
+			ctlra_dev_light_set(avtka_ui, light, status);	\
 	} while (0)
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
@@ -83,7 +84,8 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 
-	avtka_mirror_hw_cb(avtka_ui, num_events, events, 0x0);
+	if(avtka_ui)
+		avtka_mirror_hw_cb(avtka_ui, num_events, events, 0x0);
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
