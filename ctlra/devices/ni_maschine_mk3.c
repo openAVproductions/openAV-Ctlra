@@ -40,22 +40,6 @@
 
 #include "impl.h"
 
-static inline uint64_t rdtsc(void)
-{
-	union {
-		uint64_t tsc_64;
-		struct {
-			uint32_t lo_32;
-			uint32_t hi_32;
-		};
-	} tsc;
-
-	__asm__ volatile("rdtscp" :
-		     "=a" (tsc.lo_32),
-		     "=d" (tsc.hi_32));
-	return tsc.tsc_64;
-}
-
 #define CTLRA_DRIVER_VENDOR (0x17cc)
 #define CTLRA_DRIVER_DEVICE (0x1600)
 #define USB_INTERFACE_ID      (0x04)
@@ -364,21 +348,6 @@ static uint32_t ni_maschine_mk3_poll(struct ctlra_dev_t *base)
 void
 ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force);
 
-#if 0
-typedef uint16_t elem_type;
-
-static int compare(const void *f1, const void *f2)
-{
-	return ( *(elem_type*)f1 > *(elem_type*)f2) ? 1 : -1;
-}
-
-static elem_type qsort_median(elem_type * array, int n)
-{
-	qsort(array, n, sizeof(elem_type), compare);
-	return array[n/2];
-}
-#endif
-
 /* ABCDEFGH Pad colour */
 static const uint8_t pad_cols[] = {
 	0x2a, 0b11101, 0b11000011, 0x5e,
@@ -421,11 +390,6 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			break;
 		}
 
-		uint64_t now = rdtsc();
-		printf("delta between msgs = %ld\n",
-		       now - dev->pad_last_msg_time);
-		dev->pad_last_msg_time = now;
-
 		/* Template event */
 		struct ctlra_event_t event = {
 			.type = CTLRA_EVENT_GRID,
@@ -441,74 +405,44 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		/* pre-process pressed pads into bitmask */
 		uint16_t rpt_pressed = 0;
 		int flush_lights = 0;
-		for(int i = 0; i < 16; i++) {
+		uint8_t d1, d2;
+		int i;
+		for(i = 0; i < 16; i++) {
 			/* skip over pressure values */
 			uint8_t p = buf[1+i*3];
+			d1 = buf[2+i*3];
+			d2 = buf[3+i*3];
 			/* pad is zero when list of pads has ended */
-			if(i > 0 && p == 0)
+			printf("i = %d, rpt = %04x, d = %02x, %02x\n", i, rpt_pressed, d1, d2);
+			if(p == 0 && d1 == 0)
 				break;
+			/* store pressed pads into bitmask */
 			rpt_pressed |= 1 << p;
 		}
-
-		printf("rpt %d\n", rpt_pressed);
-#if 0
-		{
-			int pressure = ((buf[2+i*3] & 0xf) << 8) | buf[3+i*3];
-			pad_pressed |= (pressure > 200) << p;
-
-			uint8_t idx = dev->pad_idx[i]++ & KERNEL_MASK;
-			uint16_t total = 0;
-			for(int j = 0; j < KERNEL_LENGTH; j++) {
-				int idx = i*KERNEL_LENGTH + j;
-				total += dev->pad_pressures[idx];
-			}
-			dev->pad_pressures[i*KERNEL_LENGTH + idx] = pressure;
-
-			uint16_t med = qsort_median(&dev->pad_pressures[i*KERNEL_LENGTH],
-						    KERNEL_LENGTH);
-		}
+		printf("\n");
 
 		for(int i = 0; i < 16; i++) {
-			/* already pressed */
-			if(dev->pad_hit & (1 << i)) {
-				dev->pad_hit &= ~(1 << i);
-				dev->lights_pads[25+i] = 0;
-				flush_lights = 1;
+			/* detect state change */
+			int current = (dev->pad_hit & (1 << i));
+			int new     = (rpt_pressed  & (1 << i));
+			if(current == new)
 				continue;
-			}
-
-			dev->pad_hit |= (1 << i);
 
 			/* rotate grid to match order on device (but zero
 			 * based counting instead of 1 based). */
 			event.grid.pos = (3-(i/4))*4 + (i%4);
-
-			event.grid.pressed = ((1 << i)) > 0;
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
+			event.grid.pressed = new > 0;
+			//dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
+#ifndef CTLRA_MK3_PADS
 			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 			flush_lights = 1;
+#endif
 		}
+
 		if(flush_lights)
 			ni_maschine_mk3_light_flush(&dev->base, 1);
-#endif
 
-#if 1
-#else
-		/* alternative implementation using bitmasks for loop */
-		uint16_t delta = old_pressed ^ pad_pressed;
-		const uint32_t count = __builtin_popcount(delta);
-		for(int i = 0; i < count; i++) {
-			int p = ffs(delta);
-			event.grid.pos = p - 1;
-			event.grid.pressed = (pad_pressed & (1 << p));
-			printf("pop: %d, ffs %d, press = %d, pressed %02x\n",
-			       i, p, pad_pressed & (1<<p), pad_pressed);
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-		}
-#endif
-
+		dev->pad_hit = rpt_pressed;
 	} break;
 	case 42: {
 		/* Buttons */
@@ -632,45 +566,7 @@ ni_maschine_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 
 	uint8_t *data = &dev->lights_endpoint;
 	dev->lights_endpoint = 0x80;
-#if 0
-	static uint16_t c;
-	for(int i= 0; i < 1; i++) {
-		dev->lights[i] = 0x21 | 0b11;//(0b1101 << ((c++ / 4000)%8));
-			//0b00100000;
-			//0x2a;
-	}
 
-	dev->lights[29] = 0b10000000;
-	dev->lights[30] = 0b10000001;
-	dev->lights[30] = 0b01000001;
-	dev->lights[31] = 0b00101000;
-	dev->lights[32] = 0b00010011;
-	dev->lights[33] = 0b00001011;
-	dev->lights[34] = 0b00000101;
-	dev->lights[35] = 0b00001101;
-	dev->lights[36] = 0b00011101;
-
-
-	for(int i = 0; i < 4; i++)
-		dev->lights[25+i] = 0b10001 << i;
-	for(int i = 0; i < 4; i++) {
-		dev->lights[37+i] = 0b1100 << i;
-		//printf("%d = %02x\n", i, 0b1100 << i);
-	}
-
-	dev->lights[29] = 0b10000000;
-	dev->lights[30] = 0b10000001;
-	dev->lights[30] = 0b01000001;
-	dev->lights[31] = 0b00100011;
-	dev->lights[32] = 0b00010011;
-	dev->lights[33] = 0b00001011;
-	dev->lights[34] = 0b00000101;
-	dev->lights[35] = 0b00001101;
-	dev->lights[36] = 0b00011101;
-
-	for(int i = 0; i < 16; i++)
-		dev->lights[25+i] &= dev->pad_hit[i] > 0 ? (uint8_t)-1 : 0;
-#endif
 	/* error handling in USB subsystem */
 	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
