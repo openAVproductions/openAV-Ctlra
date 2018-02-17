@@ -40,6 +40,9 @@
 
 #include "impl.h"
 
+// Uncomment to debug pad on/off
+//#define CTLRA_MK3_PADS 1
+
 #define CTLRA_DRIVER_VENDOR (0x17cc)
 #define CTLRA_DRIVER_DEVICE (0x1600)
 #define USB_INTERFACE_ID      (0x04)
@@ -391,16 +394,13 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		if(p == 0 && d1 == 0)
 			break;
 
-		/* set pads state into bitmask: 0 means not pressed */
-		if(d2 != 0)
+		/* software threshold for gentle release */
+		uint16_t pressure = ((d1 & 0xf) << 8) | d2;
+		if(pressure > 128)
 			rpt_pressed |= 1 << p;
 		else
 			rpt_pressed &= ~(1 << p);
-
-		//printf("iter %d, d1 %d, d2 %d\n", i, d1, d2);
 	}
-
-	//printf("rpt %04x, old %04x\n", rpt_pressed, dev->pad_hit);
 
 	for(int i = 0; i < 16; i++) {
 		/* detect state change */
@@ -415,7 +415,7 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		event.grid.pressed = new > 0;
 		dev->base.event_func(&dev->base, 1, &e,
 				     dev->base.event_func_userdata);
-#ifndef CTLRA_MK3_PADS
+#ifdef CTLRA_MK3_PADS
 		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 		ni_maschine_mk3_light_flush(&dev->base, 1);
 #endif
@@ -453,7 +453,7 @@ ni_maschine_mk3_pads(struct ni_maschine_mk3_t *dev,
 	 *   Not taking B into account would cause the note-off to be
 	 *   dropped.
 	 */
-#if 1
+#ifdef CTLRA_MK3_PADS
 	for(int i = 0; i < 64; i++) {
 		printf("%02x ", buf[i]);
 		printf("%02x ", buf[i+64]);
