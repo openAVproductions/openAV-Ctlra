@@ -357,6 +357,108 @@ static const uint8_t pad_cols[] = {
 	0b101,
 };
 
+static void
+ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
+				uint8_t *buf)
+{
+	/* This function decodes a single 64 byte pads message. See
+	 * comments in calling code to understand how sets work */
+	/* Template event */
+	struct ctlra_event_t event = {
+		.type = CTLRA_EVENT_GRID,
+		.grid  = {
+			.id = 0,
+			.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
+			.pos = 0,
+			.pressed = 0
+		},
+	};
+	struct ctlra_event_t *e = {&event};
+
+	/* pre-process pressed pads into bitmask */
+	uint16_t rpt_pressed = 0;
+	int flush_lights = 0;
+	uint8_t d1, d2;
+	int i;
+	for(i = 0; i < 16; i++) {
+		/* skip over pressure values */
+		uint8_t p = buf[1+i*3];
+		d1 = buf[2+i*3];
+		d2 = buf[3+i*3];
+		/* pad is zero when list of pads has ended */
+		if(p == 0 && d1 == 0)
+			break;
+		/* store pressed pads into bitmask */
+		rpt_pressed |= 1 << p;
+	}
+
+	printf("rpt %04x, old %04x\n", rpt_pressed, dev->pad_hit);
+
+	for(int i = 0; i < 16; i++) {
+		/* detect state change */
+		int current = (dev->pad_hit & (1 << i));
+		int new     = (rpt_pressed  & (1 << i));
+		if(current == new)
+			continue;
+
+		/* rotate grid to match order on device (but zero
+		 * based counting instead of 1 based). */
+		event.grid.pos = (3-(i/4))*4 + (i%4);
+		event.grid.pressed = new > 0;
+		dev->base.event_func(&dev->base, 1, &e,
+				     dev->base.event_func_userdata);
+#ifndef CTLRA_MK3_PADS
+		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
+		ni_maschine_mk3_light_flush(&dev->base, 1);
+#endif
+	}
+
+	dev->pad_hit = rpt_pressed;
+}
+
+static void
+ni_maschine_mk3_pads(struct ni_maschine_mk3_t *dev,
+		     uint8_t *buf)
+{
+	/* decode the mk3 pads:
+	 * - The data format is interesting - requires some knowledge to
+	 *   decode the pad states.
+	 * - The data is "double-pumped" - each 128 byte pads message
+	 *   contains two sets of the pad data. This suggests that the
+	 *   hardware internally samples the pad ADCs (at least) twice the
+	 *   maximum USB xfer delta. The first set is referred to as set A,
+	 *   and the second set is known as B for the rest of the code.
+	 * - Providing both sets of pad data allows smoother pressure
+	 *   curves to be generated, using some interpolation and guessing
+	 *   of the timestamps.
+	 * - Both messages (Set A and B) can contain note-on and note-off
+	 *   messages - a correct implementation *must* decode both in
+	 *   order to not drop events.
+	 * - Somehow, the note-on/off events are *usually* in set A, but
+	 *   faster / more-busy passages start dropping notes a lot. This
+	 *   is from experience - there is no real logic as to why..?
+	 * - The commented code below prints the two messages side-by-side
+	 *   making it easy to spot differences. An example below:
+	 *     Eg:       02 02 01 01 41 30 75 00
+	 *     Set A:    02    01    41    75
+	 *     Set B:       02    01    30    00
+	 *   Not taking B into account would cause the note-off to be
+	 *   dropped.
+	 */
+#if 1
+	for(int i = 0; i < 64; i++) {
+		if(i > 0 && buf[i] == 0)
+			break;
+		printf("%02x ", buf[i]);
+		printf("%02x ", buf[i+64]);
+	}
+	printf("\n");
+#endif
+	/* call for Set A, then again for set B */
+	ni_maschine_mk3_pads_decode_set(dev, &buf[0]);
+	ni_maschine_mk3_pads_decode_set(dev, &buf[64]);
+};
+
 void
 ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				  uint32_t endpoint, uint8_t *data,
@@ -374,76 +476,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 	switch(nbytes) {
 	case 81: {
 		/* Return of LED state, after update written to device */
-#if 0
-		int i;
-		static uint8_t old[82];
-		for(i = 81; i >= 0; i--) {
-			printf("%02x ", buf[i]);
-		}
-		printf("\n");
-#endif
 		} break;
-	case 128: {
-		/* ensure a pad message */
-		if(buf[0] != 2) {
-			printf("128 but not 2\n");
-			break;
-		}
-
-		/* Template event */
-		struct ctlra_event_t event = {
-			.type = CTLRA_EVENT_GRID,
-			.grid  = {
-				.id = 0,
-				.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
-				.pos = 0,
-				.pressed = 1
-			},
-		};
-		struct ctlra_event_t *e = {&event};
-
-		/* pre-process pressed pads into bitmask */
-		uint16_t rpt_pressed = 0;
-		int flush_lights = 0;
-		uint8_t d1, d2;
-		int i;
-		for(i = 0; i < 16; i++) {
-			/* skip over pressure values */
-			uint8_t p = buf[1+i*3];
-			d1 = buf[2+i*3];
-			d2 = buf[3+i*3];
-			/* pad is zero when list of pads has ended */
-			printf("i = %d, rpt = %04x, d = %02x, %02x\n", i, rpt_pressed, d1, d2);
-			if(p == 0 && d1 == 0)
-				break;
-			/* store pressed pads into bitmask */
-			rpt_pressed |= 1 << p;
-		}
-		printf("\n");
-
-		for(int i = 0; i < 16; i++) {
-			/* detect state change */
-			int current = (dev->pad_hit & (1 << i));
-			int new     = (rpt_pressed  & (1 << i));
-			if(current == new)
-				continue;
-
-			/* rotate grid to match order on device (but zero
-			 * based counting instead of 1 based). */
-			event.grid.pos = (3-(i/4))*4 + (i%4);
-			event.grid.pressed = new > 0;
-			//dev->base.event_func(&dev->base, 1, &e, dev->base.event_func_userdata);
-#ifndef CTLRA_MK3_PADS
-			dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
-			flush_lights = 1;
-#endif
-		}
-
-		if(flush_lights)
-			ni_maschine_mk3_light_flush(&dev->base, 1);
-
-		dev->pad_hit = rpt_pressed;
-	} break;
+	case 128:
+		ni_maschine_mk3_pads(dev, data);
+		break;
 	case 42: {
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
