@@ -375,8 +375,9 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 	};
 	struct ctlra_event_t *e = {&event};
 
-	/* pre-process pressed pads into bitmask */
-	uint16_t rpt_pressed = 0;
+	/* pre-process pressed pads into bitmask. Keep state from before,
+	 * the messages will update only those that have changed */
+	uint16_t rpt_pressed = dev->pad_hit;
 	int flush_lights = 0;
 	uint8_t d1, d2;
 	int i;
@@ -385,14 +386,21 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		uint8_t p = buf[1+i*3];
 		d1 = buf[2+i*3];
 		d2 = buf[3+i*3];
-		/* pad is zero when list of pads has ended */
+
+		/* pad number is zero when list of pads has ended */
 		if(p == 0 && d1 == 0)
 			break;
-		/* store pressed pads into bitmask */
-		rpt_pressed |= 1 << p;
+
+		/* set pads state into bitmask: 0 means not pressed */
+		if(d2 != 0)
+			rpt_pressed |= 1 << p;
+		else
+			rpt_pressed &= ~(1 << p);
+
+		//printf("iter %d, d1 %d, d2 %d\n", i, d1, d2);
 	}
 
-	printf("rpt %04x, old %04x\n", rpt_pressed, dev->pad_hit);
+	//printf("rpt %04x, old %04x\n", rpt_pressed, dev->pad_hit);
 
 	for(int i = 0; i < 16; i++) {
 		/* detect state change */
@@ -447,10 +455,10 @@ ni_maschine_mk3_pads(struct ni_maschine_mk3_t *dev,
 	 */
 #if 1
 	for(int i = 0; i < 64; i++) {
-		if(i > 0 && buf[i] == 0)
-			break;
 		printf("%02x ", buf[i]);
 		printf("%02x ", buf[i+64]);
+		if(i > 0 && buf[i] == 0)
+			break;
 	}
 	printf("\n");
 #endif
