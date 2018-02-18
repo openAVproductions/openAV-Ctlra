@@ -380,6 +380,7 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 
 	/* pre-process pressed pads into bitmask. Keep state from before,
 	 * the messages will update only those that have changed */
+	uint16_t pad_pressures[16];
 	uint16_t rpt_pressed = dev->pad_hit;
 	int flush_lights = 0;
 	uint8_t d1, d2;
@@ -400,6 +401,9 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 			rpt_pressed |= 1 << p;
 		else
 			rpt_pressed &= ~(1 << p);
+
+		/* store pressure value for setting in event later */
+		pad_pressures[p] = pressure;
 	}
 
 	for(int i = 0; i < 16; i++) {
@@ -412,7 +416,10 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		/* rotate grid to match order on device (but zero
 		 * based counting instead of 1 based). */
 		event.grid.pos = (3-(i/4))*4 + (i%4);
-		event.grid.pressed = new > 0;
+		int press = new > 0;
+		event.grid.pressed = press;
+		event.grid.pressure = pad_pressures[i] * (1 / 4096.f) * press;
+
 		dev->base.event_func(&dev->base, 1, &e,
 				     dev->base.event_func_userdata);
 #ifdef CTLRA_MK3_PADS
