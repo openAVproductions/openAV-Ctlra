@@ -143,6 +143,8 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 
 	memset(pixel_data, 0, bytes);
 
+	static int flush_1;
+
 	if(self.mode == MODE_INPUT) {
 		/* draw input selector / levels on screen */
 		if(screen_idx == 1) {
@@ -155,12 +157,20 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 		}
 	}
 
-	if(screen_idx == 1)
-		return 0;
-
 	for(int i = 0; i < bytes; i++) {
 		pixel_data[i] = 0;
 	}
+
+	//printf("blit screen %d\n", screen_idx);
+	if(screen_idx == 1) {
+		if(!flush_1) {
+			flush_1 = 1;
+			printf("blit screen %d\n", screen_idx);
+			return 1;
+		}
+		return 0;
+	}
+
 
 	float v = 1 - self.v;
 	for(int i = 0; i < 272; i++) {
