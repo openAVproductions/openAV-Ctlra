@@ -70,7 +70,7 @@ struct maschine3_t
 };
 
 static
-void maschin3_item_browser(struct dummy_data *d,
+void maschine3_item_browser(struct dummy_data *d,
 			   cairo_t *cr,
 			   const char *path)
 {
@@ -108,7 +108,7 @@ void maschin3_item_browser(struct dummy_data *d,
 }
 
 static
-void maschin3_file_browser(struct dummy_data *d,
+void maschine3_file_browser(struct dummy_data *d,
 			   cairo_t *cr,
 			   const char *path)
 {
@@ -199,8 +199,8 @@ void draw_stuff(struct dummy_data *d)
 	cairo_stroke(cr);
 #endif
 
-	//if(1) maschin3_file_browser(d, cr, "test");
-	if(1) maschin3_item_browser(d, cr, "blah");
+	if(0) maschine3_file_browser(d, cr, "test");
+	if(1) maschine3_item_browser(d, cr, "blah");
 
 	cairo_surface_flush(surface);
 	(void)m;
