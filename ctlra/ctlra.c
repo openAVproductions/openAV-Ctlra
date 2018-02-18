@@ -460,18 +460,21 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
 		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
 		uint64_t nanos_elapsed = secs * 10e9 + nanos;
-		uint64_t fps_in_nanos = 300000000;
+		uint64_t fps_in_nanos = 100000000;
 
 		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
 			dev_iter->screen_last_redraw = now;
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 				uint8_t *pixel;
 				uint32_t bytes;
-				/* TODO: improve screen_flush() functionality */
-				int ret = ctlra_dev_screen_get_data(dev_iter,
-							  &pixel,
-							  &bytes,
-							  0);
+
+				struct ctlra_screen_zone_t zone_redraw;
+				int32_t ret = ctlra_screen_get_data(dev_iter,
+								    i,
+								    &pixel,
+								    &bytes,
+								    &zone_redraw,
+								    0);
 				if(ret)
 					continue;
 
