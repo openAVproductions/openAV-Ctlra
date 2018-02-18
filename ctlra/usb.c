@@ -365,8 +365,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
 		CTLRA_ERROR(ctlra,
-			    "Ctlra: Could not claim interface %d of dev %s, continuing...\n",
-			    interface, ctlra_dev->info.device);
+			    "Ctlra: Could not claim device %s, is it already in use?\n",
+			    ctlra_dev->info.device);
 		int kernel_active = libusb_kernel_driver_active(handle,
 		                    interface);
 		if(kernel_active)

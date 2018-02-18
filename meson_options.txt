@@ -1,1 +1,3 @@
 option('avtka', type : 'boolean', value : true, description : 'Use Avtka library for virtual controller support')
+option('firmata', type : 'boolean', value : false, description : 'Use Firmatac library for serial devices')
+option('midi', type : 'boolean', value : false, description : 'Enable MIDI (only ALSA implemented, so Linux')
