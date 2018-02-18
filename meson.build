@@ -32,6 +32,10 @@ install_headers(ctlra_hdr, subdir : 'ctlra')
 subdir('examples')
 ctlra_includes = include_directories('ctlra')
 
+# To copy files to the build directory
+configure_file(input : 'examples/loopa/loopa_mk3.c',
+    output : 'loopa_mk3.c',
+    configuration : configuration_data())
 
 executable('simple',
            example_simple,
