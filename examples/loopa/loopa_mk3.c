@@ -23,6 +23,7 @@ enum MODES {
 struct mk3_loopa_t {
 	int loop_id;
 	float v;
+	float delay_time;
 
 	uint32_t mode;
 
@@ -119,6 +120,13 @@ void script_feedback_func(struct ctlra_dev_t *dev, void *userdata)
 		}
 		for(int i = 0; i < 16; i++)
 			ctlra_dev_light_set(dev, 62 + 25 + i, self.col);
+
+		/* make Scene/Pattern lights beside pads glow */
+		ctlra_dev_light_set(dev, 50, 0xffffffff);
+		ctlra_dev_light_set(dev, 51, 0xffffffff);
+	} else {
+		ctlra_dev_light_set(dev, 50, LOW);
+		ctlra_dev_light_set(dev, 51, LOW);
 	}
 
 	ctlra_dev_light_flush(dev, 0);
@@ -221,7 +229,7 @@ void script_event_func(struct ctlra_dev_t* dev,
 			case 57: self.selected_input_channel = 1;
 				break;
 
-			case 73:
+			case 72:
 				if(pr) {
 					if(loopa_rec_get(0) && !loopa_play_get(0)) {
 						loopa_playing_toggle();
@@ -234,11 +242,18 @@ void script_event_func(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_ENCODER:
 			if(e->encoder.id == 0)
 				loopa_vol_set(0, 1.0f);
-			else {
+			else if(e->encoder.id == 1) {
 				self.v += e->encoder.delta_float;
 				if(self.v > 1.f) self.v = 1.0f;
 				if(self.v < 0.f) self.v = 0.0f;
 				loopa_reverb(self.v);
+				printf("reverb\n");
+			} else {
+				printf("dleay\n");
+				self.delay_time += e->encoder.delta_float;
+				if(self.delay_time > 1.f) self.delay_time = 1.0f;
+				if(self.delay_time < 0.f) self.delay_time = 0.0f;
+				loopa_delay_time(self.delay_time);
 			}
 			break;
 		case CTLRA_EVENT_SLIDER:

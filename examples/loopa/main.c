@@ -92,6 +92,7 @@ static struct loopa_symbol_t loopa_symbols[] = {
 	{"loopa_record_toggle", loopa_record_toggle},
 	{"loopa_play_get", loopa_play_get},
 	{"loopa_reverb", loopa_reverb},
+	{"loopa_delay_time", loopa_delay_time},
 	{"loopa_progress", loopa_progress},
 	{"loopa_progress_set", loopa_progress_set},
 	{"loopa_input_max", loopa_input_max},

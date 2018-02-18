@@ -8,6 +8,7 @@ void loopa_recording(int r);
 void loopa_reset();
 
 void loopa_reverb(float v);
+void loopa_delay_time(float v);
 
 float loopa_progress();
 void loopa_progress_set(float p);

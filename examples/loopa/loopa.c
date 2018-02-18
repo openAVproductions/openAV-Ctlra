@@ -4,6 +4,7 @@
 #include <jack/jack.h>
 
 #include "oav_reverb.h"
+#include "oav_delay.h"
 
 static jack_port_t *input_port;
 static jack_port_t *output_port;
@@ -22,6 +23,7 @@ static uint32_t recording;
 static uint32_t playing;
 
 roomy_t *roomy;
+delay_t *delay;
 
 #define NUM_INPUTS 2
 float input_max[NUM_INPUTS];
@@ -29,8 +31,14 @@ float input_max[NUM_INPUTS];
 void loopa_reverb(float v)
 {
 	// dB gain for reverb
-	roomy->fVslider1 = (v * 2.f) - 1.f;// - 30;
+	roomy->fVslider1 = -((v * 2.f) - 1.f);// - 30;
 	printf("vslider1 = %f, v = %f\n", roomy->fVslider1, v);
+}
+
+void loopa_delay_time(float v)
+{
+	delay->fHslider2 = v;
+	printf("delay %f, result = %f\n", v, delay->fHslider2);
 }
 
 float loopa_input_max(int channel)
@@ -94,6 +102,7 @@ process(jack_nframes_t nframes, void *arg)
 		float *ins[] = {&tmp_in, wasteL};
 		float *outs[] = {&tmp_out, wasteR};
 		computeroomy_t(roomy, 1, ins, outs);
+		computedelay_t(delay, 1, ins, outs);
 
 		out[i] = tmp_out;
 	}
@@ -172,6 +181,7 @@ int loopa_init()
 	jack_status_t status;
 
 	roomy = newroomy_t();
+	delay = newdelay_t();
 
 	/* open a client connection to the JACK server */
 	client = jack_client_open (client_name, options, &status, server_name);
@@ -211,6 +221,7 @@ int loopa_init()
 
 	/* init DSP */
 	initroomy_t(roomy, sr);
+	initdelay_t(delay, sr);
 
 	for(int i = 0; i < 8; i++)
 		vols[i] = 1.0f;
