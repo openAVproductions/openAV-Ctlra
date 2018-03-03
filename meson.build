@@ -28,6 +28,12 @@ if get_option('firmata')
   ctlra_lib_incs += include_directories('subprojects/firmatac/includes')
 endif
 
+if cc.has_header('libtcc.h')
+  conf_data.set('HAVE_TCC', 1)
+else
+  conf_data.set('HAVE_TCC', 0)
+endif
+
 subdir('ctlra')
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
@@ -93,12 +99,15 @@ endif
 # FAUST code requires powf()
 m_dep = cc.find_library('m', required : false)
 
-executable('loopa',
-           example_loopa,
-           include_directories: ctlra_includes,
-           link_with: ctlra,
-           link_args : ['-ltcc', '-ldl'],
-           dependencies: [jack, cairo, sndfile, fluid, m_dep])
+
+if conf_data.get('HAVE_TCC') == 1
+  executable('loopa',
+             example_loopa,
+             include_directories: ctlra_includes,
+             link_with: ctlra,
+             link_args : ['-ltcc', '-ldl'],
+             dependencies: [jack, cairo, sndfile, fluid, m_dep])
+endif
 
 gtkdep = dependency('gtk+-3.0', required: false)
 if gtkdep.found()
