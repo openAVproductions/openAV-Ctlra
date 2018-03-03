@@ -3,10 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "ctlra.h"
 #include "impl.h"
 #include "usb.h"
-
 
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
@@ -285,6 +283,23 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 	return -ENOTSUP;
 }
 
+int32_t
+ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
+				   uint32_t target_fps,
+				   ctlra_screen_redraw_cb callback,
+				   void *userdata)
+{
+	if(!dev || !callback)
+		return -EINVAL;
+
+	dev->screen_redraw_cb = callback;
+	dev->screen_redraw_ud = userdata;
+
+	/* TODO: fps support */
+
+	return 0;
+}
+
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info)
 {
@@ -400,7 +415,6 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
-
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
@@ -417,10 +431,51 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		if(!dev_iter->banished) {
-			if(dev_iter->feedback_func) {
-				dev_iter->feedback_func(dev_iter,
-					dev_iter->event_func_userdata);
+		if(dev_iter->banished) {
+			dev_iter = dev_iter->dev_list_next;
+			continue;
+		}
+
+		if(dev_iter->feedback_func) {
+			dev_iter->feedback_func(dev_iter,
+				dev_iter->event_func_userdata);
+		}
+
+		struct timespec now;
+		int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+		if(err)
+			CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
+				    err);
+
+		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
+		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
+		uint64_t nanos_elapsed = secs * 10e9 + nanos;
+		uint64_t fps_in_nanos = 300000000;
+
+		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
+			dev_iter->screen_last_redraw = now;
+			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
+				uint8_t *pixel;
+				uint32_t bytes;
+				/* TODO: improve screen_flush() functionality */
+				int ret = ctlra_dev_screen_get_data(dev_iter,
+							  &pixel,
+							  &bytes,
+							  i == 1 ? 0 : 2);
+				if(ret)
+					continue;
+
+				int32_t flush = dev_iter->screen_redraw_cb(
+					dev_iter,
+					i, /* screen idx */
+					pixel,
+					bytes,
+					dev_iter->screen_redraw_ud);
+				if(flush)
+					ctlra_dev_screen_get_data(dev_iter,
+								  &pixel,
+								  &bytes,
+								  1);
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;

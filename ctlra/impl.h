@@ -36,6 +36,10 @@
 extern "C" {
 #endif
 
+#include <time.h>
+
+#define CTLRA_INTERNAL 1
+
 #include "ctlra.h"
 #include "event.h"
 
@@ -136,10 +140,11 @@ struct ctlra_dev_t {
 #define USB_XFER_CANCELLED 3
 #define USB_XFER_TIMEOUT 4
 #define USB_XFER_ERROR 5
-#define USB_XFER_INFLIGHT_READ 6
-#define USB_XFER_INFLIGHT_WRITE 7
-#define USB_XFER_INFLIGHT_CANCEL 8
-#define USB_XFER_COUNT 9
+#define USB_XFER_BULK_ERROR 6
+#define USB_XFER_INFLIGHT_READ 7
+#define USB_XFER_INFLIGHT_WRITE 8
+#define USB_XFER_INFLIGHT_CANCEL 9
+#define USB_XFER_COUNT 10
 	uint32_t usb_xfer_counts[USB_XFER_COUNT];
 
 
@@ -174,6 +179,9 @@ struct ctlra_dev_t {
 
 	/* Screen related functions */
 	ctlra_dev_impl_screen_get_data screen_get_data;
+	ctlra_screen_redraw_cb screen_redraw_cb;
+	void *screen_redraw_ud;
+	struct timespec screen_last_redraw;
 
 	/* Function pointer to retrive info about a particular control */
 	ctlra_dev_impl_control_get_name control_get_name;

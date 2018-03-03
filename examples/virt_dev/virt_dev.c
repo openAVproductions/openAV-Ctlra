@@ -135,6 +135,7 @@ int main(int argc, char **argv)
 	if(argc > 2) {
 		vendor = argv[1];
 		device = argv[2];
+		printf("virt with %s %s\n", vendor, device);
 	}
 
 	signal(SIGINT, sighndlr);

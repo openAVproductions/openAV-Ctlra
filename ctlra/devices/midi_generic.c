@@ -144,6 +144,7 @@ static int32_t
 midi_generic_disconnect(struct ctlra_dev_t *base)
 {
 	struct midi_generic_t *dev = (struct midi_generic_t *)base;
+	ctlra_midi_destroy(dev->midi);
 	free(dev);
 	return 0;
 }

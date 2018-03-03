@@ -1,5 +1,5 @@
 project('openav_ctlra', 'c')
-add_project_arguments('-std=c99', language : 'c')
+add_project_arguments('-std=gnu99', language : 'c')
 
 conf_data = configuration_data()
 conf_data.set('version', '0.1')
@@ -78,6 +78,14 @@ executable('vegas_mode',
            include_directories: ctlra_includes,
            link_with: ctlra,
            dependencies: [jack, cairo, sndfile, fluid])
+endif
+
+gtkdep = dependency('gtk+-3.0', required: false)
+if gtkdep.found()
+  executable('select_device',
+      'examples/select_device/main.c',
+      link_with : ctlra,
+      dependencies : gtkdep)
 endif
 
 pkg = import('pkgconfig')

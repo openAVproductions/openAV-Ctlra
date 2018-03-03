@@ -65,6 +65,8 @@ extern "C" {
 
 #include "event.h"
 
+#define DEPRECATED __attribute__((deprecated))
+
 #define CTLRA_STR_MAX        32
 #define CTLRA_DEV_SERIAL_MAX 64
 #define CTLRA_NUM_GRIDS_MAX   8
@@ -399,7 +401,11 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
 			     uint32_t light_id,
 			     uint32_t light_status);
 
-/** This function serves a dual purpose of getting the pixel data pointer
+/** @warning
+ * @b DEPRECATED: this API has been superseeded, use the screen update
+ * callback APIs instead.
+ *
+ * This function serves a dual purpose of getting the pixel data pointer
  * of the driver, and allows flushing the data to the device itself.
  * The function returns 0 on success, -ENOTSUP if the device doesn't
  * have a screen, or it is not yet supported.
@@ -411,10 +417,48 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev,
  *
  * When *flush* is non-zero, the driver will flush the pixel data
  * from the driver to the device */
-int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
+
+int32_t
+#ifndef CTLRA_INTERNAL
+DEPRECATED
+#endif
+ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t **pixel_data,
 					 uint32_t *bytes,
 					 uint8_t flush);
+
+/*** NEXT GEN SCREEN INTERFACE ***/
+/** A callback function that the application must implement in order to
+ * redraw a screen for a device. This callback is registered using the
+ * *ctlra_dev_screen_register_callback* function.
+ *
+ * The application must write exactly the number of *bytes* specified, to
+ * the location provided in *pixel_data. The data written must be formatted
+ * in the devices native screen data type.
+ */
+typedef int32_t (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
+					  uint32_t screen_idx,
+					  uint8_t *pixel_data,
+					  uint32_t bytes,
+					  void *userdata);
+
+/** Register a callback function to be called when a screen needs to
+ * be redrawn. The *dev* and *screen_idx* select the screen from the
+ * available controllers, while the *target_fps* sets how often the
+ * callback will be invoked. The *callback* function is called, and passed
+ * the *userdata* pointer.
+ *
+ * An application must not make assumptions about the order or frequency
+ * of calls to the screen redraw callback.
+ *
+ * @retval 0 Successfully registered the callback.
+ * @retval -EINVAL Invalid device, screen index or callback.
+ */
+int32_t
+ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
+				   uint32_t target_fps,
+				   ctlra_screen_redraw_cb callback,
+				   void *userdata);
 
 
 /** Get the info struct from a device. The user-supplied info pointer is
