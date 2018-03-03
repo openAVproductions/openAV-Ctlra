@@ -18,6 +18,10 @@ static cairo_t *cr = 0;
 
 int32_t d2_screen_redraw_cb(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			    uint8_t *pixel_data, uint32_t bytes,
+<<<<<<< HEAD
+=======
+			    struct ctlra_screen_zone_t *damage,
+>>>>>>> loopa_screen_rework_mk3_reb
 			    void *userdata)
 {
 	//printf("in %s\n", __func__);

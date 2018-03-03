@@ -35,11 +35,21 @@ install_headers(ctlra_hdr, subdir : 'ctlra')
 subdir('examples')
 ctlra_includes = include_directories('ctlra')
 
+# To copy files to the build directory
+configure_file(input : 'examples/loopa/loopa_mk3.c',
+    output : 'loopa_mk3.c',
+    configuration : configuration_data())
 
 executable('simple',
            example_simple,
            include_directories: ctlra_includes,
            link_with: ctlra)
+
+executable('avtka',
+           example_avtka,
+           include_directories: ctlra_includes,
+           link_with: ctlra,
+           dependencies: avtka_dep)
 
 if get_option('midi')
   executable('daemon',
@@ -72,13 +82,23 @@ endif
 cairo   = dependency('cairo', required: false)
 sndfile = dependency('sndfile', required: false)
 fluid   = dependency('fluidsynth', required: false)
-if(jack.found() and cairo.found() and sndfile.found() and fluid.found())
+if(jack.found() and cairo.found() and sndfile.found() and not fluid.found())
 executable('vegas_mode',
            example_vegas,
            include_directories: ctlra_includes,
            link_with: ctlra,
            dependencies: [jack, cairo, sndfile, fluid])
 endif
+
+# FAUST code requires powf()
+m_dep = cc.find_library('m', required : false)
+
+executable('loopa',
+           example_loopa,
+           include_directories: ctlra_includes,
+           link_with: ctlra,
+           link_args : ['-ltcc', '-ldl'],
+           dependencies: [jack, cairo, sndfile, fluid, m_dep])
 
 gtkdep = dependency('gtk+-3.0', required: false)
 if gtkdep.found()

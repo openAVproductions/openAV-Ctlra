@@ -8,6 +8,11 @@
 
 static int chan;
 const char *patch_name;
+const uint8_t NUM_FILES = 128;
+/* contains filenames */
+char filenames[NUM_FILES*64];
+/* Table of pointers to filenames */
+const char *files[NUM_FILES];
 
 /* for drawing graphics to screen */
 #include <cairo/cairo.h>
@@ -29,6 +34,12 @@ void maschine3_screen_init()
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 					      WIDTH, HEIGHT);
 #else
+	/* Blitting a PNG surface made from ARGB data onto this format
+	 * keeps pixels ratio, but doesn't correctly do the required color
+	 * space conversion (ARGB32 -> RGB 565). If working in 565, we must
+	 * manually convert the ARGB32 surface to a 565 surface, and keep
+	 * the 565 version in cache (or that seems the best solution..)
+	 */
 	surface = cairo_image_surface_create (CAIRO_FORMAT_RGB16_565,
 					      WIDTH, HEIGHT);
 #endif
@@ -97,10 +108,12 @@ void maschine3_item_browser(struct dummy_data *d,
 	cairo_scale(cr, 0.35, 0.35);
 	for(int i = 0; i < 4; i++) {
 		cairo_save(cr);
-		float off = ((m->file_selected % 4) == i) ? 0 : 1;
+		int sel = m->file_selected + (4 * (screen_idx == 1));
+		float off = ((sel % 8) == i) ? 0 : 1;
 		//cairo_scale(cr, off, off);
 		cairo_translate(cr, 100 * i, 150 + off * 100);
-		cairo_set_source_surface(cr, m->item_surfaces[i], i * 220, 0);
+		cairo_set_source_surface(cr, m->item_surfaces[i],
+					 i * 220, 0);
 		cairo_paint(cr);
 		cairo_restore(cr);
 	}
@@ -135,7 +148,8 @@ void maschine3_file_browser(struct dummy_data *d,
 	cairo_rectangle(cr, 1, 1, 478, 18);
 	cairo_fill(cr);
 
-	int selected = m->file_selected % nfiles;
+	//int selected = m->file_selected % nfiles;
+	int selected = chan % nfiles;
 
 	cairo_move_to(cr, 9, 15 );
 	cairo_set_source_rgba(cr, 1,1,1, 0.8);
@@ -144,7 +158,7 @@ void maschine3_file_browser(struct dummy_data *d,
 	for(int i = 0; i < NUM_FILES; i++) {
 		/* Draw each file */
 		if(i == selected && i < nfiles)
-			cairo_set_source_rgb(cr, 60/255., 60/255.,255/255.);
+			cairo_set_source_rgb(cr, 0/255., 0x7c/255.,255/255.);
 		else if(i & 1)
 			cairo_set_source_rgb(cr, 18/255.,18/255.,18/255.);
 		else
@@ -160,9 +174,14 @@ void maschine3_file_browser(struct dummy_data *d,
 	}
 }
 
-void draw_stuff(struct dummy_data *d)
+int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 {
-	struct maschine3_t *m = d->maschine3;
+	static uint64_t rev;
+	if(d->revision == rev) {
+		return 0;
+	}
+
+	rev = d->revision;
 
 	/* blank background */
 	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
@@ -171,6 +190,7 @@ void draw_stuff(struct dummy_data *d)
 	cairo_fill(cr);
 
 #if 0
+	struct maschine3_t *m = d->maschine3;
 	/* draw on surface */
 	cairo_set_source_rgb(cr, 1, 0, 0);
 	cairo_rectangle(cr, 0, 0, 4, 4);
@@ -182,6 +202,10 @@ void draw_stuff(struct dummy_data *d)
 
 	cairo_set_source_rgb(cr, 0, 0, 1);
 	cairo_rectangle(cr, 8, 0, 4, 4);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, 12, 0, 4, 4);
 	cairo_fill(cr);
 
 	cairo_set_source_rgb(cr, 2/255., 2/255., 2/255.);
@@ -199,8 +223,8 @@ void draw_stuff(struct dummy_data *d)
 	cairo_stroke(cr);
 #endif
 
-	if(0) maschine3_file_browser(d, cr, "test");
-	if(1) maschine3_item_browser(d, cr, "blah");
+	if(1) maschine3_file_browser(d, cr, "test");
+	if(0) maschine3_item_browser(d, cr, "blah");
 
 	cairo_surface_flush(surface);
 	(void)m;
@@ -260,6 +284,8 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	switch(m->mode) {
 	case 0:
 		ctlra_dev_light_set(dev, 22, UINT32_MAX);
+		for(i = 0; i < 16; i++)
+			ctlra_dev_light_set(dev, 58 + 25 + i, m->pads[i] * 0xbf0000ff);
 		ctlra_dev_light_flush(dev, 0);
 		break;
 	default:
@@ -268,20 +294,31 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 			ctlra_dev_light_set(dev, i, UINT32_MAX * d->buttons[i]);
 		break;
 	}
+}
 
-	uint8_t *pixels;
-	uint32_t bytes;
-	int32_t ret = ctlra_dev_screen_get_data(dev, &pixels,
-						&bytes, 0);
-	if(ret)
-		printf("error from get_data()\n");
+int maschine3_redraw_screen(uint32_t screen_idx, uint8_t *pixels,
+			     uint32_t bytes,
+			     struct ctlra_screen_zone_t *damage,
+			     void *ud)
+{
+	struct dummy_data *d = ud;
 
-	draw_stuff(d);
+	int flush;
+
+	{
+		uint64_t start = rdtsc();
+		flush = draw_stuff(d, screen_idx);
+		uint64_t end = rdtsc();
+		if(0) printf("draw = %ld\n", end - start);
+	}
+
+	if(flush == 0)
+		return 0;
 
 	unsigned char * data = cairo_image_surface_get_data(surface);
 	if(!data) {
 		printf("error data == 0\n");
-		return;
+		return -1;
 	}
 
 	uint64_t start = rdtsc();
@@ -294,6 +331,7 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	/* rgb 565 -> bgr 565 */
 	uint16_t *rgb565 = (uint16_t *)cairo_image_surface_get_data(surface);
 	uint16_t *pixels_565 = (uint16_t *)pixels;
+#if 0 /* HEAD */
 	__m128i red_mask;
 	__m128i green_mask;
 	__m128i blue_mask;
@@ -324,6 +362,31 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 
 		__m128i blue_shift_amt = _mm_set1_epi64x(11);
 		__m128i blue_shifted = _mm_sll_epi16(blue, blue_shift_amt);
+#else
+	__m128i green_mask;
+	uint16_t *gm = (uint16_t *)&green_mask;
+
+	for(int i = 0; i < 8; i++) {
+		gm[i] = (0b00000111 << 8) | 0b11100000;
+	}
+
+	__m128i red_shift_amt = _mm_set1_epi64x(6);
+	__m128i green_shift_amt = _mm_set1_epi64x(6);
+	__m128i blue_shift_amt = _mm_set1_epi64x(11);
+
+	for(int i = 0; i < (HEIGHT * WIDTH); i += 8) {
+		__m128i input = _mm_loadu_si128((__m128i*)&rgb565[i]);
+
+		//__m128i red = _mm_and_si128(input, green_mask);
+
+		__m128i red_shifted = _mm_srl_epi16(input, red_shift_amt);
+
+		//__m128i green_shifted = _mm_srl_epi16(red_shifted, green_shift_amt);
+
+		__m128i finished = red_shifted; // _mm_or_si128(green_shifted, red_shifted);
+
+		__m128i blue_shifted = _mm_sll_epi16(input, blue_shift_amt);
+#endif /* REWORK MK3 REBASE CODE */
 
 		finished = _mm_or_si128(blue_shifted, finished);
 		_mm_storeu_si128((__m128i *)&pixels_565[i], finished);
@@ -333,9 +396,7 @@ void maschine3_update_state(struct ctlra_dev_t *dev, void *ud)
 	uint64_t end = rdtsc();
 	if(0) printf("convert = %ld\n", end - start);
 
-	ret = ctlra_dev_screen_get_data(dev, &pixels, &bytes, 1);
-
-	return;
+	return flush;
 }
 
 void maschine3_pads(struct ctlra_dev_t* dev,
@@ -355,8 +416,29 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			break;
 		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
+<<<<<<< HEAD
 			if(e->encoder.id == 0)
 				m->file_selected += e->encoder.delta;
+=======
+			if(e->encoder.id != 0) {
+				printf("encoder %d: %f\n", e->encoder.id,
+				       e->encoder.delta_float);
+				continue;
+			}
+
+			if(e->encoder.delta > 0)
+				chan++;
+			else
+				chan--;
+			if(chan < 0)   chan =   0;
+			if(chan > 127) chan = 127;
+			soffa_set_patch(dummy->soffa, 0, 0, chan, &patch_name);
+			printf("maschine: patch switched to %s (%d)\n",
+			       patch_name, chan);
+			snprintf(&filenames[chan*64], 64, "%s", patch_name);
+			break;
+
+>>>>>>> loopa_screen_rework_mk3_reb
 			break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
@@ -372,9 +454,25 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		default:
 			break;
 		};
+<<<<<<< HEAD
 	}
 
 	dummy->revision++;
+=======
+		dummy->revision++;
+	}
+}
+
+int maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
+				uint32_t screen_idx,
+				uint8_t *pixel_data,
+				uint32_t bytes,
+				struct ctlra_screen_zone_t *damage,
+				void *userdata)
+{
+	return maschine3_redraw_screen(screen_idx, pixel_data, bytes,
+				       damage, userdata);
+>>>>>>> loopa_screen_rework_mk3_reb
 }
 
 void maschine3_func(struct ctlra_dev_t* dev,
@@ -390,6 +488,16 @@ void maschine3_func(struct ctlra_dev_t* dev,
 			printf("failed to allocate maschine3 struct\n");
 			exit(-1);
 		}
+<<<<<<< HEAD
+=======
+
+		int32_t ret = ctlra_dev_screen_register_callback(dev,
+								 30,
+						 maschine3_screen_redraw_cb,
+								 dummy);
+		if(ret)
+			printf("WARNING: Failed to register screen callback\n");
+>>>>>>> loopa_screen_rework_mk3_reb
 	}
 
 	maschine3_screen_init();

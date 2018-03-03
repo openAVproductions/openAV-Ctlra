@@ -114,7 +114,7 @@ int process(jack_nframes_t nframes, void* arg)
 	}
 
 	/* mark dummy data updated, so controllers get updates */
-	d->revision++;
+	//d->revision++;
 
 	return 0;
 }

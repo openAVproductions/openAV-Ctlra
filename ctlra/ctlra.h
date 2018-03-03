@@ -428,6 +428,13 @@ ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t flush);
 
 /*** NEXT GEN SCREEN INTERFACE ***/
+/* struct to represent a "zone" of a screen. Can be used for eg: redraw */
+struct ctlra_screen_zone_t {
+	uint32_t x;
+	uint32_t y;
+	uint32_t w;
+	uint32_t h;
+};
 /** A callback function that the application must implement in order to
  * redraw a screen for a device. This callback is registered using the
  * *ctlra_dev_screen_register_callback* function.
@@ -435,11 +442,16 @@ ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
  * The application must write exactly the number of *bytes* specified, to
  * the location provided in *pixel_data. The data written must be formatted
  * in the devices native screen data type.
+ *
+ * @retval 0 Screen will not be redrawn
+ * @retval 1 Screen will fully redrawn
+ * @retval 2 Screen will redraw only zone as indicated in *redraw_zone*
  */
 typedef int32_t (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
 					  uint32_t screen_idx,
 					  uint8_t *pixel_data,
 					  uint32_t bytes,
+					  struct ctlra_screen_zone_t *redraw_zone,
 					  void *userdata);
 
 /** Register a callback function to be called when a screen needs to

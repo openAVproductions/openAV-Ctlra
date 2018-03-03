@@ -233,8 +233,12 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 
 int32_t
-avtka_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
-		      uint32_t *bytes, uint8_t flush)
+avtka_screen_get_data(struct ctlra_dev_t *base,
+		      uint32_t screen_idx,
+		      uint8_t **pixels,
+		      uint32_t *bytes,
+		      struct ctlra_screen_zone_t *zone,
+		      uint8_t flush)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	struct avtka_t *a = dev->a;

@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <math.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -259,7 +260,9 @@ static const char *encoder_names[] = {
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
-#define LIGHTS_SIZE (80)
+#define LIGHTS_SIZE (62)
+/* 25 + 16 bytes enough, but padding required for USB message */
+#define LIGHTS_PADS_SIZE (80)
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
@@ -306,17 +309,21 @@ struct ni_maschine_mk3_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
+	uint8_t lights_pads_dirty;
 
 	/* Lights endpoint used to transfer with hidapi */
 	uint8_t lights_endpoint;
 	uint8_t lights[LIGHTS_SIZE];
 
 	uint8_t lights_pads_endpoint;
-	uint8_t lights_pads[LIGHTS_SIZE];
+	uint8_t lights_pads[LIGHTS_PADS_SIZE];
 	uint8_t pad_colour;
 
-	/* Store the current encoder value */
+	/* state of the pedal, according to the hardware */
+	uint8_t pedal;
+
 	uint8_t encoder_value;
+	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
 	uint64_t pad_last_msg_time;
 	uint16_t pad_hit;
@@ -335,6 +342,8 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 		return ni_maschine_mk3_control_names[control_id];
 	if(type == CTLRA_EVENT_ENCODER && control_id < 9)
 		return encoder_names[control_id];
+	if(type == CTLRA_EVENT_SLIDER && control_id == 0)
+		return "Touchstrip";
 	return 0;
 }
 
@@ -373,7 +382,7 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 			.id = 0,
 			.flags = CTLRA_EVENT_GRID_FLAG_BUTTON,
 			.pos = 0,
-			.pressed = 0
+			.pressed = 1
 		},
 	};
 	struct ctlra_event_t *e = {&event};
@@ -496,6 +505,47 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		ni_maschine_mk3_pads(dev, data);
 		break;
 	case 42: {
+		/* pedal */
+		int pedal = buf[3] > 0;
+		if(pedal != dev->pedal) {
+			printf("PEDAL: %d, inv = %d\n", pedal, !pedal);
+			struct ctlra_event_t event[] = {
+				{ .type = CTLRA_EVENT_BUTTON,
+				  .button  = {
+					.id = BUTTONS_SIZE,
+					.pressed = pedal, },
+				},
+				{ .type = CTLRA_EVENT_BUTTON,
+				  .button  = {
+					.id = BUTTONS_SIZE + 1,
+					.pressed = !pedal, },
+				}
+			};
+			struct ctlra_event_t *e = &event[0];
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			e = &event[1];
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->pedal = pedal;
+		}
+
+		/* touchstrip: dont send event if 0, as this is release */
+		uint16_t v = *((uint16_t *)&buf[30]);
+		if(v && v != dev->touchstrip_value) {
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_SLIDER,
+				.slider = {
+					.id = 0,
+					.value = v / 1024.f,
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->touchstrip_value = v;
+		}
+
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
 			int id     = buttons[i].event_id;
@@ -518,12 +568,6 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				struct ctlra_event_t *e = {&event};
 				dev->base.event_func(&dev->base, 1, &e,
 						     dev->base.event_func_userdata);
-
-				if(i > 6 && i <= 6 + 8) {
-					dev->pad_colour   = pad_cols[i-7];
-					dev->lights[22+i] = pad_cols[i-7];;
-					dev->lights_dirty = 1;
-				}
 			}
 		}
 
@@ -534,7 +578,12 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			const uint8_t idx = BUTTONS_SIZE + i;
 
 			if(dev->hw_values[idx] != value) {
-				const float d = -(dev->hw_values[idx] - value);
+				const float d = (value - dev->hw_values[idx]);
+				if(fabsf(d) > 0.7) {
+					/* wrap around */
+					dev->hw_values[idx] = value;
+					continue;
+				}
 				struct ctlra_event_t event = {
 					.type = CTLRA_EVENT_ENCODER,
 					.encoder  = {
@@ -583,29 +632,78 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 
 	if(!dev)
 		return;
-	if(light_id > LIGHTS_SIZE) {
+
+	// TODO: debug the -1, why is it required to get the right size?
+	if(light_id > (LIGHTS_SIZE + 25 + 16) - 1)
 		return;
-	}
 
 	int idx = light_id;
+	const uint8_t r = ((light_status >> 16) & 0xFF);
+	const uint8_t g = ((light_status >>  8) & 0xFF);
+	const uint8_t b = ((light_status >>  0) & 0xFF);
 
-	uint32_t r = (light_status >> 16) & 0x7F;
-	uint32_t g = (light_status >>  8) & 0x7F;
-	uint32_t b = (light_status >>  0) & 0x7F;
-	uint32_t bright = (light_status >> 27);
-	
-	switch(idx) {
-	case 5: /* Sampling */
-		dev->lights_dirty = r;
-		break;
-	default:
-		/* brighness 2 bits at the start of the uint8_t for the light */
-		dev->lights[idx] = bright;
-		dev->lights_pads[idx] = bright;
-		break;
-	};
+	uint8_t max = r > g ? r : g;
+	max = b > max ? b : max;
+	uint8_t min = r < g ? r : g;
+	min = b < min ? b : min;
 
-	dev->lights_dirty = 1;
+	/* rgb to hsv: nasty, but the device requires a H value input,
+	 * so we have to calculate it here. Icky branchy divide-y... */
+	uint8_t v = max;
+	uint8_t h, s;
+	if (v == 0 || (max - min) == 0) {
+		h = 0;
+		s = 0;
+	} else {
+		s = 255 * (max - min) / v;
+		if (s == 0)
+			h = 0;
+		if (max == r)
+			h = 0 + 43 * (g - b) / (max - min);
+		else if (max == g)
+			h = 85 + 43 * (b - r) / (max - min);
+		else
+			h = 171 + 43 * (r - g) / (max - min);
+	}
+
+	uint32_t bright = light_status >> 27;
+	uint8_t hue = h / 16 + 1;
+
+	/* if equal components, then set white */
+	if(r == g && r == b)
+		hue = 0xff;
+
+	/* if the input was totally zero, set the LED off */
+	if(light_status == 0)
+		hue = 0;
+
+	/* normal LEDs */
+	if(idx < LIGHTS_SIZE) {
+		switch(idx) {
+		/* Sampling */
+		case 5:
+		/* ABCDEFGH */
+		case 29: case 30: case 31: case 32:
+		case 33: case 34: case 35: case 36:
+		/* Encoder up, left, right, down */
+		case 58: case 59: case 60: case 61:
+		{
+			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
+			dev->lights[idx] = v;
+		} break;
+		default:
+			/* brighness 2 bits at the start of the
+			 * uint8_t for the light */
+			dev->lights[idx] = bright;
+			break;
+		};
+		dev->lights_dirty = 1;
+	} else {
+		/* 25 strip + 16 pads */
+		uint8_t v = (hue << 2) | (bright & 0x3);
+		dev->lights_pads[idx - LIGHTS_SIZE] = v;
+		dev->lights_pads_dirty = 1;
+	}
 }
 
 void
@@ -648,18 +746,179 @@ maschine_mk3_blit_to_screen(struct ni_maschine_mk3_t *dev, int scr)
 		printf("%s screen write failed!\n", __func__);
 }
 
+/** Skip forward in the screen by *num_px* amount of pixels. */
+static inline void
+ni_screen_skip(uint8_t *data, uint32_t *idx, uint32_t num_px)
+{
+	uint32_t skip = num_px / 2;
+	data[(*idx)++] = 0x2;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (skip & 0xff00) >> 8;
+	data[(*idx)++] = (skip & 0x00ff);
+}
+
+static inline void
+ni_screen_line(uint8_t *data, uint32_t *idx, uint32_t length_px,
+	       uint16_t px1_col, uint16_t px2_col)
+{
+	uint32_t len = length_px / 2;
+	data[(*idx)++] = 0x1;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (len & 0xff00) >> 8;
+	data[(*idx)++] = (len & 0x00ff);
+	/* px 1 colour */
+	data[(*idx)++] = px1_col >> 8;
+	data[(*idx)++] = px1_col;
+	/* px2 colour */
+	data[(*idx)++] = px2_col >> 8;
+	data[(*idx)++] = px2_col;
+}
+
+static inline void
+ni_screen_var_px(uint8_t *data, uint32_t *idx, uint32_t num_px,
+		 uint8_t *px_data)
+{
+	uint32_t len = num_px;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = 0x0;
+	data[(*idx)++] = (len & 0xff00) >> 8;
+	data[(*idx)++] = (len & 0x00ff);
+	/* iterate provided pixels: 565 has 2 bpp, hence *2 */
+	for(int i = 0; i < num_px * 2; i++)
+		data[(*idx)++] = px_data[i];
+}
+
 int32_t
 ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
-				      uint8_t **pixels,
-				      uint32_t *bytes,
-				      uint8_t flush)
+				uint32_t screen_idx,
+				uint8_t **pixels,
+				uint32_t *bytes,
+				struct ctlra_screen_zone_t *zone,
+				uint8_t flush)
 {
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
-	if(flush)
-		maschine_mk3_blit_to_screen(dev, 0);
+	if(screen_idx > 1)
+		return -1;
+
+	if(flush == 3)
+		flush = 1;
+
+	if(flush == 2) {
+		printf("partial redraw %d %d %d %d -  experimental!\n",
+		       zone->x, zone->y, zone->w, zone->h);
+		/* create a new buffer on the stack, to build up the
+		 * required commands to do a partial update */
+		uint8_t cmd[1024*1024];
+
+		uint32_t idx = 0;
+		for(; idx < sizeof(dev->screen_left.header); idx++)
+			cmd[idx] = dev->screen_left.header[idx];
+
+#if 1
+
+#if 1
+		int hack_redraw = 0;
+		if(hack_redraw) {
+			ni_screen_line(cmd, &idx, 480 * 272,
+				       0b11,
+				       0b11);
+			hack_redraw = 0;
+		} else {
+#if 1
+			/* skip foward the required amount from zero */
+			int skip_px = ((480 * zone->y) + zone->x) & (~0x1);
+			ni_screen_skip(cmd, &idx, skip_px);
+
+			int width = zone->w & (~1);
+
+			uint8_t test_px[480];
+			for(int i = 0; i < 480; i++)
+				test_px[i] = 0xf;
+
+			uint32_t px_idx = ((zone->y + 0) * 480) + zone->x;
+			printf("px idx = %d\n", px_idx);
+			uint8_t *px_in_data = (uint8_t *)&dev->screen_left.pixels[px_idx];
+
+			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			ni_screen_line(cmd, &idx, 12, 0b11111100000, 0b11111100000);
+			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			//ni_screen_var_px(cmd, &idx, 12, test_px);
+
+			for(int i = 0; i < zone->h; i++) {
+				ni_screen_line(cmd, &idx, width,
+					       0b1111100000000000,
+					       0b1111100000000000);
+				//printf("i = %d, idx = %d, zone w %d\n", i, idx, zone->w);
+				ni_screen_skip(cmd, &idx, 480 - width);
+			}
+			/* for each horizontal line, plot X pixels, and re-skip */
+#else
+			for(int i = 0; i < zone->h; i++) {
+				uint32_t px_idx = ((zone->y + i) * 480) + zone->x;
+				printf("i %d, px_idx = %d\n", i, px_idx);
+				ni_screen_var_px(cmd, &idx, zone->w, cmd);
+				ni_screen_line(cmd, &idx, zone->w,
+					       0b11111,
+					       0b11111);
+				ni_screen_skip(cmd, &idx, 480 - zone->w);
+			}
+#endif
+		}
+#endif
+
+#else
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		uint8_t test[] = {
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+			0xf8, 0x00, 0xf8, 0x00,
+		};
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
+		ni_screen_var_px(cmd, &idx, 8, test);
+
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b1111100000000000,
+			       0b1111100000000000);
+
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b11111100000,
+			       0b11111100000);
+
+		ni_screen_skip(cmd, &idx, 480 * 20);
+
+		ni_screen_line(cmd, &idx, 480 * 20,
+			       0b11111,
+			       0b11111);
+#endif
+
+		for(int i = 0; i < sizeof(dev->screen_left.footer); i++, idx++)
+			cmd[idx] = dev->screen_left.footer[i];
+
+		ctlra_dev_impl_usb_bulk_write(&dev->base, USB_HANDLE_SCREEN_IDX,
+							USB_ENDPOINT_SCREEN_WRITE,
+							cmd, idx);
+
+		return 0;
+	}
+
+	if(flush == 1) {
+		maschine_mk3_blit_to_screen(dev, screen_idx);
+		return 0;
+	}
 
 	*pixels = (uint8_t *)&dev->screen_left.pixels;
+	if(screen_idx == 1)
+		*pixels = (uint8_t *)&dev->screen_right.pixels;
+
 	*bytes = NUM_PX * 2;
 
 	return 0;
@@ -671,6 +930,10 @@ ni_maschine_mk3_disconnect(struct ctlra_dev_t *base)
 	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 
 	memset(dev->lights, 0x0, LIGHTS_SIZE);
+	dev->lights_dirty = 1;
+	memset(dev->lights_pads, 0x0, LIGHTS_PADS_SIZE);
+	dev->lights_pads_dirty = 1;
+
 	if(!base->banished) {
 		ni_maschine_mk3_light_flush(base, 1);
 		memset(dev->screen_left.pixels, 0x0,
@@ -745,7 +1008,6 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	}
 	maschine_mk3_blit_to_screen(dev, 0);
 	maschine_mk3_blit_to_screen(dev, 1);
-
 
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;

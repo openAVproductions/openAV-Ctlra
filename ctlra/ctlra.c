@@ -270,14 +270,27 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev, uint32_t grid_id,
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
 
+int32_t ctlra_screen_get_data(struct ctlra_dev_t *dev,
+				  uint32_t screen_idx,
+				  uint8_t **pixels,
+				  uint32_t *bytes,
+				  struct ctlra_screen_zone_t *redraw,
+				  uint8_t flush)
+{
+	if(dev && dev->screen_get_data)
+		return dev->screen_get_data(dev, screen_idx, pixels, bytes,
+					    redraw, flush);
+	return -ENOTSUP;
+}
+
 int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 				 uint8_t **pixels,
 				 uint32_t *bytes,
 				 uint8_t flush)
 {
-	if(dev && dev->screen_get_data)
-		return dev->screen_get_data(dev, pixels, bytes, flush);
-	return -ENOTSUP;
+	struct ctlra_screen_zone_t redraw;
+	memset(&redraw, 0, sizeof(redraw));
+	return ctlra_screen_get_data(dev, 0, pixels, bytes, &redraw, flush);
 }
 
 int32_t
@@ -447,32 +460,44 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
 		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
 		uint64_t nanos_elapsed = secs * 10e9 + nanos;
-		uint64_t fps_in_nanos = 300000000;
+		uint64_t fps_in_nanos = 100000000;
 
 		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
 			dev_iter->screen_last_redraw = now;
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 				uint8_t *pixel;
 				uint32_t bytes;
-				/* TODO: improve screen_flush() functionality */
-				int ret = ctlra_dev_screen_get_data(dev_iter,
-							  &pixel,
-							  &bytes,
-							  i == 1 ? 0 : 2);
+
+				struct ctlra_screen_zone_t zone_redraw;
+				int32_t ret = ctlra_screen_get_data(dev_iter,
+								    i,
+								    &pixel,
+								    &bytes,
+								    &zone_redraw,
+								    0);
 				if(ret)
 					continue;
 
+				if(pixel == 0) {
+					printf("pixel == NULL\n");
+					continue;
+				}
+
+				struct ctlra_screen_zone_t redraw;
 				int32_t flush = dev_iter->screen_redraw_cb(
 					dev_iter,
 					i, /* screen idx */
 					pixel,
 					bytes,
+					&redraw,
 					dev_iter->screen_redraw_ud);
 				if(flush)
-					ctlra_dev_screen_get_data(dev_iter,
-								  &pixel,
-								  &bytes,
-								  1);
+					ctlra_screen_get_data(dev_iter,
+							      i,
+							      &pixel,
+							      &bytes,
+							      &redraw,
+							      flush);
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
