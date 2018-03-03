@@ -108,7 +108,8 @@ void maschine3_item_browser(struct dummy_data *d,
 	cairo_scale(cr, 0.35, 0.35);
 	for(int i = 0; i < 4; i++) {
 		cairo_save(cr);
-		int sel = m->file_selected + (4 * (screen_idx == 1));
+		//int sel = m->file_selected + (4 * (screen_idx == 1));
+		int sel = m->file_selected;
 		float off = ((sel % 8) == i) ? 0 : 1;
 		//cairo_scale(cr, off, off);
 		cairo_translate(cr, 100 * i, 150 + off * 100);
@@ -125,7 +126,7 @@ void maschine3_file_browser(struct dummy_data *d,
 			   cairo_t *cr,
 			   const char *path)
 {
-	struct maschine3_t *m = d->maschine3;
+	//struct maschine3_t *m = d->maschine3;
 
 	const uint8_t NUM_FILES = 12;
 	/* contains filenames */
@@ -227,7 +228,8 @@ int draw_stuff(struct dummy_data *d, uint32_t screen_idx)
 	if(0) maschine3_item_browser(d, cr, "blah");
 
 	cairo_surface_flush(surface);
-	(void)m;
+
+	return 1;
 }
 
 static inline uint64_t rdtsc(void)
@@ -416,10 +418,6 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			break;
 		case CTLRA_EVENT_ENCODER:
 			//printf("e %d, %f\n", e->encoder.id, e->encoder.delta_float);
-<<<<<<< HEAD
-			if(e->encoder.id == 0)
-				m->file_selected += e->encoder.delta;
-=======
 			if(e->encoder.id != 0) {
 				printf("encoder %d: %f\n", e->encoder.id,
 				       e->encoder.delta_float);
@@ -438,7 +436,6 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 			snprintf(&filenames[chan*64], 64, "%s", patch_name);
 			break;
 
->>>>>>> loopa_screen_rework_mk3_reb
 			break;
 		case CTLRA_EVENT_GRID:
 			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
@@ -454,11 +451,6 @@ void maschine3_pads(struct ctlra_dev_t* dev,
 		default:
 			break;
 		};
-<<<<<<< HEAD
-	}
-
-	dummy->revision++;
-=======
 		dummy->revision++;
 	}
 }
@@ -472,7 +464,6 @@ int maschine3_screen_redraw_cb(struct ctlra_dev_t *dev,
 {
 	return maschine3_redraw_screen(screen_idx, pixel_data, bytes,
 				       damage, userdata);
->>>>>>> loopa_screen_rework_mk3_reb
 }
 
 void maschine3_func(struct ctlra_dev_t* dev,
@@ -488,8 +479,6 @@ void maschine3_func(struct ctlra_dev_t* dev,
 			printf("failed to allocate maschine3 struct\n");
 			exit(-1);
 		}
-<<<<<<< HEAD
-=======
 
 		int32_t ret = ctlra_dev_screen_register_callback(dev,
 								 30,
@@ -497,7 +486,6 @@ void maschine3_func(struct ctlra_dev_t* dev,
 								 dummy);
 		if(ret)
 			printf("WARNING: Failed to register screen callback\n");
->>>>>>> loopa_screen_rework_mk3_reb
 	}
 
 	maschine3_screen_init();
