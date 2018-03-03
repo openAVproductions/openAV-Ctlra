@@ -45,6 +45,19 @@ void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 		break;
 	}
 
+	uint8_t *pixel_data;
+	uint32_t bytes;
+	ctlra_dev_screen_get_data(dev, &pixel_data, &bytes, 0);
+
+	/* TODO: fix the bytes parameter, once a decision on the
+	 * general approach is made; see here for details:
+	 * https://github.com/openAVproductions/openAV-Avtka/pull/5
+	 */
+	/* 128x64 pixels, RGB = 3 channels, Cairo Stride +1 */
+#define SIZE (128 * 64 * (3 + 1))
+	for(int i = 0; i < SIZE; i++)
+		pixel_data[i] = rand();
+
 	return;
 }
 

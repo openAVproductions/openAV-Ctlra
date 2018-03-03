@@ -51,6 +51,9 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 				      void *userdata, void *future)
 {
 	struct ctlra_dev_t *new_dev;
+
+	/* TODO: pass ctlra instance to connect() so the ->ctlra_context
+	 * pointer is always valid */
 	new_dev = connect(event_func, userdata, future);
 	if(new_dev) {
 		new_dev->ctlra_context = ctlra;
