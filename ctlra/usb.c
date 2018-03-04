@@ -202,6 +202,13 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 		int accepted = ctlra_impl_accept_dev(ctlra, id);
 		if(!accepted)
 			libusb_close(handle);
+
+		/* close the handle, since its no longer needed with
+		 * the device set up. This is different in the hotplug
+		 * path than the present-on-probe path, but also works.
+		 */
+		libusb_close(handle);
+
 		return 0;
 	}
 
@@ -757,8 +764,21 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 #else
 	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
 	                               data, size, &transferred, timeout);
+
+	/* Timeouts occur if the USB subsystem is too slow for the given
+	 * timeout duration. Ensure the CPU frequency is at its highest,
+	 * it has been observed that the USB is slower with CPU scaling.
+	 */
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
+
+	/* when a device is recognized by the kernel, it might not yet be
+	 * ready for bulk transfers. Developing with Maschine MK3 has this
+	 * issue, so catch ERROR_BUSY and ignore it here
+	 */
+	if(r == LIBUSB_ERROR_BUSY)
+		return 0;
+
 	if (r < 0) {
 		CTLRA_ERROR(ctlra, "usb error %s : %s, bulk write count %d\n",
 			libusb_error_name(r), libusb_strerror(r),
