@@ -1,8 +1,28 @@
-example_simple = files('simple/simple.c')
-example_avtka = files('avtka_ctlra/avtka.c')
-example_dev_test = files('device_test/device_test.c')
-example_daemon = files('daemon/daemon.c')
-example_virt_dev = files('virt_dev/virt_dev.c')
+# Portable math library linking
+m_dep = cc.find_library('m', required : false)
+
+# Example specific deps - these *MUST* be required : false
+jack_dep = dependency('jack', required: false)
+sndfile_dep    = dependency('sndfile', required: false)
+fluidsynth_dep = dependency('fluidsynth', required: false)
+
+
+foreach name: get_option('examples').split(',')
+  example_src = []
+  dependencies = []
+  link_args = []
+
+  subdir(name)
+
+  executable('ctlra_' + name,
+             example_src,
+             include_directories: ctlra_includes,
+             dependencies : dependencies,
+             link_args : link_args,
+             link_with: ctlra)
+endforeach
+
+
 example_loopa = files('loopa/loopa.c', 'loopa/main.c')
 
 # To properly install resources into /usr/share etc
