@@ -170,12 +170,8 @@ CTLRA_DEVICE_DECL(avtka);
 	}
 
 	/* assuming info setup is ok, call accept dev callback in app */
-	int accepted = c->accept_dev_func(&dev->info,
-				&dev->event_func,
-				&dev->feedback_func,
-				&dev->remove_func,
-				&dev->event_func_userdata,
-				c->accept_dev_func_userdata);
+	int accepted = c->accept_dev_func(c, &dev->info, dev,
+					  c->accept_dev_func_userdata);
 
 	CTLRA_INFO(c, "%s %s %s accepted\n", dev->info.vendor,
 		   dev->info.device, accepted ? "" : "not");
@@ -377,13 +373,14 @@ int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 						    0 /* userdata */,
 						    0x0);
 	if(dev) {
+		/* Store the ctlra context into the dev pointer */
+		dev->ctlra_context = ctlra;
+
 		/* Application sets function pointers directly to device */
-		int accepted = ctlra->accept_dev_func(&dev->info,
-					&dev->event_func,
-					&dev->feedback_func,
-					&dev->remove_func,
-					&dev->event_func_userdata,
-					ctlra->accept_dev_func_userdata);
+		int accepted = ctlra->accept_dev_func(ctlra,
+						      &dev->info,
+						      dev,
+						      ctlra->accept_dev_func_userdata);
 
 		CTLRA_INFO(ctlra, "%s %s %s accepted\n", dev->info.vendor,
 			   dev->info.device, accepted ? "" : "not");

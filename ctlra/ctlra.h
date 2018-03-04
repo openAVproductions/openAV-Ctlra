@@ -259,12 +259,37 @@ typedef void (*ctlra_remove_dev_func)(struct ctlra_dev_t *dev,
  * \retval 0 Reject the device - Ctlra does not connect, and the device
  *           is not used by this instance of Ctlra
  */
-typedef int (*ctlra_accept_dev_func)(const struct ctlra_dev_info_t *info,
-				     ctlra_event_func *event_func,
-				     ctlra_feedback_func *feedback_func,
-				     ctlra_remove_dev_func *remove_func,
-				     void **userdata_for_event_func,
-				     void *userdata_for_accept_func);
+typedef int (*ctlra_accept_dev_func)(struct ctlra_t *ctlra,
+				     const struct ctlra_dev_info_t *info,
+				     struct ctlra_dev_t *dev,
+				     void *userdata);
+
+/* struct to represent a "zone" of a screen. Can be used for eg: redraw */
+struct ctlra_screen_zone_t {
+	uint32_t x;
+	uint32_t y;
+	uint32_t w;
+	uint32_t h;
+};
+
+/** A callback function that the application must implement in order to
+ * redraw a screen for a device. This callback is registered using the
+ * *ctlra_dev_screen_register_callback* function.
+ *
+ * The application must write exactly the number of *bytes* specified, to
+ * the location provided in *pixel_data. The data written must be formatted
+ * in the devices native screen data type.
+ *
+ * @retval 0 Screen will not be redrawn
+ * @retval 1 Screen will fully redrawn
+ * @retval 2 Screen will redraw only zone as indicated in *redraw_zone*
+ */
+typedef int32_t (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
+					  uint32_t screen_idx,
+					  uint8_t *pixel_data,
+					  uint32_t bytes,
+					  struct ctlra_screen_zone_t *redraw_zone,
+					  void *userdata);
 
 /** Create a new ctlra context. This context holds state about the
  * connected devices, hotplug callbacks and backends (usb, bluetooth, etc)
@@ -283,6 +308,27 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
  */
 int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		void *userdata);
+
+/** Sets the event function that will be called */
+int ctlra_dev_set_event_cb(struct ctlra_t *ctlra,
+			   struct ctlra_dev_t *dev,
+			   ctlra_event_func *func);
+
+/** Sets the feedback function for the device */
+int ctlra_dev_set_feedback_cb(struct ctlra_t *ctlra,
+			      struct ctlra_dev_t *dev,
+			      ctlra_feedback_func *func);
+
+/** Sets the screen redraw function for the device */
+int ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
+				     struct ctlra_dev_t *dev,
+				     uint32_t target_fps,
+				     ctlra_screen_redraw_cb *func);
+
+/** Sets the function that will be called on device removal */
+int ctlra_dev_set_remove_cb(struct ctlra_t *ctlra,
+			    struct ctlra_dev_t *dev,
+			    ctlra_remove_dev_func *func);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
@@ -426,52 +472,6 @@ ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 					 uint8_t **pixel_data,
 					 uint32_t *bytes,
 					 uint8_t flush);
-
-/*** NEXT GEN SCREEN INTERFACE ***/
-/* struct to represent a "zone" of a screen. Can be used for eg: redraw */
-struct ctlra_screen_zone_t {
-	uint32_t x;
-	uint32_t y;
-	uint32_t w;
-	uint32_t h;
-};
-/** A callback function that the application must implement in order to
- * redraw a screen for a device. This callback is registered using the
- * *ctlra_dev_screen_register_callback* function.
- *
- * The application must write exactly the number of *bytes* specified, to
- * the location provided in *pixel_data. The data written must be formatted
- * in the devices native screen data type.
- *
- * @retval 0 Screen will not be redrawn
- * @retval 1 Screen will fully redrawn
- * @retval 2 Screen will redraw only zone as indicated in *redraw_zone*
- */
-typedef int32_t (*ctlra_screen_redraw_cb)(struct ctlra_dev_t *dev,
-					  uint32_t screen_idx,
-					  uint8_t *pixel_data,
-					  uint32_t bytes,
-					  struct ctlra_screen_zone_t *redraw_zone,
-					  void *userdata);
-
-/** Register a callback function to be called when a screen needs to
- * be redrawn. The *dev* and *screen_idx* select the screen from the
- * available controllers, while the *target_fps* sets how often the
- * callback will be invoked. The *callback* function is called, and passed
- * the *userdata* pointer.
- *
- * An application must not make assumptions about the order or frequency
- * of calls to the screen redraw callback.
- *
- * @retval 0 Successfully registered the callback.
- * @retval -EINVAL Invalid device, screen index or callback.
- */
-int32_t
-ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
-				   uint32_t target_fps,
-				   ctlra_screen_redraw_cb callback,
-				   void *userdata);
-
 
 /** Get the info struct from a device. The user-supplied info pointer is
  * filled in by the device driver */
