@@ -1,5 +1,5 @@
 project('openav_ctlra', 'c')
-add_project_arguments('-std=c99', language : 'c')
+add_project_arguments('-std=gnu99', language : 'c')
 
 conf_data = configuration_data()
 conf_data.set('version', '0.1')
@@ -28,6 +28,12 @@ if get_option('firmata')
   ctlra_lib_incs += include_directories('subprojects/firmatac/includes')
 endif
 
+if cc.has_header('libtcc.h')
+  conf_data.set('HAVE_TCC', 1)
+else
+  conf_data.set('HAVE_TCC', 0)
+endif
+
 subdir('ctlra')
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
@@ -35,11 +41,21 @@ install_headers(ctlra_hdr, subdir : 'ctlra')
 subdir('examples')
 ctlra_includes = include_directories('ctlra')
 
+# To copy files to the build directory
+configure_file(input : 'examples/loopa/loopa_mk3.c',
+    output : 'loopa_mk3.c',
+    configuration : configuration_data())
 
 executable('simple',
            example_simple,
            include_directories: ctlra_includes,
            link_with: ctlra)
+
+executable('avtka',
+           example_avtka,
+           include_directories: ctlra_includes,
+           link_with: ctlra,
+           dependencies: avtka_dep)
 
 if get_option('midi')
   executable('daemon',
@@ -78,6 +94,27 @@ executable('vegas_mode',
            include_directories: ctlra_includes,
            link_with: ctlra,
            dependencies: [jack, cairo, sndfile, fluid])
+endif
+
+# FAUST code requires powf()
+m_dep = cc.find_library('m', required : false)
+
+
+if conf_data.get('HAVE_TCC') == 1
+  executable('loopa',
+             example_loopa,
+             include_directories: ctlra_includes,
+             link_with: ctlra,
+             link_args : ['-ltcc', '-ldl'],
+             dependencies: [jack, cairo, sndfile, fluid, m_dep])
+endif
+
+gtkdep = dependency('gtk+-3.0', required: false)
+if gtkdep.found()
+  executable('select_device',
+      'examples/select_device/main.c',
+      link_with : ctlra,
+      dependencies : gtkdep)
 endif
 
 pkg = import('pkgconfig')

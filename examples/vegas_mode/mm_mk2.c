@@ -47,6 +47,7 @@ void mm_update_state(struct ctlra_dev_t *dev, void *ud)
 
 	uint8_t *pixel_data;
 	uint32_t bytes;
+	/* deprecated - rework this to the new screen callback API */
 	ctlra_dev_screen_get_data(dev, &pixel_data, &bytes, 0);
 
 	/* TODO: fix the bytes parameter, once a decision on the

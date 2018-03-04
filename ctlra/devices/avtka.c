@@ -147,6 +147,8 @@ event_cb(struct avtka_t *avtka, uint32_t item, float value, void *userdata)
 	uint32_t id   = dev->id_to_ctlra[item].id;
 	uint32_t col  = dev->id_to_ctlra[item].col;
 
+	printf("%s : event\n", __func__);
+
 	/* default type is button */
 	struct ctlra_event_t event = {
 		.type = type,
@@ -231,8 +233,12 @@ avtka_mirror_hw_cb(struct ctlra_dev_t* base, uint32_t num_events,
 
 
 int32_t
-avtka_screen_get_data(struct ctlra_dev_t *base, uint8_t **pixels,
-		      uint32_t *bytes, uint8_t flush)
+avtka_screen_get_data(struct ctlra_dev_t *base,
+		      uint32_t screen_idx,
+		      uint8_t **pixels,
+		      uint32_t *bytes,
+		      struct ctlra_screen_zone_t *zone,
+		      uint8_t flush)
 {
 	struct cavtka_t *dev = (struct cavtka_t *)base;
 	struct avtka_t *a = dev->a;
@@ -334,7 +340,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		.event_callback = event_cb,
 		.event_callback_userdata = dev,
 	};
-	char name[64];
+	char name[128];
 	snprintf(name, sizeof(name), "Ctlra Virtual: %s - %s",
 		 dev->base.info.vendor, dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);

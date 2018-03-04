@@ -702,9 +702,66 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
                                   uint32_t endpoint, uint8_t *data,
                                   uint32_t size)
 {
-	const uint32_t timeout = 100;
-	struct ctlra_t *ctlra = dev->ctlra_context;
 	int transferred;
+	struct ctlra_t *ctlra = dev->ctlra_context;
+	const uint32_t timeout = 0;
+
+	int inf = dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE];
+	if(inf >= CTLRA_ASYNC_READ_MAX) {
+		dev->usb_xfer_counts[USB_XFER_BULK_ERROR]++;
+		return 0;
+	}
+
+#if CTLRA_USE_ASYNC_XFER
+	struct libusb_transfer *xfr;
+	xfr = libusb_alloc_transfer(0);
+	if(xfr == 0)
+		CTLRA_ERROR(ctlra, "write xfr == %p!\n", xfr);
+
+	/* see comment in interrupt read for malloc() and async details */
+	struct usb_async_t *async = malloc(size + sizeof(struct usb_async_t));
+	if(!async) {
+		dev->usb_xfer_counts[USB_XFER_BULK_ERROR]++;
+		return -ENOSPC;
+	}
+	XFER_VALIDATE(dev);
+	struct usb_async_t *dev_current = dev->usb_async_next;
+	if(dev_current)
+		dev_current->prev = async;
+	async->next = dev_current;
+	async->prev = 0;
+	dev->usb_async_next = async;
+	XFER_VALIDATE(dev);
+
+	/* back-pointer from async to xfer */
+	async->xfer = xfr;
+
+	void *usb_data = &async->malloc_mem;
+	memcpy(usb_data, data, size);
+
+	libusb_fill_bulk_transfer(xfr, dev->usb_handle[idx],
+				       endpoint,
+				       usb_data,
+				       size,
+				       ctlra_usb_xfr_write_done_cb,
+				       dev, /* userdata - pass dev to
+					       banish it if required */
+				       timeout);
+	if(libusb_submit_transfer(xfr) < 0) {
+		libusb_free_transfer(xfr);
+		free(usb_data);
+		dev->usb_xfer_counts[USB_XFER_BULK_ERROR]++;
+		//printf("error submitting data!!\n");
+		return -1;
+	}
+
+	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
+	dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE]++;
+
+	/* do we want to return the size here? */
+	/* This read op is async - there *IS* no data written yet */
+	return size;
+#else
 	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
 	                               data, size, &transferred, timeout);
 
@@ -732,7 +789,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 
 	dev->usb_xfer_counts[USB_XFER_BULK_WRITE]++;
 	return transferred;
-
+#endif /* CTLRA_USE_ASYNC_XFER */
 }
 
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
@@ -794,6 +851,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 		"Cancelled",
 		"Timeout",
 		"Error",
+		"Bulk Error",
 		"Inflight Read",
 		"Inflight Write",
 		"Inflight Cancel",

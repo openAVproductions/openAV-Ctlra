@@ -3,10 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "ctlra.h"
 #include "impl.h"
 #include "usb.h"
-
 
 #define CTLRA_MAX_DEVICES 64
 struct ctlra_dev_connect_func_t __ctlra_devices[CTLRA_MAX_DEVICES];
@@ -275,14 +273,44 @@ void ctlra_dev_grid_light_set(struct ctlra_dev_t *dev, uint32_t grid_id,
 		dev->grid_light_set(dev, grid_id, light_id, light_status);
 }
 
+int32_t ctlra_screen_get_data(struct ctlra_dev_t *dev,
+				  uint32_t screen_idx,
+				  uint8_t **pixels,
+				  uint32_t *bytes,
+				  struct ctlra_screen_zone_t *redraw,
+				  uint8_t flush)
+{
+	if(dev && dev->screen_get_data)
+		return dev->screen_get_data(dev, screen_idx, pixels, bytes,
+					    redraw, flush);
+	return -ENOTSUP;
+}
+
 int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 				 uint8_t **pixels,
 				 uint32_t *bytes,
 				 uint8_t flush)
 {
-	if(dev && dev->screen_get_data)
-		return dev->screen_get_data(dev, pixels, bytes, flush);
-	return -ENOTSUP;
+	struct ctlra_screen_zone_t redraw;
+	memset(&redraw, 0, sizeof(redraw));
+	return ctlra_screen_get_data(dev, 0, pixels, bytes, &redraw, flush);
+}
+
+int32_t
+ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
+				   uint32_t target_fps,
+				   ctlra_screen_redraw_cb callback,
+				   void *userdata)
+{
+	if(!dev || !callback)
+		return -EINVAL;
+
+	dev->screen_redraw_cb = callback;
+	dev->screen_redraw_ud = userdata;
+
+	/* TODO: fps support */
+
+	return 0;
 }
 
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
@@ -400,7 +428,6 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
-
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
@@ -417,10 +444,63 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 	/* Then update state of all */
 	dev_iter = ctlra->dev_list;
 	while(dev_iter) {
-		if(!dev_iter->banished) {
-			if(dev_iter->feedback_func) {
-				dev_iter->feedback_func(dev_iter,
-					dev_iter->event_func_userdata);
+		if(dev_iter->banished) {
+			dev_iter = dev_iter->dev_list_next;
+			continue;
+		}
+
+		if(dev_iter->feedback_func) {
+			dev_iter->feedback_func(dev_iter,
+				dev_iter->event_func_userdata);
+		}
+
+		struct timespec now;
+		int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+		if(err)
+			CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
+				    err);
+
+		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
+		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
+		uint64_t nanos_elapsed = secs * 10e9 + nanos;
+		uint64_t fps_in_nanos = 100000000;
+
+		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
+			dev_iter->screen_last_redraw = now;
+			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
+				uint8_t *pixel;
+				uint32_t bytes;
+
+				struct ctlra_screen_zone_t zone_redraw;
+				int32_t ret = ctlra_screen_get_data(dev_iter,
+								    i,
+								    &pixel,
+								    &bytes,
+								    &zone_redraw,
+								    0);
+				if(ret)
+					continue;
+
+				if(pixel == 0) {
+					printf("pixel == NULL\n");
+					continue;
+				}
+
+				struct ctlra_screen_zone_t redraw;
+				int32_t flush = dev_iter->screen_redraw_cb(
+					dev_iter,
+					i, /* screen idx */
+					pixel,
+					bytes,
+					&redraw,
+					dev_iter->screen_redraw_ud);
+				if(flush)
+					ctlra_screen_get_data(dev_iter,
+							      i,
+							      &pixel,
+							      &bytes,
+							      &redraw,
+							      flush);
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
