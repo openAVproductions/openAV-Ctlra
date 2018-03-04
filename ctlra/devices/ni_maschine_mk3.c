@@ -833,6 +833,7 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 			int width = zone->w & (~1);
 
 			uint8_t test_px[480];
+			(void)test_px; // keep GCC7 happy
 			for(int i = 0; i < 480; i++)
 				test_px[i] = 0xf;
 

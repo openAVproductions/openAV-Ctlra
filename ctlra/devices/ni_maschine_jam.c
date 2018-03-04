@@ -411,6 +411,9 @@ static uint32_t ni_maschine_jam_poll(struct ctlra_dev_t *base)
 	nbytes = ctlra_dev_impl_usb_interrupt_read(base, USB_HANDLE_IDX,
 						   USB_ENDPOINT_READ,
 						   buf, 1024);
+
+	(void)nbytes; // keep gcc7 happy
+
 	return 0;
 }
 

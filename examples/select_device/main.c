@@ -1,4 +1,4 @@
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 // inspired by ComboBox sample code here
 // https://developer.gnome.org/gnome-devel-demos/stable/combobox.c.html.en
 // https://developer.gnome.org/gtk-tutorial/stable/x1063.html

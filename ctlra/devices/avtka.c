@@ -340,7 +340,7 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		.event_callback = event_cb,
 		.event_callback_userdata = dev,
 	};
-	char name[64];
+	char name[128];
 	snprintf(name, sizeof(name), "Ctlra Virtual: %s - %s",
 		 dev->base.info.vendor, dev->base.info.device);
 	struct avtka_t *a = avtka_create(name, &opts);

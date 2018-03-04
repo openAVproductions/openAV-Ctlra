@@ -283,6 +283,7 @@ int main(int argc, char **argv)
 		.interact = AVTKA_INTERACT_DRAG_V,
 	};
 	int id = avtka_item_create(a, &item);
+	(void)id; // keep gcc7 happy
 
 	item.x = 10;
 	item.y = 10;

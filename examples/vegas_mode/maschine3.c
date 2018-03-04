@@ -8,11 +8,9 @@
 
 static int chan;
 const char *patch_name;
-const uint8_t NUM_FILES = 128;
-/* contains filenames */
-char filenames[NUM_FILES*64];
-/* Table of pointers to filenames */
-const char *files[NUM_FILES];
+
+#define NUM_FILES (128)
+static char filenames[NUM_FILES*64];
 
 /* for drawing graphics to screen */
 #include <cairo/cairo.h>
@@ -128,7 +126,6 @@ void maschine3_file_browser(struct dummy_data *d,
 {
 	//struct maschine3_t *m = d->maschine3;
 
-	const uint8_t NUM_FILES = 12;
 	/* contains filenames */
 	char filenames[NUM_FILES*64];
 	/* Table of pointers to filenames */
