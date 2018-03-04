@@ -26,17 +26,9 @@ static struct pad_t pads[16];
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
-	/* feedback like LEDs and Screen drawing based on application
-	 * state goes here. See the vegas_mode/ example for an example of
-	 * how to turn on LEDs on the controllers.
-	 *
-	 * Alternatively re-run the simple example with an integer
-	 * parameter and that light number will be lit: ./simple 5
-	 */
-	if(led_set) {
-		ctlra_dev_light_set(dev, led, 0xffffffff);
-		ctlra_dev_light_flush(dev, 1);
-	}
+	for(int i = 0; i < 45; i++)
+		ctlra_dev_light_set(dev, i, 0xffffffff);
+	ctlra_dev_light_flush(dev, 1);
 }
 
 static inline
@@ -265,10 +257,13 @@ int main(int argc, char **argv)
 	struct avtka_opts_t opts = {
 		.w = 480,
 		.h = 272,
-		.debug_redraws = 1,
-		//.flag_no_resize = 1,
+		.resizeable = 1,
 		.event_callback = event_cb,
 		.event_callback_userdata = 0,
+		.offscreen_only = 1,
+#if 0
+		.debug_redraws = 1,
+#endif
 	};
 	a = avtka_create("Avtka Ctlra Screen", &opts);
 	if(!a) {
