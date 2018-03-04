@@ -309,15 +309,9 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts);
 int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 		void *userdata);
 
-/** Sets the event function that will be called */
-int ctlra_dev_set_event_cb(struct ctlra_t *ctlra,
-			   struct ctlra_dev_t *dev,
-			   ctlra_event_func *func);
-
 /** Sets the feedback function for the device */
-int ctlra_dev_set_feedback_cb(struct ctlra_t *ctlra,
-			      struct ctlra_dev_t *dev,
-			      ctlra_feedback_func *func);
+void ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
+				 ctlra_feedback_func *func);
 
 /** Sets the screen redraw function for the device */
 int ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,

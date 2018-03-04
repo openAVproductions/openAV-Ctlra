@@ -73,6 +73,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 	return 0;
 }
 
+
 int32_t
 ctlra_get_devices_by_vendor(const char *vendor, const char *devices[],
 			    int32_t size)
@@ -196,10 +197,35 @@ uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 	return 0;
 }
 
-void ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func ef)
+void
+ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func f)
 {
 	if(dev)
-		dev->event_func = ef;
+		dev->event_func = f;
+}
+
+void
+ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
+			    ctlra_feedback_func *func)
+{
+	if(dev)
+		dev->feedback_func = func;
+}
+
+int
+ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
+				 struct ctlra_dev_t *dev,
+				 uint32_t target_fps,
+				 ctlra_screen_redraw_cb *func)
+{
+	return 0;
+}
+
+int
+ctlra_dev_set_remove_cb(struct ctlra_t *ctlra, struct ctlra_dev_t *dev,
+			ctlra_remove_dev_func *func)
+{
+	return 0;
 }
 
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)

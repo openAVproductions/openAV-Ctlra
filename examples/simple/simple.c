@@ -115,24 +115,18 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 
 }
 
-int accept_dev_func(const struct ctlra_dev_info_t *info,
-                    ctlra_event_func *event_func,
-                    ctlra_feedback_func *feedback_func,
-                    ctlra_remove_dev_func *remove_func,
-                    void **userdata_for_event_func,
+int accept_dev_func(struct ctlra_t *ctlra,
+		    const struct ctlra_dev_info_t *info,
+		    struct ctlra_dev_t *dev,
                     void *userdata)
 {
 	printf("simple: accepting %s %s\n", info->vendor, info->device);
-	/* Fill in the callbacks the device needs to function.
-	 * In this example, all events are routed to the above functions,
-	 * which simply print the event that occurred. Look at the daemon/
-	 * example in order to see how to send MIDI messages for events */
-	*event_func    = simple_event_func;
-	*feedback_func = simple_feedback_func;
-	*remove_func   = simple_remove_func;
-	/* Optionally provide a userdata. It is passed to the callback
-	 * functions simple_event_func() and simple_feedback_func(). */
-	*userdata_for_event_func = userdata;
+
+	/* here we use the Ctlra APIs to set callback functions to get
+	 * events and send feedback updates to/from the device */
+	ctlra_dev_set_event_func(dev, simple_event_func);
+
+	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
 
 	return 1;
 }
