@@ -206,26 +206,27 @@ ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func f)
 
 void
 ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
-			    ctlra_feedback_func *func)
+			    ctlra_feedback_func func)
 {
 	if(dev)
 		dev->feedback_func = func;
 }
 
-int
+void
 ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
 				 struct ctlra_dev_t *dev,
-				 uint32_t target_fps,
-				 ctlra_screen_redraw_cb *func)
+				 ctlra_screen_redraw_cb func)
 {
-	return 0;
+	if(dev)
+		dev->screen_redraw_cb = func;
 }
 
-int
+void
 ctlra_dev_set_remove_cb(struct ctlra_t *ctlra, struct ctlra_dev_t *dev,
-			ctlra_remove_dev_func *func)
+			ctlra_remove_dev_func func)
 {
-	return 0;
+	if(dev)
+		dev->remove_func = func;
 }
 
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
@@ -316,23 +317,6 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 	struct ctlra_screen_zone_t redraw;
 	memset(&redraw, 0, sizeof(redraw));
 	return ctlra_screen_get_data(dev, 0, pixels, bytes, &redraw, flush);
-}
-
-int32_t
-ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
-				   uint32_t target_fps,
-				   ctlra_screen_redraw_cb callback,
-				   void *userdata)
-{
-	if(!dev || !callback)
-		return -EINVAL;
-
-	dev->screen_redraw_cb = callback;
-	dev->screen_redraw_ud = userdata;
-
-	/* TODO: fps support */
-
-	return 0;
 }
 
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,

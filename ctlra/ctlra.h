@@ -311,18 +311,17 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 
 /** Sets the feedback function for the device */
 void ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
-				 ctlra_feedback_func *func);
+				 ctlra_feedback_func func);
 
 /** Sets the screen redraw function for the device */
-int ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
-				     struct ctlra_dev_t *dev,
-				     uint32_t target_fps,
-				     ctlra_screen_redraw_cb *func);
+void ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
+				      struct ctlra_dev_t *dev,
+				      ctlra_screen_redraw_cb func);
 
 /** Sets the function that will be called on device removal */
-int ctlra_dev_set_remove_cb(struct ctlra_t *ctlra,
-			    struct ctlra_dev_t *dev,
-			    ctlra_remove_dev_func *func);
+void ctlra_dev_set_remove_cb(struct ctlra_t *ctlra,
+			     struct ctlra_dev_t *dev,
+			     ctlra_remove_dev_func func);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
