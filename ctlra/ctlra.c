@@ -213,17 +213,16 @@ ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
 }
 
 void
-ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
-				 struct ctlra_dev_t *dev,
-				 ctlra_screen_redraw_cb func)
+ctlra_dev_set_screen_feedback_func(struct ctlra_dev_t *dev,
+				   ctlra_screen_redraw_cb func)
 {
 	if(dev)
 		dev->screen_redraw_cb = func;
 }
 
 void
-ctlra_dev_set_remove_cb(struct ctlra_t *ctlra, struct ctlra_dev_t *dev,
-			ctlra_remove_dev_func func)
+ctlra_dev_set_remove_func(struct ctlra_t *ctlra, struct ctlra_dev_t *dev,
+			  ctlra_remove_dev_func func)
 {
 	if(dev)
 		dev->remove_func = func;

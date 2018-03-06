@@ -112,7 +112,32 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 	printf("simple: removing %s %s\n", info.vendor, info.device);
+}
 
+int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
+				  uint32_t screen_idx,
+				  uint8_t *pixel_data,
+				  uint32_t bytes,
+				  struct ctlra_screen_zone_t *redraw_zone,
+				  void *userdata)
+{
+	/* two+ screens? :) */
+	static int do_twice;
+
+	if(do_twice < 2) {
+		for(int i = 0; i < bytes; i += 2) {
+			/* TODO: Device dependant data format here:
+			 * Provide generic Cairo instance abstracton?
+			 */
+			pixel_data[i]   = 0b1000;
+			pixel_data[i+1] = 0b100011;
+		}
+
+		do_twice++;
+	}
+
+	/* flush the screens */
+	return 1;
 }
 
 int accept_dev_func(struct ctlra_t *ctlra,
@@ -127,6 +152,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	ctlra_dev_set_event_func(dev, simple_event_func);
 
 	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
+	ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
 
 	return 1;
 }

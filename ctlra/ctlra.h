@@ -314,14 +314,13 @@ void ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
 				 ctlra_feedback_func func);
 
 /** Sets the screen redraw function for the device */
-void ctlra_dev_set_screen_feedback_cb(struct ctlra_t *ctlra,
-				      struct ctlra_dev_t *dev,
-				      ctlra_screen_redraw_cb func);
+void ctlra_dev_set_screen_feedback_func(struct ctlra_dev_t *dev,
+					ctlra_screen_redraw_cb func);
 
 /** Sets the function that will be called on device removal */
-void ctlra_dev_set_remove_cb(struct ctlra_t *ctlra,
-			     struct ctlra_dev_t *dev,
-			     ctlra_remove_dev_func func);
+void ctlra_dev_set_remove_func(struct ctlra_t *ctlra,
+			       struct ctlra_dev_t *dev,
+			       ctlra_remove_dev_func func);
 
 /** Iterate backends and see if anything has changed - this enables hotplug
  * detection and removal of devices.
