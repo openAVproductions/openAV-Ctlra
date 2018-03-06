@@ -9,6 +9,7 @@
 static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
+static int redraw_screens = 1;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -60,7 +61,13 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 				e->button.has_pressure ?  pressure :
 				(e->button.pressed ? " X " : "   "),
 				name, e->button.id);
-			} break;
+			}
+			if(e->button.pressed) {
+				/* any button event to repain screen */
+				redraw_screens = 1;
+			}
+			break;
+
 
 		case CTLRA_EVENT_ENCODER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
@@ -123,17 +130,28 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 {
 	/* two+ screens? :) */
 	static int do_twice;
+	static int color;
+	static uint16_t colors[3] = {
+		0b1111100000000000,
+		      0b1111100000,
+		           0b11111,
+	};
 
-	if(do_twice < 2) {
+	if(redraw_screens) {
 		for(int i = 0; i < bytes; i += 2) {
 			/* TODO: Device dependant data format here:
 			 * Provide generic Cairo instance abstracton?
 			 */
-			pixel_data[i]   = 0b1000;
-			pixel_data[i+1] = 0b100011;
+			pixel_data[i]   = colors[color%3] >> 8;
+			pixel_data[i+1] = colors[color%3];
 		}
 
 		do_twice++;
+		if(do_twice >= 2) {
+			color++;
+			redraw_screens = 0;
+			do_twice = 0;
+		}
 	}
 
 	/* flush the screens */
@@ -150,9 +168,9 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	/* here we use the Ctlra APIs to set callback functions to get
 	 * events and send feedback updates to/from the device */
 	ctlra_dev_set_event_func(dev, simple_event_func);
-
 	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
 	ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
+	ctlra_dev_set_remove_func(dev, simple_remove_func);
 
 	return 1;
 }
