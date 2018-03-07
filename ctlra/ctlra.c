@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "config.h"
+
 #include "impl.h"
 #include "usb.h"
 
@@ -358,6 +360,12 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 		int debug_level = atoi(ctlra_debug);
 		c->opts.debug_level = debug_level;
 		CTLRA_INFO(c, "debug level: %d\n", debug_level);
+	}
+
+	if(ctlra_debug) {
+		CTLRA_INFO(c, "JACK: %s\n", CTLRA_OPT_JACK);
+		CTLRA_INFO(c, "ALSA: %s\n", CTLRA_OPT_ALSA);
+		CTLRA_INFO(c, "Cairo: %s\n", CTLRA_OPT_CAIRO);
 	}
 
 	/* register USB hotplug etc */

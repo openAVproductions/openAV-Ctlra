@@ -9,9 +9,11 @@ subdir('devices')
 cargs = ['-Wno-unused-variable']
 
 libusb = dependency('libusb-1.0')
+gl     = dependency('gl', required: false)
+
 conf_data.set('libusb', libusb.found())
 conf_data.set('alsa', midi_dep.found())
-gl     = dependency('gl', required: false)
+conf_data.set('cairo', cairo_dep.found())
 
 ctlra_lib_deps_impl = [libusb, gl]
 
