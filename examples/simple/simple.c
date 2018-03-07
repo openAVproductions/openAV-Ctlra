@@ -4,12 +4,16 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include <cairo/cairo.h>
+
 #include "ctlra.h"
 
 static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
 static int redraw_screens = 1;
+
+static int xoff;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -75,7 +79,10 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
-			break;
+			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT) {
+				xoff += e->encoder.delta_float * 100;
+				printf("xoff = %d\n", xoff);
+			} break;
 
 		case CTLRA_EVENT_SLIDER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
@@ -128,33 +135,49 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 				  struct ctlra_screen_zone_t *redraw_zone,
 				  void *userdata)
 {
-	/* two+ screens? :) */
-	static int do_twice;
-	static int color;
-	static uint16_t colors[3] = {
-		0b1111100000000000,
-		      0b1111100000,
-		           0b11111,
-	};
 
-	if(redraw_screens) {
-		for(int i = 0; i < bytes; i += 2) {
-			/* TODO: Device dependant data format here:
-			 * Provide generic Cairo instance abstracton?
-			 */
-			pixel_data[i]   = colors[color%3] >> 8;
-			pixel_data[i+1] = colors[color%3];
-		}
+	/* do drawing using your favorite toolkit here: Cairo / QT etc.
+	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out
+	 * the cairo_surface_t from the AVTKA UI instance (it provides that
+	 * function for you :) and call the Cairo->DeviceScreen helper
+	 */
 
-		do_twice++;
-		if(do_twice >= 2) {
-			color++;
-			redraw_screens = 0;
-			do_twice = 0;
-		}
+	/* TODO: how to get an appropriate FORMAT HEIGHT WIDTH? */
+	static cairo_surface_t *img;
+	static cairo_t *cr;
+	if(!img) {
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+						 480, 272);
+		cr = cairo_create(img);
 	}
 
-	/* flush the screens */
+	/* blank out bg */
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_rectangle(cr, 0, 0, 480, 272);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 1, 0, 1);
+	cairo_rectangle(cr, 10, 10, 10, 10);
+	cairo_fill(cr);
+	cairo_set_source_rgb(cr, 1, 0, 0);
+	cairo_rectangle(cr, 30, 10, 10, 10);
+	cairo_fill(cr);
+	cairo_set_source_rgb(cr, 0, 1, 1);
+	cairo_rectangle(cr, xoff, 10, 10, 10);
+	cairo_fill(cr);
+
+	if(screen_idx == 0) {
+		/* draw screen A */
+	} else {
+		/* draw screen B */
+	}
+	void *cairo_surf = 0;
+	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
+				     redraw_zone, img);
+
+	/* return 1 to flush the screens - helper function above already
+	 * handles this.
+	 */
 	return 1;
 }
 

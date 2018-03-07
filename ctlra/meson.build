@@ -1,4 +1,4 @@
-ctlra_hdr = files('ctlra.h', 'event.h')
+ctlra_hdr = files('ctlra.h', 'event.h', 'ctlra_cairo.h')
 ctlra_src = files('ctlra.c', 'event.c', 'usb.c')
 
 jack   = dependency('jack', required: false)
@@ -19,6 +19,10 @@ ctlra_lib_deps_impl = [libusb, gl]
 
 if avtka_dep.found()
   ctlra_lib_deps_impl += avtka_dep
+endif
+
+if cairo_dep.found()
+  ctlra_src += files('ctlra_cairo.c')
 endif
 
 if get_option('firmata')

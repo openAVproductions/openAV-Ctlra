@@ -280,6 +280,12 @@ struct ctlra_screen_zone_t {
  * the location provided in *pixel_data. The data written must be formatted
  * in the devices native screen data type.
  *
+ * In order to abstract the application from the device's native data
+ * format, various functions are exposed to translate the data. For
+ * example, the common Cairo library can be used to draw pixels, and the
+ * cairo_surface_t * passed to the *ctlra_screen_cairo_to_device* helper
+ * function, and then the appropriate pixel converion will take place.
+ *
  * @retval 0 Screen will not be redrawn
  * @retval 1 Screen will fully redrawn
  * @retval 2 Screen will redraw only zone as indicated in *redraw_zone*
