@@ -152,6 +152,22 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 								&ni_mm);
 			ctlra_dev_disconnect(ni_mm);
 		}
+
+		/* Search through all devices matching on VID and PID.
+		 * If the device matches, we disconnect it from Ctlra.
+		 * TODO: Improve this to use the serial number if present.
+		 */
+		struct ctlra_dev_t *dev_iter = ctlra->dev_list;
+		while(dev_iter) {
+			struct ctlra_dev_t *tmp = dev_iter;
+			dev_iter = dev_iter->dev_list_next;
+
+			if(tmp->info.vendor_id == desc.idVendor &&
+				tmp->info.device_id == desc.idProduct) {
+				ctlra_dev_disconnect(tmp);
+			}
+		}
+
 		return 0;
 	}
 
