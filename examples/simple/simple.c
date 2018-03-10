@@ -7,6 +7,7 @@
 #include <cairo/cairo.h>
 
 #include "ctlra.h"
+#include "ctlra_cairo.h"
 
 static volatile uint32_t done;
 static uint32_t led;
@@ -171,7 +172,6 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	} else {
 		/* draw screen B */
 	}
-	void *cairo_surf = 0;
 	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
 				     redraw_zone, img);
 
@@ -194,7 +194,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
 	ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
 	ctlra_dev_set_remove_func(dev, simple_remove_func);
-	ctlra_dev_set_callback_userdata(dev, 0xcafe);
+	ctlra_dev_set_callback_userdata(dev, 0x0);
 
 	return 1;
 }
