@@ -194,6 +194,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
 	ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
 	ctlra_dev_set_remove_func(dev, simple_remove_func);
+	ctlra_dev_set_callback_userdata(dev, 0xcafe);
 
 	return 1;
 }

@@ -199,6 +199,17 @@ uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 	return 0;
 }
 
+
+void
+ctlra_dev_set_callback_userdata(struct ctlra_dev_t *dev,
+				void *app_userdata)
+{
+	if(dev) {
+		dev->event_func_userdata = app_userdata;
+		dev->screen_redraw_ud = app_userdata;
+	}
+}
+
 void
 ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func f)
 {

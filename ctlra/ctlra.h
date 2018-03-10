@@ -319,6 +319,9 @@ int ctlra_probe(struct ctlra_t *ctlra, ctlra_accept_dev_func accept_func,
 void ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
 				 ctlra_feedback_func func);
 
+void ctlra_dev_set_callback_userdata(struct ctlra_dev_t *dev,
+				     void *app_userdata);
+
 /** Sets the screen redraw function for the device */
 void ctlra_dev_set_screen_feedback_func(struct ctlra_dev_t *dev,
 					ctlra_screen_redraw_cb func);
