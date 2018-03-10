@@ -1,10 +1,6 @@
 ctlra_hdr = files('ctlra.h', 'event.h')
 ctlra_src = files('ctlra.c', 'event.c', 'usb.c')
 
-if get_option('midi')
-  ctlra_src += files('midi.c')
-endif
-
 jack   = dependency('jack', required: false)
 conf_data.set('jack', jack.found())
 
@@ -14,8 +10,7 @@ cargs = ['-Wno-unused-variable']
 
 libusb = dependency('libusb-1.0')
 conf_data.set('libusb', libusb.found())
-alsa   = dependency('alsa', required: false)
-conf_data.set('alsa', alsa.found())
+conf_data.set('alsa', midi_dep.found())
 gl     = dependency('gl', required: false)
 
 ctlra_lib_deps_impl = [libusb, gl]
@@ -28,8 +23,9 @@ if get_option('firmata')
   ctlra_lib_deps_impl += firmata_dep
 endif
 
-if alsa.found()
-  ctlra_lib_deps_impl += alsa
+if midi_dep.found()
+  ctlra_lib_deps_impl += midi_dep
+  ctlra_src += files('midi.c')
 endif
 
 devices_lib = static_library('ctlra_devices', devices_src,

@@ -34,88 +34,27 @@ else
   conf_data.set('HAVE_TCC', 0)
 endif
 
+midi_dep = dependency('alsa', required: false)
+if not midi_dep.found()
+  midi_dep = disabler()
+  message('MIDI = disabler')
+endif
+
 subdir('ctlra')
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
-
-subdir('examples')
 ctlra_includes = include_directories('ctlra')
+
+cairo_dep = dependency('cairo', required: false)
+
+if (get_option('examples') != '')
+	subdir('examples')
+endif
 
 # To copy files to the build directory
 configure_file(input : 'examples/loopa/loopa_mk3.c',
     output : 'loopa_mk3.c',
     configuration : configuration_data())
-
-executable('simple',
-           example_simple,
-           include_directories: ctlra_includes,
-           link_with: ctlra)
-
-executable('avtka',
-           example_avtka,
-           include_directories: ctlra_includes,
-           link_with: ctlra,
-           dependencies: avtka_dep)
-
-if get_option('midi')
-  executable('daemon',
-             example_daemon,
-             include_directories: ctlra_includes,
-             link_with: ctlra)
-
-  executable('sequencer',
-             example_seq,
-             include_directories: ctlra_includes,
-             link_with: ctlra)
-endif
-
-if(get_option('avtka') == true)
- if(avtka_dep.found())
-  executable('virt_dev',
-             example_virt_dev,
-             include_directories: ctlra_includes,
-             dependencies: avtka_dep,
-             link_with: ctlra)
-
-  executable('device_test',
-             example_dev_test,
-             include_directories: ctlra_includes,
-             dependencies: avtka_dep,
-             link_with: ctlra)
-  endif
-endif
-
-cairo   = dependency('cairo', required: false)
-sndfile = dependency('sndfile', required: false)
-fluid   = dependency('fluidsynth', required: false)
-if(jack.found() and cairo.found() and sndfile.found() and fluid.found())
-executable('vegas_mode',
-           example_vegas,
-           include_directories: ctlra_includes,
-           link_with: ctlra,
-           dependencies: [jack, cairo, sndfile, fluid])
-endif
-
-# FAUST code requires powf()
-m_dep = cc.find_library('m', required : false)
-
-
-if conf_data.get('HAVE_TCC') == 1
-  executable('loopa',
-             example_loopa,
-             include_directories: ctlra_includes,
-             link_with: ctlra,
-             link_args : ['-ltcc', '-ldl'],
-             dependencies: [jack, cairo, sndfile, fluid, m_dep])
-endif
-
-gtkdep = dependency('gtk+-3.0', required: false)
-if gtkdep.found()
-  executable('select_device',
-      'examples/select_device/main.c',
-      link_with : ctlra,
-      dependencies : gtkdep)
-endif
 
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',
