@@ -14,7 +14,7 @@ static uint32_t led;
 static uint32_t led_set;
 static int redraw_screens = 1;
 
-static int xoff;
+static float xoff;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -82,7 +82,7 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			       name, e->button.id);
 			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT) {
 				xoff += e->encoder.delta_float * 100;
-				printf("xoff = %d\n", xoff);
+				printf("xoff = %f\n", xoff);
 			} break;
 
 		case CTLRA_EVENT_SLIDER:
