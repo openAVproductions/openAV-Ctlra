@@ -147,7 +147,8 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	static cairo_surface_t *img;
 	static cairo_t *cr;
 	if(!img) {
-		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+		//img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565,
 						 480, 272);
 		cr = cairo_create(img);
 	}
