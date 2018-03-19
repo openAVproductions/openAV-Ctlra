@@ -4,11 +4,17 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include <cairo/cairo.h>
+
 #include "ctlra.h"
+#include "ctlra_cairo.h"
 
 static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
+static int redraw_screens = 1;
+
+static float xoff;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -60,7 +66,13 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 				e->button.has_pressure ?  pressure :
 				(e->button.pressed ? " X " : "   "),
 				name, e->button.id);
-			} break;
+			}
+			if(e->button.pressed) {
+				/* any button event to repain screen */
+				redraw_screens = 1;
+			}
+			break;
+
 
 		case CTLRA_EVENT_ENCODER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
@@ -68,7 +80,10 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 			printf("[%s] encoder %s (%d)\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
 			       name, e->button.id);
-			break;
+			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT) {
+				xoff += e->encoder.delta_float * 100;
+				printf("xoff = %f\n", xoff);
+			} break;
 
 		case CTLRA_EVENT_SLIDER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
@@ -112,27 +127,74 @@ void simple_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 	printf("simple: removing %s %s\n", info.vendor, info.device);
-
 }
 
-int accept_dev_func(const struct ctlra_dev_info_t *info,
-                    ctlra_event_func *event_func,
-                    ctlra_feedback_func *feedback_func,
-                    ctlra_remove_dev_func *remove_func,
-                    void **userdata_for_event_func,
+int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
+				  uint32_t screen_idx,
+				  uint8_t *pixel_data,
+				  uint32_t bytes,
+				  struct ctlra_screen_zone_t *redraw_zone,
+				  void *userdata)
+{
+
+	/* do drawing using your favorite toolkit here: Cairo / QT etc.
+	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out
+	 * the cairo_surface_t from the AVTKA UI instance (it provides that
+	 * function for you :) and call the Cairo->DeviceScreen helper
+	 */
+
+	/* TODO: how to get an appropriate FORMAT HEIGHT WIDTH? */
+	static cairo_surface_t *img;
+	static cairo_t *cr;
+	if(!img) {
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+						 480, 272);
+		cr = cairo_create(img);
+	}
+
+	/* blank out bg */
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_rectangle(cr, 0, 0, 480, 272);
+	cairo_fill(cr);
+
+	cairo_set_source_rgb(cr, 1, 0, 1);
+	cairo_rectangle(cr, 10, 10, 10, 10);
+	cairo_fill(cr);
+	cairo_set_source_rgb(cr, 1, 0, 0);
+	cairo_rectangle(cr, 30, 10, 10, 10);
+	cairo_fill(cr);
+	cairo_set_source_rgb(cr, 0, 1, 1);
+	cairo_rectangle(cr, xoff, 10, 10, 10);
+	cairo_fill(cr);
+
+	if(screen_idx == 0) {
+		/* draw screen A */
+	} else {
+		/* draw screen B */
+	}
+	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
+				     redraw_zone, img);
+
+	/* return 1 to flush the screens - helper function above already
+	 * handles this.
+	 */
+	return 1;
+}
+
+int accept_dev_func(struct ctlra_t *ctlra,
+		    const struct ctlra_dev_info_t *info,
+		    struct ctlra_dev_t *dev,
                     void *userdata)
 {
 	printf("simple: accepting %s %s\n", info->vendor, info->device);
-	/* Fill in the callbacks the device needs to function.
-	 * In this example, all events are routed to the above functions,
-	 * which simply print the event that occurred. Look at the daemon/
-	 * example in order to see how to send MIDI messages for events */
-	*event_func    = simple_event_func;
-	*feedback_func = simple_feedback_func;
-	*remove_func   = simple_remove_func;
-	/* Optionally provide a userdata. It is passed to the callback
-	 * functions simple_event_func() and simple_feedback_func(). */
-	*userdata_for_event_func = userdata;
+
+	/* here we use the Ctlra APIs to set callback functions to get
+	 * events and send feedback updates to/from the device */
+	ctlra_dev_set_event_func(dev, simple_event_func);
+	ctlra_dev_set_feedback_func(dev, simple_feedback_func);
+	ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
+	ctlra_dev_set_remove_func(dev, simple_remove_func);
+	ctlra_dev_set_callback_userdata(dev, 0x0);
 
 	return 1;
 }

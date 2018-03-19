@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "config.h"
+
 #include "impl.h"
 #include "usb.h"
 
@@ -72,6 +74,7 @@ struct ctlra_dev_t *ctlra_dev_connect(struct ctlra_t *ctlra,
 	}
 	return 0;
 }
+
 
 int32_t
 ctlra_get_devices_by_vendor(const char *vendor, const char *devices[],
@@ -170,12 +173,8 @@ CTLRA_DEVICE_DECL(avtka);
 	}
 
 	/* assuming info setup is ok, call accept dev callback in app */
-	int accepted = c->accept_dev_func(&dev->info,
-				&dev->event_func,
-				&dev->feedback_func,
-				&dev->remove_func,
-				&dev->event_func_userdata,
-				c->accept_dev_func_userdata);
+	int accepted = c->accept_dev_func(c, &dev->info, dev,
+					  c->accept_dev_func_userdata);
 
 	CTLRA_INFO(c, "%s %s %s accepted\n", dev->info.vendor,
 		   dev->info.device, accepted ? "" : "not");
@@ -200,10 +199,46 @@ uint32_t ctlra_dev_poll(struct ctlra_dev_t *dev)
 	return 0;
 }
 
-void ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func ef)
+
+void
+ctlra_dev_set_callback_userdata(struct ctlra_dev_t *dev,
+				void *app_userdata)
+{
+	if(dev) {
+		dev->event_func_userdata = app_userdata;
+		dev->screen_redraw_ud = app_userdata;
+	}
+}
+
+void
+ctlra_dev_set_event_func(struct ctlra_dev_t* dev, ctlra_event_func f)
 {
 	if(dev)
-		dev->event_func = ef;
+		dev->event_func = f;
+}
+
+void
+ctlra_dev_set_feedback_func(struct ctlra_dev_t *dev,
+			    ctlra_feedback_func func)
+{
+	if(dev)
+		dev->feedback_func = func;
+}
+
+void
+ctlra_dev_set_screen_feedback_func(struct ctlra_dev_t *dev,
+				   ctlra_screen_redraw_cb func)
+{
+	if(dev)
+		dev->screen_redraw_cb = func;
+}
+
+void
+ctlra_dev_set_remove_func(struct ctlra_dev_t *dev,
+			  ctlra_remove_dev_func func)
+{
+	if(dev)
+		dev->remove_func = func;
 }
 
 int32_t ctlra_dev_disconnect(struct ctlra_dev_t *dev)
@@ -296,23 +331,6 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 	return ctlra_screen_get_data(dev, 0, pixels, bytes, &redraw, flush);
 }
 
-int32_t
-ctlra_dev_screen_register_callback(struct ctlra_dev_t *dev,
-				   uint32_t target_fps,
-				   ctlra_screen_redraw_cb callback,
-				   void *userdata)
-{
-	if(!dev || !callback)
-		return -EINVAL;
-
-	dev->screen_redraw_cb = callback;
-	dev->screen_redraw_ud = userdata;
-
-	/* TODO: fps support */
-
-	return 0;
-}
-
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info)
 {
@@ -355,6 +373,12 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 		CTLRA_INFO(c, "debug level: %d\n", debug_level);
 	}
 
+	if(ctlra_debug) {
+		CTLRA_INFO(c, "JACK: %s\n", CTLRA_OPT_JACK);
+		CTLRA_INFO(c, "ALSA: %s\n", CTLRA_OPT_ALSA);
+		CTLRA_INFO(c, "Cairo: %s\n", CTLRA_OPT_CAIRO);
+	}
+
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
 	if(err)
@@ -377,13 +401,14 @@ int ctlra_impl_accept_dev(struct ctlra_t *ctlra,
 						    0 /* userdata */,
 						    0x0);
 	if(dev) {
+		/* Store the ctlra context into the dev pointer */
+		dev->ctlra_context = ctlra;
+
 		/* Application sets function pointers directly to device */
-		int accepted = ctlra->accept_dev_func(&dev->info,
-					&dev->event_func,
-					&dev->feedback_func,
-					&dev->remove_func,
-					&dev->event_func_userdata,
-					ctlra->accept_dev_func_userdata);
+		int accepted = ctlra->accept_dev_func(ctlra,
+						      &dev->info,
+						      dev,
+						      ctlra->accept_dev_func_userdata);
 
 		CTLRA_INFO(ctlra, "%s %s %s accepted\n", dev->info.vendor,
 			   dev->info.device, accepted ? "" : "not");

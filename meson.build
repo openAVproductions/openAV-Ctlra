@@ -40,12 +40,12 @@ if not midi_dep.found()
   message('MIDI = disabler')
 endif
 
+cairo_dep = dependency('cairo', required: false)
+
 subdir('ctlra')
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
 ctlra_includes = include_directories('ctlra')
-
-cairo_dep = dependency('cairo', required: false)
 
 if (get_option('examples') != '')
 	subdir('examples')
@@ -55,6 +55,11 @@ endif
 configure_file(input : 'examples/loopa/loopa_mk3.c',
     output : 'loopa_mk3.c',
     configuration : configuration_data())
+
+# generate configuration file
+configure_file(input : join_paths('ctlra', 'config.h.in'),
+               output : 'config.h',
+               configuration : conf_data)
 
 pkg = import('pkgconfig')
 pkg.generate(name: 'openav_ctlra',

@@ -3,3 +3,4 @@
 #define CTLRA_OPT_JACK "@jack@"
 #define CTLRA_OPT_LIBUSB "@libusb@"
 #define CTLRA_OPT_ALSA "@alsa@"
+#define CTLRA_OPT_CAIRO "@cairo@"
