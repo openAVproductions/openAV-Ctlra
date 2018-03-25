@@ -147,7 +147,9 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	static cairo_surface_t *img;
 	static cairo_t *cr;
 	if(!img) {
-		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+		/* TODO: cleanup img / cr */
+		//img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565,
 						 480, 272);
 		cr = cairo_create(img);
 	}
@@ -157,15 +159,43 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
-	cairo_set_source_rgb(cr, 1, 0, 1);
-	cairo_rectangle(cr, 10, 10, 10, 10);
-	cairo_fill(cr);
+	int x = 32;
+	int xoff = 62;
+
 	cairo_set_source_rgb(cr, 1, 0, 0);
-	cairo_rectangle(cr, 30, 10, 10, 10);
+	cairo_rectangle(cr, x, 20, 40, 40);
 	cairo_fill(cr);
+	x += xoff;
+
+	cairo_set_source_rgb(cr, 0, 1, 0);
+	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_fill(cr);
+	x += xoff;
+
+	cairo_set_source_rgb(cr, 0, 0, 1);
+	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_fill(cr);
+	x += xoff;
+
+	cairo_set_source_rgb(cr, 1, 1, 0);
+	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_fill(cr);
+	x += xoff;
+
+	cairo_set_source_rgb(cr, 1, 0, 1);
+	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_fill(cr);
+	x += xoff;
+
 	cairo_set_source_rgb(cr, 0, 1, 1);
-	cairo_rectangle(cr, xoff, 10, 10, 10);
+	cairo_rectangle(cr, x, 20, 40, 40);
 	cairo_fill(cr);
+	x += xoff;
+
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_fill(cr);
+	x += xoff;
 
 	if(screen_idx == 0) {
 		/* draw screen A */
