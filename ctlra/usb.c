@@ -164,6 +164,10 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 			if(tmp->info.vendor_id == desc.idVendor &&
 				tmp->info.device_id == desc.idProduct) {
+				/* as the device has just been unplugged,
+				 * its too late to update state, so banish
+				 * and then disconnect */
+				tmp->banished = 1;
 				ctlra_dev_disconnect(tmp);
 			}
 		}
