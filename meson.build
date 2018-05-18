@@ -41,6 +41,9 @@ if not midi_dep.found()
 endif
 
 cairo_dep = dependency('cairo', required: false)
+if(cairo_dep.found())
+  add_project_arguments('-DCTLRA_HAVE_CAIRO', language : 'c')
+endif
 
 subdir('ctlra')
 

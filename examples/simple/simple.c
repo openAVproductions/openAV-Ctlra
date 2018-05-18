@@ -4,10 +4,12 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include <cairo/cairo.h>
-
 #include "ctlra.h"
+
+#ifdef CTLRA_HAVE_CAIRO
+#include <cairo/cairo.h>
 #include "ctlra_cairo.h"
+#endif
 
 static volatile uint32_t done;
 static uint32_t led;
@@ -137,6 +139,9 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 				  void *userdata)
 {
 
+#ifndef CTLRA_HAVE_CAIRO
+	return 0;
+#else
 	/* do drawing using your favorite toolkit here: Cairo / QT etc.
 	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out
 	 * the cairo_surface_t from the AVTKA UI instance (it provides that
@@ -209,6 +214,7 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	 * handles this.
 	 */
 	return 1;
+#endif
 }
 
 int accept_dev_func(struct ctlra_t *ctlra,
