@@ -11,7 +11,11 @@
 #include "ctlra_cairo.h"
 #else
 /* small static compiled in bitmap library */
+#define SR_MODE_RGBA 1
 #include "sera.h"
+/* header only lib to save pixels to .bmp file for testing */
+#define LOADBMP_IMPLEMENTATION
+#include "loadbmp.h"
 #endif
 
 static volatile uint32_t done;
@@ -143,6 +147,7 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 {
 
 #ifndef CTLRA_HAVE_CAIRO
+	unsigned int width = 480, height = 272;
 	static sr_Buffer *buf;
 	if(!buf) {
 		buf = sr_newBuffer(480, 272);
@@ -158,11 +163,40 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	int x = xoff + 20;
 	sr_drawRect(buf, p, x, 20, 480 - 40, 272 - 40);
 
+	sr_Pixel *pixels = sr_getPixelDataRaw(buf);
+	for(int i = 0; i < width * height; i++) {
+		pixels[i].rgba.a = 0x0;
+		pixels[i].rgba.r = 0xff;
+		pixels[i].rgba.g = 0x51;
+		pixels[i].rgba.b = 0x0;
+	}
+
+	unsigned int err = loadbmp_encode_file("screenshot.bmp", (uint8_t *)pixels,
+					       width, height, LOADBMP_RGBA);
+	if (err)
+		printf("LoadBMP Load Error: %u\n", err);
+
+	sr_Pixel px = sr_getPixel(buf, 0, 0);
+	printf("px.word %x\n", px.word);
+
 	uint16_t *scn = (uint16_t *)pixel_data;
 	for(int j = 0; j < 272; j++) {
 		for(int i = 0; i < 480; i++) {
 			sr_Pixel px = sr_getPixel(buf, i, j);
-			*scn++ = px.rgba.r;
+			/* convert to BGR565 in byte-swapped LE */
+			/* blue 5, green LSB 3 bits */
+			uint16_t red = px.rgba.r;
+			uint16_t blue = px.rgba.b;
+			uint16_t green = px.rgba.g;
+
+			uint16_t b = (blue >> 3) & 0x1f;
+			uint16_t g = ((green >> 2) & 0x3f) << 5;
+			uint16_t r = ((red >> 3) & 0x1f) << 11;
+
+			/* byte-swap and store */
+			uint16_t tmp = (b | g | r);
+			*scn = ((tmp & 0x00FF) << 8) | ((tmp & 0xFF00) >> 8);
+			scn++;
 		}
 	}
 
