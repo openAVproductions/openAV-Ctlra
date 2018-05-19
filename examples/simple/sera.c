@@ -543,7 +543,11 @@ void sr_drawRect(sr_Buffer *b, sr_Pixel c, int x, int y, int w, int h) {
     x = r.w;
     p = b->pixels + r.x + (r.y + y) * b->w;
     while (x--) {
+#if 1
+      *p++ = c;
+#else
       blendPixel(&b->mode, p++, c);
+#endif
     }
   }
 }

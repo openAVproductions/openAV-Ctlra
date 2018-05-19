@@ -157,8 +157,9 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 		.word = 0,
 	};
 
-	sr_clear(buf, p);
+
 	sr_Pixel *pixels = sr_getPixelDataRaw(buf);
+	memset(pixels, 0, 480 * 272 * 4);
 
 	static sr_Pixel px_col[] = {
 		{.rgba.a = 0xff, .rgba.r = 255, .rgba.g = 0, .rgba.b = 0},
@@ -173,15 +174,17 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	for(int i = 0; i < 7; i++)
 		sr_drawRect(buf, px_col[i], 32 + i * 62, 20, 40, 40);
 
+	/*
 	unsigned int err = loadbmp_encode_file("screenshot.bmp", (uint8_t *)pixels,
 					       width, height, LOADBMP_RGBA);
 	if (err)
 		printf("LoadBMP Load Error: %u\n", err);
+	*/
 
 	uint16_t *scn = (uint16_t *)pixel_data;
 	for(int j = 0; j < 272; j++) {
 		for(int i = 0; i < 480; i++) {
-			sr_Pixel px = sr_getPixel(buf, i, j);
+			sr_Pixel px = *pixels++;
 			/* convert to BGR565 in byte-swapped LE */
 			/* blue 5, green LSB 3 bits */
 			uint16_t red = px.rgba.r;
