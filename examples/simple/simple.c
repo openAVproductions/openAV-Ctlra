@@ -152,32 +152,31 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	if(!buf) {
 		buf = sr_newBuffer(480, 272);
 	}
-	//sr_loadPixels(buf, pixel_data, SR_FMT_ARGB);
+
 	sr_Pixel p = {
 		.word = 0,
 	};
 
 	sr_clear(buf, p);
-
-	p.word = -1;
-	int x = xoff + 20;
-	sr_drawRect(buf, p, x, 20, 480 - 40, 272 - 40);
-
 	sr_Pixel *pixels = sr_getPixelDataRaw(buf);
-	for(int i = 0; i < width * height; i++) {
-		pixels[i].rgba.a = 0x0;
-		pixels[i].rgba.r = 0xff;
-		pixels[i].rgba.g = 0x51;
-		pixels[i].rgba.b = 0x0;
-	}
+
+	static sr_Pixel px_col[] = {
+		{.rgba.a = 0xff, .rgba.r = 255, .rgba.g = 0, .rgba.b = 0},
+		{.rgba.a = 0xff, .rgba.r = 0, .rgba.g = 255, .rgba.b = 0},
+		{.rgba.a = 0xff, .rgba.r = 0, .rgba.g = 0, .rgba.b = 255},
+		{.rgba.a = 0xff, .rgba.r = 0, .rgba.g = 0x7c, .rgba.b = 255},
+		{.rgba.a = 0xff, .rgba.r = 55, .rgba.g = 255, .rgba.b = 100},
+		{.rgba.a = 0xff, .rgba.r = 55, .rgba.g = 255, .rgba.b = 155},
+		{.rgba.a = 0xff, .rgba.r = 255, .rgba.g = 55, .rgba.b = 255},
+	};
+
+	for(int i = 0; i < 7; i++)
+		sr_drawRect(buf, px_col[i], 32 + i * 62, 20, 40, 40);
 
 	unsigned int err = loadbmp_encode_file("screenshot.bmp", (uint8_t *)pixels,
 					       width, height, LOADBMP_RGBA);
 	if (err)
 		printf("LoadBMP Load Error: %u\n", err);
-
-	sr_Pixel px = sr_getPixel(buf, 0, 0);
-	printf("px.word %x\n", px.word);
 
 	uint16_t *scn = (uint16_t *)pixel_data;
 	for(int j = 0; j < 272; j++) {
@@ -189,9 +188,10 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 			uint16_t blue = px.rgba.b;
 			uint16_t green = px.rgba.g;
 
-			uint16_t b = (blue >> 3) & 0x1f;
+			/* mask and shift */
+			uint16_t b = ((blue  >> 3) & 0x1f);
 			uint16_t g = ((green >> 2) & 0x3f) << 5;
-			uint16_t r = ((red >> 3) & 0x1f) << 11;
+			uint16_t r = ((red   >> 3) & 0x1f) << 11;
 
 			/* byte-swap and store */
 			uint16_t tmp = (b | g | r);
