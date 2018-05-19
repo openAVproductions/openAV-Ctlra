@@ -9,6 +9,9 @@
 #ifdef CTLRA_HAVE_CAIRO
 #include <cairo/cairo.h>
 #include "ctlra_cairo.h"
+#else
+/* small static compiled in bitmap library */
+#include "sera.h"
 #endif
 
 static volatile uint32_t done;
@@ -140,7 +143,30 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 {
 
 #ifndef CTLRA_HAVE_CAIRO
-	return 0;
+	static sr_Buffer *buf;
+	if(!buf) {
+		buf = sr_newBuffer(480, 272);
+	}
+	//sr_loadPixels(buf, pixel_data, SR_FMT_ARGB);
+	sr_Pixel p = {
+		.word = 0,
+	};
+
+	sr_clear(buf, p);
+
+	p.word = -1;
+	int x = xoff + 20;
+	sr_drawRect(buf, p, x, 20, 480 - 40, 272 - 40);
+
+	uint16_t *scn = (uint16_t *)pixel_data;
+	for(int j = 0; j < 272; j++) {
+		for(int i = 0; i < 480; i++) {
+			sr_Pixel px = sr_getPixel(buf, i, j);
+			*scn++ = px.rgba.r;
+		}
+	}
+
+	return (screen_idx == 0);
 #else
 	/* do drawing using your favorite toolkit here: Cairo / QT etc.
 	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out

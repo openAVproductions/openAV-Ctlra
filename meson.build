@@ -6,7 +6,7 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
-required_libs = ['libusb-1.0', 'alsa']
+required_libs = ['libusb-1.0', 'alsa', 'm']
 
 ctlra_lib_incs = []
 
@@ -20,7 +20,11 @@ if(get_option('avtka') == true)
     add_project_arguments('-DHAVE_AVTKA', language : 'c')
     required_libs += 'openav_avtka'
 endif
-ctlra_lib_deps = avtka_dep
+ctlra_lib_deps = []
+ctlra_lib_deps += avtka_dep
+
+m_dep = cc.find_library('m', required : false)
+ctlra_lib_deps += m_dep
 
 if get_option('firmata')
   firmatac = subproject('firmatac')
