@@ -90,6 +90,7 @@ void sr_setClip(sr_Buffer *b, sr_Rect r);
 void sr_reset(sr_Buffer *b);
 
 void sr_clear(sr_Buffer *b, sr_Pixel c);
+sr_Pixel *sr_getPixelDataRaw(sr_Buffer *b);
 sr_Pixel sr_getPixel(sr_Buffer *b, int x, int y);
 void sr_setPixel(sr_Buffer *b, sr_Pixel c, int x, int y);
 void sr_copyPixels(sr_Buffer *b, sr_Buffer *src, int x, int y,

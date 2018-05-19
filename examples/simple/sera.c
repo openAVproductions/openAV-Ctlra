@@ -265,6 +265,9 @@ void sr_clear(sr_Buffer *b, sr_Pixel c) {
   }
 }
 
+sr_Pixel *sr_getPixelDataRaw(sr_Buffer *b) {
+    return b->pixels;
+}
 
 sr_Pixel sr_getPixel(sr_Buffer *b, int x, int y) {
   sr_Pixel p;
