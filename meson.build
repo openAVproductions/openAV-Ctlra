@@ -10,7 +10,7 @@ required_libs = ['libusb-1.0', 'alsa', 'm']
 
 ctlra_lib_incs = []
 
-avtka_dep = dependency('openav_avtka', required: false)
+avtka_dep = dependency('openav_avtka_NOPE', required: false)
 if(get_option('avtka') == true)
     if (not avtka_dep.found())
       avtka_git = subproject('avtka')
@@ -25,6 +25,11 @@ ctlra_lib_deps += avtka_dep
 
 m_dep = cc.find_library('m', required : false)
 ctlra_lib_deps += m_dep
+
+
+#caira_git = subproject('caira')
+#caira_dep = caira_git.get_variable('caira_dep')
+caira_dep = dependency('openav_caira', required: true)
 
 if get_option('firmata')
   firmatac = subproject('firmatac')
@@ -44,7 +49,7 @@ if not midi_dep.found()
   message('MIDI = disabler')
 endif
 
-cairo_dep = dependency('cairo', required: false)
+cairo_dep = dependency('cairo_NOPE', required: false)
 if(cairo_dep.found())
   #add_project_arguments('-DCTLRA_HAVE_CAIRO', language : 'c')
 endif
