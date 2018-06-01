@@ -6,12 +6,19 @@
 #include "dsp_forga.h"
 
 struct smpla_t {
+	forga_t forga;
 };
 
 
 struct smpla_t *smpla_init(int rate)
 {
-	return calloc(1, sizeof(struct smpla_t));
+	struct smpla_t *s = calloc(1, sizeof(struct smpla_t));
+	if(!s)
+		return 0;
+
+	instanceInitforga(&s->forga, rate);
+
+	return s;
 }
 
 void smpla_free(struct smpla_t *s)

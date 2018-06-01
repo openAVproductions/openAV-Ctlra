@@ -90,23 +90,33 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 
 	switch(mm->mode) {
 	case MODE_PATTERN: {
+		/* layout all steps */
 		for(int i = 0; i < 16; i++) {
 			int on = sequencer_get_step(sequencer, i);
-			ctlra_dev_light_set(dev, 87 + i, 0x3fff3f00);
+			ctlra_dev_light_set(dev, 87 + i,
+					    col_dim(col, on ? 0.4 : 0.0));
 		}
+
+		/* highlight current step */
 		int step = sequencer_get_current_step( sequencer );
 		int on = sequencer_get_step(sequencer, step % 16);
-		ctlra_dev_light_set(dev, 87 + step, on ?  0x007f7f7f : 0x000f0f0f );
+		//printf("step %d on %d\n", step, on);
+		if(on) {
+			ctlra_dev_light_set(dev, 87 + step,
+					    col_dim(&grp_col[mm->grp_id], 1.0));
+		}
+
 		if(mm->shift_pressed) {
-			ctlra_dev_light_set(dev, 87 + mm->pattern_pad_id, 0x00ffffff);
+			printf("setting pattern %d\n", mm->pattern_pad_id);
+			ctlra_dev_light_set(dev, 87 + mm->pattern_pad_id,
+					    0xff0000ff);
 		}
 		break;
 		}
 	case MODE_GROUP:
 		for(int i = 0; i < 16; i++) {
 			ctlra_dev_light_set(dev, 87 + i,
-					    col_dim(&grp_col[i],
-						    i == mm->grp_id ? 1.0 : 0.05));
+				col_dim(&grp_col[i], i == mm->grp_id ? 1.0 : 0.05));
 		}
 		break;
 	case MODE_PADS:
@@ -114,22 +124,20 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 		for(int i = 0; i < 16; i++) {
 			ctlra_dev_light_set(dev, 87 + i,
 					    col_dim(&grp_col[mm->grp_id],
-						    mm->pads_pressed[i] ? 1.0 : 0.02));
+						    mm->pads_pressed[i] ? 1.0 : 0));
 		}
 		/* sequencer playbacks */
 		for(int i = 0; i < 16; i++) {
-			//if(mm->pads_seq_play[i] && !static_mute)
-			ctlra_dev_light_set(dev, 87 + i, 0xffffffff);
+			if(mm->pads_seq_play[i] && !static_mute)
+				ctlra_dev_light_set(dev, 87 + i, 0xffffffff);
 		}
 		break;
 	}
 
 	ctlra_dev_light_set(dev, 57, static_mute ? 0xffffffff : 0x3);
 	ctlra_dev_light_set(dev, 46, mm->mode == MODE_PADS ? 0xffffffff : 0x3);
+	ctlra_dev_light_set(dev, 50, mm->mode == MODE_GROUP ? 0xffffffff : 0x3);
 	ctlra_dev_light_set(dev, 49, mm->mode == MODE_PATTERN ? 0xffffffff : 0x3);
-
-	ctlra_dev_light_set(dev, 87, col_dim(&grp_col[mm->grp_id], 1.0));
-
 
 	ctlra_dev_light_flush(dev, 1);
 }
@@ -159,7 +167,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			case 33: if(pr) static_mute = !static_mute; break;
 			case 41: if(pr) mm->playing = 1; break;
 			case 43: if(pr) mm->playing = 0; break;
-			case 23:
+			case 26:
 				if(pr) {
 					mm->mode_prev = mm->mode;
 					mm->mode = MODE_GROUP;
@@ -171,6 +179,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 				printf("button %d\n", e->button.id);
 				break;
 			}
+			printf("button %d\n", e->button.id);
 			break;
 
 		case CTLRA_EVENT_ENCODER:
@@ -179,15 +188,32 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 		case CTLRA_EVENT_SLIDER:
 			break;
 
-		case CTLRA_EVENT_GRID:
-#if 0
+		case CTLRA_EVENT_GRID: {
 			pr = e->grid.pressed;
+			int p = ((3 - (e->grid.pos / 4)) * 4) + (e->grid.pos % 4);
+			printf("pad %d, mode = %d\n", p, mm->mode);
+			mm->pads_pressed[p] = pr;
 			if(mm->mode == MODE_GROUP) {
 				/* select new group here */
-				if(e->grid.pressed && e->grid.pos < 8) {
-					mm->grp_id = e->grid.pos;
+				if(e->grid.pressed && p < 8) {
+					mm->grp_id = p;
+					printf("new group %d\n", p);
+				}
+			} else if(mm->mode == MODE_PADS && pr) {
+			} else if(mm->mode == MODE_PATTERN && pr) {
+				printf("pattern pr\n");
+				if(mm->shift_pressed) {
+					mm->pattern_pad_id = p;
+				} else {
+					sequencer_toggle_step(sequencers[mm->pattern_pad_id], p);
 				}
 			}
+
+
+			} break;
+
+#if 0
+			pr = e->grid.pressed;
 			if(mm->mode == MODE_PATTERN && pr) {
 				if(mm->shift_pressed) {
 					mm->pattern_pad_id = e->grid.pos;
@@ -195,8 +221,6 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 				}
 				else
 					sequencer_toggle_step(sequencer, e->grid.pos);
-			}
-			if(mm->mode == MODE_PADS && pr) {
 			}
 			mm->pads_pressed[e->grid.pos] = e->grid.pressed;
 			break;
@@ -256,7 +280,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 
 void seqEventCb(int frame, int note, int velocity, void* userdata )
 {
-	printf("%s: %d, %d : %d\n", __func__, frame, note, velocity);
+	printf("%s: frame %d, note %d : vel %d\n", __func__, frame, note, velocity);
 	if(static_mute)
 		return;
 

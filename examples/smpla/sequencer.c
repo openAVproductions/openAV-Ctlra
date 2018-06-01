@@ -177,6 +177,7 @@ void sequencer_toggle_step( Sequencer* s, int step )
 	assert( step >= 0 );
 	assert( step < MAX_STEPS );
 	s->steps[step] = !s->steps[step];
+	printf("step %d = %d\n", step, s->steps[step]);
 }
 
 int sequencer_get_step( Sequencer* s, int step )
