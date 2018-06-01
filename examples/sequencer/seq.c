@@ -267,29 +267,23 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
-void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
+void demo_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		     void *userdata)
 {
 	//RtMidiOut *midiout = (RtMidiOut *)userdata;
 	//delete midiout;
 }
 
-int accept_dev_func(const struct ctlra_dev_info_t *info,
-                    ctlra_event_func *event_func,
-                    ctlra_feedback_func *feedback_func,
-                    ctlra_remove_dev_func *remove_func,
-                    void **userdata_for_event_func,
+int accept_dev_func(struct ctlra_t *ctlra,
+		    const struct ctlra_dev_info_t *info,
+		    struct ctlra_dev_t *dev,
                     void *userdata)
 {
 	printf("sequencer: accepting %s %s\n", info->vendor, info->device);
 
-	*event_func = demo_event_func;
-	*feedback_func = demo_feedback_func;
-	*remove_func = remove_dev_func;
-
 	if(info->device_id == 0x1500) {
 		/* jam */
-		*feedback_func = jam_feedback_func;
+		ctlra_dev_set_feedback_func(dev, jam_feedback_func);
 	}
 
 	/* MIDI output */
@@ -300,7 +294,12 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 		printf("%s: failed to open midi backend\n", __func__);
 		return 0;
 	}
-	*userdata_for_event_func = midi;
+
+	ctlra_dev_set_event_func(dev, demo_event_func);
+	ctlra_dev_set_feedback_func(dev, demo_feedback_func);
+	//ctlra_dev_set_screen_feedback_func(dev, demo_screen_redraw_func);
+	ctlra_dev_set_remove_func(dev, demo_remove_func);
+	ctlra_dev_set_callback_userdata(dev, midi);
 
 	return 1;
 }
