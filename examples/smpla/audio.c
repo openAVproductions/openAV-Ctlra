@@ -7,6 +7,7 @@
 
 struct smpla_t {
 	forga_t forga;
+	struct sampler_t *sampler;
 };
 
 
@@ -43,4 +44,3 @@ int smpla_process(struct smpla_t *s,
 
 	return 0;
 }
-
