@@ -40,6 +40,34 @@ int smpla_process(struct smpla_t *s,
 	uint32_t ret = sampler_process(s->sampler,
 				       audio,
 				       nframes);
+	(void)ret;
 
 	return 0;
 }
+
+int
+smpla_to_ctlra_write(struct smpla_t *s,
+		     smpla_rt_msg_func func,
+		     void *data, uint32_t size)
+{
+	/* message to enqueue into ring */
+	struct smpla_rt_msg m = {
+		.func = func,
+		.data_size = size,
+	};
+
+	/* TODO: check write space available */
+
+	uint32_t dw = zix_ring_write(s->to_rt_data_ring, data, size);
+	if(dw != size) {
+		printf("error didn't write data to ring: %d\n", dw);
+	}
+
+	uint32_t w = zix_ring_write(s->to_rt_ring, &m, sizeof(m));
+	if(w != sizeof(m)) {
+		printf("error didn't write full msg to ring: %d\n", w);
+	}
+
+	return 0;
+}
+

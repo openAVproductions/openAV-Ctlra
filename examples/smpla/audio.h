@@ -6,10 +6,27 @@
 #include <stdlib.h>
 
 #include "dsp_forga.h"
+#include "zix/ring.h"
+
+
+typedef void (*smpla_rt_msg_func)(void *self, void *func_data);
+
+/* message structure to pass through ring */
+struct smpla_rt_msg {
+	/* function to call */
+	smpla_rt_msg_func func;
+	/* size of data to consume */
+	uint32_t data_size;
+	/* padding to 16B */
+	uint32_t padding;
+};
 
 struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
+	/* rings for passing smpla_rt_msg structs */
+	ZixRing *to_rt_data_ring;
+	ZixRing *to_rt_ring;
 };
 
 /* define struct + functions here that can be bound to func ptr comms */
@@ -31,13 +48,24 @@ struct smpla_sample_state_t {
 void smpla_sample_state(struct smpla_t *s,
 			struct smpla_sample_state_t *d);
 
+/* cross-thread message passing */
+int smpla_to_ctlra_write(struct smpla_t *s,
+			 smpla_rt_msg_func func,
+			 void *data, uint32_t size);
+
+
+
 /* SAMPLER functions */
 struct sampler_t *sampler_init(int rate);
+uint32_t sampler_process(struct sampler_t *s,
+			 float *audio[],
+			 uint32_t nframes);
 
 /* SMPLA container functions */
 struct smpla_t *smpla_init(int rate);
 void smpla_free(struct smpla_t *s);
+
 int smpla_process(struct smpla_t *s,
-                  uint32_t nframes,
-                  const float *inputs[],
-                  float *outputs[]);
+		  uint32_t nframes,
+		  const float *inputs[],
+		  float *outputs[]);

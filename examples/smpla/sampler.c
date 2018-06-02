@@ -4,7 +4,7 @@
 
 struct buffer_t {
 	/* interleaved audio */
-	float *audio;
+	const float *audio;
 	uint32_t frames;
 	uint8_t channels;
 	uint8_t loaded;
