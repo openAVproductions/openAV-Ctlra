@@ -9,12 +9,9 @@
 #include <jack/jack.h>
 
 #include "ctlra.h"
-#include "sequencer.h"
 #include "audio.h"
 
 static volatile uint32_t done;
-
-static Sequencer *sequencers[16];
 
 /* TODO: use LV2 audio IO in future - so static is no issue */
 static jack_client_t* client;
@@ -98,7 +95,7 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 	int static_mute = 0;
 
 	const struct col_t *col = &grp_col[mm->grp_id];
-	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
+	struct Sequencer *sequencer = s->sequencers[mm->pattern_pad_id];
 
 	switch(mm->mode) {
 	case MODE_PATTERN: {
@@ -228,13 +225,14 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 					.frame_start = 0,
 					.frame_end = -1,
 				};
-				smpla_sample_state(s, &d);
+				smpla_to_rt_write(s, smpla_sample_state,
+						  &d, sizeof(d));
 			} else if(mm->mode == MODE_PATTERN && pr) {
 				printf("pattern pr\n");
 				if(mm->shift_pressed) {
 					mm->pattern_pad_id = p;
 				} else {
-					sequencer_toggle_step(sequencers[mm->pattern_pad_id], p);
+					sequencer_toggle_step(s->sequencers[mm->pattern_pad_id], p);
 				}
 			}
 
@@ -360,7 +358,7 @@ int main()
 		sequencer_set_length(sequencer, sr * 0.8);
 		sequencer_set_num_steps(sequencer, 16);
 		sequencer_set_note(sequencer, i);
-		sequencers[i] = sequencer;
+		s->sequencers[i] = sequencer;
 	}
 
 	struct mm_t *mm = calloc(1, sizeof(struct mm_t));

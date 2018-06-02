@@ -5,13 +5,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+
+#include "sequencer.h"
+
 #include "dsp_forga.h"
+
 #include "zix/ring.h"
 #include "zix/thread.h"
 
 struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
+	Sequencer *sequencers[16];
+
 
 	void *controller_data;
 
@@ -56,9 +62,8 @@ struct smpla_sample_state_t {
 void smpla_sample_state(struct smpla_t *s, void *data);
 
 /* cross-thread message passing */
-int smpla_to_ctlra_write(struct smpla_t *s,
-			 smpla_rt_msg_func func,
-			 void *data, uint32_t size);
+int smpla_to_rt_write(struct smpla_t *s, smpla_rt_msg_func func,
+		      void *data, uint32_t size);
 
 
 

@@ -19,7 +19,7 @@ ctlra_thread_func(void *ud)
 			break;
 
 		/* TODO: replace with audio-thread time handling */
-		const uint32_t sleep_time = 2000 * 1000 / (4800 / 128);
+		const uint32_t sleep_time = 2000 * 1000 / (48000 / 128);
 
 		if(!s->ctlra_thread_running) {
 			usleep(sleep_time);
@@ -27,12 +27,6 @@ ctlra_thread_func(void *ud)
 		}
 
 		ctlra_idle_iter(s->ctlra);
-		for(int i = 0; i < 16; i++) {
-			/*
-			struct Sequencer *sequencer = sequencers[i];
-			sequencer_process( sequencer, 128 );
-			*/
-		}
 		usleep(sleep_time);
 	}
 
@@ -69,7 +63,7 @@ struct smpla_t *smpla_init(int rate)
 	};
 	smpla_sample_state(s, &d);
 
-	int ret = smpla_to_ctlra_write(s, smpla_sample_state, &d, sizeof(d));
+	int ret = smpla_to_rt_write(s, smpla_sample_state, &d, sizeof(d));
 	printf("write msg %d\n", ret);
 
 	ZixStatus status = zix_thread_create(&s->ctlra_thread,
@@ -126,6 +120,11 @@ int smpla_process(struct smpla_t *s,
 			m.func(s, buf);
 	}
 
+	for(int i = 0; i < 16; i++) {
+		struct Sequencer *sequencer = s->sequencers[i];
+		sequencer_process(sequencer, nframes);
+	}
+
 	for(int i = 0; i < nframes; i++) {
 		out_l[i] = in_l[i];
 		out_r[i] = in_r[i];
@@ -141,7 +140,7 @@ int smpla_process(struct smpla_t *s,
 }
 
 int
-smpla_to_ctlra_write(struct smpla_t *s,
+smpla_to_rt_write(struct smpla_t *s,
 		     smpla_rt_msg_func func,
 		     void *data, uint32_t size)
 {
