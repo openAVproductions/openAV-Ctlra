@@ -370,6 +370,8 @@ int main()
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("sequencer: Connected controllers %d\n", num_devs);
 
+	s->ctlra = ctlra;
+
 #ifdef SMPLA_JACK
 	if(jack_set_process_callback(client, process, s)) {
 		printf("error setting JACK callback\n");
@@ -386,14 +388,7 @@ int main()
 	uint32_t sleep = sr / 128;
 
 	while(!done) {
-		ctlra_idle_iter(ctlra);
-		if(mm_static.playing) {
-			for(int i = 0; i < 16; i++) {
-				struct Sequencer *sequencer = sequencers[i];
-				sequencer_process( sequencer, 128 );
-			}
-		}
-		usleep(2000 * 1000 / sleep);
+		usleep(1000*1000);
 	}
 
 	ctlra_exit(ctlra);

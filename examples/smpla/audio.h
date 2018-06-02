@@ -7,13 +7,20 @@
 
 #include "dsp_forga.h"
 #include "zix/ring.h"
+#include "zix/thread.h"
 
 struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
+
+	struct ctlra_t *ctlra;
 	/* rings for passing smpla_rt_msg structs */
 	ZixRing *to_rt_data_ring;
 	ZixRing *to_rt_ring;
+	ZixThread ctlra_thread;
+	volatile uint32_t ctlra_thread_running;
+	volatile uint32_t ctlra_thread_quit_now;
+	volatile uint32_t ctlra_thread_quit_done;
 };
 
 /* message function prototype */
@@ -67,3 +74,4 @@ int smpla_process(struct smpla_t *s,
 		  uint32_t nframes,
 		  const float *inputs[],
 		  float *outputs[]);
+

@@ -2,6 +2,43 @@
 #include "audio.h"
 
 #include <stdlib.h>
+#include <unistd.h>
+
+#include <ctlra/ctlra.h>
+
+
+/* ctlra thread */
+static void *
+ctlra_thread_func(void *ud)
+{
+	struct smpla_t *s = ud;
+	usleep(500 * 1000);
+
+	while(1) {
+		if(s->ctlra_thread_quit_now)
+			break;
+
+		/* TODO: replace with audio-thread time handling */
+		const uint32_t sleep_time = 2000 * 1000 / (4800 / 128);
+
+		if(!s->ctlra_thread_running) {
+			usleep(sleep_time);
+			continue;
+		}
+
+		ctlra_idle_iter(s->ctlra);
+		for(int i = 0; i < 16; i++) {
+			/*
+			struct Sequencer *sequencer = sequencers[i];
+			sequencer_process( sequencer, 128 );
+			*/
+		}
+		usleep(sleep_time);
+	}
+
+	s->ctlra_thread_quit_done = 1;
+	return 0;
+}
 
 struct smpla_t *smpla_init(int rate)
 {
@@ -34,6 +71,16 @@ struct smpla_t *smpla_init(int rate)
 
 	int ret = smpla_to_ctlra_write(s, smpla_sample_state, &d, sizeof(d));
 	printf("write msg %d\n", ret);
+
+	ZixStatus status = zix_thread_create(&s->ctlra_thread,
+					     80000,
+					     ctlra_thread_func,
+					     s);
+	if(status != ZIX_STATUS_SUCCESS) {
+		printf("ERROR launching zix thread!!\n");
+	}
+
+	s->ctlra_thread_running = 1;
 
 	return s;
 }
