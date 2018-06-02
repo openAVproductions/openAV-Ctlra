@@ -68,7 +68,7 @@ uint32_t col_dim(const struct col_t *col, float bri)
 }
 
 
-static struct mm_t
+struct mm_t
 {
 	/* 0 Group   : Selects active group
 	 * 1 Pads    : Plays different notes
@@ -90,12 +90,15 @@ static struct mm_t
 
 	/* Pattern */
 	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
-} mm_static;
+};
 
 void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* group, pads, sequencer modes */
-	struct mm_t *mm = &mm_static;
+	struct smpla_t *s = d;
+
+	struct mm_t *mm = s->controller_data;
+
 	const struct col_t *col = &grp_col[mm->grp_id];
 	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
 
@@ -158,7 +161,8 @@ void machine3_event_func(struct ctlra_dev_t* dev,
                      struct ctlra_event_t** events,
                      void *userdata)
 {
-	struct mm_t *mm = &mm_static;
+	struct smpla_t *s = userdata;
+	struct mm_t *mm = s->controller_data;
 	uint8_t msg[3] = {0};
 
 	for(uint32_t i = 0; i < num_events; i++) {
@@ -282,25 +286,17 @@ int accept_dev_func(struct ctlra_t *ctlra,
 		    struct ctlra_dev_t *dev,
                     void *userdata)
 {
-	ctlra_dev_set_feedback_func(dev, machine3_feedback_func);
 	ctlra_dev_set_event_func(dev, machine3_event_func);
 	ctlra_dev_set_feedback_func(dev, machine3_feedback_func);
 	//ctlra_dev_set_screen_feedback_func(dev, machine3_screen_redraw_func);
 	ctlra_dev_set_remove_func(dev, machine3_remove_func);
-	ctlra_dev_set_callback_userdata(dev, &mm_static);
+	ctlra_dev_set_callback_userdata(dev, userdata);
 
 	/* mk3 */
 	if(info->device_id == 0x1600) {
-		printf("smpla: accepting %s %s\n", info->vendor, info->device);
-		ctlra_dev_set_feedback_func(dev, machine3_feedback_func);
-		ctlra_dev_set_event_func(dev, machine3_event_func);
-		ctlra_dev_set_feedback_func(dev, machine3_feedback_func);
-		//ctlra_dev_set_screen_feedback_func(dev, machine3_screen_redraw_func);
-		ctlra_dev_set_remove_func(dev, machine3_remove_func);
-		ctlra_dev_set_callback_userdata(dev, &mm_static);
 	}
 
-	printf("smpla: NOT using %s %s\n", info->vendor, info->device);
+	printf("smpla: accepting %s %s\n", info->vendor, info->device);
 	return 1;
 }
 
@@ -310,8 +306,10 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 	if(static_mute)
 		return;
 
-	memset(mm_static.pads_seq_play, 0, sizeof(mm_static.pads_seq_play));
-	mm_static.pads_seq_play[note] = velocity;
+	struct smpla_t *s = userdata;
+	struct mm_t *mm = s->controller_data;
+	memset(mm->pads_seq_play, 0, sizeof(mm->pads_seq_play));
+	mm->pads_seq_play[note] = velocity;
 
 	struct smpla_sample_state_t d = {
 		.pad_id = 0,
@@ -357,17 +355,19 @@ int main()
 
 	for(int i = 0; i < 16; i++) {
 		struct Sequencer *sequencer = sequencer_new(sr);
-		sequencer_set_callback(sequencer, seqEventCb, 0x0);
+		sequencer_set_callback(sequencer, seqEventCb, s);
 		sequencer_set_length(sequencer, sr * 0.8);
 		sequencer_set_num_steps(sequencer, 16);
 		sequencer_set_note(sequencer, i);
 		sequencers[i] = sequencer;
 	}
 
-	mm_static.mode = MODE_PADS;
+	struct mm_t *mm = calloc(1, sizeof(struct mm_t));
+	mm->mode = MODE_PADS;
+	s->controller_data = mm;
 
 	struct ctlra_t *ctlra = ctlra_create(NULL);
-	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	int num_devs = ctlra_probe(ctlra, accept_dev_func, s);
 	printf("sequencer: Connected controllers %d\n", num_devs);
 
 	s->ctlra = ctlra;

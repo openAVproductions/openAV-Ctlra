@@ -13,6 +13,8 @@ struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
 
+	void *controller_data;
+
 	struct ctlra_t *ctlra;
 	/* rings for passing smpla_rt_msg structs */
 	ZixRing *to_rt_data_ring;
