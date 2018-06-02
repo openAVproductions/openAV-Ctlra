@@ -5,19 +5,21 @@
 #include <signal.h>
 #include <string.h>
 
-#define SMPLA_JACK
+//#define SMPLA_JACK
+#ifdef SMPLA_JACK
 #include <jack/jack.h>
+
+/* TODO: use LV2 audio IO in future - so static is no issue */
+static jack_client_t* client;
+static jack_port_t* outputPortL;
+static jack_port_t* outputPortR;
+#endif
 
 #include <caira.h>
 #include <ctlra.h>
 #include "audio.h"
 
 static volatile uint32_t done;
-
-/* TODO: use LV2 audio IO in future - so static is no issue */
-static jack_client_t* client;
-static jack_port_t* outputPortL;
-static jack_port_t* outputPortR;
 
 #define MODE_GROUP   0
 #define MODE_PADS    1
@@ -373,6 +375,7 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 
 }
 
+#ifdef SMPLA_JACK
 int process(jack_nframes_t nframes, void* arg)
 {
 	struct smpla_t *s = arg;
@@ -390,16 +393,18 @@ int process(jack_nframes_t nframes, void* arg)
 
 	return 0;
 }
+#endif
 
 
 int main()
 {
 	signal(SIGINT, sighndlr);
 
+	int sr = 48000;
 #ifdef SMPLA_JACK
 	/* setup JACK */
 	client = jack_client_open("Smpla", JackNullOption, 0, 0 );
-	int sr = jack_get_sample_rate(client);
+	sr = jack_get_sample_rate(client);
 #endif
 
 	s = smpla_init(sr);
@@ -448,7 +453,7 @@ int main()
 
 	ctlra_exit(ctlra);
 
-	usleep(2000);
+	usleep(700);
 
 	return 0;
 }
