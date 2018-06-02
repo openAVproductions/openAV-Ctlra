@@ -53,19 +53,6 @@ struct smpla_t *smpla_init(int rate)
 		printf("ERROR creating zix ctlra->rt DATA ring\n");
 	}
 
-	/* testing */
-	struct smpla_sample_state_t d = {
-		.pad_id = 0,
-		.action = 1,
-		.sample_id = 0,
-		.frame_start = 0,
-		.frame_end = -1,
-	};
-	smpla_sample_state(s, &d);
-
-	int ret = smpla_to_rt_write(s, smpla_sample_state, &d, sizeof(d));
-	printf("write msg %d\n", ret);
-
 	ZixStatus status = zix_thread_create(&s->ctlra_thread,
 					     80000,
 					     ctlra_thread_func,

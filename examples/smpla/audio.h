@@ -20,6 +20,8 @@ struct smpla_t {
 
 
 	void *controller_data;
+	void *cairo_img;
+	void *cairo_cr;
 
 	struct ctlra_t *ctlra;
 	/* rings for passing smpla_rt_msg structs */

@@ -3,4 +3,4 @@ example_src = files('smpla.c', 'sequencer.c', 'audio.c', 'sampler.c', 'audio_sam
 example_src += files(join_paths('zix','ring.c'))
 
 thread_dep = dependency('threads')
-dependencies += [m_dep, jack_dep, thread_dep]
+dependencies += [m_dep, jack_dep, thread_dep, caira_dep]

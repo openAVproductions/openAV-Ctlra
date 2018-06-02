@@ -8,7 +8,8 @@
 #define SMPLA_JACK
 #include <jack/jack.h>
 
-#include "ctlra.h"
+#include <caira.h>
+#include <ctlra.h>
 #include "audio.h"
 
 static volatile uint32_t done;
@@ -60,7 +61,6 @@ uint32_t col_dim(const struct col_t *col, float bri)
 	uint32_t intCol = *(uint32_t *)&c;
 	return intCol;
 }
-
 
 struct mm_t
 {
@@ -149,6 +149,58 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 	ctlra_dev_light_set(dev, 49, mm->mode == MODE_PATTERN ? 0xffffffff : 0x3);
 
 	ctlra_dev_light_flush(dev, 1);
+}
+
+/* TODO: remove dependency on this */
+#define SR_CHANNELS r, g, b, a
+typedef union {
+  unsigned int word;
+  struct { unsigned char SR_CHANNELS; } rgba;
+} sr_Pixel;
+
+int32_t
+machine3_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
+			    uint8_t *pixel_data, uint32_t bytes,
+			    struct ctlra_screen_zone_t *redraw_zone,
+			    void *userdata)
+{
+	struct smpla_t *s = userdata;
+
+	caira_surface_t *img = s->cairo_img;
+	caira_t *cr = s->cairo_cr;
+
+	caira_set_source_rgb(cr, 1, 0, 0);
+	caira_rectangle(cr, 0, 0, 480, 272);
+	caira_fill(cr);
+
+	int stride = caira_image_surface_get_stride(img);
+	unsigned char *data = caira_image_surface_get_data(img);
+
+	sr_Pixel *pixels = (sr_Pixel *)data;
+	uint16_t *scn = (uint16_t *)pixel_data;
+	for(int j = 0; j < 272; j++) {
+		for(int i = 0; i < 480; i++) {
+			sr_Pixel px = *pixels++;
+			/* convert to BGR565 in byte-swapped LE */
+			/* blue 5, green LSB 3 bits */
+			uint16_t red = px.rgba.r;
+			uint16_t green = px.rgba.g;
+			uint16_t blue = px.rgba.b;
+
+			/* mask and shift */
+			uint16_t b = ((blue  >> 3) & 0x1f);
+			uint16_t g = ((green >> 2) & 0x3f) << 5;
+			uint16_t r = ((red   >> 3) & 0x1f) << 11;
+
+			/* byte-swap and store */
+			uint16_t tmp = (b | g | r);
+			*scn = ((tmp & 0x00FF) << 8) | ((tmp & 0xFF00) >> 8);
+			scn++;
+		}
+	}
+
+
+	return 1;
 }
 
 void machine3_event_func(struct ctlra_dev_t* dev,
@@ -285,7 +337,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 {
 	ctlra_dev_set_event_func(dev, machine3_event_func);
 	ctlra_dev_set_feedback_func(dev, machine3_feedback_func);
-	//ctlra_dev_set_screen_feedback_func(dev, machine3_screen_redraw_func);
+	ctlra_dev_set_screen_feedback_func(dev, machine3_screen_redraw_func);
 	ctlra_dev_set_remove_func(dev, machine3_remove_func);
 	ctlra_dev_set_callback_userdata(dev, userdata);
 
@@ -352,6 +404,10 @@ int main()
 
 	s = smpla_init(sr);
 
+
+	s->cairo_img = caira_image_surface_create(CAIRA_FORMAT_ARGB32, 480, 272);
+	s->cairo_cr = caira_create(s->cairo_img);
+
 	for(int i = 0; i < 16; i++) {
 		struct Sequencer *sequencer = sequencer_new(sr);
 		sequencer_set_callback(sequencer, seqEventCb, s);
@@ -391,6 +447,8 @@ int main()
 	}
 
 	ctlra_exit(ctlra);
+
+	usleep(2000);
 
 	return 0;
 }
