@@ -12,6 +12,29 @@ struct smpla_t *smpla_init(int rate)
 	instanceInitforga(&s->forga, rate);
 	s->sampler = sampler_init(rate);
 
+	/* initialize rings for x-thread messaging */
+	s->to_rt_ring = zix_ring_new(4096);
+	if(!s->to_rt_ring) {
+		printf("ERROR creating zix ctlra->rt ring\n");
+	}
+	s->to_rt_data_ring = zix_ring_new(4 * 4096);
+	if(!s->to_rt_data_ring) {
+		printf("ERROR creating zix ctlra->rt DATA ring\n");
+	}
+
+	/* testing */
+	struct smpla_sample_state_t d = {
+		.pad_id = 0,
+		.action = 1,
+		.sample_id = 0,
+		.frame_start = 0,
+		.frame_end = -1,
+	};
+	smpla_sample_state(s, &d);
+
+	int ret = smpla_to_ctlra_write(s, smpla_sample_state, &d, sizeof(d));
+	printf("write msg %d\n", ret);
+
 	return s;
 }
 
@@ -30,6 +53,31 @@ int smpla_process(struct smpla_t *s,
 	float *out_l = outputs[0];
 	float *out_r = outputs[1];
 
+	/* poll ring for functions to execute in RT context */
+	struct smpla_rt_msg m = {0};
+	uint32_t r = zix_ring_read(s->to_rt_ring, &m, sizeof(m));
+	if(r == 0) {
+		/* empty ring == no events available */
+	} else if(r != sizeof(m)) {
+		/* TODO: error handle here? Programming issue detected */
+	} else {
+		/* we have a f2_msg now, with a function pointer and a
+		 * size of data to consume. Call the function with the
+		 * read head of the ringbuffer, allowing function to use
+		 * data from the ring, then consume data_size from the data
+		 * ring so the next message pulls the next block of info.
+		 */
+		/* TODO: suboptimal usage here, because we copy the data
+		 * out and into a linear array - but it probably already is
+		 * Use a bip-buffer mechanism to avoid the copy here */
+		const uint32_t ds = 256;
+		char buf[ds];
+		uint32_t read_size = m.data_size > ds ? ds : m.data_size;
+		uint32_t data_r = zix_ring_read(s->to_rt_data_ring,
+						buf, read_size);
+		if(m.func && data_r == read_size)
+			m.func(s, buf);
+	}
 
 	for(int i = 0; i < nframes; i++) {
 		out_l[i] = in_l[i];

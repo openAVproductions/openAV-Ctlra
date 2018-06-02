@@ -51,8 +51,9 @@ sampler_init(int rate)
 }
 
 void
-smpla_sample_state(struct smpla_t *smpla, struct smpla_sample_state_t *d)
+smpla_sample_state(struct smpla_t *smpla, void* data)
 {
+	struct smpla_sample_state_t *d = data;
 	assert(smpla);
 	assert(d);
 	printf("func %s\n", __func__);
