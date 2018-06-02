@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <string.h>
 
+#define SMPLA_JACK
 #include <jack/jack.h>
 
 #include "ctlra.h"
@@ -311,6 +312,16 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 
 	memset(mm_static.pads_seq_play, 0, sizeof(mm_static.pads_seq_play));
 	mm_static.pads_seq_play[note] = velocity;
+
+	struct smpla_sample_state_t d = {
+		.pad_id = 0,
+		.action = 1,
+		.sample_id = note,
+		.frame_start = 0,
+		.frame_end = -1,
+	};
+	smpla_sample_state(s, &d);
+
 }
 
 int process(jack_nframes_t nframes, void* arg)
@@ -336,9 +347,11 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
+#ifdef SMPLA_JACK
 	/* setup JACK */
 	client = jack_client_open("Smpla", JackNullOption, 0, 0 );
 	int sr = jack_get_sample_rate(client);
+#endif
 
 	s = smpla_init(sr);
 
@@ -357,6 +370,7 @@ int main()
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("sequencer: Connected controllers %d\n", num_devs);
 
+#ifdef SMPLA_JACK
 	if(jack_set_process_callback(client, process, s)) {
 		printf("error setting JACK callback\n");
 	}
@@ -366,16 +380,18 @@ int main()
 	outputPortR = jack_port_register(client, "output_r",
 	                                JACK_DEFAULT_AUDIO_TYPE,
 	                                JackPortIsOutput, 0 );
-
 	jack_activate(client);
+#endif
 
 	uint32_t sleep = sr / 128;
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
-		for(int i = 0; i < 16; i++) {
-			struct Sequencer *sequencer = sequencers[i];
-			sequencer_process( sequencer, 128 );
+		if(mm_static.playing) {
+			for(int i = 0; i < 16; i++) {
+				struct Sequencer *sequencer = sequencers[i];
+				sequencer_process( sequencer, 128 );
+			}
 		}
 		usleep(2000 * 1000 / sleep);
 	}

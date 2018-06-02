@@ -88,8 +88,6 @@ voice_process(struct voice_t *v,
 	uint32_t playhead = v->playhead * 2;
 	v->playhead += nframes;
 
-	printf("voice %p, playhead %u\n", v, playhead);
-
 	for(int i = 0; i < nframes; i++) {
 		l[i] += buffer->audio[playhead++];
 		r[i] += buffer->audio[playhead++];
