@@ -1,5 +1,7 @@
 #include "audio.h"
 
+#include "audio_samples.h"
+
 struct buffer_t {
 	/* interleaved audio */
 	float *audio;
@@ -37,13 +39,13 @@ sampler_init(int rate)
 	if(!s)
 		return 0;
 
-	const uint32_t size = rate * 4;
-	s->buffers[0].audio = malloc(size * 2 * sizeof(float));
-	for(int i = 0; i < size; i++) {
-		s->buffers[0].audio[i] = (float)rand()/(float)(RAND_MAX);
-	}
+	s->buffers[0].audio = hat_wavetable;
+	s->buffers[0].frames = hat_size/2;
 	s->buffers[0].loaded = 1;
-	s->buffers[0].frames = size;
+
+	s->buffers[1].audio = kick_wavetable;
+	s->buffers[1].frames = kick_size/2;
+	s->buffers[1].loaded = 1;
 
 	return s;
 }
@@ -58,7 +60,7 @@ smpla_sample_state(struct smpla_t *smpla, struct smpla_sample_state_t *d)
 
 	struct voice_t v = {
 		.active = 1,
-		.buffer = 0,
+		.buffer = d->sample_id,
 		.playhead = d->frame_start,
 		.end = d->frame_end,
 	};

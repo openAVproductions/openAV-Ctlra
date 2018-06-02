@@ -10,9 +10,7 @@ struct smpla_t *smpla_init(int rate)
 		return 0;
 
 	instanceInitforga(&s->forga, rate);
-
 	s->sampler = sampler_init(rate);
-
 
 	return s;
 }

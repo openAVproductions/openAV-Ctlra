@@ -220,7 +220,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 					 * 2) record:
 					 */
 					.action = 1,
-					.sample_id = 0,
+					.sample_id = p,
 					.frame_start = 0,
 					.frame_end = -1,
 				};
