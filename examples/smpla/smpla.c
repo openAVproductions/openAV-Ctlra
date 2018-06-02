@@ -5,13 +5,20 @@
 #include <signal.h>
 #include <string.h>
 
-#include "ctlra.h"
+#include <jack/jack.h>
 
+#include "ctlra.h"
 #include "sequencer.h"
+#include "audio.h"
 
 static volatile uint32_t done;
 
 static Sequencer *sequencers[16];
+
+/* TODO: use LV2 audio IO in future - so static is no issue */
+static jack_client_t* client;
+static jack_port_t* outputPortL;
+static jack_port_t* outputPortR;
 
 #define MODE_GROUP   0
 #define MODE_PADS    1
@@ -288,16 +295,37 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 	mm_static.pads_seq_play[note] = velocity;
 }
 
-#define SR 48000
+int process(jack_nframes_t nframes, void* arg)
+{
+	struct smpla_t *s = arg;
+
+	float* buf_l = (float*)jack_port_get_buffer (outputPortL, nframes);
+	memset(buf_l, 0, nframes * sizeof(float));
+	float* buf_r = (float*)jack_port_get_buffer (outputPortR, nframes);
+	memset(buf_r, 0, nframes * sizeof(float));
+
+	const float *ins[2] = {buf_l, buf_r};
+	float *outs[2] = {buf_l, buf_r};
+
+	int ret = smpla_process(s, nframes, ins, outs);
+	(void)ret;
+
+	return 0;
+}
+
 
 int main()
 {
 	signal(SIGINT, sighndlr);
 
+	/* setup JACK */
+	client = jack_client_open("Smpla", JackNullOption, 0, 0 );
+	int sr = jack_get_sample_rate(client);
+
 	for(int i = 0; i < 16; i++) {
-		struct Sequencer *sequencer = sequencer_new(SR);
+		struct Sequencer *sequencer = sequencer_new(sr);
 		sequencer_set_callback(sequencer, seqEventCb, 0x0);
-		sequencer_set_length(sequencer, SR * 0.8);
+		sequencer_set_length(sequencer, sr * 0.8);
 		sequencer_set_num_steps(sequencer, 16);
 		sequencer_set_note(sequencer, i);
 		sequencers[i] = sequencer;
@@ -309,7 +337,21 @@ int main()
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("sequencer: Connected controllers %d\n", num_devs);
 
-	uint32_t sleep = SR / 128;
+	struct smpla_t *s = smpla_init(sr);
+
+	if(jack_set_process_callback(client, process, s)) {
+		printf("error setting JACK callback\n");
+	}
+	outputPortL = jack_port_register(client, "output_l",
+	                                JACK_DEFAULT_AUDIO_TYPE,
+	                                JackPortIsOutput, 0 );
+	outputPortR = jack_port_register(client, "output_r",
+	                                JACK_DEFAULT_AUDIO_TYPE,
+	                                JackPortIsOutput, 0 );
+
+	jack_activate(client);
+
+	uint32_t sleep = sr / 128;
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
