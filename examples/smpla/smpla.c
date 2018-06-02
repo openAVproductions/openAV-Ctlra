@@ -25,9 +25,6 @@ static jack_port_t* outputPortR;
 #define MODE_PADS    1
 #define MODE_PATTERN 2
 
-/* When muted, no sequencer events get played */
-static uint8_t static_mute;
-
 static struct smpla_t *s;
 
 
@@ -98,6 +95,7 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 	struct smpla_t *s = d;
 
 	struct mm_t *mm = s->controller_data;
+	int static_mute = 0;
 
 	const struct col_t *col = &grp_col[mm->grp_id];
 	struct Sequencer *sequencer = sequencers[mm->pattern_pad_id];
@@ -164,6 +162,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 	struct smpla_t *s = userdata;
 	struct mm_t *mm = s->controller_data;
 	uint8_t msg[3] = {0};
+	int static_mute = 0;
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
@@ -303,6 +302,8 @@ int accept_dev_func(struct ctlra_t *ctlra,
 void seqEventCb(int frame, int note, int velocity, void* userdata )
 {
 	printf("%s: frame %d, note %d : vel %d\n", __func__, frame, note, velocity);
+
+	int static_mute = 0;
 	if(static_mute)
 		return;
 
