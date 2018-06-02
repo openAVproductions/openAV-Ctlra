@@ -2,13 +2,6 @@
 #include "audio.h"
 
 #include <stdlib.h>
-#include "dsp_forga.h"
-
-struct smpla_t {
-	forga_t forga;
-	struct sampler_t *sampler;
-};
-
 
 struct smpla_t *smpla_init(int rate)
 {
@@ -17,6 +10,9 @@ struct smpla_t *smpla_init(int rate)
 		return 0;
 
 	instanceInitforga(&s->forga, rate);
+
+	s->sampler = sampler_init(rate);
+
 
 	return s;
 }
@@ -36,10 +32,16 @@ int smpla_process(struct smpla_t *s,
 	float *out_l = outputs[0];
 	float *out_r = outputs[1];
 
+
 	for(int i = 0; i < nframes; i++) {
 		out_l[i] = in_l[i];
 		out_r[i] = in_r[i];
 	}
+
+	float *audio[2] = {out_l, out_r};
+	uint32_t ret = sampler_process(s->sampler,
+				       audio,
+				       nframes);
 
 	return 0;
 }

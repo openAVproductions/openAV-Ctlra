@@ -45,13 +45,13 @@ typedef struct {
 
 } forga_t;
 
-forga_t* newforga()
+static inline forga_t* newforga()
 {
 	forga_t* dsp = (forga_t*)calloc(1, sizeof(forga_t));
 	return dsp;
 }
 
-void deleteforga(forga_t* dsp)
+static inline void deleteforga(forga_t* dsp)
 {
 	free(dsp);
 }
@@ -69,22 +69,22 @@ void metadataforga(MetaGlue* m)
 }
 */
 
-int getSampleRateforga(forga_t* dsp)
+static inline int getSampleRateforga(forga_t* dsp)
 {
 	return dsp->fSamplingFreq;
 }
 
-int getNumInputsforga(forga_t* dsp)
+static inline int getNumInputsforga(forga_t* dsp)
 {
 	return 0;
 
 }
-int getNumOutputsforga(forga_t* dsp)
+static inline int getNumOutputsforga(forga_t* dsp)
 {
 	return 1;
 
 }
-int getInputRateforga(forga_t* dsp, int channel)
+static inline int getInputRateforga(forga_t* dsp, int channel)
 {
 	int rate;
 	switch (channel) {
@@ -95,9 +95,9 @@ int getInputRateforga(forga_t* dsp, int channel)
 
 	}
 	return rate;
-
 }
-int getOutputRateforga(forga_t* dsp, int channel)
+
+static inline int getOutputRateforga(forga_t* dsp, int channel)
 {
 	int rate;
 	switch (channel) {
@@ -115,12 +115,12 @@ int getOutputRateforga(forga_t* dsp, int channel)
 
 }
 
-void classInitforga(int samplingFreq)
+static inline void classInitforga(int samplingFreq)
 {
 
 }
 
-void instanceResetUserInterfaceforga(forga_t* dsp)
+static inline void instanceResetUserInterfaceforga(forga_t* dsp)
 {
 	dsp->fHslider0 = (FAUSTFLOAT)0.5f;
 	dsp->fButton0 = (FAUSTFLOAT)0.0f;
@@ -128,7 +128,7 @@ void instanceResetUserInterfaceforga(forga_t* dsp)
 	dsp->fHslider2 = (FAUSTFLOAT)440.0f;
 }
 
-void instanceClearforga(forga_t* dsp)
+static inline void instanceClearforga(forga_t* dsp)
 {
 	/* C99 loop */
 	{
@@ -169,7 +169,7 @@ void instanceClearforga(forga_t* dsp)
 
 }
 
-void instanceConstantsforga(forga_t* dsp, int samplingFreq)
+static inline void instanceConstantsforga(forga_t* dsp, int samplingFreq)
 {
 	dsp->fSamplingFreq = samplingFreq;
 	dsp->fConst0 = fmin(48000.0f, fmax(1.0f, (float)dsp->fSamplingFreq));
@@ -179,14 +179,14 @@ void instanceConstantsforga(forga_t* dsp, int samplingFreq)
 
 }
 
-void instanceInitforga(forga_t* dsp, int samplingFreq)
+static inline void instanceInitforga(forga_t* dsp, int samplingFreq)
 {
 	instanceConstantsforga(dsp, samplingFreq);
 	instanceResetUserInterfaceforga(dsp);
 	instanceClearforga(dsp);
 }
 
-void initforga(forga_t* dsp, int samplingFreq)
+static inline void initforga(forga_t* dsp, int samplingFreq)
 {
 	classInitforga(samplingFreq);
 	instanceInitforga(dsp, samplingFreq);
@@ -205,7 +205,7 @@ void buildUserInterfaceforga(forga_t* dsp, UIGlue* ui_interface)
 }
 */
 
-void computeforga(forga_t* dsp, int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs)
+static inline void computeforga(forga_t* dsp, int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs)
 {
 	FAUSTFLOAT* output0 = outputs[0];
 	float fSlow0 = (float)dsp->fHslider0;

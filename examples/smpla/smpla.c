@@ -27,6 +27,9 @@ static jack_port_t* outputPortR;
 /* When muted, no sequencer events get played */
 static uint8_t static_mute;
 
+static struct smpla_t *s;
+
+
 struct col_t
 {
 	uint8_t green;
@@ -207,6 +210,21 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 					printf("new group %d\n", p);
 				}
 			} else if(mm->mode == MODE_PADS && pr) {
+				/* trigger a sample now */
+
+				struct smpla_sample_state_t d = {
+					.pad_id = 0,
+					/* actions:
+					 * 0) stop (also stops recording)
+					 * 1) start playback from frame_start, to frame_end
+					 * 2) record:
+					 */
+					.action = 1,
+					.sample_id = 0,
+					.frame_start = 0,
+					.frame_end = -1,
+				};
+				smpla_sample_state(s, &d);
 			} else if(mm->mode == MODE_PATTERN && pr) {
 				printf("pattern pr\n");
 				if(mm->shift_pressed) {
@@ -322,6 +340,8 @@ int main()
 	client = jack_client_open("Smpla", JackNullOption, 0, 0 );
 	int sr = jack_get_sample_rate(client);
 
+	s = smpla_init(sr);
+
 	for(int i = 0; i < 16; i++) {
 		struct Sequencer *sequencer = sequencer_new(sr);
 		sequencer_set_callback(sequencer, seqEventCb, 0x0);
@@ -336,8 +356,6 @@ int main()
 	struct ctlra_t *ctlra = ctlra_create(NULL);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("sequencer: Connected controllers %d\n", num_devs);
-
-	struct smpla_t *s = smpla_init(sr);
 
 	if(jack_set_process_callback(client, process, s)) {
 		printf("error setting JACK callback\n");
