@@ -8,6 +8,7 @@ struct buffer_t {
 	uint32_t frames;
 	uint8_t channels;
 	uint8_t loaded;
+	float gain;
 };
 
 struct voice_t {
@@ -39,15 +40,26 @@ sampler_init(int rate)
 	if(!s)
 		return 0;
 
-	s->buffers[0].audio = hat_wavetable;
-	s->buffers[0].frames = hat_size/2;
+	s->buffers[0].audio = kick_wavetable;
+	s->buffers[0].frames = kick_size/2;
 	s->buffers[0].loaded = 1;
 
-	s->buffers[1].audio = kick_wavetable;
-	s->buffers[1].frames = kick_size/2;
+	s->buffers[1].audio = hat_wavetable;
+	s->buffers[1].frames = hat_size/2;
 	s->buffers[1].loaded = 1;
 
 	return s;
+}
+
+float smpla_sample_vol_get(struct smpla_t *s, uint32_t sample_id)
+{
+	return s->sampler->buffers[sample_id].gain;
+}
+void smpla_sample_vol(struct smpla_t *s, void *data)
+{
+	struct smpla_sample_vol_t *d = data;
+	s->sampler->buffers[d->sample_id].gain = d->vol * 1.5;
+	printf("%s: id %d, gain = %f\n", __func__, d->sample_id, d->vol);
 }
 
 void
@@ -64,6 +76,7 @@ smpla_sample_state(struct smpla_t *smpla, void* data)
 		.buffer = d->sample_id,
 		.playhead = d->frame_start,
 		.end = d->frame_end,
+		.volume = s->buffers[d->sample_id].gain,
 	};
 	s->voices[s->voice_idx++] = v;
 }
@@ -89,9 +102,11 @@ voice_process(struct voice_t *v,
 	uint32_t playhead = v->playhead * 2;
 	v->playhead += nframes;
 
+	const float g = v->volume;
+
 	for(int i = 0; i < nframes; i++) {
-		l[i] += buffer->audio[playhead++];
-		r[i] += buffer->audio[playhead++];
+		l[i] += buffer->audio[playhead++] * g;
+		r[i] += buffer->audio[playhead++] * g;
 	}
 	return 0;
 }

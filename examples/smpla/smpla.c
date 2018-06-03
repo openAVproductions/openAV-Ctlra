@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <string.h>
 
-//#define SMPLA_JACK
+#define SMPLA_JACK 1
 #ifdef SMPLA_JACK
 #include <jack/jack.h>
 
@@ -160,6 +160,41 @@ typedef union {
   struct { unsigned char SR_CHANNELS; } rgba;
 } sr_Pixel;
 
+static inline void
+screen_draw_sequencers(struct smpla_t *s, caira_t *cr)
+{
+	struct mm_t *mm = s->controller_data;
+
+	for(int i = 0; i < 16; i++) {
+		Sequencer *seq = s->sequencers[i];
+		int steps = sequencer_get_num_steps(seq);
+		int note  = sequencer_get_note(seq);
+		int cur   = sequencer_get_current_step(seq);
+
+		float col[9] = {
+			0.25, 0.25, 0.25,
+			0, 0x71 / 255.f, 1,
+			1, 1, 1,
+		};
+
+		float vol = smpla_sample_vol_get(s, i);
+		caira_set_source_rgb(cr, 0, 0, 0);
+		caira_rectangle(cr, 100, i * 17, 100, 15);
+		caira_fill(cr);
+		caira_set_source_rgb(cr, col[0], col[1], col[2]);
+		caira_rectangle(cr, 100, i * 17, 100 * (vol * (0.6665)), 15);
+		caira_fill(cr);
+
+		for(int j = 0; j < steps; j++) {
+			int on = sequencer_get_step(seq, j) * 3;
+			on += ((cur == j) * 3) * (on > 0);
+			caira_set_source_rgb(cr, col[on+0], col[on+1], col[on+2]);
+			caira_rectangle(cr, 208 + j * 17, i * 17, 15, 15);
+			caira_fill(cr);
+		}
+	}
+}
+
 int32_t
 machine3_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 			    uint8_t *pixel_data, uint32_t bytes,
@@ -171,9 +206,14 @@ machine3_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 	caira_surface_t *img = s->cairo_img;
 	caira_t *cr = s->cairo_cr;
 
-	caira_set_source_rgb(cr, 1, 0, 0);
+	caira_set_source_rgb(cr, 0.1, 0.1, 0.1);
 	caira_rectangle(cr, 0, 0, 480, 272);
 	caira_fill(cr);
+
+	if(screen_idx == 0)
+		screen_draw_sequencers(s, cr);
+	else
+		return 0;
 
 	int stride = caira_image_surface_get_stride(img);
 	unsigned char *data = caira_image_surface_get_data(img);
@@ -251,6 +291,12 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_SLIDER:
+			printf("slider %f\n", e->slider.value);
+			struct smpla_sample_vol_t d = {
+				.sample_id = mm->pattern_pad_id,
+				.vol = e->slider.value,
+			};
+			smpla_to_rt_write(s, smpla_sample_vol, &d, sizeof(d));
 			break;
 
 		case CTLRA_EVENT_GRID: {

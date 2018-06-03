@@ -63,6 +63,13 @@ struct smpla_sample_state_t {
 };
 void smpla_sample_state(struct smpla_t *s, void *data);
 
+struct smpla_sample_vol_t {
+	uint32_t sample_id;
+	float vol;
+};
+void smpla_sample_vol(struct smpla_t *s, void *data);
+float smpla_sample_vol_get(struct smpla_t *s, uint32_t sample_id);
+
 /* cross-thread message passing */
 int smpla_to_rt_write(struct smpla_t *s, smpla_rt_msg_func func,
 		      void *data, uint32_t size);
