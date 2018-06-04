@@ -59,7 +59,6 @@ void smpla_sample_vol(struct smpla_t *s, void *data)
 {
 	struct smpla_sample_vol_t *d = data;
 	s->sampler->buffers[d->sample_id].gain = d->vol * 1.5;
-	printf("%s: id %d, gain = %f\n", __func__, d->sample_id, d->vol);
 }
 
 void
@@ -68,7 +67,6 @@ smpla_sample_state(struct smpla_t *smpla, void* data)
 	struct smpla_sample_state_t *d = data;
 	assert(smpla);
 	assert(d);
-	printf("func %s\n", __func__);
 	struct sampler_t *s = smpla->sampler;
 
 	struct voice_t v = {

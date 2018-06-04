@@ -118,7 +118,7 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 		}
 
 		if(mm->shift_pressed) {
-			printf("setting pattern %d\n", mm->pattern_pad_id);
+			//printf("setting pattern %d\n", mm->pattern_pad_id);
 			ctlra_dev_light_set(dev, 87 + mm->pattern_pad_id,
 					    0xff0000ff);
 		}
@@ -284,35 +284,36 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 				printf("button %d\n", e->button.id);
 				break;
 			}
-			printf("button %d\n", e->button.id);
+			//printf("button %d\n", e->button.id);
 			break;
 
 		case CTLRA_EVENT_ENCODER:
 			break;
 
-		case CTLRA_EVENT_SLIDER:
-			printf("slider %f\n", e->slider.value);
+		case CTLRA_EVENT_SLIDER: {
+			//printf("slider %f\n", e->slider.value);
 			struct smpla_sample_vol_t d = {
 				.sample_id = mm->pattern_pad_id,
 				.vol = e->slider.value,
 			};
 			smpla_to_rt_write(s, smpla_sample_vol, &d, sizeof(d));
-			break;
+			} break;
 
 		case CTLRA_EVENT_GRID: {
 			pr = e->grid.pressed;
 			int p = ((3 - (e->grid.pos / 4)) * 4) + (e->grid.pos % 4);
-			printf("pad %d, mode = %d\n", p, mm->mode);
+			//printf("pad %d, mode = %d\n", p, mm->mode);
 			mm->pads_pressed[p] = pr;
 			if(mm->mode == MODE_GROUP) {
 				/* select new group here */
 				if(e->grid.pressed && p < 8) {
 					mm->grp_id = p;
-					printf("new group %d\n", p);
+					//printf("new group %d\n", p);
 				}
 			} else if(mm->mode == MODE_PADS && pr) {
+				/* update the selected pad */
+				mm->pattern_pad_id = p;
 				/* trigger a sample now */
-
 				struct smpla_sample_state_t d = {
 					.pad_id = 0,
 					/* actions:
@@ -328,7 +329,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 				smpla_to_rt_write(s, smpla_sample_state,
 						  &d, sizeof(d));
 			} else if(mm->mode == MODE_PATTERN && pr) {
-				printf("pattern pr\n");
+				//printf("pattern pr\n");
 				if(mm->shift_pressed) {
 					mm->pattern_pad_id = p;
 				} else {
@@ -399,8 +400,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 
 void seqEventCb(int frame, int note, int velocity, void* userdata )
 {
-	printf("%s: frame %d, note %d : vel %d\n", __func__, frame, note, velocity);
-
+	//printf("%s: frame %d, note %d : vel %d\n", __func__, frame, note, velocity);
 	int static_mute = 0;
 	if(static_mute)
 		return;
@@ -408,7 +408,7 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 	struct smpla_t *s = userdata;
 	struct mm_t *mm = s->controller_data;
 	memset(mm->pads_seq_play, 0, sizeof(mm->pads_seq_play));
-	mm->pads_seq_play[note] = velocity;
+	mm->pads_seq_play[note] = velocity > 0 ? velocity : 0;
 
 	struct smpla_sample_state_t d = {
 		.pad_id = 0,
