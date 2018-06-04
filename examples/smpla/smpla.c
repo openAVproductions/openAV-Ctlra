@@ -4,13 +4,9 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <ctlra/ctlra.h>
 #include <caira.h>
-#include <ctlra.h>
 #include "audio.h"
-
-#define MODE_GROUP   0
-#define MODE_PADS    1
-#define MODE_PATTERN 2
 
 struct col_t
 {

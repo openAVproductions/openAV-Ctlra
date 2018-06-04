@@ -5,13 +5,23 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <ctlra/ctlra.h>
 
 #include "sequencer.h"
-
 #include "dsp_forga.h"
 
 #include "zix/ring.h"
 #include "zix/thread.h"
+
+#define SMPLA_DSP_URI "http://www.openavproductions.com/smpla"
+#define SMPLA_UI_URI  "http://www.openavproductions.com/smpla#gui"
+
+enum {
+	A_IN_L  = 0,
+	A_IN_R  = 1,
+	A_OUT_L  = 2,
+	A_OUT_R  = 3,
+};
 
 void seqEventCb(int frame, int note, int velocity, void* userdata );
 
