@@ -7,8 +7,6 @@
 #include <ctlra/ctlra.h>
 #include "audio.h"
 
-#define SMPLA_JACK 1
-
 /* for when to quit */
 static volatile uint32_t done;
 

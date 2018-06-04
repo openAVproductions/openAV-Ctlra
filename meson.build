@@ -49,6 +49,11 @@ if not midi_dep.found()
   message('MIDI = disabler')
 endif
 
+jack_dep = dependency('jack', required: false)
+if jack_dep.found()
+  add_project_arguments('-DSMPLA_JACK', language : 'c')
+endif
+
 cairo_dep = dependency('cairo_NOPE', required: false)
 if(cairo_dep.found())
   #add_project_arguments('-DCTLRA_HAVE_CAIRO', language : 'c')
