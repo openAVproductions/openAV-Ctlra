@@ -769,7 +769,7 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 				       timeout);
 	if(libusb_submit_transfer(xfr) < 0) {
 		libusb_free_transfer(xfr);
-		free(usb_data);
+		free(async);
 		dev->usb_xfer_counts[USB_XFER_BULK_ERROR]++;
 		//printf("error submitting data!!\n");
 		return -1;
