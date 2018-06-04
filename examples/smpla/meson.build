@@ -19,3 +19,5 @@ smpla_lv2 = library('smpla',
     link_with : ctlra,
     dependencies: dependencies)
 
+install_subdir('smpla.lv2', install_dir : 'lib/lv2/')
+

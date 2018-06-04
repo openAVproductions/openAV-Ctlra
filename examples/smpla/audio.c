@@ -29,6 +29,8 @@ ctlra_thread_func(void *ud)
 		usleep(sleep_time);
 	}
 
+	printf("ctlra thread done\n");
+
 	s->ctlra_thread_quit_done = 1;
 	return 0;
 }

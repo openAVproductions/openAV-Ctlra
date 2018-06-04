@@ -1,6 +1,9 @@
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
+#include <unistd.h>
+
 #include "audio.h"
+
 
 struct smpla_lv2_t {
 	const float* a_in[2];
@@ -71,7 +74,18 @@ deactivate(LV2_Handle instance)
 static void
 cleanup(LV2_Handle instance)
 {
-	free(instance);
+	struct smpla_lv2_t *lv2 = instance;
+	lv2->s->ctlra_thread_quit_now = 1;
+
+	int i = 0;
+	while(!lv2->s->ctlra_thread_quit_done && i++ < 1000)
+		usleep(1000);
+
+	ctlra_exit(lv2->s->ctlra);
+
+	smpla_free(lv2->s);
+
+	free(lv2);
 }
 
 static const void*
