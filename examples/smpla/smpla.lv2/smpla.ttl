@@ -1,0 +1,49 @@
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix ui: <http://lv2plug.in/ns/extensions/ui#>.
+
+<http://www.openavproductions.com/smpla>
+  a ui:X11UI;
+  ui:binary <smpla.so>;
+  ui:requiredFeature ui:makeResident.
+
+<http://www.openavproductions.com/smpla>
+	a lv2:Plugin ,
+		lv2:AmplifierPlugin;
+
+	lv2:project <http://www.openavproductions.com> ;
+
+	doap:name "Smpla Sampler Plugin" ;
+
+	#ui:ui <http://www.openavproductions.com/avtka#example/gui>;
+
+	lv2:optionalFeature lv2:hardRTCapable ;
+
+	lv2:port [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 0 ;
+		lv2:symbol "in_l" ;
+		lv2:name "In Left"
+	] , [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 1 ;
+		lv2:symbol "in_r" ;
+		lv2:name "In Right"
+	] , [
+		a lv2:AudioPort ,
+			lv2:OutputPort ;
+		lv2:index 2 ;
+		lv2:symbol "out_l" ;
+		lv2:name "Out Left"
+	] , [
+		a lv2:AudioPort ,
+			lv2:OutputPort ;
+		lv2:index 3 ;
+		lv2:symbol "out_r" ;
+		lv2:name "Out Right"
+	] .
