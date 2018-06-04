@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <ctlra/ctlra.h>
+#include <caira.h>
 
 
 /* ctlra thread */
@@ -60,6 +61,20 @@ struct smpla_t *smpla_init(int rate)
 	if(status != ZIX_STATUS_SUCCESS) {
 		printf("ERROR launching zix thread!!\n");
 	}
+
+	/* initialize sequencers */
+	for(int i = 0; i < 16; i++) {
+		struct Sequencer *sequencer = sequencer_new(rate);
+		sequencer_set_callback(sequencer, seqEventCb, s);
+		sequencer_set_length(sequencer, rate * 2);
+		sequencer_set_num_steps(sequencer, 16);
+		sequencer_set_note(sequencer, i);
+		s->sequencers[i] = sequencer;
+	}
+
+
+	s->cairo_img = caira_image_surface_create(CAIRA_FORMAT_ARGB32, 480, 272);
+	s->cairo_cr = caira_create(s->cairo_img);
 
 	s->ctlra_thread_running = 1;
 

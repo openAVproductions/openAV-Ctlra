@@ -13,6 +13,8 @@
 #include "zix/ring.h"
 #include "zix/thread.h"
 
+void seqEventCb(int frame, int note, int velocity, void* userdata );
+
 struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;

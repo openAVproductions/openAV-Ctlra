@@ -367,13 +367,6 @@ int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
 	return 0;
 }
 
-
-void sighndlr(int signal)
-{
-	done = 1;
-	printf("\n");
-}
-
 void machine3_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		     void *userdata)
 {
@@ -418,7 +411,6 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 		.frame_end = -1,
 	};
 	smpla_sample_state(s, &d);
-
 }
 
 #ifdef SMPLA_JACK
@@ -441,11 +433,15 @@ int process(jack_nframes_t nframes, void* arg)
 }
 #endif
 
+void sighndlr(int signal)
+{
+	done = 1;
+	printf("\n");
+}
 
 int main()
 {
 	signal(SIGINT, sighndlr);
-
 	int sr = 48000;
 #ifdef SMPLA_JACK
 	/* setup JACK */
@@ -454,19 +450,8 @@ int main()
 #endif
 
 	s = smpla_init(sr);
-
-
 	s->cairo_img = caira_image_surface_create(CAIRA_FORMAT_ARGB32, 480, 272);
 	s->cairo_cr = caira_create(s->cairo_img);
-
-	for(int i = 0; i < 16; i++) {
-		struct Sequencer *sequencer = sequencer_new(sr);
-		sequencer_set_callback(sequencer, seqEventCb, s);
-		sequencer_set_length(sequencer, sr * 0.8);
-		sequencer_set_num_steps(sequencer, 16);
-		sequencer_set_note(sequencer, i);
-		s->sequencers[i] = sequencer;
-	}
 
 	struct mm_t *mm = calloc(1, sizeof(struct mm_t));
 	mm->mode = MODE_PADS;
