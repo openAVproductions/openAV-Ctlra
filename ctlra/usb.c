@@ -745,7 +745,10 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 		return -ENOSPC;
 	}
 	XFER_VALIDATE(dev);
+
 	struct usb_async_t *dev_current = dev->usb_async_next;
+	/* just store the pointers into a rollback struct */
+	struct usb_async_t *async_next_rollback = dev_current;
 	if(dev_current)
 		dev_current->prev = async;
 	async->next = dev_current;
@@ -768,6 +771,9 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 					       banish it if required */
 				       timeout);
 	if(libusb_submit_transfer(xfr) < 0) {
+		/* restore rollback version of async linked list */
+		dev->usb_async_next = async_next_rollback;
+		/* free this transaction */
 		libusb_free_transfer(xfr);
 		free(async);
 		dev->usb_xfer_counts[USB_XFER_BULK_ERROR]++;
