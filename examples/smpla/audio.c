@@ -1,4 +1,3 @@
-
 #include "audio.h"
 
 #include <stdlib.h>
@@ -6,7 +5,6 @@
 
 #include <ctlra/ctlra.h>
 #include <caira.h>
-
 
 /* ctlra thread */
 static void *
@@ -83,6 +81,7 @@ struct smpla_t *smpla_init(int rate)
 
 void smpla_free(struct smpla_t *s)
 {
+	/* TODO: free sequencers and audio buffers here */
 	free(s);
 }
 

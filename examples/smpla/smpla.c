@@ -2,31 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 #include <string.h>
-
-#define SMPLA_JACK 1
-#ifdef SMPLA_JACK
-#include <jack/jack.h>
-
-/* TODO: use LV2 audio IO in future - so static is no issue */
-static jack_client_t* client;
-static jack_port_t* outputPortL;
-static jack_port_t* outputPortR;
-#endif
 
 #include <caira.h>
 #include <ctlra.h>
 #include "audio.h"
 
-static volatile uint32_t done;
-
 #define MODE_GROUP   0
 #define MODE_PADS    1
 #define MODE_PATTERN 2
-
-static struct smpla_t *s;
-
 
 struct col_t
 {
@@ -63,30 +47,6 @@ uint32_t col_dim(const struct col_t *col, float bri)
 	uint32_t intCol = *(uint32_t *)&c;
 	return intCol;
 }
-
-struct mm_t
-{
-	/* 0 Group   : Selects active group
-	 * 1 Pads    : Plays different notes
-	 * 2 Pattern : Sequence a single note
-	 */
-	uint8_t mode;
-	uint8_t mode_prev;
-	uint8_t shift_pressed;
-
-	/* GROUP */
-	uint8_t grp_id; /* 0 - 7, selected group */
-
-	/* transport */
-	uint8_t playing; /* stopped if not */
-
-	/* Pads */
-	uint8_t pads_pressed[16];
-	uint8_t pads_seq_play[16];
-
-	/* Pattern */
-	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
-};
 
 void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
@@ -362,11 +322,6 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 	ctlra_dev_light_flush(dev, 0);
 }
 
-int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
-{
-	return 0;
-}
-
 void machine3_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		     void *userdata)
 {
@@ -411,80 +366,4 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 		.frame_end = -1,
 	};
 	smpla_sample_state(s, &d);
-}
-
-#ifdef SMPLA_JACK
-int process(jack_nframes_t nframes, void* arg)
-{
-	struct smpla_t *s = arg;
-
-	float* buf_l = (float*)jack_port_get_buffer (outputPortL, nframes);
-	memset(buf_l, 0, nframes * sizeof(float));
-	float* buf_r = (float*)jack_port_get_buffer (outputPortR, nframes);
-	memset(buf_r, 0, nframes * sizeof(float));
-
-	const float *ins[2] = {buf_l, buf_r};
-	float *outs[2] = {buf_l, buf_r};
-
-	int ret = smpla_process(s, nframes, ins, outs);
-	(void)ret;
-
-	return 0;
-}
-#endif
-
-void sighndlr(int signal)
-{
-	done = 1;
-	printf("\n");
-}
-
-int main()
-{
-	signal(SIGINT, sighndlr);
-	int sr = 48000;
-#ifdef SMPLA_JACK
-	/* setup JACK */
-	client = jack_client_open("Smpla", JackNullOption, 0, 0 );
-	sr = jack_get_sample_rate(client);
-#endif
-
-	s = smpla_init(sr);
-	s->cairo_img = caira_image_surface_create(CAIRA_FORMAT_ARGB32, 480, 272);
-	s->cairo_cr = caira_create(s->cairo_img);
-
-	struct mm_t *mm = calloc(1, sizeof(struct mm_t));
-	mm->mode = MODE_PADS;
-	s->controller_data = mm;
-
-	struct ctlra_t *ctlra = ctlra_create(NULL);
-	int num_devs = ctlra_probe(ctlra, accept_dev_func, s);
-	printf("sequencer: Connected controllers %d\n", num_devs);
-
-	s->ctlra = ctlra;
-
-#ifdef SMPLA_JACK
-	if(jack_set_process_callback(client, process, s)) {
-		printf("error setting JACK callback\n");
-	}
-	outputPortL = jack_port_register(client, "output_l",
-	                                JACK_DEFAULT_AUDIO_TYPE,
-	                                JackPortIsOutput, 0 );
-	outputPortR = jack_port_register(client, "output_r",
-	                                JACK_DEFAULT_AUDIO_TYPE,
-	                                JackPortIsOutput, 0 );
-	jack_activate(client);
-#endif
-
-	uint32_t sleep = sr / 128;
-
-	while(!done) {
-		usleep(1000*1000);
-	}
-
-	ctlra_exit(ctlra);
-
-	usleep(700);
-
-	return 0;
 }

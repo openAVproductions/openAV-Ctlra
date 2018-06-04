@@ -15,6 +15,40 @@
 
 void seqEventCb(int frame, int note, int velocity, void* userdata );
 
+#define MODE_GROUP   0
+#define MODE_PADS    1
+#define MODE_PATTERN 2
+
+
+int accept_dev_func(struct ctlra_t *ctlra,
+		    const struct ctlra_dev_info_t *info,
+		    struct ctlra_dev_t *dev,
+                    void *userdata);
+
+struct mm_t
+{
+	/* 0 Group   : Selects active group
+	 * 1 Pads    : Plays different notes
+	 * 2 Pattern : Sequence a single note
+	 */
+	uint8_t mode;
+	uint8_t mode_prev;
+	uint8_t shift_pressed;
+
+	/* GROUP */
+	uint8_t grp_id; /* 0 - 7, selected group */
+
+	/* transport */
+	uint8_t playing; /* stopped if not */
+
+	/* Pads */
+	uint8_t pads_pressed[16];
+	uint8_t pads_seq_play[16];
+
+	/* Pattern */
+	uint8_t pattern_pad_id; /* the pad that this pattern is playing */
+};
+
 struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
