@@ -576,3 +576,13 @@ void ctlra_strerror(struct ctlra_t *ctlra, FILE* out)
 {
 	fprintf(out, "Ctlra: %s\n", ctlra->strerror);
 }
+
+struct ctlra_dev_t *
+ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
+				    void *userdata, void *future);
+
+#define CTLRA_DRIVER_VENDOR (0x17cc)
+#define CTLRA_DRIVER_DEVICE (0x1600)
+extern struct ctlra_dev_info_t ctlra_ni_maschine_mk3_info;
+
+CTLRA_DEVICE_REGISTER(ni_maschine_mk3)

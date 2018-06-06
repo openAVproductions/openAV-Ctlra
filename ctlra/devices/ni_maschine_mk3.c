@@ -1084,4 +1084,5 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mk3_info = {
 	.get_name = ni_maschine_mk3_control_get_name,
 };
 
-CTLRA_DEVICE_REGISTER(ni_maschine_mk3)
+// Hacked into Ctlra.c - no need to register twice
+//CTLRA_DEVICE_REGISTER(ni_maschine_mk3)
