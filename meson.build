@@ -6,7 +6,11 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
-required_libs = ['libusb-1.0', 'alsa', 'm']
+required_libs = ['libusb-1.0', 'm']
+
+if get_option('midi')
+  required_libs += ['alsa']
+endif
 
 ctlra_lib_incs = []
 
@@ -43,13 +47,13 @@ else
   conf_data.set('HAVE_TCC', 0)
 endif
 
-midi_dep = dependency('alsa', required: false)
+midi_dep = dependency('alsa_NOPE', required: false)
 if not midi_dep.found()
   midi_dep = disabler()
   message('MIDI = disabler')
 endif
 
-jack_dep = dependency('jack', required: false)
+jack_dep = dependency('jack_NOPE', required: false)
 if jack_dep.found()
   add_project_arguments('-DSMPLA_JACK', language : 'c')
 endif
