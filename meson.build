@@ -6,7 +6,7 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
-required_libs = ['libusb-1.0', 'm']
+required_libs = ['libusb-1.0']
 
 if get_option('midi')
   required_libs += ['alsa']

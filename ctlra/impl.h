@@ -299,9 +299,10 @@ static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
 	.connect = ctlra_ ## name ## _connect,			\
 	.info = &ctlra_ ## name ## _info,			\
 };								\
-__attribute__((constructor(102)))				\
+__attribute__((constructor()))				\
 static void ctlra_ ## name ## _register() {			\
 	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
+	printf("registered %s\n", __ctlra_dev.info->vendor);	\
 }
 
 

@@ -16,6 +16,7 @@ __attribute__((constructor(101)))
 static void ctlra_static_setup()
 {
 	/* placeholder */
+	printf("in %s\n", __func__);
 }
 
 int ctlra_impl_get_id_by_vid_pid(uint32_t vid, uint32_t pid)

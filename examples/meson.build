@@ -18,8 +18,8 @@ foreach name: get_option('examples').split(',')
              example_src,
              include_directories: ctlra_includes,
              dependencies : dependencies,
-             link_args : link_args,
-             link_with: ctlra)
+             #link_args : '-Wl,--whole-archive',
+             link_whole: ctlra)
 endforeach
 
 
