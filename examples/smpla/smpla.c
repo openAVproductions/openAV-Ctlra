@@ -274,6 +274,16 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			break;
 
 		case CTLRA_EVENT_ENCODER:
+			if(e->encoder.id == 0) {
+			for(int i = 0; i < 16; i++) {
+				struct smpla_seq_loop_frames_t d = {
+					.seq = i,
+					.frames = 44100,
+				};
+				smpla_to_rt_write(s, smpla_seq_loop_frames,
+						  &d, sizeof(d));
+			}
+			}
 			break;
 
 		case CTLRA_EVENT_SLIDER: {
@@ -392,4 +402,11 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 		.frame_end = -1,
 	};
 	smpla_sample_state(s, &d);
+}
+
+void smpla_seq_loop_frames(struct smpla_t *s, void *data)
+{
+	struct smpla_seq_loop_frames_t *d = data;
+	sequencer_set_length(s->sequencers[d->seq], d->frames);
+	printf("frames = %d\n", d->frames);
 }
