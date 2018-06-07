@@ -278,7 +278,7 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			for(int i = 0; i < 16; i++) {
 				struct smpla_seq_loop_frames_t d = {
 					.seq = i,
-					.frames = 44100,
+					.frames = e->encoder.delta > 0 ? 4410 : -4410,
 				};
 				smpla_to_rt_write(s, smpla_seq_loop_frames,
 						  &d, sizeof(d));
@@ -407,6 +407,6 @@ void seqEventCb(int frame, int note, int velocity, void* userdata )
 void smpla_seq_loop_frames(struct smpla_t *s, void *data)
 {
 	struct smpla_seq_loop_frames_t *d = data;
-	sequencer_set_length(s->sequencers[d->seq], d->frames);
-	printf("frames = %d\n", d->frames);
+	uint32_t frames = sequencer_get_length(s->sequencers[d->seq]);
+	sequencer_set_length(s->sequencers[d->seq], frames + d->frames);
 }
