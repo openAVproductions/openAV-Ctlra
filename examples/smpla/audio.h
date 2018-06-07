@@ -122,6 +122,14 @@ struct smpla_seq_loop_frames_t {
 };
 void smpla_seq_loop_frames(struct smpla_t *s, void *data);
 
+struct smpla_seq_play_t {
+	uint32_t seq;
+	uint32_t play;
+	uint32_t reset;
+};
+void smpla_seq_play(struct smpla_t *s, void *data);
+
+
 /* cross-thread message passing */
 int smpla_to_rt_write(struct smpla_t *s, smpla_rt_msg_func func,
 		      void *data, uint32_t size);

@@ -256,8 +256,22 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			case 24: mm->mode = MODE_PATTERN; break;
 			case 21: mm->mode = MODE_PADS; break;
 			case 33: if(pr) static_mute = !static_mute; break;
-			case 41: if(pr) mm->playing = 1; break;
-			case 43: if(pr) mm->playing = 0; break;
+			case 41: /* play : falltrough */
+			case 43: /* stop */
+				if(!pr) {
+					break;
+				}
+				for(int i = 0; i < 16; i++) {
+					mm->playing = (e->button.id == 41);
+					struct smpla_seq_play_t d = {
+						.seq = i,
+						.play = mm->playing,
+						.reset = 0,
+					};
+					smpla_to_rt_write(s, smpla_seq_play,
+							  &d, sizeof(d));
+				}
+
 			case 26:
 				if(pr) {
 					mm->mode_prev = mm->mode;
@@ -410,3 +424,18 @@ void smpla_seq_loop_frames(struct smpla_t *s, void *data)
 	uint32_t frames = sequencer_get_length(s->sequencers[d->seq]);
 	sequencer_set_length(s->sequencers[d->seq], frames + d->frames);
 }
+
+void smpla_seq_play(struct smpla_t *s, void *data)
+{
+	/*
+	struct smpla_seq_play_t d = data;
+
+	uint32_t frames = sequencer_get_length(s->sequencers[d->seq]);
+	sequencer_set_length(s->sequencers[d->seq], frames + d->frames);
+
+	uint32_t seq;
+	uint32_t play;
+	uint32_t reset;
+	*/
+}
+
