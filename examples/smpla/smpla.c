@@ -117,6 +117,36 @@ typedef union {
 } sr_Pixel;
 
 static inline void
+screen_draw_mixer(struct smpla_t *s, caira_t *cr)
+{
+	struct mm_t *mm = s->controller_data;
+
+	for(int i = 0; i < 16; i++) {
+		Sequencer *seq = s->sequencers[i];
+		int steps = sequencer_get_num_steps(seq);
+		int note  = sequencer_get_note(seq);
+		int cur   = sequencer_get_current_step(seq);
+
+		float col[9] = {
+			0.25, 0.25, 0.25,
+			0, 0x71 / 255.f, 1,
+			1, 1, 1,
+		};
+
+		float vol = smpla_sample_vol_get(s, i);
+		caira_set_source_rgb(cr, 0, 0, 0);
+		const float yoff = 80;
+		caira_rectangle(cr, i * 30, yoff + 10, 25, 150);
+		caira_fill(cr);
+		caira_set_source_rgb(cr, col[0], col[1], col[2]);
+		const float h = 150;
+		const float vpx = h * (vol * 0.665);
+		caira_rectangle(cr, i * 30, yoff + 10 + h - vpx, 25, vpx);
+		caira_fill(cr);
+	}
+}
+
+static inline void
 screen_draw_sequencers(struct smpla_t *s, caira_t *cr)
 {
 	struct mm_t *mm = s->controller_data;
@@ -169,7 +199,7 @@ machine3_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 	if(screen_idx == 0)
 		screen_draw_sequencers(s, cr);
 	else
-		return 0;
+		screen_draw_mixer(s, cr);
 
 	int stride = caira_image_surface_get_stride(img);
 	unsigned char *data = caira_image_surface_get_data(img);
