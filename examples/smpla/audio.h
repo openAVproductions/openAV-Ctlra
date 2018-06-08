@@ -9,6 +9,7 @@
 
 #include "sequencer.h"
 #include "dsp_forga.h"
+#include "loop.h"
 
 #include "zix/ring.h"
 #include "zix/thread.h"
@@ -63,7 +64,7 @@ struct smpla_t {
 	forga_t forga;
 	struct sampler_t *sampler;
 	Sequencer *sequencers[16];
-
+	struct loop_t *loops[16];
 
 	void *controller_data;
 	void *cairo_img;

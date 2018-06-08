@@ -62,14 +62,17 @@ struct smpla_t *smpla_init(int rate)
 		printf("ERROR launching zix thread!!\n");
 	}
 
-	/* initialize sequencers */
 	for(int i = 0; i < 16; i++) {
+		/* initialize sequencers */
 		struct Sequencer *sequencer = sequencer_new(rate);
 		sequencer_set_callback(sequencer, seqEventCb, s);
 		sequencer_set_length(sequencer, rate * 2);
 		sequencer_set_num_steps(sequencer, 16);
 		sequencer_set_note(sequencer, i);
 		s->sequencers[i] = sequencer;
+
+		/* initialize loopers */
+		s->loops[i] =  loop_new(rate);
 	}
 
 
@@ -139,7 +142,13 @@ int smpla_process(struct smpla_t *s,
 		out_r[i] = in_r[i];
 	}
 
+	const float *ins[2] = {in_l, in_r};
 	float *audio[2] = {out_l, out_r};
+
+	for(int i = 0; i < 16; i++) {
+		loop_process(s->loops[i], nframes, ins, audio);
+	}
+
 	uint32_t ret = sampler_process(s->sampler,
 				       audio,
 				       nframes);
