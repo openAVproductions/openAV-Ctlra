@@ -22,6 +22,8 @@ void loop_process(struct loop_t*, int nframes, const float** in, float** out);
 
 /** Start playing a loop. If no content is available, it records */
 void loop_play(struct loop_t*);
+int loop_playing(struct loop_t*);
+int loop_recording(struct loop_t*);
 
 /** Play the loop, overdubbing the incoming audio */
 void loop_overdub(struct loop_t*);

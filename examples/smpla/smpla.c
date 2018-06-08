@@ -101,6 +101,12 @@ void machine3_feedback_func(struct ctlra_dev_t *dev, void *d)
 		break;
 	}
 
+	/* loop lights */
+	for(int i = 0; i < 4; i++) {
+		ctlra_dev_light_set(dev, 29 + i, loop_playing(s->loops[i]) ? 0x03030303 : 0x3);
+		ctlra_dev_light_set(dev, 33 + i, loop_recording(s->loops[i]) ? 0xffff0000 : 0x3);
+	}
+
 	ctlra_dev_light_set(dev, 57, static_mute ? 0xffffffff : 0x3);
 	ctlra_dev_light_set(dev, 46, mm->mode == MODE_PADS ? 0xffffffff : 0x3);
 	ctlra_dev_light_set(dev, 50, mm->mode == MODE_GROUP ? 0xffffffff : 0x3);
@@ -253,6 +259,28 @@ void machine3_event_func(struct ctlra_dev_t* dev,
 			pr = e->button.pressed;
 			switch(e->button.id) {
 			case  5: mm->shift_pressed = pr; break;
+
+			/* loop controls */
+			case 7: case 8: case 9: case 10:
+				if(pr) {
+					int id = e->button.id - 7;
+					loop_play(s->loops[id]);
+				}
+				break;
+			case 11: case 12: case 13: case 14:
+				if(pr) {
+					int id = e->button.id - 11;
+					loop_stop(s->loops[id]);
+					uint32_t f = loop_get_frames(s->loops[id]);
+					printf("seq len %d\n", f);
+					for(int i = 0; i < 16; i++) {
+						sequencer_set_length(s->sequencers[i], f);
+					}
+
+				}
+				break;
+
+
 			case 24: mm->mode = MODE_PATTERN; break;
 			case 21: mm->mode = MODE_PADS; break;
 			case 33: if(pr) static_mute = !static_mute; break;

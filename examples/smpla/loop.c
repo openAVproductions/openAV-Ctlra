@@ -216,6 +216,16 @@ void loop_play( struct loop_t* s )
 	s->index = 0;
 }
 
+int loop_playing(struct loop_t* s)
+{
+	return s->state != LOOP_STOP;
+}
+
+int loop_recording(struct loop_t* s)
+{
+	return s->state == LOOP_REC;
+}
+
 void loop_stop( struct loop_t* s )
 {
 	assert( s );
