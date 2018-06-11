@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "mappa.h"
 
@@ -52,6 +53,14 @@ int main(int argc, char **argv)
 		//mappa_run(m);
 		usleep(10 * 1000);
 	}
+
+	ret = mappa_sw_target_remove(m, 0, 0);
+	assert(ret == 0);
+
+	ret = mappa_sw_target_remove(m, 1, 0);
+	assert(ret == -EINVAL);
+	ret = mappa_sw_target_remove(m, 0, 1);
+	assert(ret == -EINVAL);
 
 	mappa_destroy(m);
 

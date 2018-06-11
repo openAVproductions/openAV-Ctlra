@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "mappa.h"
 #include "mappa_impl.h"
@@ -150,7 +151,21 @@ int32_t
 mappa_sw_target_remove(struct mappa_t *m, uint32_t group_id,
 		       uint32_t item_id)
 {
-	return 0;
+	struct target_t *t;
+	TAILQ_FOREACH(t, &m->target_list, tailq) {
+		if((t->target.group_id == group_id) &&
+		   (t->target.item_id  == item_id))
+		{
+			printf("removing target: group %d, item %d\n",
+			       t->target.group_id, t->target.item_id);
+			/* nuke any controller mappings to this */
+			TAILQ_REMOVE(&m->target_list, t, tailq);
+			target_destroy(t);
+			return 0;
+		}
+	}
+
+	return -EINVAL;
 }
 
 void
@@ -212,11 +227,11 @@ fail:
 void
 mappa_destroy(struct mappa_t *m)
 {
-	struct target_t *i;
+	struct target_t *t;
 	while (!TAILQ_EMPTY(&m->target_list)) {
-		i = TAILQ_FIRST(&m->target_list);
-		TAILQ_REMOVE(&m->target_list, i, tailq);
-		target_destroy(i);
+		t = TAILQ_FIRST(&m->target_list);
+		TAILQ_REMOVE(&m->target_list, t, tailq);
+		target_destroy(t);
 	}
 
 	/* iterate over all allocated resources and free them */
