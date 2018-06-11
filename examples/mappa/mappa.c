@@ -140,6 +140,8 @@ mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
 	struct target_t * n= target_create_copy_for_list(t);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
 
+	printf("added %d %d\n", n->target.group_id, n->target.item_id);
+
 	/* TODO: must each group_id and item_id be unique? Do we need to
 	 * check this before add? How does remove work if we don't have
 	 * a unique id?
