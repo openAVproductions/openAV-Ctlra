@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <assert.h>
 
 #include "mappa.h"
+#include "mappa_impl.h"
 
 #include "ctlra.h"
 
@@ -98,9 +101,44 @@ void mappa_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 	}
 }
 
+/* perform a deep copy of the target so it doesn't rely on app memory */
+static struct target_t *
+target_create_copy_for_list(const struct mappa_sw_target_t *t)
+{
+	/* allocate a size for the list-pointer-enabled struct */
+	struct target_t *n = malloc(sizeof(struct target_t));
+
+	/* dereference the current target, shallow copy values */
+	n->target = *t;
+
+	/* deep copy strings (to not depend on app provided strings) */
+	if(t->group_name)
+		n->target.group_name = strdup(t->group_name);
+	if(t->item_name)
+		n->target.item_name = strdup(t->item_name);
+
+	return n;
+}
+
+static void
+target_destroy(struct target_t *t)
+{
+	assert(t != NULL);
+
+	if(t->target.group_name)
+		free(t->target.group_name);
+	if(t->target.item_name)
+		free(t->target.item_name);
+
+	free(t);
+}
+
 int32_t
 mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
 {
+	struct target_t * n= target_create_copy_for_list(t);
+	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
+
 	/* TODO: must each group_id and item_id be unique? Do we need to
 	 * check this before add? How does remove work if we don't have
 	 * a unique id?
@@ -130,7 +168,8 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 {
 	struct mappa_t *m = userdata;
 
-	printf("mappa: accepting %s %s\n", info->vendor, info->device);
+	ctlra_dev_set_event_func(dev, mappa_event_func);
+	ctlra_dev_set_feedback_func(dev, mappa_feedback_func);
 	ctlra_dev_set_remove_func(dev, mappa_remove_func);
 	ctlra_dev_set_callback_userdata(dev, m);
 
@@ -158,6 +197,8 @@ mappa_create(struct mappa_opts_t *opts)
 
 	m->ctlra = c;
 
+	TAILQ_INIT(&m->target_list);
+
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	printf("mappa connected to %d devices\n", num_devs);
 
@@ -171,6 +212,13 @@ fail:
 void
 mappa_destroy(struct mappa_t *m)
 {
+	struct target_t *i;
+	while (!TAILQ_EMPTY(&m->target_list)) {
+		i = TAILQ_FIRST(&m->target_list);
+		TAILQ_REMOVE(&m->target_list, i, tailq);
+		target_destroy(i);
+	}
+
 	/* iterate over all allocated resources and free them */
 	ctlra_exit(m->ctlra);
 	free(m);

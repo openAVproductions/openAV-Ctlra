@@ -61,11 +61,6 @@ struct mappa_opts_t {
 	 */
 };
 
-struct mappa_t {
-	uint32_t waste;
-	struct ctlra_t *ctlra;
-};
-
 /** Initialize a mappa context */
 struct mappa_t *mappa_create(struct mappa_opts_t *opts);
 
