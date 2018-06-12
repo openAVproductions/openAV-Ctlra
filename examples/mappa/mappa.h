@@ -151,6 +151,22 @@ int32_t mappa_sw_target_remove(struct mappa_t *m,
 			       uint32_t group_id,
 			       uint32_t item_id);
 
+/* returns number of controllers */
+int32_t mappa_ctlra_count();
+/* returns user-readable info on device */
+int32_t mappa_ctlra_get_info();
+
+/* create a binding from the ctlra dev id at control id, to gid,iid, for
+ * layer id
+ */
+int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
+				   uint32_t cltra_dev_id,
+				   uint32_t control_id,
+				   uint32_t gid,
+				   uint32_t iid,
+				   uint32_t layer);
+
+
 void mappa_destroy(struct mappa_t *m);
 
 #endif /* OPENAV_CTLRA_MAPPA */

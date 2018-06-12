@@ -38,64 +38,34 @@ void mappa_feedback_func(struct ctlra_dev_t *dev, void *d)
 void mappa_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
-	struct ctlra_dev_info_t info;
-	ctlra_dev_get_info(dev, &info);
+	struct mappa_lut_t *lut = userdata;
+
+	struct mappa_sw_target_t *t = 0;
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
-		const char *pressed = 0;
-		const char *name = 0;
 		switch(e->type) {
-		case CTLRA_EVENT_BUTTON: {
-			name = ctlra_info_get_name(&info, CTLRA_EVENT_BUTTON,
-						   e->button.id);
-			char pressure[16] = {0};
-			if(e->button.has_pressure) {
-				snprintf(pressure, sizeof(pressure),
-					 "%0.01f", e->button.pressure);
-			}
-			printf("[%s] button %s (%d)\n",
-				e->button.has_pressure ?  pressure :
-				(e->button.pressed ? " X " : "   "),
-				name, e->button.id);
-			}
-			if(e->button.pressed) {
-				/* any button down event */
-			}
+		case CTLRA_EVENT_BUTTON:
 			break;
 
-
 		case CTLRA_EVENT_ENCODER:
-			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
-						   e->encoder.id);
-			printf("[%s] encoder %s (%d)\n",
-			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
-			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT) {
-				//printf("delta float = %f\n", e->encoder.delta_float);
-			} break;
+			break;
 
-		case CTLRA_EVENT_SLIDER:
-			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
-						   e->slider.id);
-			printf("[%03d] slider %s (%d)\n",
-			       (int)(e->slider.value * 100.f),
-			       name, e->slider.id);
+		case CTLRA_EVENT_SLIDER: {
+			uint32_t id = e->slider.id;
+			t = &lut->target_types[CTLRA_EVENT_SLIDER][id];
+			printf("id %d, group %d, item %d\n",
+			       id, t->group_id, t->item_id);
+			if(t->func) {
+				t->func(t->group_id, t->item_id,
+					e->slider.value, t->userdata);
+			}
+			}
 			break;
 
 		case CTLRA_EVENT_GRID:
-			name = ctlra_info_get_name(&info, CTLRA_EVENT_GRID,
-			                                  e->grid.id);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_BUTTON) {
-				pressed = e->grid.pressed ? " X " : " - ";
-			} else {
-				pressed = "---";
-			}
-			printf("[%s] grid %d", pressed, e->grid.pos);
-			if(e->grid.flags & CTLRA_EVENT_GRID_FLAG_PRESSURE)
-				printf(", pressure %1.3f", e->grid.pressure);
-			printf("\n");
 			break;
+
 		default:
 			break;
 		};
@@ -179,16 +149,81 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	printf("mappa_app: removing %s %s\n", info.vendor, info.device);
 }
 
+
+int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
+				   uint32_t cltra_dev_id,
+				   uint32_t control_id,
+				   uint32_t gid,
+				   uint32_t iid,
+				   uint32_t layer)
+{
+	/* TODO: Error check this */
+	struct mappa_sw_target_t *dev_target =
+		&m->lut->target_types[CTLRA_EVENT_SLIDER][control_id];
+
+	struct target_t *t;
+	TAILQ_FOREACH(t, &m->target_list, tailq) {
+		if((t->target.group_id == gid) &&
+		   (t->target.item_id  == iid)) {
+			dev_target->item_id  = iid;
+			dev_target->group_id = gid;
+			dev_target->func     = t->target.func;
+			dev_target->userdata = t->target.userdata;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+
+struct mappa_lut_t *
+lut_create_for_dev(struct ctlra_dev_t *dev,
+		   const struct ctlra_dev_info_t *info)
+{
+	struct mappa_lut_t * lut = calloc(1, sizeof(*lut));
+	if(!lut)
+		return 0;
+
+	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
+		uint32_t c = info->control_count[i];
+		printf("type %d, count %d\n", i, c);
+		lut->target_types[i] = calloc(c, sizeof(struct mappa_sw_target_t));
+		if(!lut->target_types[i])
+			goto fail;
+	}
+
+	return lut;
+fail:
+	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
+		if(lut->target_types[i])
+			free(lut->target_types[i]);
+	}
+	return 0;
+}
+
 int
 mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 		  struct ctlra_dev_t *dev, void *userdata)
 {
 	struct mappa_t *m = userdata;
 
+	struct mappa_lut_t *lut = lut_create_for_dev(dev, info);
+
 	ctlra_dev_set_event_func(dev, mappa_event_func);
 	ctlra_dev_set_feedback_func(dev, mappa_feedback_func);
 	ctlra_dev_set_remove_func(dev, mappa_remove_func);
-	ctlra_dev_set_callback_userdata(dev, m);
+
+	/* the callback here is set per *DEVICE* - NOT the mappa pointer!
+	 * The struct being passed is used directly to avoid lookup of the
+	 * correct device from a list. The structure has a mappa_t back-
+	 * pointer in order to communicate with "self" if required.
+	 */
+	lut->self = m;
+	m->lut = lut;
+	ctlra_dev_set_callback_userdata(dev, lut);
+
+	/* TODO: check for default map to load for this device */
 
 	return 1;
 }

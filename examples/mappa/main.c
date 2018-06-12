@@ -55,12 +55,6 @@ int main(int argc, char **argv)
 		assert(ret == 0);
 	}
 
-	int i = 0;
-	while(!done && i++ < 10) {
-		//mappa_run(m);
-		//usleep(10 * 1000);
-	}
-
 	/* valid remove works */
 	ret = mappa_sw_target_remove(m, 0, 0);
 	assert(ret == 0);
@@ -79,6 +73,25 @@ int main(int argc, char **argv)
 
 	ret = mappa_sw_target_remove(m, 1, 0);
 	assert(ret == 0);
+
+	/* map a few controls */
+	int dev = 0;
+	int control = 2;
+	int group = 0;
+	int item = 7;
+	int layer = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, control, group, item, layer);
+
+	control = 13;
+	group = 1;
+	item = 1;
+	ret = mappa_bind_ctlra_to_target(m, dev, control, group, item, layer);
+
+	/* loop for testing */
+	while(!done) {
+		mappa_iter(m);
+		usleep(10 * 1000);
+	}
 
 	mappa_destroy(m);
 
