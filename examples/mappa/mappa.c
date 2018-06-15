@@ -38,7 +38,7 @@ void mappa_feedback_func(struct ctlra_dev_t *dev, void *d)
 void mappa_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
-	struct mappa_lut_t *lut = userdata;
+	struct lut_t *lut = userdata;
 
 	struct mappa_sw_target_t *t = 0;
 
@@ -54,9 +54,9 @@ void mappa_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		case CTLRA_EVENT_SLIDER: {
 			uint32_t id = e->slider.id;
 			t = &lut->target_types[CTLRA_EVENT_SLIDER][id];
-			printf("id %d, group %d, item %d\n",
-			       id, t->group_id, t->item_id);
 			if(t->func) {
+				printf("id %d, group %d, item %d\n",
+				       id, t->group_id, t->item_id);
 				t->func(t->group_id, t->item_id,
 					e->slider.value, t->userdata);
 			}
@@ -157,7 +157,9 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t iid,
 				   uint32_t layer)
 {
-	/* TODO: Error check this */
+	if(!m || !m->lut)
+		return -EINVAL;
+
 	struct mappa_sw_target_t *dev_target =
 		&m->lut->target_types[CTLRA_EVENT_SLIDER][control_id];
 
@@ -177,11 +179,11 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 }
 
 
-struct mappa_lut_t *
+struct lut_t *
 lut_create_for_dev(struct ctlra_dev_t *dev,
 		   const struct ctlra_dev_info_t *info)
 {
-	struct mappa_lut_t * lut = calloc(1, sizeof(*lut));
+	struct lut_t * lut = calloc(1, sizeof(*lut));
 	if(!lut)
 		return 0;
 
@@ -208,7 +210,7 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 {
 	struct mappa_t *m = userdata;
 
-	struct mappa_lut_t *lut = lut_create_for_dev(dev, info);
+	struct lut_t *lut = lut_create_for_dev(dev, info);
 
 	ctlra_dev_set_event_func(dev, mappa_event_func);
 	ctlra_dev_set_feedback_func(dev, mappa_feedback_func);
