@@ -35,10 +35,19 @@ void mappa_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 }
 
-void mappa_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
+void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
-	struct lut_t *lut = userdata;
+	struct dev_t *dev = userdata;
+	if(!dev) {
+		printf("programming error - dev is NULL\n");
+		return;
+	}
+	struct lut_t *lut = dev->active_lut;
+	if(!lut) {
+		printf("programming error - lut is NULL\n");
+		return;
+	}
 
 	struct mappa_sw_target_t *t = 0;
 
@@ -157,11 +166,18 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t iid,
 				   uint32_t layer)
 {
-	if(!m || !m->lut)
+	if(!m)
 		return -EINVAL;
 
+	/* TODO: support multiple ctlra devices by ID */
+	struct dev_t *dev = m->dev;
+	if(!dev) {
+		printf("%s with invalid dev\n", __func__);
+		return -EINVAL;
+	}
+
 	struct mappa_sw_target_t *dev_target =
-		&m->lut->target_types[CTLRA_EVENT_SLIDER][control_id];
+		&dev->active_lut->target_types[CTLRA_EVENT_SLIDER][control_id];
 
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
@@ -196,6 +212,8 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 
 	TAILQ_INSERT_HEAD(&dev->lut_list, lut, tailq);
 
+	dev->active_lut = lut;
+
 	return 0;
 
 fail:
@@ -222,6 +240,8 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 		printf("error ret from lut_create_add_to_dev: %d\n", ret);
 
 	dev->self = m;
+
+	m->dev = dev;
 
 	return dev;
 }

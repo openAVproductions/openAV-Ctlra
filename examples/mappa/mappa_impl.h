@@ -50,11 +50,11 @@ struct dev_t {
 struct mappa_t {
 	struct ctlra_t *ctlra;
 
+	struct dev_t *dev;
+
 	/* container for all targets in the system. This is not used to
 	 * look-up events when they occur on the Ctlra device, this is
 	 * book-keeping only for add/remove, and map/unmap.
 	 */
 	struct target_list_t target_list;
-
-	struct lut_t *lut;
 };
