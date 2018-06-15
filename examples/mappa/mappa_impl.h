@@ -16,12 +16,7 @@ TAILQ_HEAD(target_list_t, target_t);
 struct mappa_t;
 
 struct lut_t {
-	/* back pointer to the main instance. Allows the ctlra user-data
-	 * pointer to be pointed at this struct for easy access to the
-	 * main LUT for event dispatch, but allow self access.
-	 */
-	struct mappa_t *self;
-
+	TAILQ_ENTRY(lut_t) tailq;
 	/* structure for lookup:
 	 * - dynamic alloc array for each type of control
 	 * - enables easy lookup for each event->id
@@ -29,10 +24,28 @@ struct lut_t {
 	 * - only have performance required items in cache
 	 */
 	struct mappa_sw_target_t *target_types[CTLRA_EVENT_T_COUNT];
-
-	TAILQ_ENTRY(lut_t) tailq;
 };
 TAILQ_HEAD(lut_list_t, lut_t);
+
+/* device specific struct, passed into each device callback as userdata
+ * This is used to easily look up the correct layer / lut, and then use
+ * it to handle the events.
+ */
+struct dev_t {
+	/* back pointer to the main instance. Allows the ctlra user-data
+	 * pointer to be pointed at this struct for easy access to the
+	 * main LUT for event dispatch, but allow self access.
+	 */
+	struct mappa_t *self;
+	/* List of look up tables for events. Only to keep track of them,
+	 * and switch between them as required. The hot-path uses a direct
+	 * pointer to the lut
+	 */
+	struct lut_list_t lut_list;
+
+	/* the active lut to use for incoming events */
+	struct lut_t *active_lut;
+};
 
 struct mappa_t {
 	struct ctlra_t *ctlra;

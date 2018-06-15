@@ -179,13 +179,12 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 }
 
 
-struct lut_t *
-lut_create_for_dev(struct ctlra_dev_t *dev,
-		   const struct ctlra_dev_info_t *info)
+int32_t
+lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 {
 	struct lut_t * lut = calloc(1, sizeof(*lut));
 	if(!lut)
-		return 0;
+		return -ENOMEM;
 
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
@@ -195,35 +194,60 @@ lut_create_for_dev(struct ctlra_dev_t *dev,
 			goto fail;
 	}
 
-	return lut;
+	TAILQ_INSERT_HEAD(&dev->lut_list, lut, tailq);
+
+	return 0;
+
 fail:
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		if(lut->target_types[i])
 			free(lut->target_types[i]);
 	}
-	return 0;
+	return -ENOMEM;
+}
+
+struct dev_t *
+mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
+		 const struct ctlra_dev_info_t *info)
+{
+	struct dev_t *dev = calloc(1, sizeof(*dev));
+	if(!dev)
+		return 0;
+
+	TAILQ_INIT(&dev->lut_list);
+
+	/* add LUT to this dev */
+	int32_t ret = lut_create_add_to_dev(dev, info);
+	if(ret)
+		printf("error ret from lut_create_add_to_dev: %d\n", ret);
+
+	dev->self = m;
+
+	return dev;
 }
 
 int
 mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
-		  struct ctlra_dev_t *dev, void *userdata)
+		  struct ctlra_dev_t *ctlra_dev, void *userdata)
 {
 	struct mappa_t *m = userdata;
 
-	struct lut_t *lut = lut_create_for_dev(dev, info);
+	struct dev_t *dev = mappa_create_dev(m, ctlra_dev, info);
+	if(!dev) {
+		printf("failed to create dev\n");
+		return 0;
+	}
 
-	ctlra_dev_set_event_func(dev, mappa_event_func);
-	ctlra_dev_set_feedback_func(dev, mappa_feedback_func);
-	ctlra_dev_set_remove_func(dev, mappa_remove_func);
+	ctlra_dev_set_event_func(ctlra_dev, mappa_event_func);
+	ctlra_dev_set_feedback_func(ctlra_dev, mappa_feedback_func);
+	ctlra_dev_set_remove_func(ctlra_dev, mappa_remove_func);
 
 	/* the callback here is set per *DEVICE* - NOT the mappa pointer!
 	 * The struct being passed is used directly to avoid lookup of the
 	 * correct device from a list. The structure has a mappa_t back-
 	 * pointer in order to communicate with "self" if required.
 	 */
-	lut->self = m;
-	m->lut = lut;
-	ctlra_dev_set_callback_userdata(dev, lut);
+	ctlra_dev_set_callback_userdata(ctlra_dev, dev);
 
 	/* TODO: check for default map to load for this device */
 
