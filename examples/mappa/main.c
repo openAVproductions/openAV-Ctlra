@@ -20,6 +20,7 @@ void sw_source_float_func(void *token,
 			  float *value,
 			  void *userdata)
 {
+	printf("%s\n", __func__);
 	/* hacky hack - assign value of userdata to value */
 	*value = userdata ? 1.0f : 0.f;
 }
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
 	struct mappa_sw_source_t fb = {
 		.name = "test_fb_1",
 		.func = sw_source_float_func,
-		.userdata = 0,
+		.userdata = 1,
 	};
 	ret = mappa_sw_source_add(m, &fb);
 	assert(ret == 0);
@@ -101,13 +102,16 @@ int main(int argc, char **argv)
 	ret = mappa_sw_source_add(m, &fb);
 	assert(ret == 0);
 
+	/**** map feedback *****/
+	int dev = 0;
+	int layer = 0;
+	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_1");
+
 
 	/* map a few controls */
-	int dev = 0;
 	int control = 2;
 	int group = 0;
 	int item = 7;
-	int layer = 0;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
 

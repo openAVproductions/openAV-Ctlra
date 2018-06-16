@@ -44,22 +44,33 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 {
 	struct dev_t *dev = userdata;
 	struct mappa_t *m = dev->self;
-	struct source_t *s;
+	struct lut_t *lut = dev->active_lut;
 
+	/* iterate over the # of destinations, pulling sources for each */
+	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
+	for(int i = 0; i < 1; i++) {
+		struct mappa_sw_source_t *s = lut->sources[i];
+		printf("fb func: i %d, s %p, func %p\n", i, s, &lut->sources[i]);
+		if(s && s->func) {
+			printf("checking source %s\n", s->name);
+			float v;
+			s->func(0, &v, s->userdata);
+			ctlra_dev_light_set(ctlra_dev, 0, v ? -1 : 0);
+		}
+	}
+
+	/*
 	int sidx = 0;
+	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
 		float v;
 		void *token = 0x0;
 		if(s && s->source.func)
 			s->source.func(token, &v, s->source.userdata);
 
-		for(int i = 0; i < 7; i++) {
-			/* get source for the led */
-			ctlra_dev_light_set(ctlra_dev, i + (sidx++ * 7),
-					    source_mush_value_to_array(v, i, 7));
-		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
+	*/
 }
 
 void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
@@ -173,13 +184,8 @@ mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
 {
 	struct source_t *n = source_deep_copy(t);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
-
-	printf("added source %s\n", n->source.name);
-
-	/* TODO: must each group_id and item_id be unique? Do we need to
-	 * check this before add? How does remove work if we don't have
-	 * a unique id?
-	 */
+	printf("added source %s, func %p\n", n->source.name, n->source.func);
+	/* TODO: check for uniqueness? */
 	return 0;
 }
 
@@ -297,6 +303,66 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	return 0;
 }
 
+int32_t
+mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
+			   uint32_t layer, uint32_t fb_id,
+			   const char *name)
+{
+	/* check is fb_id is valid */
+	struct dev_t *dev = m->dev;
+	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
+		printf("%s() invalid fb_id\n", __func__);
+	}
+
+	/* iterate over sources by name, compare */
+	int found = 0;
+	struct source_t *s;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		if(!strcmp(name, s->source.name)) {
+			printf("matched %s, s = %p, s->source %p\n",
+			       name, s, &s->source);
+			found = 1;
+			break;
+		}
+	}
+	if(!found)
+		return -EINVAL;
+
+	/* search for correct lut layer */
+	struct lut_t *l;
+	found = 0;
+	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
+		if(l->id == layer) {
+			found = 1;
+			break;
+		}
+	}
+	if(!found)
+		return -EINVAL;
+
+	/* set source to feed into the feedback id */
+	printf("setting layer %d fb id %d to %s, func %p\n", layer, fb_id,
+	       s->source.name, s->source.func);
+	l->sources[fb_id] = &s->source;
+	printf("source %p, %s, func %p, userdata %p\n",
+	       l->sources[fb_id],
+	       l->sources[fb_id]->name,
+	       l->sources[fb_id]->func,
+	       l->sources[fb_id]->userdata);
+
+	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
+	for(int i = 0; i < 1; i++) {
+#if 0
+		struct mappa_sw_source_t *s = &l->sources[i];
+		printf("fb func: i %d, s %p, func %p\n", i, s, s->func);
+#else
+		struct mappa_sw_source_t *s = l->sources[i];
+		printf("postbind i %d, s %p, func %p\n", i, s, s->func);
+#endif
+	}
+
+	return 0;
+}
 
 int32_t
 lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
@@ -305,18 +371,25 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	if(!lut)
 		return -ENOMEM;
 
+	/* allocate event input to target lookup arrays */
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
-		printf("type %d, count %d\n", i, c);
+		//printf("type %d, count %d\n", i, c);
 		lut->target_types[i] = calloc(c, sizeof(struct mappa_sw_target_t));
 		if(!lut->target_types[i])
 			goto fail;
 	}
 
+	/* allocate feedback item lookup array */
+	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
+	printf("num fb items = %d\n", items);
+	lut->sources[0] = calloc(items, sizeof(struct mappa_sw_source_t));
+	if(!lut->sources)
+		goto fail;
+
+	/* set index, append to list of LUTs */
 	lut->id = dev->lut_idx++;
-
 	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
-
 	return 0;
 
 fail:
@@ -324,6 +397,8 @@ fail:
 		if(lut->target_types[i])
 			free(lut->target_types[i]);
 	}
+	if(lut->sources)
+		free(lut->sources);
 	return -ENOMEM;
 }
 
