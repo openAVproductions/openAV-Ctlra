@@ -53,31 +53,32 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
+		float v = 0;
+
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
+			t = &lut->target_types[CTLRA_EVENT_BUTTON][e->button.id];
+			v = e->button.pressed;
 			break;
-
 		case CTLRA_EVENT_ENCODER:
+			t =&lut->target_types[CTLRA_EVENT_ENCODER][e->encoder.id];
+			v = e->encoder.delta;
+			// TODO: handle delta floats
 			break;
-
-		case CTLRA_EVENT_SLIDER: {
-			uint32_t id = e->slider.id;
-			t = &lut->target_types[CTLRA_EVENT_SLIDER][id];
-			if(t->func) {
-				printf("id %d, group %d, item %d\n",
-				       id, t->group_id, t->item_id);
-				t->func(t->group_id, t->item_id,
-					e->slider.value, t->userdata);
-			}
-			}
+		case CTLRA_EVENT_SLIDER:
+			t = &lut->target_types[CTLRA_EVENT_SLIDER][e->slider.id];
+			v = e->slider.value;
 			break;
-
 		case CTLRA_EVENT_GRID:
 			break;
-
 		default:
 			break;
 		};
+
+		if(t->func) {
+			printf("grp %d, itm %d\n", t->group_id, t->item_id);
+			t->func(t->group_id, t->item_id, v, t->userdata);
+		}
 	}
 }
 

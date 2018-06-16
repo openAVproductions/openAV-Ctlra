@@ -22,8 +22,12 @@ void sw_target_float_func(uint32_t group_id, uint32_t target_id,
 	printf("%s: (%d : %d) %f\n", __func__, group_id, target_id, value);
 }
 
+void tests(void);
+
 int main(int argc, char **argv)
 {
+	tests();
+
 	int ret;
 	signal(SIGINT, sighndlr);
 
@@ -96,4 +100,21 @@ int main(int argc, char **argv)
 	mappa_destroy(m);
 
 	return 0;
+}
+
+void tests(void)
+{
+	int ret = 0;
+	ret = setenv("CTLRA_VIRTUAL_VENDOR", "Native Instruments", 1);
+	printf("errno %d\n", errno);
+	assert(!ret);
+	ret = setenv("CTLRA_VIRTUAL_DEVICE", "Kontrol Z1", 1);
+	printf("errno %d\n", errno);
+	assert(!ret);
+
+	struct mappa_t *m = mappa_create(NULL);
+	assert(m);
+
+
+	mappa_destroy(m);
 }
