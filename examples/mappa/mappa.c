@@ -215,9 +215,9 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 			goto fail;
 	}
 
-	TAILQ_INSERT_HEAD(&dev->lut_list, lut, tailq);
+	lut->id = dev->lut_idx++;
 
-	dev->active_lut = lut;
+	TAILQ_INSERT_HEAD(&dev->lut_list, lut, tailq);
 
 	return 0;
 
@@ -245,6 +245,7 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 		printf("error ret from lut_create_add_to_dev: %d\n", ret);
 
 	dev->self = m;
+	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
 
 	m->dev = dev;
 

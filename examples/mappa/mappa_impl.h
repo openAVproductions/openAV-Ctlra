@@ -17,6 +17,10 @@ struct mappa_t;
 
 struct lut_t {
 	TAILQ_ENTRY(lut_t) tailq;
+
+	/* The ID of this LUT. Used to switch between luts */
+	uint32_t id;
+
 	/* structure for lookup:
 	 * - dynamic alloc array for each type of control
 	 * - enables easy lookup for each event->id
@@ -45,6 +49,9 @@ struct dev_t {
 
 	/* the active lut to use for incoming events */
 	struct lut_t *active_lut;
+
+	/* unique integer ID starting from zero for each LUT */
+	uint32_t lut_idx;
 };
 
 struct mappa_t {
