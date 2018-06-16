@@ -179,6 +179,12 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		return -EINVAL;
 	}
 
+	/* error check control type/id combo */
+	if(control_id >= dev->ctlra_dev_info.control_count[control_type]) {
+		printf("control id %d out of range for type %d, dev %s\n",
+		       control_id, control_type, dev->ctlra_dev_info.vendor);
+	}
+
 	/* search for correct lut layer */
 	struct lut_t *l;
 	struct lut_t *lut = 0;
@@ -260,6 +266,9 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 		return 0;
 
 	TAILQ_INIT(&dev->lut_list);
+
+	/* store the dev info into the struct, for error checking later */
+	dev->ctlra_dev_info = *info;
 
 	/* add LUT to this dev */
 	int32_t ret = lut_create_add_to_dev(dev, info);

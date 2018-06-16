@@ -52,6 +52,9 @@ struct dev_t {
 
 	/* unique integer ID starting from zero for each LUT */
 	uint32_t lut_idx;
+
+	/* ctlra dev info, required to error check binding IDs */
+	struct ctlra_dev_info_t ctlra_dev_info;
 };
 
 struct mappa_t {
