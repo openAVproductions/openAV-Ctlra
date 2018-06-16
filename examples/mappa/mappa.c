@@ -54,20 +54,23 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		float v = 0;
+		uint32_t id = 0;
 
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
-			t = &lut->target_types[CTLRA_EVENT_BUTTON][e->button.id];
+			id = e->button.id;
+			t = &lut->target_types[CTLRA_EVENT_BUTTON][id];
 			v = e->button.pressed;
-			printf("button id %d\n", e->button.id);
 			break;
 		case CTLRA_EVENT_ENCODER:
-			t =&lut->target_types[CTLRA_EVENT_ENCODER][e->encoder.id];
-			v = e->encoder.delta;
 			// TODO: handle delta floats
+			id = e->encoder.id;
+			t = &lut->target_types[CTLRA_EVENT_ENCODER][id];
+			v = e->encoder.delta;
 			break;
 		case CTLRA_EVENT_SLIDER:
-			t = &lut->target_types[CTLRA_EVENT_SLIDER][e->slider.id];
+			id = e->slider.id;
+			t = &lut->target_types[CTLRA_EVENT_SLIDER][id];
 			v = e->slider.value;
 			break;
 		case CTLRA_EVENT_GRID:
@@ -76,6 +79,19 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 			break;
 		};
 
+		/* ensure event id is within known range. Badly written
+		 * device code might send events that they don't advertise.
+		 * Hence, we check if the event is in the advertised range,
+		 * and bomb out if its not, notifying the dev.
+		 */
+		const int count = dev->ctlra_dev_info.control_count[e->type];
+		if(id >= count) {
+			printf("%s() device error: type %d id %d >= control count %d\n",
+			       __func__, e->type, id, count);
+			continue;
+		}
+
+		/* perform callback as currently mapped by lut */
 		if(t && t->func) {
 			printf("grp %d, itm %d\n", t->group_id, t->item_id);
 			t->func(t->group_id, t->item_id, v, t->userdata);
@@ -181,8 +197,10 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 
 	/* error check control type/id combo */
 	if(control_id >= dev->ctlra_dev_info.control_count[control_type]) {
-		printf("control id %d out of range for type %d, dev %s\n",
-		       control_id, control_type, dev->ctlra_dev_info.vendor);
+		printf("%s: control id %d out of range for type %d, dev %s\n",
+		       __func__, control_id, control_type,
+		       dev->ctlra_dev_info.vendor);
+		return -EINVAL;
 	}
 
 	/* search for correct lut layer */
