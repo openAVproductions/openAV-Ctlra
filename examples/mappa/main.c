@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	if(!m)
 		return -1;
 
-	for(int i = 0; i < 12; i++) {
+	for(int i = 1; i < 12; i++) {
 		char grp_buf[64];
 		char itm_buf[64];
 
@@ -60,8 +60,8 @@ int main(int argc, char **argv)
 	}
 
 	/* valid remove works */
-	ret = mappa_sw_target_remove(m, 0, 0);
-	assert(ret == 0);
+	//ret = mappa_sw_target_remove(m, 0, 0);
+	//assert(ret == 0);
 
 	/* no invalid removes */
 	ret = mappa_sw_target_remove(m, 2, 0);
@@ -96,6 +96,19 @@ int main(int argc, char **argv)
 	control = 2;
 	group = 1;
 	item = 2;
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
+					 group, item, layer);
+
+	control = 0;
+	group = 0;
+	item = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
+					 group, item, layer);
+
+	control = 1;
+	group = 0;
+	item = 0;
+	layer = 1;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
 					 group, item, layer);
 

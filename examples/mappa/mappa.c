@@ -179,10 +179,25 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		return -EINVAL;
 	}
 
-	/* todo error check control_type, control_id */
+	/* search for correct lut layer */
+	struct lut_t *l;
+	struct lut_t *lut = 0;
+	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
+		printf("searching for layer %d, have %d\n", layer, l->id);
+		if(l->id == layer) {
+			lut = l;
+			break;
+		}
+	}
 
-	struct mappa_sw_target_t *dev_target =
-		&dev->active_lut->target_types[control_type][control_id];
+	if(lut == 0) {
+		printf("invalid layer %d requested for binding\n", layer);
+		return -EINVAL;
+	}
+
+	struct mappa_sw_target_t *dev_target = 0;
+	/* todo error check control_type, control_id */
+	dev_target = &lut->target_types[control_type][control_id];
 
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
@@ -191,7 +206,14 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 			dev_target->item_id  = iid;
 			dev_target->group_id = gid;
 			dev_target->func     = t->target.func;
-			dev_target->userdata = t->target.userdata;
+			int is_internal = (gid == 0);
+
+			/* internal mappings expect the dev_t *, while
+			 * external mappings recieve the sw provided ud */
+			if(is_internal)
+				dev_target->userdata = dev;
+			else
+				dev_target->userdata = t->target.userdata;
 			break;
 		}
 	}
@@ -217,7 +239,7 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 
 	lut->id = dev->lut_idx++;
 
-	TAILQ_INSERT_HEAD(&dev->lut_list, lut, tailq);
+	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
 
 	return 0;
 
@@ -244,11 +266,13 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	if(ret)
 		printf("error ret from lut_create_add_to_dev: %d\n", ret);
 
+	ret = lut_create_add_to_dev(dev, info);
+	if(ret)
+		printf("error ret from 2ND lut_create_add_to_dev: %d\n", ret);
+
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
-
 	m->dev = dev;
-
 	return dev;
 }
 
@@ -287,6 +311,25 @@ mappa_iter(struct mappa_t *m)
 	return 0;
 }
 
+/* int cast of the float value will indicate the layer to switch to */
+void mappa_layer_switch_target(uint32_t group_id, uint32_t target_id,
+			       float value, void *userdata)
+{
+	struct dev_t *dev = userdata;
+	int layer = (int)value;
+
+	/* search for correct lut layer */
+	struct lut_t *l;
+	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
+		if(l->id == layer) {
+			dev->active_lut = l;
+			break;
+		}
+	}
+
+	/* TODO: how to notify of failure to switch? */
+}
+
 struct mappa_t *
 mappa_create(struct mappa_opts_t *opts)
 {
@@ -302,6 +345,22 @@ mappa_create(struct mappa_opts_t *opts)
 	m->ctlra = c;
 
 	TAILQ_INIT(&m->target_list);
+
+	/* push back "internal" targets like layer switching */
+	struct mappa_sw_target_t tar = {
+		.group_name = "mappa",
+		.item_name = "layer switch",
+		.group_id = 0,
+		.item_id = 0,
+		.func = mappa_layer_switch_target,
+		/* TODO: pass the dev_t* to switch as userdata
+		 * for internal mappings. Do this when bindings are
+		 * created */
+		.userdata = 0,
+	};
+	int ret = mappa_sw_target_add(m, &tar);
+	assert(ret == 0);
+
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	printf("mappa connected to %d devices\n", num_devs);
