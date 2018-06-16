@@ -75,7 +75,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 			break;
 		};
 
-		if(t->func) {
+		if(t && t->func) {
 			printf("grp %d, itm %d\n", t->group_id, t->item_id);
 			t->func(t->group_id, t->item_id, v, t->userdata);
 		}
