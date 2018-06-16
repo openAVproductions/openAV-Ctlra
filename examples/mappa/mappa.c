@@ -31,8 +31,11 @@
  * --- Adding a new layer adds Group "mappa" : Item "Layer 1" ?
  */
 
+
 void mappa_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
+	/* handle user feedback here. */
+
 }
 
 void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
@@ -131,13 +134,38 @@ target_destroy(struct target_t *t)
 	free(t);
 }
 
+struct source_t *
+source_deep_copy(const struct mappa_sw_source_t *s)
+{
+	struct source_t *n = malloc(sizeof(struct source_t));
+	n->source = *s;
+	if(s->name)
+		n->source.name = strdup(s->name);
+	return n;
+}
+
+int32_t
+mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
+{
+	struct source_t *n = source_deep_copy(t);
+	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
+
+	printf("added source %s\n", n->source.name);
+
+	/* TODO: must each group_id and item_id be unique? Do we need to
+	 * check this before add? How does remove work if we don't have
+	 * a unique id?
+	 */
+	return 0;
+}
+
 int32_t
 mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
 {
-	struct target_t * n= target_create_copy_for_list(t);
+	struct target_t *n = target_create_copy_for_list(t);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
 
-	printf("added %d %d\n", n->target.group_id, n->target.item_id);
+	printf("added target %d %d\n", n->target.group_id, n->target.item_id);
 
 	/* TODO: must each group_id and item_id be unique? Do we need to
 	 * check this before add? How does remove work if we don't have

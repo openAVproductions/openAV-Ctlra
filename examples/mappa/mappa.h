@@ -91,6 +91,14 @@ typedef void (*mappa_sw_target_float_func)(uint32_t group_id,
 					   float value,
 					   void *userdata);
 
+/* Callback function to be implemented by the host/app. This will be
+ * called when a particular source value is required to be displayed
+ * on a control surface.
+ */
+typedef void (*mappa_sw_source_float_func)(void *token,
+					   float *value,
+					   void *userdata);
+
 /** mappa_sw_target_t
  * A mappa_sw_target_t is the structure that represents a destination for
  * hardware input. The target itself is a software value, which the
@@ -127,6 +135,17 @@ struct mappa_sw_target_t {
 	void *userdata;
 };
 
+/* data structure to expose a source of feedback information to mappa.
+ * This structure must be filled in by the host/application, and then
+ * registered with a mappa instance. The callback will be called when
+ * the source value is required.
+ */
+struct mappa_sw_source_t {
+	char *name;
+	mappa_sw_source_float_func func;
+	void *userdata;
+};
+
 /** Add the target to the mappa instance, push it to the UI for
  * visibility, and allow ctlra inputs to be mapped to this target.
  * All targets are always available, the application is responsible for
@@ -151,6 +170,17 @@ int32_t mappa_sw_target_remove(struct mappa_t *m,
 			       uint32_t group_id,
 			       uint32_t item_id);
 
+/** Register a source of feedback information to the controllers.
+ * Examples include play/stop state, track level meters, FX on/off states,
+ * float values such as EQ, Filter Cutoffs etc. These values can be mapped
+ * by the user to any control surface - LED lights, moving faders etc. The
+ * data should be provided in a way that allows the user to easily map it.
+ *
+ * TODO: link to value mushers here
+ */
+int32_t mappa_sw_source_add(struct mappa_t *m,
+			    struct mappa_sw_source_t *t);
+
 /* returns number of controllers */
 int32_t mappa_ctlra_count();
 /* returns user-readable info on device */
@@ -166,6 +196,13 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t gid,
 				   uint32_t iid,
 				   uint32_t layer);
+
+
+int32_t mappa_bind_source_to_ctlra(struct mappa_t *m,
+				   uint32_t cltra_dev_id,
+				   uint32_t layer,
+				   uint32_t feedback_id,
+				   const char *name);
 
 
 void mappa_destroy(struct mappa_t *m);

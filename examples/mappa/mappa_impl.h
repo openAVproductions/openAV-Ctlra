@@ -12,6 +12,13 @@ struct target_t {
 };
 TAILQ_HEAD(target_list_t, target_t);
 
+/* internal data structure for linked list of sw feedback sources */
+struct source_t {
+	TAILQ_ENTRY(source_t) tailq;
+	struct mappa_sw_source_t source;
+};
+TAILQ_HEAD(source_list_t, source_t);
+
 /* forward decl only */
 struct mappa_t;
 
@@ -28,6 +35,9 @@ struct lut_t {
 	 * - only have performance required items in cache
 	 */
 	struct mappa_sw_target_t *target_types[CTLRA_EVENT_T_COUNT];
+
+	/* array of feedback items that the HW has, that can be mapped to */
+
 };
 TAILQ_HEAD(lut_list_t, lut_t);
 
@@ -67,4 +77,7 @@ struct mappa_t {
 	 * book-keeping only for add/remove, and map/unmap.
 	 */
 	struct target_list_t target_list;
+
+	/* container for all sources in the system. Not used for lookup */
+	struct source_list_t source_list;
 };

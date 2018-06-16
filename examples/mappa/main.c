@@ -16,6 +16,14 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
+void sw_source_float_func(void *token,
+			  float *value,
+			  void *userdata)
+{
+	/* hacky hack - assign value of userdata to value */
+	*value = *(float *)userdata;
+}
+
 void sw_target_float_func(uint32_t group_id, uint32_t target_id,
 			  float value, void *userdata)
 {
@@ -77,6 +85,21 @@ int main(int argc, char **argv)
 
 	ret = mappa_sw_target_remove(m, 1, 0);
 	assert(ret == 0);
+
+
+	/****** Feedback ******/
+	struct mappa_sw_source_t fb = {
+		.name = "test_fb_1",
+		.func = sw_source_float_func,
+		.userdata = 0,
+	};
+	ret = mappa_sw_source_add(m, &fb);
+	assert(ret == 0);
+
+	fb.name = "test_fb_2";
+	ret = mappa_sw_source_add(m, &fb);
+	assert(ret == 0);
+
 
 	/* map a few controls */
 	int dev = 0;
