@@ -21,7 +21,7 @@ void sw_source_float_func(void *token,
 			  void *userdata)
 {
 	/* hacky hack - assign value of userdata to value */
-	*value = *(float *)userdata;
+	*value = userdata ? 1.0f : 0.f;
 }
 
 void sw_target_float_func(uint32_t group_id, uint32_t target_id,
@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 	assert(ret == 0);
 
 	fb.name = "test_fb_2";
+	fb.userdata = 1,
 	ret = mappa_sw_source_add(m, &fb);
 	assert(ret == 0);
 

@@ -36,8 +36,10 @@ struct lut_t {
 	 */
 	struct mappa_sw_target_t *target_types[CTLRA_EVENT_T_COUNT];
 
-	/* array of feedback items that the HW has, that can be mapped to */
-
+	/* array of feedback items that the HW has, that can be mapped to.
+	 * The size of the array is defined by the number of feedback items
+	 * on the device */
+	struct mappa_sw_source_t *sources;
 };
 TAILQ_HEAD(lut_list_t, lut_t);
 
@@ -51,15 +53,14 @@ struct dev_t {
 	 * main LUT for event dispatch, but allow self access.
 	 */
 	struct mappa_t *self;
+
 	/* List of look up tables for events. Only to keep track of them,
 	 * and switch between them as required. The hot-path uses a direct
 	 * pointer to the lut
 	 */
 	struct lut_list_t lut_list;
-
 	/* the active lut to use for incoming events */
 	struct lut_t *active_lut;
-
 	/* unique integer ID starting from zero for each LUT */
 	uint32_t lut_idx;
 

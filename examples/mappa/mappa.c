@@ -31,11 +31,35 @@
  * --- Adding a new layer adds Group "mappa" : Item "Layer 1" ?
  */
 
-
-void mappa_feedback_func(struct ctlra_dev_t *dev, void *d)
+/* mushes a single float to multiple feedback items. Eg: volume LEDs.
+ * The application supplies a single float value, shown as VU LED strip
+ */
+static uint32_t
+source_mush_value_to_array(float v, uint32_t idx, uint32_t total)
 {
-	/* handle user feedback here. */
+	return v > (idx / ((float)total)) ? -1 : 0x4;
+}
 
+void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
+{
+	struct dev_t *dev = userdata;
+	struct mappa_t *m = dev->self;
+	struct source_t *s;
+
+	int sidx = 0;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		float v;
+		void *token = 0x0;
+		if(s && s->source.func)
+			s->source.func(token, &v, s->source.userdata);
+
+		for(int i = 0; i < 7; i++) {
+			/* get source for the led */
+			ctlra_dev_light_set(ctlra_dev, i + (sidx++ * 7),
+					    source_mush_value_to_array(v, i, 7));
+		}
+	}
+	ctlra_dev_light_flush(ctlra_dev, 1);
 }
 
 void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
