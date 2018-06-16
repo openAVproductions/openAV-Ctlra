@@ -26,7 +26,7 @@ void tests(void);
 
 int main(int argc, char **argv)
 {
-	tests();
+	//tests();
 
 	int ret;
 	signal(SIGINT, sighndlr);
@@ -105,11 +105,18 @@ int main(int argc, char **argv)
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
 					 group, item, layer);
 
+	/* layer 1 bindings */
 	control = 1;
 	group = 0;
 	item = 0;
 	layer = 1;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
+					 group, item, layer);
+
+	control = 13;
+	group = 1;
+	item = 3;
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
 
 	/* loop for testing */
