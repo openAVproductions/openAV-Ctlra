@@ -59,6 +59,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		case CTLRA_EVENT_BUTTON:
 			t = &lut->target_types[CTLRA_EVENT_BUTTON][e->button.id];
 			v = e->button.pressed;
+			printf("button id %d\n", e->button.id);
 			break;
 		case CTLRA_EVENT_ENCODER:
 			t =&lut->target_types[CTLRA_EVENT_ENCODER][e->encoder.id];
@@ -162,6 +163,7 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 
 int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t cltra_dev_id,
+				   uint32_t control_type,
 				   uint32_t control_id,
 				   uint32_t gid,
 				   uint32_t iid,
@@ -177,8 +179,10 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		return -EINVAL;
 	}
 
+	/* todo error check control_type, control_id */
+
 	struct mappa_sw_target_t *dev_target =
-		&dev->active_lut->target_types[CTLRA_EVENT_SLIDER][control_id];
+		&dev->active_lut->target_types[control_type][control_id];
 
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {

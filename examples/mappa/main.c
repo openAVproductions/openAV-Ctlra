@@ -84,12 +84,20 @@ int main(int argc, char **argv)
 	int group = 0;
 	int item = 7;
 	int layer = 0;
-	ret = mappa_bind_ctlra_to_target(m, dev, control, group, item, layer);
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
+					 group, item, layer);
 
 	control = 13;
 	group = 1;
 	item = 1;
-	ret = mappa_bind_ctlra_to_target(m, dev, control, group, item, layer);
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
+					 group, item, layer);
+
+	control = 2;
+	group = 1;
+	item = 2;
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
+					 group, item, layer);
 
 	/* loop for testing */
 	while(!done) {
@@ -109,6 +117,7 @@ void tests(void)
 	printf("errno %d\n", errno);
 	assert(!ret);
 	ret = setenv("CTLRA_VIRTUAL_DEVICE", "Kontrol Z1", 1);
+	//ret = setenv("CTLRA_VIRTUAL_DEVICE", "Maschine Mikro Mk2", 1);
 	printf("errno %d\n", errno);
 	assert(!ret);
 

@@ -161,6 +161,7 @@ int32_t mappa_ctlra_get_info();
  */
 int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t cltra_dev_id,
+				   uint32_t control_type,
 				   uint32_t control_id,
 				   uint32_t gid,
 				   uint32_t iid,
