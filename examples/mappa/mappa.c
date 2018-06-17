@@ -498,8 +498,7 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 	struct mappa_t *m = userdata;
 	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
 	int layer = (int)value;
-	printf("%s, layer = %d\n", __func__, layer);
-
+	//printf("%s, layer = %d\n", __func__, layer);
 	/* search for correct lut layer */
 	struct lut_t *l;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {

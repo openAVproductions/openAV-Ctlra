@@ -81,7 +81,8 @@ bind_callback(struct mappa_t *m, void *userdata)
 	int ctype = CTLRA_EVENT_SLIDER;
 	int cid = 0;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP %d failed: cid %d\n", __LINE__, cid);
 
 	/* target 2 */
 	t.name = "t_2";
@@ -126,19 +127,23 @@ bind_callback(struct mappa_t *m, void *userdata)
 	};
 	uint32_t source_id;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP %d failed: source name %s\n", __LINE__, fb.name);
 
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
 
 	/**** FB item 2 */
 	fb.name = "test fb 2";
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
 	layer = 1;
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
 
 #if 0
 
