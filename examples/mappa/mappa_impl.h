@@ -8,8 +8,9 @@
 /* internal data structure for a linked list of targets */
 struct target_t {
 	TAILQ_ENTRY(target_t) tailq;
-	struct mappa_sw_target_t target;
-	/* variably sized token based approach */
+	struct mappa_target_t target;
+	uint32_t id;
+	/* variably sized token size and data */
 	uint32_t token_size;
 	uint8_t token_buf[];
 };
@@ -18,7 +19,7 @@ TAILQ_HEAD(target_list_t, target_t);
 /* internal data structure for linked list of sw feedback sources */
 struct source_t {
 	TAILQ_ENTRY(source_t) tailq;
-	struct mappa_sw_source_t source;
+	struct mappa_source_t source;
 };
 TAILQ_HEAD(source_list_t, source_t);
 
@@ -37,12 +38,12 @@ struct lut_t {
 	 * - no memory wastage
 	 * - only have performance required items in cache
 	 */
-	struct mappa_sw_target_t *target_types[CTLRA_EVENT_T_COUNT];
+	struct target_t *target_types[CTLRA_EVENT_T_COUNT];
 
 	/* array of feedback items that the HW has, that can be mapped to.
 	 * The size of the array is defined by the number of feedback items
 	 * on the device */
-	struct mappa_sw_source_t **sources;
+	struct mappa_source_t **sources;
 };
 TAILQ_HEAD(lut_list_t, lut_t);
 

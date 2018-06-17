@@ -49,7 +49,7 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	/* iterate over the # of destinations, pulling sources for each */
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
-		struct mappa_sw_source_t *s = lut->sources[i];
+		struct mappa_source_t *s = lut->sources[i];
 		if(s && s->func) {
 			float v;
 			s->func(0, &v, s->userdata);
@@ -89,7 +89,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		return;
 	}
 
-	struct mappa_sw_target_t *t = 0;
+	struct target_t *t = 0;
 
 	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
@@ -132,14 +132,16 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		}
 
 		/* perform callback as currently mapped by lut */
-		if(t && t->func)
-			t->func(t->group_id, t->item_id, v, t->userdata);
+		if(t && t->target.func)
+			t->target.func(t->id, v,
+				       t->token_size, t->token_buf,
+				       t->target.userdata);
 	}
 }
 
 /* perform a deep copy of the target so it doesn't rely on app memory */
 static struct target_t *
-target_create_copy_for_list(const struct mappa_sw_target_t *t,
+target_create_copy_for_list(const struct mappa_target_t *t,
 			    uint32_t token_size,
 			    void *token)
 {
@@ -148,11 +150,8 @@ target_create_copy_for_list(const struct mappa_sw_target_t *t,
 	/* dereference the current target, shallow copy values */
 	n->target = *t;
 	/* deep copy strings (to not depend on app provided strings) */
-	if(t->group_name)
-		n->target.group_name = strdup(t->group_name);
-	if(t->item_name)
-		n->target.item_name = strdup(t->item_name);
-
+	if(t->name)
+		n->target.name = strdup(t->name);
 	/* store token */
 	n->token_size = token_size;
 	memcpy(n->token_buf, token, token_size);
@@ -164,12 +163,7 @@ static void
 target_destroy(struct target_t *t)
 {
 	assert(t != NULL);
-
-	if(t->target.group_name)
-		free(t->target.group_name);
-	if(t->target.item_name)
-		free(t->target.item_name);
-
+	free(t->target.name);
 	free(t);
 }
 
@@ -177,13 +171,12 @@ static void
 source_destroy(struct source_t *s)
 {
 	assert(s != NULL);
-	if(s->source.name)
-		free(s->source.name);
+	free(s->source.name);
 	free(s);
 }
 
 struct source_t *
-source_deep_copy(const struct mappa_sw_source_t *s)
+source_deep_copy(const struct mappa_source_t *s)
 {
 	struct source_t *n = calloc(1, sizeof(struct source_t));
 	n->source = *s;
@@ -193,7 +186,7 @@ source_deep_copy(const struct mappa_sw_source_t *s)
 }
 
 int32_t
-mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
+mappa_source_add(struct mappa_t *m, struct mappa_source_t *t)
 {
 	struct source_t *n = source_deep_copy(t);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
@@ -203,42 +196,26 @@ mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
 }
 
 int32_t
-mappa_sw_target_add_token(struct mappa_t *m,
-			  struct mappa_sw_target_t *t,
-			  uint32_t token_size,
-			  void *token)
+mappa_target_add(struct mappa_t *m,
+		 struct mappa_target_t *t,
+		 uint32_t *target_id,
+		 uint32_t token_size,
+		 void *token)
 {
 	struct target_t *n = target_create_copy_for_list(t, token_size, token);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
+	/* TODO: fill in target id here */
 	return 0;
 }
 
 int32_t
-mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
-{
-	struct target_t *n = target_create_copy_for_list(t, 0, 0);
-	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
-
-	//printf("added target %d %d\n", n->target.group_id, n->target.item_id);
-	/* TODO: must each group_id and item_id be unique? Do we need to
-	 * check this before add? How does remove work if we don't have
-	 * a unique id?
-	 */
-	return 0;
-}
-
-int32_t
-mappa_sw_target_remove(struct mappa_t *m, uint32_t group_id,
-		       uint32_t item_id)
+mappa_target_remove(struct mappa_t *m, uint32_t target_id)
 {
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
-		if((t->target.group_id == group_id) &&
-		   (t->target.item_id  == item_id))
-		{
-			printf("removing target: group %d, item %d\n",
-			       t->target.group_id, t->target.item_id);
-			/* nuke any controller mappings to this */
+		if(t->id == target_id) {
+			printf("removing target id %d\n", t->id);
+			/* TODO: nuke any controller mappings here */
 			TAILQ_REMOVE(&m->target_list, t, tailq);
 			target_destroy(t);
 			return 0;
@@ -277,11 +254,10 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 
 int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t ctlra_dev_id,
+				   uint32_t layer,
 				   uint32_t control_type,
 				   uint32_t control_id,
-				   uint32_t gid,
-				   uint32_t iid,
-				   uint32_t layer)
+				   uint32_t target_id)
 {
 	if(!m)
 		return -EINVAL;
@@ -307,32 +283,24 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 			break;
 		}
 	}
-
 	if(lut == 0) {
 		printf("invalid layer %d requested for binding\n", layer);
 		return -EINVAL;
 	}
 
-	struct mappa_sw_target_t *dev_target = 0;
+	struct target_t *dev_target = 0;
 	/* todo error check control_type, control_id */
 	dev_target = &lut->target_types[control_type][control_id];
 
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
-		if((t->target.group_id == gid) &&
-		   (t->target.item_id  == iid)) {
-			dev_target->item_id  = iid;
-			dev_target->group_id = gid;
-			dev_target->func     = t->target.func;
-			int is_internal = (gid == 0);
-
-			/* internal mappings expect the dev_t *, while
-			 * external mappings recieve the sw provided ud */
-			if(is_internal)
-				dev_target->userdata = dev;
-			else
-				dev_target->userdata = t->target.userdata;
-			break;
+		if(t->id == target_id) {
+			printf("TODO %s %d\n", __func__, __LINE__);
+#if 0
+			dev_target->id  = target_id;
+			dev_target->func = t->target.func;
+			dev_target->userdata = t->target.userdata;
+#endif
 		}
 	}
 
@@ -383,7 +351,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
-		struct mappa_sw_source_t *s = l->sources[i];
+		struct mappa_source_t *s = l->sources[i];
 		if(s)
 			printf("postbind i %d, s %p, func %p\n", i, s, s->func);
 	}
@@ -414,7 +382,7 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
 		//printf("type %d, count %d\n", i, c);
-		lut->target_types[i] = calloc(c, sizeof(struct mappa_sw_target_t));
+		lut->target_types[i] = calloc(c, sizeof(struct mappa_target_t));
 		if(!lut->target_types[i])
 			goto fail;
 	}
@@ -422,7 +390,7 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
 	printf("num fb items = %d\n", items);
-	lut->sources = calloc(items, sizeof(struct mappa_sw_source_t));
+	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
 
@@ -555,20 +523,19 @@ mappa_create(struct mappa_opts_t *opts)
 	TAILQ_INIT(&m->dev_list);
 
 	/* push back "internal" targets like layer switching */
-	struct mappa_sw_target_t tar = {
-		.group_name = "mappa",
-		.item_name = "layer switch",
-		.group_id = 0,
-		.item_id = 0,
+	struct mappa_target_t tar = {
+		.name = "Mappa:Layer Switch",
 		.func = mappa_layer_switch_target,
 		/* TODO: pass the dev_t* to switch as userdata
 		 * for internal mappings. Do this when bindings are
 		 * created */
 		.userdata = 0,
 	};
-	int ret = mappa_sw_target_add(m, &tar);
-	assert(ret == 0);
 
+	/*
+	int ret = mappa_target_add(m, &tar, 
+	assert(ret == 0);
+	*/
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	printf("mappa connected to %d devices\n", num_devs);

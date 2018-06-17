@@ -39,6 +39,7 @@ bind_callback(struct mappa_t *m, void *userdata)
 {
 	int ret;
 
+#if 0
 	for(int i = 1; i < 12; i++) {
 		char grp_buf[64];
 		char itm_buf[64];
@@ -151,6 +152,7 @@ bind_callback(struct mappa_t *m, void *userdata)
 	layer = 0;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
+#endif
 
 	return 0;
 }
