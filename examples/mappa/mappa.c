@@ -139,19 +139,23 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 
 /* perform a deep copy of the target so it doesn't rely on app memory */
 static struct target_t *
-target_create_copy_for_list(const struct mappa_sw_target_t *t)
+target_create_copy_for_list(const struct mappa_sw_target_t *t,
+			    uint32_t token_size,
+			    void *token)
 {
 	/* allocate a size for the list-pointer-enabled struct */
-	struct target_t *n = malloc(sizeof(struct target_t));
-
+	struct target_t *n = malloc(sizeof(struct target_t) + token_size);
 	/* dereference the current target, shallow copy values */
 	n->target = *t;
-
 	/* deep copy strings (to not depend on app provided strings) */
 	if(t->group_name)
 		n->target.group_name = strdup(t->group_name);
 	if(t->item_name)
 		n->target.item_name = strdup(t->item_name);
+
+	/* store token */
+	n->token_size = token_size;
+	memcpy(n->token_buf, token, token_size);
 
 	return n;
 }
@@ -199,9 +203,20 @@ mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
 }
 
 int32_t
+mappa_sw_target_add_token(struct mappa_t *m,
+			  struct mappa_sw_target_t *t,
+			  uint32_t token_size,
+			  void *token)
+{
+	struct target_t *n = target_create_copy_for_list(t, token_size, token);
+	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
+	return 0;
+}
+
+int32_t
 mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
 {
-	struct target_t *n = target_create_copy_for_list(t);
+	struct target_t *n = target_create_copy_for_list(t, 0, 0);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
 
 	//printf("added target %d %d\n", n->target.group_id, n->target.item_id);

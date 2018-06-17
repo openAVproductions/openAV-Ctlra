@@ -9,6 +9,9 @@
 struct target_t {
 	TAILQ_ENTRY(target_t) tailq;
 	struct mappa_sw_target_t target;
+	/* variably sized token based approach */
+	uint32_t token_size;
+	uint8_t token_buf[];
 };
 TAILQ_HEAD(target_list_t, target_t);
 
