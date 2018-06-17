@@ -79,14 +79,16 @@ bind_callback(struct mappa_t *m, void *userdata)
 	assert(ret == 0);
 	cid = 13;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP failed: cid %d\n", cid);
 
 	t.name = "t_3";
 	ret = mappa_target_add(m, &t, &tid, &token_test, sizeof(token_test));
 	assert(ret == 0);
 	cid = 12;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	assert(ret == 0);
+	if(ret != 0)
+		printf("MAP failed: cid %d\n", cid);
 
 #if 0
 	/****** Feedback ******/
