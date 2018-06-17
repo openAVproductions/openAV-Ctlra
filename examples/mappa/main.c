@@ -18,13 +18,11 @@ void sighndlr(int signal)
 
 void sw_source_float_func_1(void *token, float *value, void *userdata)
 {
-	printf("%s\n", __func__, userdata);
 	*value = 1;
 }
 
 void sw_source_float_func_2(void *token, float *value, void *userdata)
 {
-	printf("%s\n", __func__, userdata);
 	*value = 0.2;
 }
 
@@ -112,7 +110,6 @@ int main(int argc, char **argv)
 	layer = 1;
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_2");
 
-
 	/* map a few controls */
 	int control = 2;
 	int group = 0;
@@ -156,7 +153,7 @@ int main(int argc, char **argv)
 	/* loop for testing */
 	while(!done) {
 		mappa_iter(m);
-		usleep(10 * 1000);
+		usleep((1000 * 1000) / 60);
 	}
 
 	mappa_destroy(m);

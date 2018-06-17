@@ -37,7 +37,7 @@
 static uint32_t
 source_mush_value_to_array(float v, uint32_t idx, uint32_t total)
 {
-	return v > (idx / ((float)total)) ? -1 : 0x4;
+	return v > (idx / ((float)total)) ? -1 : 0xf;
 }
 
 void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
@@ -50,15 +50,13 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct mappa_sw_source_t *s = lut->sources[i];
-		//printf("fb func: i %d, s %p, func %p\n", i, s, &lut->sources[i]);
 		if(s && s->func) {
-			//printf("checking source %s, ud %p\n", s->name, s->userdata);
 			float v;
 			s->func(0, &v, s->userdata);
 			for(int j = 0; j < 7; j++) {
-				ctlra_dev_light_set(ctlra_dev, j, source_mush_value_to_array(v, j, 7));
+				ctlra_dev_light_set(ctlra_dev, i * 7 + j,
+						    source_mush_value_to_array(v, j, 7));
 			}
-			printf("id = %d, v = %f\n", i, v);
 		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
@@ -134,10 +132,8 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		}
 
 		/* perform callback as currently mapped by lut */
-		if(t && t->func) {
-			printf("grp %d, itm %d\n", t->group_id, t->item_id);
+		if(t && t->func)
 			t->func(t->group_id, t->item_id, v, t->userdata);
-		}
 	}
 }
 
@@ -188,7 +184,7 @@ mappa_sw_source_add(struct mappa_t *m, struct mappa_sw_source_t *t)
 {
 	struct source_t *n = source_deep_copy(t);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
-	printf("added source %s, func %p\n", n->source.name, n->source.func);
+	//printf("added source %s, func %p\n", n->source.name, n->source.func);
 	/* TODO: check for uniqueness? */
 	return 0;
 }
@@ -199,8 +195,7 @@ mappa_sw_target_add(struct mappa_t *m, struct mappa_sw_target_t *t)
 	struct target_t *n = target_create_copy_for_list(t);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
 
-	printf("added target %d %d\n", n->target.group_id, n->target.item_id);
-
+	//printf("added target %d %d\n", n->target.group_id, n->target.item_id);
 	/* TODO: must each group_id and item_id be unique? Do we need to
 	 * check this before add? How does remove work if we don't have
 	 * a unique id?
@@ -269,7 +264,6 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	struct lut_t *l;
 	struct lut_t *lut = 0;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		printf("searching for layer %d, have %d\n", layer, l->id);
 		if(l->id == layer) {
 			lut = l;
 			break;
@@ -314,6 +308,10 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
 {
 	/* check is fb_id is valid */
 	struct dev_t *dev = m->dev;
+	if(!dev) {
+		return -EINVAL;
+	}
+
 	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
 		printf("%s() invalid fb_id\n", __func__);
 	}
@@ -323,8 +321,6 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
 		if(!strcmp(name, s->source.name)) {
-			printf("matched %s, s = %p, s->source %p\n",
-			       name, s, &s->source);
 			found = 1;
 			break;
 		}
@@ -345,25 +341,13 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
 		return -EINVAL;
 
 	/* set source to feed into the feedback id */
-	printf("setting layer %d fb id %d to %s, func %p\n", layer, fb_id,
-	       s->source.name, s->source.func);
 	l->sources[fb_id] = &s->source;
-	printf("source %p, %s, func %p, userdata %p\n",
-	       l->sources[fb_id],
-	       l->sources[fb_id]->name,
-	       l->sources[fb_id]->func,
-	       l->sources[fb_id]->userdata);
 
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
-#if 0
-		struct mappa_sw_source_t *s = &l->sources[i];
-		printf("fb func: i %d, s %p, func %p\n", i, s, s->func);
-#else
 		struct mappa_sw_source_t *s = l->sources[i];
 		if(s)
 			printf("postbind i %d, s %p, func %p\n", i, s, s->func);
-#endif
 	}
 
 	return 0;
