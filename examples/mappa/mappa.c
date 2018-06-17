@@ -267,7 +267,8 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
 	/* error check control type/id combo */
-	if(control_id >= dev->ctlra_dev_info.control_count[control_type]) {
+	if(control_id >= dev->ctlra_dev_info.control_count[control_type] ||
+			control_type >= CTLRA_EVENT_T_COUNT) {
 		printf("%s: control id %d out of range for type %d, dev %s\n",
 		       __func__, control_id, control_type,
 		       dev->ctlra_dev_info.vendor);
@@ -289,7 +290,6 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	}
 
 	struct target_t *dev_target = 0;
-	/* todo error check control_type, control_id */
 	dev_target = &lut->target_types[control_type][control_id];
 
 	struct target_t *t;
@@ -487,8 +487,9 @@ mappa_iter(struct mappa_t *m)
 }
 
 /* int cast of the float value will indicate the layer to switch to */
-void mappa_layer_switch_target(uint32_t group_id, uint32_t target_id,
-			       float value, void *userdata)
+void mappa_layer_switch_target(uint32_t target_id, float value,
+			       uint32_t token_size, void *token,
+			       void *userdata)
 {
 	struct dev_t *dev = userdata;
 	int layer = (int)value;
