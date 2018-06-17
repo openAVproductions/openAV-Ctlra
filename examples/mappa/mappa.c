@@ -336,6 +336,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 
 	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
 		printf("%s() invalid fb_id\n", __func__);
+		return -EINVAL;
 	}
 
 	/* iterate over sources by name, compare */
