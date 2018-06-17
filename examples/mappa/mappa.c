@@ -193,6 +193,8 @@ mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 	struct source_t *n = source_deep_copy(t);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
 	n->id = m->source_ids++;
+	if(source_id)
+		*source_id = n->id;
 	printf("added source %s, id %u, func %p\n", n->source.name, n->id,
 	       n->source.func);
 
@@ -311,10 +313,8 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 int32_t
 mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 			   uint32_t layer, uint32_t fb_id,
-			   const char *name)
+			   uint32_t source_id)
 {
-	/* check is fb_id is valid */
-
 	struct dev_t *dev = 0;
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
@@ -327,11 +327,12 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	int found = 0;
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
-		if(!strcmp(name, s->source.name)) {
+		if(s->id == source_id) {
 			found = 1;
 			break;
 		}
 	}
+	printf("source %d, found %d\n", source_id, found);
 	if(!found)
 		return -EINVAL;
 

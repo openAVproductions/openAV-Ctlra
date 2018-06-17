@@ -17,11 +17,13 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
+static float the_value;
+
 void sw_source_float_func_1(float *value,
 			    void *token, uint32_t token_size,
 			    void *userdata)
 {
-	*value = 1;
+	*value = the_value;
 }
 
 void sw_source_float_func_2(float *value,
@@ -40,17 +42,18 @@ void sw_target_float_func(uint32_t target_id,
 			  uint32_t token_size,
 			  void *userdata)
 {
-	printf("%s: target id %d, value %f, token size %d\n", __func__,
-	       target_id, value, token_size);
+#if 0
+	printf("%s: target id %d, value %f, token size %d\n",
+	       __func__, target_id, value, token_size);
+#endif
 	if(token_size == 8) {
 		uint64_t t = *(uint64_t *)token;
 		assert(t == 0xcafe);
 		assert(token_size == sizeof(uint64_t));
 	} else if (token_size == sizeof(token_test)) {
 		assert(memcmp(token, token_test, sizeof(token_test)) == 0);
-		uint64_t *td = token;
-		printf("%lx\n", td[3]);
 	}
+	the_value = value;
 }
 
 void tests(void);
@@ -106,7 +109,8 @@ bind_callback(struct mappa_t *m, void *userdata)
 	assert(ret == 0);
 
 	/**** map feedback *****/
-	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_1");
+	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
+	assert(ret == 0);
 
 #if 0
 
