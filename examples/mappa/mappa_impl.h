@@ -81,6 +81,10 @@ struct mappa_t {
 	struct ctlra_t *ctlra;
 
 	uint32_t dev_ids;
+	uint32_t target_ids;
+	uint32_t source_ids;
+
+	/* list of devices currently in use by mappa */
 	struct dev_list_t dev_list;
 
 	/* container for all targets in the system. This is not used to

@@ -26,10 +26,13 @@ void sw_source_float_func_2(void *token, float *value, void *userdata)
 	*value = 0.2;
 }
 
-void sw_target_float_func(uint32_t group_id, uint32_t target_id,
-			  float value, void *userdata)
+void sw_target_float_func(uint32_t target_id,
+			  float value,
+			  uint32_t token_size,
+			  void *token,
+			  void *userdata)
 {
-	printf("%s: (%d : %d) %f\n", __func__, group_id, target_id, value);
+	printf("%s: target id %d, value %f\n", __func__, target_id, value);
 }
 
 void tests(void);
@@ -38,6 +41,14 @@ int32_t
 bind_callback(struct mappa_t *m, void *userdata)
 {
 	int ret;
+
+	struct mappa_target_t t = {
+		.name = "t_1",
+		.func = sw_target_float_func,
+		.userdata = 0x0,
+	};
+	ret = mappa_target_add(m, &t, 0, 0, 0);
+	assert(ret == 0);
 
 #if 0
 	for(int i = 1; i < 12; i++) {

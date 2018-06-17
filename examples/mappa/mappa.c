@@ -141,9 +141,8 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 
 /* perform a deep copy of the target so it doesn't rely on app memory */
 static struct target_t *
-target_create_copy_for_list(const struct mappa_target_t *t,
-			    uint32_t token_size,
-			    void *token)
+target_clone(const struct mappa_target_t *t, uint32_t token_size,
+	     void *token)
 {
 	/* allocate a size for the list-pointer-enabled struct */
 	struct target_t *n = malloc(sizeof(struct target_t) + token_size);
@@ -202,9 +201,12 @@ mappa_target_add(struct mappa_t *m,
 		 uint32_t token_size,
 		 void *token)
 {
-	struct target_t *n = target_create_copy_for_list(t, token_size, token);
+	struct target_t *n = target_clone(t, token_size, token);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
-	/* TODO: fill in target id here */
+	n->id = m->target_ids++;
+	if(target_id)
+		*target_id = n->id;
+	printf("new target %s, id %u\n", t->name, n->id);
 	return 0;
 }
 
