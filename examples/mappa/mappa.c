@@ -135,7 +135,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		float value = v * 1.0f; // TODO scaling here?
 		if(t && t->target.func)
 			t->target.func(t->id, value,
-				       t->token_size, t->token_buf,
+				       t->token_buf, t->token_size,
 				       t->target.userdata);
 	}
 }
@@ -199,8 +199,8 @@ int32_t
 mappa_target_add(struct mappa_t *m,
 		 struct mappa_target_t *t,
 		 uint32_t *target_id,
-		 uint32_t token_size,
-		 void *token)
+		 void *token,
+		 uint32_t token_size)
 {
 	struct target_t *n = target_clone(t, token_size, token);
 	TAILQ_INSERT_HEAD(&m->target_list, n, tailq);
@@ -487,7 +487,7 @@ mappa_iter(struct mappa_t *m)
 
 /* int cast of the float value will indicate the layer to switch to */
 void mappa_layer_switch_target(uint32_t target_id, float value,
-			       uint32_t token_size, void *token,
+			       void *token, uint32_t token_size,
 			       void *userdata)
 {
 	struct dev_t *dev = userdata;

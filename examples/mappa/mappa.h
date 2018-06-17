@@ -88,8 +88,8 @@ int32_t mappa_iter(struct mappa_t *m);
  */
 typedef void (*mappa_target_float_func)(uint32_t target_id,
 					float value,
-					uint32_t token_size,
 					void *token,
+					uint32_t token_size,
 					void *userdata);
 
 /* Callback function to be implemented by the host/app. This will be
@@ -161,8 +161,8 @@ struct mappa_source_t {
 int32_t mappa_target_add(struct mappa_t *m,
 			 struct mappa_target_t *t,
 			 uint32_t *target_id,
-			 uint32_t token_size,
-			 void *token);
+			 void *token,
+			 uint32_t token_size);
 
 /** Remove a target from the mappa instance
  * @param m Mappa instance

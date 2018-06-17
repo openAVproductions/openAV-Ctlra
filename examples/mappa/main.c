@@ -28,11 +28,17 @@ void sw_source_float_func_2(void *token, float *value, void *userdata)
 
 void sw_target_float_func(uint32_t target_id,
 			  float value,
-			  uint32_t token_size,
 			  void *token,
+			  uint32_t token_size,
 			  void *userdata)
 {
-	printf("%s: target id %d, value %f\n", __func__, target_id, value);
+	printf("%s: target id %d, value %f, token size %d\n", __func__,
+	       target_id, value, token_size);
+	if(token_size) {
+		uint64_t t = *(uint64_t *)token;
+		assert(t == 0xcafe);
+		assert(token_size == sizeof(uint64_t));
+	}
 }
 
 void tests(void);
@@ -55,6 +61,15 @@ bind_callback(struct mappa_t *m, void *userdata)
 	int layer = 0;
 	int ctype = CTLRA_EVENT_SLIDER;
 	int cid = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
+	assert(ret == 0);
+
+	/* target 2 */
+	t.name = "t_2";
+	uint64_t token = 0xcafe;
+	ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint64_t));
+	assert(ret == 0);
+	cid = 13;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
