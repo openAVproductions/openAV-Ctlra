@@ -16,13 +16,16 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
-void sw_source_float_func(void *token,
-			  float *value,
-			  void *userdata)
+void sw_source_float_func_1(void *token, float *value, void *userdata)
 {
-	printf("%s\n", __func__);
-	/* hacky hack - assign value of userdata to value */
-	*value = userdata ? 1.0f : 0.f;
+	printf("%s\n", __func__, userdata);
+	*value = 1;
+}
+
+void sw_source_float_func_2(void *token, float *value, void *userdata)
+{
+	printf("%s\n", __func__, userdata);
+	*value = 0.2;
 }
 
 void sw_target_float_func(uint32_t group_id, uint32_t target_id,
@@ -91,14 +94,14 @@ int main(int argc, char **argv)
 	/****** Feedback ******/
 	struct mappa_sw_source_t fb = {
 		.name = "test_fb_1",
-		.func = sw_source_float_func,
-		.userdata = 1,
+		.func = sw_source_float_func_1,
+		.userdata = 0,
 	};
 	ret = mappa_sw_source_add(m, &fb);
 	assert(ret == 0);
 
 	fb.name = "test_fb_2";
-	fb.userdata = 1,
+	fb.func = sw_source_float_func_2,
 	ret = mappa_sw_source_add(m, &fb);
 	assert(ret == 0);
 
@@ -106,12 +109,15 @@ int main(int argc, char **argv)
 	int dev = 0;
 	int layer = 0;
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_1");
+	layer = 1;
+	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_2");
 
 
 	/* map a few controls */
 	int control = 2;
 	int group = 0;
 	int item = 7;
+	layer = 0;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
 

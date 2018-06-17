@@ -48,16 +48,20 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 
 	/* iterate over the # of destinations, pulling sources for each */
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
-	for(int i = 0; i < 1; i++) {
+	for(int i = 0; i < count; i++) {
 		struct mappa_sw_source_t *s = lut->sources[i];
-		printf("fb func: i %d, s %p, func %p\n", i, s, &lut->sources[i]);
+		//printf("fb func: i %d, s %p, func %p\n", i, s, &lut->sources[i]);
 		if(s && s->func) {
-			printf("checking source %s\n", s->name);
+			//printf("checking source %s, ud %p\n", s->name, s->userdata);
 			float v;
 			s->func(0, &v, s->userdata);
-			ctlra_dev_light_set(ctlra_dev, 0, v ? -1 : 0);
+			for(int j = 0; j < 7; j++) {
+				ctlra_dev_light_set(ctlra_dev, j, source_mush_value_to_array(v, j, 7));
+			}
+			printf("id = %d, v = %f\n", i, v);
 		}
 	}
+	ctlra_dev_light_flush(ctlra_dev, 1);
 
 	/*
 	int sidx = 0;
@@ -172,7 +176,7 @@ target_destroy(struct target_t *t)
 struct source_t *
 source_deep_copy(const struct mappa_sw_source_t *s)
 {
-	struct source_t *n = malloc(sizeof(struct source_t));
+	struct source_t *n = calloc(1, sizeof(struct source_t));
 	n->source = *s;
 	if(s->name)
 		n->source.name = strdup(s->name);
@@ -351,13 +355,14 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
 	       l->sources[fb_id]->userdata);
 
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
-	for(int i = 0; i < 1; i++) {
+	for(int i = 0; i < count; i++) {
 #if 0
 		struct mappa_sw_source_t *s = &l->sources[i];
 		printf("fb func: i %d, s %p, func %p\n", i, s, s->func);
 #else
 		struct mappa_sw_source_t *s = l->sources[i];
-		printf("postbind i %d, s %p, func %p\n", i, s, s->func);
+		if(s)
+			printf("postbind i %d, s %p, func %p\n", i, s, s->func);
 #endif
 	}
 
@@ -383,7 +388,7 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
 	printf("num fb items = %d\n", items);
-	lut->sources[0] = calloc(items, sizeof(struct mappa_sw_source_t));
+	lut->sources = calloc(items, sizeof(struct mappa_sw_source_t));
 	if(!lut->sources)
 		goto fail;
 
