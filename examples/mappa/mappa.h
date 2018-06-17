@@ -96,8 +96,9 @@ typedef void (*mappa_target_float_func)(uint32_t target_id,
  * called when a particular source value is required to be displayed
  * on a control surface.
  */
-typedef void (*mappa_source_float_func)(void *token,
-					float *value,
+typedef void (*mappa_source_float_func)(float *value,
+					void *token,
+					uint32_t token_size,
 					void *userdata);
 
 /** mappa_target_t
@@ -182,7 +183,10 @@ int32_t mappa_target_remove(struct mappa_t *m, uint32_t target_id);
  * TODO: link to value mushers here
  */
 int32_t mappa_source_add(struct mappa_t *m,
-			 struct mappa_source_t *t);
+			 struct mappa_source_t *t,
+			 uint32_t *source_id,
+			 void *token,
+			 uint32_t token_size);
 
 /* create a binding from the ctlra dev id at control id, to gid,iid, for
  * layer id

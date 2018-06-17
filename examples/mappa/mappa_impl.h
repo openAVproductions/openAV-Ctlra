@@ -20,6 +20,7 @@ TAILQ_HEAD(target_list_t, target_t);
 struct source_t {
 	TAILQ_ENTRY(source_t) tailq;
 	struct mappa_source_t source;
+	uint32_t id;
 };
 TAILQ_HEAD(source_list_t, source_t);
 

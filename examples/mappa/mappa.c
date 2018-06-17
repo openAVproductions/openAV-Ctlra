@@ -52,7 +52,8 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 		struct mappa_source_t *s = lut->sources[i];
 		if(s && s->func) {
 			float v;
-			s->func(0, &v, s->userdata);
+			uint32_t token_size = 0;
+			s->func(&v, 0, token_size, s->userdata);
 			for(int j = 0; j < 7; j++) {
 				ctlra_dev_light_set(ctlra_dev, i * 7 + j,
 						    source_mush_value_to_array(v, j, 7));
@@ -186,12 +187,15 @@ source_deep_copy(const struct mappa_source_t *s)
 }
 
 int32_t
-mappa_source_add(struct mappa_t *m, struct mappa_source_t *t)
+mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
+		 uint32_t *source_id, void *token, uint32_t token_size)
 {
 	struct source_t *n = source_deep_copy(t);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
-	//printf("added source %s, func %p\n", n->source.name, n->source.func);
-	/* TODO: check for uniqueness? */
+	n->id = m->source_ids++;
+	printf("added source %s, id %u, func %p\n", n->source.name, n->id,
+	       n->source.func);
+
 	return 0;
 }
 

@@ -17,12 +17,16 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
-void sw_source_float_func_1(void *token, float *value, void *userdata)
+void sw_source_float_func_1(float *value,
+			    void *token, uint32_t token_size,
+			    void *userdata)
 {
 	*value = 1;
 }
 
-void sw_source_float_func_2(void *token, float *value, void *userdata)
+void sw_source_float_func_2(float *value,
+			    void *token, uint32_t token_size,
+			    void *userdata)
 {
 	*value = 0.2;
 }
@@ -90,15 +94,21 @@ bind_callback(struct mappa_t *m, void *userdata)
 	if(ret != 0)
 		printf("MAP failed: cid %d\n", cid);
 
-#if 0
+
 	/****** Feedback ******/
-	struct mappa_sw_source_t fb = {
+	struct mappa_source_t fb = {
 		.name = "test_fb_1",
 		.func = sw_source_float_func_1,
 		.userdata = 0,
 	};
-	ret = mappa_sw_source_add(m, &fb);
+	uint32_t source_id;
+	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	assert(ret == 0);
+
+	/**** map feedback *****/
+	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_1");
+
+#if 0
 
 	fb.name = "test_fb_2";
 	fb.func = sw_source_float_func_2,
