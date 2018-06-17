@@ -38,7 +38,7 @@ struct lut_t {
 	 * - no memory wastage
 	 * - only have performance required items in cache
 	 */
-	struct target_t *target_types[CTLRA_EVENT_T_COUNT];
+	struct target_t **target_types[CTLRA_EVENT_T_COUNT];
 
 	/* array of feedback items that the HW has, that can be mapped to.
 	 * The size of the array is defined by the number of feedback items

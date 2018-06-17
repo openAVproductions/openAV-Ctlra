@@ -99,18 +99,18 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		switch(e->type) {
 		case CTLRA_EVENT_BUTTON:
 			id = e->button.id;
-			t = &lut->target_types[CTLRA_EVENT_BUTTON][id];
+			t = lut->target_types[CTLRA_EVENT_BUTTON][id];
 			v = e->button.pressed;
 			break;
 		case CTLRA_EVENT_ENCODER:
 			// TODO: handle delta floats
 			id = e->encoder.id;
-			t = &lut->target_types[CTLRA_EVENT_ENCODER][id];
+			t = lut->target_types[CTLRA_EVENT_ENCODER][id];
 			v = e->encoder.delta;
 			break;
 		case CTLRA_EVENT_SLIDER:
 			id = e->slider.id;
-			t = &lut->target_types[CTLRA_EVENT_SLIDER][id];
+			t = lut->target_types[CTLRA_EVENT_SLIDER][id];
 			v = e->slider.value;
 			break;
 		case CTLRA_EVENT_GRID:
@@ -290,7 +290,7 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	}
 
 	struct target_t *dev_target = 0;
-	dev_target = &lut->target_types[control_type][control_id];
+	dev_target = lut->target_types[control_type][control_id];
 
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
@@ -381,15 +381,13 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	/* allocate event input to target lookup arrays */
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
-		//printf("type %d, count %d\n", i, c);
-		lut->target_types[i] = calloc(c, sizeof(struct mappa_target_t));
+		lut->target_types[i] = calloc(c, sizeof(void *));
 		if(!lut->target_types[i])
 			goto fail;
 	}
 
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
-	printf("num fb items = %d\n", items);
 	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
