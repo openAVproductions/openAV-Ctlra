@@ -47,7 +47,15 @@ bind_callback(struct mappa_t *m, void *userdata)
 		.func = sw_target_float_func,
 		.userdata = 0x0,
 	};
-	ret = mappa_target_add(m, &t, 0, 0, 0);
+	uint32_t tid;
+	ret = mappa_target_add(m, &t, &tid, 0, 0);
+	assert(ret == 0);
+
+	int dev = 0;
+	int layer = 0;
+	int ctype = CTLRA_EVENT_SLIDER;
+	int cid = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
 #if 0

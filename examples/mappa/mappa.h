@@ -147,7 +147,10 @@ struct mappa_source_t {
  * mappa library - this is encapsulated and not exposed to keep the host
  * implementation simple, and the multi-layer complexity inside mappa.
  *
- * @param[out] target_id Passed back to callback, ID for target_remove()
+ * @param[out] target_id Passed back to callback, ID for target_remove().
+ *                       NOTE: This value may *NOT* be expected to be
+ *                       consistent between runs. To identify the target
+ *                       using an app-known variable, use the token.
  * @param token_size Size of the token being passed in
  * @param token A chunk of data that will be returned to the callback with
  *              the userdata pointer. Put parameters to a function here, or

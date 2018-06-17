@@ -132,8 +132,9 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		}
 
 		/* perform callback as currently mapped by lut */
+		float value = v * 1.0f; // TODO scaling here?
 		if(t && t->target.func)
-			t->target.func(t->id, v,
+			t->target.func(t->id, value,
 				       t->token_size, t->token_buf,
 				       t->target.userdata);
 	}
@@ -291,22 +292,16 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		return -EINVAL;
 	}
 
-	struct target_t *dev_target = 0;
-	dev_target = lut->target_types[control_type][control_id];
-
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
 		if(t->id == target_id) {
-			printf("TODO %s %d\n", __func__, __LINE__);
-#if 0
-			dev_target->id  = target_id;
-			dev_target->func = t->target.func;
-			dev_target->userdata = t->target.userdata;
-#endif
+			/* point the lut event type:id combo at the target */
+			lut->target_types[control_type][control_id] = t;
+			return 0;
 		}
 	}
 
-	return 0;
+	return -EINVAL;
 }
 
 int32_t
@@ -384,6 +379,8 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
 		lut->target_types[i] = calloc(c, sizeof(void *));
+		printf("lut %p type %d, size %d, ptr %p\n", lut, i, c,
+		       lut->target_types[i]);
 		if(!lut->target_types[i])
 			goto fail;
 	}
@@ -422,9 +419,11 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	if(ret)
 		printf("error ret from lut_create_add_to_dev: %d\n", ret);
 
+	/*
 	ret = lut_create_add_to_dev(dev, info);
 	if(ret)
 		printf("error ret from 2ND lut_create_add_to_dev: %d\n", ret);
+	*/
 
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
