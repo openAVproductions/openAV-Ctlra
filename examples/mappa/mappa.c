@@ -169,6 +169,15 @@ target_destroy(struct target_t *t)
 	free(t);
 }
 
+static void
+source_destroy(struct source_t *s)
+{
+	assert(s != NULL);
+	if(s->source.name)
+		free(s->source.name);
+	free(s);
+}
+
 struct source_t *
 source_deep_copy(const struct mappa_sw_source_t *s)
 {
@@ -231,6 +240,10 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
 	printf("mappa_app: removing %s %s\n", info.vendor, info.device);
+
+	struct mappa_t *m = userdata;
+	/* TODO: cleanup dev_t * and resources here */
+	m->dev = 0x0;
 }
 
 
@@ -416,6 +429,8 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
 	m->dev = dev;
+
+	printf("%s: new dev\n", __func__);
 	return dev;
 }
 
@@ -443,6 +458,7 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 	ctlra_dev_set_callback_userdata(ctlra_dev, dev);
 
 	/* TODO: check for default map to load for this device */
+	printf("accepting dev %s\n", info->vendor);
 
 	return 1;
 }
@@ -523,6 +539,13 @@ mappa_destroy(struct mappa_t *m)
 		t = TAILQ_FIRST(&m->target_list);
 		TAILQ_REMOVE(&m->target_list, t, tailq);
 		target_destroy(t);
+	}
+
+	struct source_t *s;
+	while (!TAILQ_EMPTY(&m->source_list)) {
+		s = TAILQ_FIRST(&m->source_list);
+		TAILQ_REMOVE(&m->source_list, s, tailq);
+		source_destroy(s);
 	}
 
 	/* iterate over all allocated resources and free them */

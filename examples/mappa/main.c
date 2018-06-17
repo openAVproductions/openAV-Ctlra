@@ -34,17 +34,10 @@ void sw_target_float_func(uint32_t group_id, uint32_t target_id,
 
 void tests(void);
 
-int main(int argc, char **argv)
+int32_t
+bind_callback(struct mappa_t *m, void *userdata)
 {
-	//tests();
-
 	int ret;
-	signal(SIGINT, sighndlr);
-
-	/* create mappa context */
-	struct mappa_t *m = mappa_create(NULL);
-	if(!m)
-		return -1;
 
 	for(int i = 1; i < 12; i++) {
 		char grp_buf[64];
@@ -149,6 +142,23 @@ int main(int argc, char **argv)
 	item = 3;
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
+
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
+	//tests();
+
+	int ret;
+	signal(SIGINT, sighndlr);
+
+	/* create mappa context */
+	struct mappa_t *m = mappa_create(NULL);
+	if(!m)
+		return -1;
+
+	bind_callback(m, 0x0);
 
 	/* loop for testing */
 	while(!done) {
