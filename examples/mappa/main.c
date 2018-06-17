@@ -143,6 +143,15 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
 					 group, item, layer);
 
+	/**** dev 1 *****/
+	dev = 1;
+	control = 1;
+	group = 1;
+	item = 2;
+	layer = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
+					 group, item, layer);
+
 	return 0;
 }
 

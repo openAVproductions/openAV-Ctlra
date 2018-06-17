@@ -48,6 +48,7 @@ TAILQ_HEAD(lut_list_t, lut_t);
  * it to handle the events.
  */
 struct dev_t {
+	TAILQ_ENTRY(dev_t) tailq;
 	/* back pointer to the main instance. Allows the ctlra user-data
 	 * pointer to be pointed at this struct for easy access to the
 	 * main LUT for event dispatch, but allow self access.
@@ -64,14 +65,19 @@ struct dev_t {
 	/* unique integer ID starting from zero for each LUT */
 	uint32_t lut_idx;
 
+	/* dev id for mappa bindings */
+	uint32_t id;
+
 	/* ctlra dev info, required to error check binding IDs */
 	struct ctlra_dev_info_t ctlra_dev_info;
 };
+TAILQ_HEAD(dev_list_t, dev_t);
 
 struct mappa_t {
 	struct ctlra_t *ctlra;
 
-	struct dev_t *dev;
+	uint32_t dev_ids;
+	struct dev_list_t dev_list;
 
 	/* container for all targets in the system. This is not used to
 	 * look-up events when they occur on the Ctlra device, this is

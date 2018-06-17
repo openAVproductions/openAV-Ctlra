@@ -243,12 +243,25 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 
 	struct mappa_t *m = userdata;
 	/* TODO: cleanup dev_t * and resources here */
-	m->dev = 0x0;
+	//m->dev = 0x0;
 }
 
+#define DEV_FROM_MAPPA(m, dev, find_id) do {				\
+	dev = 0;							\
+	struct dev_t *__d = 0;						\
+	TAILQ_FOREACH(__d, &m->dev_list, tailq) {			\
+		if(__d->id == find_id) {				\
+			dev = __d; break;				\
+		}							\
+	}								\
+	if(!dev) {							\
+		printf("%s invalid dev id %d\n", __func__, ctlra_dev_id);\
+		return -EINVAL;						\
+	}								\
+} while(0)
 
 int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
-				   uint32_t cltra_dev_id,
+				   uint32_t ctlra_dev_id,
 				   uint32_t control_type,
 				   uint32_t control_id,
 				   uint32_t gid,
@@ -258,12 +271,9 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	if(!m)
 		return -EINVAL;
 
-	/* TODO: support multiple ctlra devices by ID */
-	struct dev_t *dev = m->dev;
-	if(!dev) {
-		printf("%s with invalid dev\n", __func__);
-		return -EINVAL;
-	}
+	/* search for dev */
+	struct dev_t *dev = 0;
+	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
 	/* error check control type/id combo */
 	if(control_id >= dev->ctlra_dev_info.control_count[control_type]) {
@@ -315,15 +325,14 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 }
 
 int32_t
-mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t cltra_dev_id,
+mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 			   uint32_t layer, uint32_t fb_id,
 			   const char *name)
 {
 	/* check is fb_id is valid */
-	struct dev_t *dev = m->dev;
-	if(!dev) {
-		return -EINVAL;
-	}
+
+	struct dev_t *dev = 0;
+	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
 	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
 		printf("%s() invalid fb_id\n", __func__);
@@ -428,8 +437,9 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
-	m->dev = dev;
 
+	dev->id = m->dev_ids++;
+	TAILQ_INSERT_TAIL(&m->dev_list, dev, tailq);
 	printf("%s: new dev\n", __func__);
 	return dev;
 }
@@ -504,6 +514,7 @@ mappa_create(struct mappa_opts_t *opts)
 	m->ctlra = c;
 
 	TAILQ_INIT(&m->target_list);
+	TAILQ_INIT(&m->dev_list);
 
 	/* push back "internal" targets like layer switching */
 	struct mappa_sw_target_t tar = {
