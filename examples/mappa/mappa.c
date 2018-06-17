@@ -303,6 +303,8 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		if(t->id == target_id) {
 			/* point the lut event type:id combo at the target */
 			lut->target_types[control_type][control_id] = t;
+			printf("bound layer %d, ctype %d cid %d to %s\n",
+			       layer, control_type, control_id, t->target.name);
 			return 0;
 		}
 	}
@@ -495,12 +497,14 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 {
 	struct dev_t *dev = userdata;
 	int layer = (int)value;
+	printf("%s, layer = %d\n", __func__, layer);
 
 	/* search for correct lut layer */
 	struct lut_t *l;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
 		if(l->id == layer) {
 			dev->active_lut = l;
+			printf("  layer %d active!\n", layer);
 			break;
 		}
 	}
@@ -526,16 +530,15 @@ mappa_create(struct mappa_opts_t *opts)
 	TAILQ_INIT(&m->dev_list);
 
 	/* push back "internal" targets like layer switching */
-	struct mappa_target_t tar = {
+	struct mappa_target_t t = {
 		.name = "Mappa:Layer Switch",
 		.func = mappa_layer_switch_target,
-		.userdata = 0,
+		.userdata = m,
 	};
 
-	/*
-	int ret = mappa_target_add(m, &tar, 
+	uint32_t sid;
+	int ret = mappa_target_add(m, &t, &sid, 0, 0);
 	assert(ret == 0);
-	*/
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	printf("mappa connected to %d devices\n", num_devs);

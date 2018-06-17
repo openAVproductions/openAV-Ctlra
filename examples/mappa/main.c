@@ -65,6 +65,8 @@ bind_callback(struct mappa_t *m, void *userdata)
 {
 	int ret;
 
+// input mapping scope
+{
 	struct mappa_target_t t = {
 		.name = "t_1",
 		.func = sw_target_float_func,
@@ -99,8 +101,24 @@ bind_callback(struct mappa_t *m, void *userdata)
 	if(ret != 0)
 		printf("MAP failed: cid %d\n", cid);
 
+#if 1
+	ctype = CTLRA_EVENT_BUTTON;
+	cid = 0;
+	tid = 0;
+	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
+	assert(ret == 0);
+
+	layer = 1;
+	cid = 1;
+	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
+	assert(ret == 0);
+#endif
+}
+
 
 	/****** Feedback ******/
+	int dev = 0;
+	int layer = 0;
 	struct mappa_source_t fb = {
 		.name = "test_fb_1",
 		.func = sw_source_float_func_1,
