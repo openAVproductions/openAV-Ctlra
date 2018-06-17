@@ -376,6 +376,18 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	return 0;
 }
 
+void
+lut_destroy(struct lut_t *lut)
+{
+	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
+		if(lut->target_types[i])
+			free(lut->target_types[i]);
+	}
+	if(lut->sources)
+		free(lut->sources);
+	free(lut);
+}
+
 int32_t
 lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 {
@@ -405,18 +417,13 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	return 0;
 
 fail:
-	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
-		if(lut->target_types[i])
-			free(lut->target_types[i]);
-	}
-	if(lut->sources)
-		free(lut->sources);
+	lut_destroy(lut);
 	return -ENOMEM;
 }
 
 struct dev_t *
-mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
-		 const struct ctlra_dev_info_t *info)
+dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
+	   const struct ctlra_dev_info_t *info)
 {
 	struct dev_t *dev = calloc(1, sizeof(*dev));
 	if(!dev)
@@ -445,13 +452,28 @@ mappa_create_dev(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	return dev;
 }
 
+void
+dev_destroy(struct dev_t *dev)
+{
+	/* cleanup all LUTs */
+	struct lut_t *l;
+	while (!TAILQ_EMPTY(&dev->lut_list)) {
+		l = TAILQ_FIRST(&dev->lut_list);
+		TAILQ_REMOVE(&dev->lut_list, l, tailq);
+		lut_destroy(l);
+	}
+
+	/* cleanup the sources */
+	free(dev);
+}
+
 int
 mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 		  struct ctlra_dev_t *ctlra_dev, void *userdata)
 {
 	struct mappa_t *m = userdata;
 
-	struct dev_t *dev = mappa_create_dev(m, ctlra_dev, info);
+	struct dev_t *dev = dev_create(m, ctlra_dev, info);
 	if(!dev) {
 		printf("failed to create dev\n");
 		return 0;
@@ -558,6 +580,13 @@ mappa_destroy(struct mappa_t *m)
 		s = TAILQ_FIRST(&m->source_list);
 		TAILQ_REMOVE(&m->source_list, s, tailq);
 		source_destroy(s);
+	}
+
+	struct dev_t *d;
+	while (!TAILQ_EMPTY(&m->dev_list)) {
+		d = TAILQ_FIRST(&m->dev_list);
+		TAILQ_REMOVE(&m->dev_list, d, tailq);
+		dev_destroy(d);
 	}
 
 	/* iterate over all allocated resources and free them */
