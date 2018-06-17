@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -26,6 +27,9 @@ void sw_source_float_func_2(void *token, float *value, void *userdata)
 	*value = 0.2;
 }
 
+/* 32 bytes of data for testing */
+uint64_t token_test[] = {0x1234, 0x5678, 0xc0ffee, 0xcafe};
+
 void sw_target_float_func(uint32_t target_id,
 			  float value,
 			  void *token,
@@ -34,10 +38,14 @@ void sw_target_float_func(uint32_t target_id,
 {
 	printf("%s: target id %d, value %f, token size %d\n", __func__,
 	       target_id, value, token_size);
-	if(token_size) {
+	if(token_size == 8) {
 		uint64_t t = *(uint64_t *)token;
 		assert(t == 0xcafe);
 		assert(token_size == sizeof(uint64_t));
+	} else if (token_size == sizeof(token_test)) {
+		assert(memcmp(token, token_test, sizeof(token_test)) == 0);
+		uint64_t *td = token;
+		printf("%lx\n", td[3]);
 	}
 }
 
@@ -73,7 +81,10 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
-	cid = 13;
+	t.name = "t_3";
+	ret = mappa_target_add(m, &t, &tid, &token_test, sizeof(token_test));
+	assert(ret == 0);
+	cid = 12;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
