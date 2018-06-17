@@ -73,50 +73,11 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
+	cid = 13;
+	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
+	assert(ret == 0);
+
 #if 0
-	for(int i = 1; i < 12; i++) {
-		char grp_buf[64];
-		char itm_buf[64];
-
-		int group = i / 8;
-		int item = i % 8;
-		snprintf(grp_buf, sizeof(grp_buf), "group_%d", group);
-		snprintf(itm_buf, sizeof(itm_buf), "item_%d", item);
-
-		struct mappa_sw_target_t tar = {
-			.group_name = grp_buf,
-			.item_name = itm_buf,
-			.group_id = group,
-			.item_id = item,
-			.func = sw_target_float_func,
-			.userdata = 0x0,
-		};
-
-		/* add target */
-		ret = mappa_sw_target_add(m, &tar);
-		assert(ret == 0);
-	}
-
-	/* valid remove works */
-	//ret = mappa_sw_target_remove(m, 0, 0);
-	//assert(ret == 0);
-
-	/* no invalid removes */
-	ret = mappa_sw_target_remove(m, 2, 0);
-	assert(ret == -EINVAL);
-	ret = mappa_sw_target_remove(m, 0, 20);
-	assert(ret == -EINVAL);
-
-	/* valid remove, but not double remove */
-	ret = mappa_sw_target_remove(m, 0, 6);
-	assert(ret == 0);
-	ret = mappa_sw_target_remove(m, 0, 6);
-	assert(ret == -EINVAL);
-
-	ret = mappa_sw_target_remove(m, 1, 0);
-	assert(ret == 0);
-
-
 	/****** Feedback ******/
 	struct mappa_sw_source_t fb = {
 		.name = "test_fb_1",

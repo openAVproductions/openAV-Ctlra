@@ -526,9 +526,6 @@ mappa_create(struct mappa_opts_t *opts)
 	struct mappa_target_t tar = {
 		.name = "Mappa:Layer Switch",
 		.func = mappa_layer_switch_target,
-		/* TODO: pass the dev_t* to switch as userdata
-		 * for internal mappings. Do this when bindings are
-		 * created */
 		.userdata = 0,
 	};
 
