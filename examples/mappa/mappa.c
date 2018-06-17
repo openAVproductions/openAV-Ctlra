@@ -424,11 +424,9 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	if(ret)
 		printf("error ret from lut_create_add_to_dev: %d\n", ret);
 
-	/*
 	ret = lut_create_add_to_dev(dev, info);
 	if(ret)
 		printf("error ret from 2ND lut_create_add_to_dev: %d\n", ret);
-	*/
 
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);

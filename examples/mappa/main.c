@@ -20,14 +20,16 @@ void sighndlr(int signal)
 static float the_value;
 
 void sw_source_float_func_1(float *value,
-			    void *token, uint32_t token_size,
+			    void *token,
+			    uint32_t token_size,
 			    void *userdata)
 {
 	*value = the_value;
 }
 
 void sw_source_float_func_2(float *value,
-			    void *token, uint32_t token_size,
+			    void *token,
+			    uint32_t token_size,
 			    void *userdata)
 {
 	*value = 0.2;
@@ -108,7 +110,15 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	assert(ret == 0);
 
-	/**** map feedback *****/
+	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
+	assert(ret == 0);
+
+	/**** FB item 2 */
+	fb.name = "test fb 2";
+	fb.func = sw_source_float_func_2;
+	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
+	assert(ret == 0);
+	layer = 1;
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
 	assert(ret == 0);
 
