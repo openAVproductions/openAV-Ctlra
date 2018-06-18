@@ -213,6 +213,9 @@ int32_t mappa_bind_source_to_ctlra(struct mappa_t *m,
 				   uint32_t ctlra_feedback_id,
 				   uint32_t source_id);
 
+/* Load a config file with bindings */
+int32_t mappa_load_bindings(struct mappa_t *m, const char *file);
+
 
 void mappa_destroy(struct mappa_t *m);
 

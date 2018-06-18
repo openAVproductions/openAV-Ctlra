@@ -10,6 +10,7 @@
 #include "mappa_impl.h"
 
 #include "ctlra.h"
+#include "ini.h"
 
 /* per ctlra-device we need a look-up table, which points to the
  * correct target function pointer to call based on the current layer.
@@ -195,8 +196,10 @@ mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 	n->id = m->source_ids++;
 	if(source_id)
 		*source_id = n->id;
+	/*
 	printf("added source %s, id %u, func %p\n", n->source.name, n->id,
 	       n->source.func);
+	*/
 
 	return 0;
 }
@@ -225,7 +228,6 @@ mappa_target_add(struct mappa_t *m,
 	n->id = m->target_ids++;
 	if(target_id)
 		*target_id = n->id;
-	printf("new target %s, id %u\n", t->name, n->id);
 	return 0;
 }
 
@@ -247,7 +249,6 @@ mappa_target_remove(struct mappa_t *m, uint32_t target_id)
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
 		if(t->id == target_id) {
-			printf("removing target id %d\n", t->id);
 			/* TODO: nuke any controller mappings here */
 			TAILQ_REMOVE(&m->target_list, t, tailq);
 			target_destroy(t);
@@ -327,8 +328,10 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		if(t->id == target_id) {
 			/* point the lut event type:id combo at the target */
 			lut->target_types[control_type][control_id] = t;
+			/*
 			printf("bound layer %d, ctype %d cid %d to %s\n",
 			       layer, control_type, control_id, t->target.name);
+			*/
 			return 0;
 		}
 	}
@@ -411,8 +414,10 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
 		lut->target_types[i] = calloc(c, sizeof(void *));
+		/*
 		printf("lut %p type %d, size %d, ptr %p\n", lut, i, c,
 		       lut->target_types[i]);
+		*/
 		if(!lut->target_types[i])
 			goto fail;
 	}
@@ -460,7 +465,6 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 
 	dev->id = m->dev_ids++;
 	TAILQ_INSERT_TAIL(&m->dev_list, dev, tailq);
-	printf("%s: new dev\n", __func__);
 	return dev;
 }
 
@@ -608,4 +612,68 @@ mappa_destroy(struct mappa_t *m)
 	/* iterate over all allocated resources and free them */
 	ctlra_exit(m->ctlra);
 	free(m);
+}
+
+int32_t
+mappa_load_bindings(struct mappa_t *m, const char *file)
+{
+	ini_t *config = ini_load("mappa_z1.ini");
+	if(!config)
+		return -EINVAL;
+
+	const char *name = 0;
+	const char *email = 0;
+	const char *org = 0;
+	ini_sget(config, "author", "name", NULL, &name);
+	ini_sget(config, "author", "email", NULL, &email);
+	ini_sget(config, "author", "organization", NULL, &org);
+	printf("Loading config file %s\n", file);
+	printf("  Name: %s\n", name);
+	printf("  Email: %s\n", email);
+	printf("  Org: %s\n", org);
+
+	for(int l = 0; l < 5; l++) {
+		char layer[32];
+		snprintf(layer, sizeof(layer), "layer.%u", l);
+		for(int i = 0; i < 100; i++) {
+			char key[32];
+			snprintf(key, sizeof(key), "slider.%u", i);
+
+			const char *value = 0;
+			ini_sget(config, layer, key, NULL, &value);
+
+			/* TODO: can we error check this better? */
+			if(!value)
+				continue;
+
+			/* lookup target, map id */
+			uint32_t tid = mappa_get_target_id(m, value);
+			if(tid == 0) {
+				printf("invalid target %s, failed to map\n", value);
+				continue;
+			}
+
+			int ret;
+			ret = mappa_bind_ctlra_to_target(m, 0, l,
+							 CTLRA_EVENT_SLIDER,
+							 i, tid);
+			assert(ret == 0);
+
+			snprintf(key, sizeof(key), "light.%u", i);
+			value = 0;
+			ini_sget(config, layer, key, NULL, &value);
+			if(!value)
+				continue;
+			uint32_t sid = mappa_get_source_id(m, value);
+			if(sid == 0) {
+				printf("invalid source %s\n", value);
+				continue;
+			}
+			ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
+		}
+	}
+
+	ini_free(config);
+
+	return 0;
 }

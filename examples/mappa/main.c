@@ -111,71 +111,6 @@ register_targets(struct mappa_t *m, void *userdata)
 }
 
 int32_t
-bind_from_file(struct mappa_t *m, const char *file)
-{
-	ini_t *config = ini_load("mappa_z1.ini");
-	if(!config)
-		return -EINVAL;
-
-	const char *name = 0;
-	const char *email = 0;
-	const char *org = 0;
-	ini_sget(config, "author", "name", NULL, &name);
-	ini_sget(config, "author", "email", NULL, &email);
-	ini_sget(config, "author", "organization", NULL, &org);
-	printf("\n\nLoading config file %s\n", file);
-	printf("  Name: %s\n", name);
-	printf("  Email: %s\n", email);
-	printf("  Org: %s\n", org);
-
-	for(int l = 0; l < 5; l++) {
-		char layer[32];
-		snprintf(layer, sizeof(layer), "layer.%u", l);
-		for(int i = 0; i < 100; i++) {
-			char key[32];
-			snprintf(key, sizeof(key), "slider.%u", i);
-
-			const char *value = 0;
-			ini_sget(config, layer, key, NULL, &value);
-
-			/* TODO: can we error check this better? */
-			if(!value)
-				continue;
-
-			/* lookup target, map id */
-			uint32_t tid = mappa_get_target_id(m, value);
-			if(tid == 0) {
-				printf("invalid target %s, failed to map\n", value);
-				continue;
-			}
-
-			int ret;
-			ret = mappa_bind_ctlra_to_target(m, 0, l,
-							 CTLRA_EVENT_SLIDER,
-							 i, tid);
-			assert(ret == 0);
-
-			snprintf(key, sizeof(key), "light.%u", i);
-			value = 0;
-			ini_sget(config, layer, key, NULL, &value);
-			if(!value)
-				continue;
-			uint32_t sid = mappa_get_source_id(m, value);
-			if(sid == 0) {
-				printf("invalid source %s\n", value);
-				continue;
-			}
-			ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
-		}
-	}
-
-	ini_free(config);
-
-
-	return 0;
-}
-
-int32_t
 register_feedback(struct mappa_t *m, void *userdata)
 {
 	/****** Feedback ******/
@@ -191,25 +126,12 @@ register_feedback(struct mappa_t *m, void *userdata)
 	if(ret != 0)
 		printf("MAP %d failed: source name %s\n", __LINE__, fb.name);
 
-	/*
-	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
-	if(ret != 0)
-		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
-	*/
-
 	/**** FB item 2 */
 	fb.name = "test fb 2";
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
-
-	/*
-	layer = 1;
-	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
-	if(ret != 0)
-		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
-	*/
 
 	return 0;
 }
@@ -229,7 +151,7 @@ int main(int argc, char **argv)
 	register_targets(m, 0x0);
 	register_feedback(m, 0x0);
 
-	ret = bind_from_file(m, "mappa_z1.ini");
+	ret = mappa_load_bindings(m, "mappa_z1.ini");
 	assert(ret == 0);
 
 	/* loop for testing */
