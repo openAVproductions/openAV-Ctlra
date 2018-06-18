@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include "mappa.h"
+#include "ini.h"
 
 static volatile uint32_t done;
 
@@ -44,7 +45,7 @@ void sw_target_float_func(uint32_t target_id,
 			  uint32_t token_size,
 			  void *userdata)
 {
-#if 0
+#if 1
 	printf("%s: target id %d, value %f, token size %d\n",
 	       __func__, target_id, value, token_size);
 #endif
@@ -61,12 +62,10 @@ void sw_target_float_func(uint32_t target_id,
 void tests(void);
 
 int32_t
-bind_callback(struct mappa_t *m, void *userdata)
+register_targets(struct mappa_t *m, void *userdata)
 {
 	int ret;
 
-// input mapping scope
-{
 	struct mappa_target_t t = {
 		.name = "t_1",
 		.func = sw_target_float_func,
@@ -80,6 +79,8 @@ bind_callback(struct mappa_t *m, void *userdata)
 	int layer = 0;
 	int ctype = CTLRA_EVENT_SLIDER;
 	int cid = 0;
+	tid = mappa_get_target_id(m, "t_1");
+	assert(tid != 0);
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	if(ret != 0)
 		printf("MAP %d failed: cid %d\n", __LINE__, cid);
@@ -90,6 +91,8 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint64_t));
 	assert(ret == 0);
 	cid = 13;
+	tid = mappa_get_target_id(m, "t_2");
+	assert(tid != 0);
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	if(ret != 0)
 		printf("MAP failed: cid %d\n", cid);
@@ -98,30 +101,85 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_target_add(m, &t, &tid, &token_test, sizeof(token_test));
 	assert(ret == 0);
 	cid = 12;
+	tid = mappa_get_target_id(m, "t_3");
+	assert(tid != 0);
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	if(ret != 0)
 		printf("MAP failed: cid %d\n", cid);
 
-	uint32_t t1_id = mappa_get_target_id(m, "t_1");
-	assert(t1_id != 0);
-	uint32_t t2_id = mappa_get_target_id(m, "t_2");
-	assert(t2_id != 0);
+	return 0;
+}
 
-#if 1
-	ctype = CTLRA_EVENT_BUTTON;
-	cid = 0;
-	tid = mappa_get_target_id(m, "mappa:layer switch");
-	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
+int32_t
+bind_from_file(struct mappa_t *m, const char *file)
+{
+	ini_t *config = ini_load("mappa_z1.ini");
+	if(!config)
+		return -EINVAL;
+
+	const char *name = 0;
+	const char *email = 0;
+	const char *org = 0;
+	ini_sget(config, "author", "name", NULL, &name);
+	ini_sget(config, "author", "email", NULL, &email);
+	ini_sget(config, "author", "organization", NULL, &org);
+	printf("\n\nConfig file:\nname: %s\nemail: %s\norg: %s\n", name, email, org);
+
+	for(int l = 0; l < 5; l++) {
+		char layer[32];
+		snprintf(layer, sizeof(layer), "layer.%u", l);
+		printf("Layer %u:\n", l);
+		for(int i = 0; i < 100; i++) {
+			char key[32];
+			snprintf(key, sizeof(key), "slider.%u", i);
+
+			const char *value = 0;
+			ini_sget(config, layer, key, NULL, &value);
+
+			/* TODO: can we error check this better? */
+			if(!value)
+				continue;
+
+			/* lookup target, map id */
+			uint32_t tid = mappa_get_target_id(m, value);
+			if(tid == 0) {
+				printf("invalid target %s, failed to map\n", value);
+				continue;
+			}
+
+			int ret;
+			ret = mappa_bind_ctlra_to_target(m, 0, 0, CTLRA_EVENT_SLIDER,
+							 i, tid);
+			printf("mapping layer %d slider %d to %s, tid = %d\n",
+			       l, i, value, tid);
+			assert(ret == 0);
+
+		}
+	}
+
+	ini_free(config);
+
+
+	return 0;
+}
+
+int32_t
+bind_stuff(struct mappa_t *m, void *userdata)
+{
+	int dev = 0;
+	int ctype = CTLRA_EVENT_BUTTON;
+	int layer = 0;
+	int cid = 0;
+	int tid = mappa_get_target_id(m, "mappa:layer switch");
+	int ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 
 	layer = 1;
 	cid = 1;
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
-#endif
-}
 
-
+{
 	/****** Feedback ******/
 	int dev = 0;
 	int layer = 0;
@@ -149,70 +207,7 @@ bind_callback(struct mappa_t *m, void *userdata)
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
-
-#if 0
-
-	fb.name = "test_fb_2";
-	fb.func = sw_source_float_func_2,
-	ret = mappa_sw_source_add(m, &fb);
-	assert(ret == 0);
-
-	/**** map feedback *****/
-	int dev = 0;
-	int layer = 0;
-	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_1");
-	layer = 1;
-	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, "test_fb_2");
-
-	/* map a few controls */
-	int control = 2;
-	int group = 0;
-	int item = 7;
-	layer = 0;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
-					 group, item, layer);
-
-	control = 13;
-	group = 1;
-	item = 1;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
-					 group, item, layer);
-
-	control = 2;
-	group = 1;
-	item = 2;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
-					 group, item, layer);
-
-	control = 0;
-	group = 0;
-	item = 0;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
-					 group, item, layer);
-
-	/* layer 1 bindings */
-	control = 1;
-	group = 0;
-	item = 0;
-	layer = 1;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_BUTTON, control,
-					 group, item, layer);
-
-	control = 13;
-	group = 1;
-	item = 3;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
-					 group, item, layer);
-
-	/**** dev 1 *****/
-	dev = 1;
-	control = 1;
-	group = 1;
-	item = 2;
-	layer = 0;
-	ret = mappa_bind_ctlra_to_target(m, dev, CTLRA_EVENT_SLIDER, control,
-					 group, item, layer);
-#endif
+}
 
 	return 0;
 }
@@ -229,7 +224,10 @@ int main(int argc, char **argv)
 	if(!m)
 		return -1;
 
-	bind_callback(m, 0x0);
+	register_targets(m, 0x0);
+
+	ret = bind_from_file(m, "mappa_z1.ini");
+	assert(ret == 0);
 
 	/* loop for testing */
 	while(!done) {
