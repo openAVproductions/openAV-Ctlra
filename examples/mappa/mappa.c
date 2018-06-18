@@ -663,6 +663,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			int ret = bind_config_to_target(m, dev, l,
 							CTLRA_EVENT_SLIDER,
 							i, value);
+			if(ret != 0)
+				printf("error mapping slider %s\n", value);
 
 			/* buttons */
 			snprintf(key, sizeof(key), "button.%u", i);
@@ -673,6 +675,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			ret = bind_config_to_target(m, dev, l,
 						    CTLRA_EVENT_BUTTON,
 						    i, value);
+			if(ret != 0)
+				printf("error mapping button %s\n", value);
 
 			snprintf(key, sizeof(key), "light.%u", i);
 			value = 0;
@@ -685,6 +689,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 				continue;
 			}
 			ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
+			if(ret != 0)
+				printf("error mapping feedback %s\n", value);
 		}
 	}
 

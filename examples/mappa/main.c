@@ -8,7 +8,6 @@
 #include <errno.h>
 
 #include "mappa.h"
-#include "ini.h"
 
 static volatile uint32_t done;
 
@@ -20,17 +19,13 @@ void sighndlr(int signal)
 
 static float the_value;
 
-void sw_source_float_func_1(float *value,
-			    void *token,
-			    uint32_t token_size,
+void sw_source_float_func_1(float *value, void *token, uint32_t token_size,
 			    void *userdata)
 {
 	*value = the_value;
 }
 
-void sw_source_float_func_2(float *value,
-			    void *token,
-			    uint32_t token_size,
+void sw_source_float_func_2(float *value, void *token, uint32_t token_size,
 			    void *userdata)
 {
 	*value = 0.2;
@@ -75,37 +70,15 @@ register_targets(struct mappa_t *m, void *userdata)
 	ret = mappa_target_add(m, &t, &tid, 0, 0);
 	assert(ret == 0);
 
-	int dev = 0;
-	int layer = 0;
-	int ctype = CTLRA_EVENT_SLIDER;
-	int cid = 0;
-	tid = mappa_get_target_id(m, "t_1");
-	assert(tid != 0);
-	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	if(ret != 0)
-		printf("MAP %d failed: cid %d\n", __LINE__, cid);
-
 	/* target 2 */
 	t.name = "t_2";
 	uint64_t token = 0xcafe;
 	ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint64_t));
 	assert(ret == 0);
-	cid = 13;
-	tid = mappa_get_target_id(m, "t_2");
-	assert(tid != 0);
-	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	if(ret != 0)
-		printf("MAP failed: cid %d\n", cid);
 
 	t.name = "t_3";
 	ret = mappa_target_add(m, &t, &tid, &token_test, sizeof(token_test));
 	assert(ret == 0);
-	cid = 12;
-	tid = mappa_get_target_id(m, "t_3");
-	assert(tid != 0);
-	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	if(ret != 0)
-		printf("MAP failed: cid %d\n", cid);
 
 	return 0;
 }
@@ -114,8 +87,6 @@ int32_t
 register_feedback(struct mappa_t *m, void *userdata)
 {
 	/****** Feedback ******/
-	int dev = 0;
-	int layer = 0;
 	struct mappa_source_t fb = {
 		.name = "test fb 1",
 		.func = sw_source_float_func_1,
