@@ -45,7 +45,7 @@ void sw_target_float_func(uint32_t target_id,
 			  uint32_t token_size,
 			  void *userdata)
 {
-#if 1
+#if 0
 	printf("%s: target id %d, value %f, token size %d\n",
 	       __func__, target_id, value, token_size);
 #endif
@@ -123,12 +123,14 @@ bind_from_file(struct mappa_t *m, const char *file)
 	ini_sget(config, "author", "name", NULL, &name);
 	ini_sget(config, "author", "email", NULL, &email);
 	ini_sget(config, "author", "organization", NULL, &org);
-	printf("\n\nConfig file:\nname: %s\nemail: %s\norg: %s\n", name, email, org);
+	printf("\n\nLoading config file %s\n", file);
+	printf("  Name: %s\n", name);
+	printf("  Email: %s\n", email);
+	printf("  Org: %s\n", org);
 
 	for(int l = 0; l < 5; l++) {
 		char layer[32];
 		snprintf(layer, sizeof(layer), "layer.%u", l);
-		printf("Layer %u:\n", l);
 		for(int i = 0; i < 100; i++) {
 			char key[32];
 			snprintf(key, sizeof(key), "slider.%u", i);
@@ -151,8 +153,6 @@ bind_from_file(struct mappa_t *m, const char *file)
 			ret = mappa_bind_ctlra_to_target(m, 0, l,
 							 CTLRA_EVENT_SLIDER,
 							 i, tid);
-			printf("mapping layer %d slider %d to %s, tid = %d\n",
-			       l, i, value, tid);
 			assert(ret == 0);
 
 			snprintf(key, sizeof(key), "light.%u", i);

@@ -207,7 +207,6 @@ mappa_get_source_id(struct mappa_t *m, const char *sname)
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
 		if(strcmp(s->source.name, sname) == 0) {
-			printf("found source %s with id %u\n", sname, s->id);
 			return s->id;
 		}
 	}
@@ -236,7 +235,6 @@ mappa_get_target_id(struct mappa_t *m, const char *tname)
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
 		if(strcmp(t->target.name, tname) == 0) {
-			printf("found %s with id %u\n", tname, t->id);
 			return t->id;
 		}
 	}
@@ -360,7 +358,6 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 			break;
 		}
 	}
-	printf("source %d, found %d\n", source_id, found);
 	if(!found)
 		return -EINVAL;
 
@@ -379,12 +376,14 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	/* set source to feed into the feedback id */
 	l->sources[fb_id] = &s->source;
 
+	/*
 	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct mappa_source_t *s = l->sources[i];
 		if(s)
 			printf("postbind i %d, s %p, func %p\n", i, s, s->func);
 	}
+	*/
 
 	return 0;
 }
