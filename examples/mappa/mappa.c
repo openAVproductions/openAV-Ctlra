@@ -614,6 +614,20 @@ mappa_destroy(struct mappa_t *m)
 	free(m);
 }
 
+static int32_t
+bind_config_to_target(struct mappa_t *m, uint32_t dev_id, uint32_t layer,
+		      uint32_t type, uint32_t cid, const char *target)
+{
+	/* lookup target, map id */
+	uint32_t tid = mappa_get_target_id(m, target);
+	if(tid == 0)
+		return -EINVAL;
+
+	int ret = mappa_bind_ctlra_to_target(m, dev_id, layer, type, cid, tid);
+	assert(ret == 0);
+	return 0;
+}
+
 int32_t
 mappa_load_bindings(struct mappa_t *m, const char *file)
 {
@@ -632,32 +646,33 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	printf("  Email: %s\n", email);
 	printf("  Org: %s\n", org);
 
+	/* TODO: lookup dev id by vendor/device/serial */
+	int dev = 0;
+
 	for(int l = 0; l < 5; l++) {
 		char layer[32];
 		snprintf(layer, sizeof(layer), "layer.%u", l);
 		for(int i = 0; i < 100; i++) {
 			char key[32];
 			snprintf(key, sizeof(key), "slider.%u", i);
-
 			const char *value = 0;
 			ini_sget(config, layer, key, NULL, &value);
-
 			/* TODO: can we error check this better? */
 			if(!value)
 				continue;
+			int ret = bind_config_to_target(m, dev, l,
+							CTLRA_EVENT_SLIDER,
+							i, value);
 
-			/* lookup target, map id */
-			uint32_t tid = mappa_get_target_id(m, value);
-			if(tid == 0) {
-				printf("invalid target %s, failed to map\n", value);
+			/* buttons */
+			snprintf(key, sizeof(key), "button.%u", i);
+			value = 0;
+			ini_sget(config, layer, key, NULL, &value);
+			if(!value)
 				continue;
-			}
-
-			int ret;
-			ret = mappa_bind_ctlra_to_target(m, 0, l,
-							 CTLRA_EVENT_SLIDER,
-							 i, tid);
-			assert(ret == 0);
+			ret = bind_config_to_target(m, dev, l,
+						    CTLRA_EVENT_BUTTON,
+						    i, value);
 
 			snprintf(key, sizeof(key), "light.%u", i);
 			value = 0;
