@@ -201,6 +201,19 @@ mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 	return 0;
 }
 
+uint32_t
+mappa_get_source_id(struct mappa_t *m, const char *sname)
+{
+	struct source_t *s;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		if(strcmp(s->source.name, sname) == 0) {
+			printf("found source %s with id %u\n", sname, s->id);
+			return s->id;
+		}
+	}
+	return 0;
+}
+
 int32_t
 mappa_target_add(struct mappa_t *m,
 		 struct mappa_target_t *t,

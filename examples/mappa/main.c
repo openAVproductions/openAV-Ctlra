@@ -148,12 +148,24 @@ bind_from_file(struct mappa_t *m, const char *file)
 			}
 
 			int ret;
-			ret = mappa_bind_ctlra_to_target(m, 0, 0, CTLRA_EVENT_SLIDER,
+			ret = mappa_bind_ctlra_to_target(m, 0, l,
+							 CTLRA_EVENT_SLIDER,
 							 i, tid);
 			printf("mapping layer %d slider %d to %s, tid = %d\n",
 			       l, i, value, tid);
 			assert(ret == 0);
 
+			snprintf(key, sizeof(key), "light.%u", i);
+			value = 0;
+			ini_sget(config, layer, key, NULL, &value);
+			if(!value)
+				continue;
+			uint32_t sid = mappa_get_source_id(m, value);
+			if(sid == 0) {
+				printf("invalid source %s\n", value);
+				continue;
+			}
+			ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
 		}
 	}
 
@@ -164,38 +176,26 @@ bind_from_file(struct mappa_t *m, const char *file)
 }
 
 int32_t
-bind_stuff(struct mappa_t *m, void *userdata)
-{
-	int dev = 0;
-	int ctype = CTLRA_EVENT_BUTTON;
-	int layer = 0;
-	int cid = 0;
-	int tid = mappa_get_target_id(m, "mappa:layer switch");
-	int ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	assert(ret == 0);
-
-	layer = 1;
-	cid = 1;
-	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
-	assert(ret == 0);
-
+register_feedback(struct mappa_t *m, void *userdata)
 {
 	/****** Feedback ******/
 	int dev = 0;
 	int layer = 0;
 	struct mappa_source_t fb = {
-		.name = "test_fb_1",
+		.name = "test fb 1",
 		.func = sw_source_float_func_1,
 		.userdata = 0,
 	};
 	uint32_t source_id;
-	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
+	int ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
 		printf("MAP %d failed: source name %s\n", __LINE__, fb.name);
 
+	/*
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+	*/
 
 	/**** FB item 2 */
 	fb.name = "test fb 2";
@@ -203,11 +203,13 @@ bind_stuff(struct mappa_t *m, void *userdata)
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+
+	/*
 	layer = 1;
 	ret = mappa_bind_source_to_ctlra(m, dev, layer, 0, source_id);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
-}
+	*/
 
 	return 0;
 }
@@ -225,6 +227,7 @@ int main(int argc, char **argv)
 		return -1;
 
 	register_targets(m, 0x0);
+	register_feedback(m, 0x0);
 
 	ret = bind_from_file(m, "mappa_z1.ini");
 	assert(ret == 0);
