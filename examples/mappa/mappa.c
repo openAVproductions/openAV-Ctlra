@@ -217,6 +217,19 @@ mappa_target_add(struct mappa_t *m,
 	return 0;
 }
 
+uint32_t
+mappa_get_target_id(struct mappa_t *m, const char *tname)
+{
+	struct target_t *t;
+	TAILQ_FOREACH(t, &m->target_list, tailq) {
+		if(strcmp(t->target.name, tname) == 0) {
+			printf("found %s with id %u\n", tname, t->id);
+			return t->id;
+		}
+	}
+	return 0;
+}
+
 int32_t
 mappa_target_remove(struct mappa_t *m, uint32_t target_id)
 {
@@ -524,6 +537,12 @@ mappa_create(struct mappa_opts_t *opts)
 	if(!c)
 		goto fail;
 
+	/* 0 is the error return for uint32_t functions, so offset
+	 * all targets by 1. They don't have an absolute meaning, so no
+	 * issue in doing this */
+	m->target_ids = 1;
+	m->source_ids = 1;
+
 	m->ctlra = c;
 
 	TAILQ_INIT(&m->target_list);
@@ -531,7 +550,7 @@ mappa_create(struct mappa_opts_t *opts)
 
 	/* push back "internal" targets like layer switching */
 	struct mappa_target_t t = {
-		.name = "Mappa:Layer Switch",
+		.name = "mappa:layer switch",
 		.func = mappa_layer_switch_target,
 		.userdata = m,
 	};

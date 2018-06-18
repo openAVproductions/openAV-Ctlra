@@ -102,10 +102,15 @@ bind_callback(struct mappa_t *m, void *userdata)
 	if(ret != 0)
 		printf("MAP failed: cid %d\n", cid);
 
+	uint32_t t1_id = mappa_get_target_id(m, "t_1");
+	assert(t1_id != 0);
+	uint32_t t2_id = mappa_get_target_id(m, "t_2");
+	assert(t2_id != 0);
+
 #if 1
 	ctype = CTLRA_EVENT_BUTTON;
 	cid = 0;
-	tid = 0;
+	tid = mappa_get_target_id(m, "mappa:layer switch");
 	ret = mappa_bind_ctlra_to_target(m, dev, layer, ctype, cid, tid);
 	assert(ret == 0);
 

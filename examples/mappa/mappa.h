@@ -198,6 +198,12 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t control_id,
 				   uint32_t target_id);
 
+/* retrieve a target id from a mappa instance.
+ * @retval 0 Target name not registered, invalid to map
+ * @retval >0 Valid target ID, pass to bind_ctlra_to_target()
+ */
+uint32_t mappa_get_target_id(struct mappa_t *m, const char *target_name);
+
 int32_t mappa_bind_source_to_ctlra(struct mappa_t *m,
 				   uint32_t ctlra_dev_id,
 				   uint32_t layer,
