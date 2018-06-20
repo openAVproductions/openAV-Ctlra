@@ -196,12 +196,22 @@ mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 	n->id = m->source_ids++;
 	if(source_id)
 		*source_id = n->id;
-	/*
-	printf("added source %s, id %u, func %p\n", n->source.name, n->id,
-	       n->source.func);
-	*/
-
 	return 0;
+}
+
+int32_t
+mappa_source_remove(struct mappa_t *m, uint32_t source_id)
+{
+	struct source_t *s;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		if(s->id == source_id) {
+			/* TODO: release any source bindings here */
+			TAILQ_REMOVE(&m->source_list, s, tailq);
+			source_destroy(s);
+			return 0;
+		}
+	}
+	return -EINVAL;
 }
 
 uint32_t
@@ -624,8 +634,7 @@ bind_config_to_target(struct mappa_t *m, uint32_t dev_id, uint32_t layer,
 		return -EINVAL;
 
 	int ret = mappa_bind_ctlra_to_target(m, dev_id, layer, type, cid, tid);
-	assert(ret == 0);
-	return 0;
+	return -1;
 }
 
 int32_t

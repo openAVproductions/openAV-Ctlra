@@ -104,6 +104,18 @@ register_feedback(struct mappa_t *m, void *userdata)
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
 
+	fb.name = "test fb 3";
+	fb.func = sw_source_float_func_2;
+	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
+	if(ret != 0)
+		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+
+	/* verify removal */
+	ret = mappa_source_remove(m, source_id);
+	assert(ret == 0);
+	ret = mappa_source_remove(m, source_id);
+	assert(ret == -EINVAL);
+
 	return 0;
 }
 

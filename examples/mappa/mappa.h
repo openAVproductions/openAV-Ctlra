@@ -188,7 +188,7 @@ int32_t mappa_source_add(struct mappa_t *m,
 			 void *token,
 			 uint32_t token_size);
 
-/* TODO source remove */
+int32_t mappa_source_remove(struct mappa_t *m, uint32_t source_id);
 
 /* Load a config file with bindings */
 int32_t mappa_load_bindings(struct mappa_t *m, const char *file);
