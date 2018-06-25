@@ -36,8 +36,8 @@
 extern "C" {
 #endif
 
-#include <ctlra/ctlra.h>
-#include <ctlra/event.h>
+#include "ctlra.h"
+#include "event.h"
 
 /** @file
  * Mappa header file of the Ctlra library. This header provides an way to
