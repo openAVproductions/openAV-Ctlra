@@ -32,6 +32,10 @@
 #ifndef OPENAV_CTLRA_MAPPA
 #define OPENAV_CTLRA_MAPPA
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ctlra/ctlra.h>
 #include <ctlra/event.h>
 
@@ -195,5 +199,9 @@ int32_t mappa_load_bindings(struct mappa_t *m, const char *file);
 
 /* cleanup a mappa instance */
 void mappa_destroy(struct mappa_t *m);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OPENAV_CTLRA_MAPPA */

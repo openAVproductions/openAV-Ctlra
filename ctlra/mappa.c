@@ -640,7 +640,7 @@ bind_config_to_target(struct mappa_t *m, uint32_t dev_id, uint32_t layer,
 int32_t
 mappa_load_bindings(struct mappa_t *m, const char *file)
 {
-	ini_t *config = ini_load("mappa_z1.ini");
+	ini_t *config = ini_load(file);
 	if(!config)
 		return -EINVAL;
 
