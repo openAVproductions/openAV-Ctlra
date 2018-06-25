@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "mappa.h"
+#include <ctlra/mappa.h>
 
 static volatile uint32_t done;
 

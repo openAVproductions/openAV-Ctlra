@@ -1,5 +1,6 @@
-ctlra_hdr = files('ctlra.h', 'event.h', 'ctlra_cairo.h')
+ctlra_hdr = files('ctlra.h', 'event.h', 'ctlra_cairo.h', 'mappa.h')
 ctlra_src = files('ctlra.c', 'event.c', 'usb.c')
+ctlra_src += files('mappa.c', 'ini.c')
 
 jack   = dependency('jack', required: false)
 conf_data.set('jack', jack.found())
