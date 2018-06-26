@@ -515,7 +515,6 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 	 */
 	ctlra_dev_set_callback_userdata(ctlra_dev, dev);
 
-	/* TODO: check for default map to load for this device */
 	MAPPA_INFO(m, "accepting device %s %s\n", info->vendor, info->device);
 	return 1;
 }
@@ -661,53 +660,58 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	int dev = 0;
 
 	for(int l = 0; l < 5; l++) {
+		uint32_t errors = 0;
 		char layer[32];
 		snprintf(layer, sizeof(layer), "layer.%u", l);
 
-		uint32_t errors = 0;
 		for(int i = 0; i < 100; i++) {
+			int ret;
 			char key[32];
+
+			/* sliders */
 			snprintf(key, sizeof(key), "slider.%u", i);
 			const char *value = 0;
 			ini_sget(config, layer, key, NULL, &value);
-			/* TODO: can we error check this better? */
-			if(!value)
-				continue;
-			int ret = bind_config_to_target(m, dev, l,
-							CTLRA_EVENT_SLIDER,
-							i, value);
-			if(ret != 0)
-				errors++;
+			if(value) {
+				ret = bind_config_to_target(m, dev, l,
+							    CTLRA_EVENT_SLIDER,
+							    i, value);
+				if(ret != 0)
+					errors++;
+			}
 
 			/* buttons */
 			snprintf(key, sizeof(key), "button.%u", i);
 			value = 0;
 			ini_sget(config, layer, key, NULL, &value);
-			if(!value)
-				continue;
-			ret = bind_config_to_target(m, dev, l,
-						    CTLRA_EVENT_BUTTON,
-						    i, value);
-			if(ret != 0) {
-				MAPPA_WARN(m, "error mapping button %s\n", value);
-				errors++;
+			if(value) {
+				ret = bind_config_to_target(m, dev, l,
+							    CTLRA_EVENT_BUTTON,
+							    i, value);
+				if(ret != 0) {
+					MAPPA_WARN(m, "error mapping button %s\n", value);
+					errors++;
+				}
 			}
 
+			/* lights */
 			snprintf(key, sizeof(key), "light.%u", i);
 			value = 0;
 			ini_sget(config, layer, key, NULL, &value);
-			if(!value)
-				continue;
-			uint32_t sid = mappa_get_source_id(m, value);
-			if(ret != 0) {
-				MAPPA_WARN(m, "invalid light id %s\n", value);
-				errors++;
-			} else {
-				ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
+			if(value) {
+				uint32_t sid = mappa_get_source_id(m, value);
 				if(ret != 0) {
-					MAPPA_WARN(m, "bind source %s failed\n",
+					MAPPA_WARN(m, "invalid light id %s\n",
 						   value);
 					errors++;
+				} else {
+					ret = mappa_bind_source_to_ctlra(m, 0,
+							 l, i, sid);
+					if(ret != 0) {
+						MAPPA_WARN(m, "bind source %s failed\n",
+							   value);
+						errors++;
+					}
 				}
 			}
 		}
@@ -715,7 +719,6 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 		if(errors)
 			MAPPA_ERROR(m, "error mapping control on layer %d, count %d\n",
 				    l, errors);
-		errors = 0;
 	}
 
 	ini_free(config);
