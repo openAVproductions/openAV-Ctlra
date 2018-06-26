@@ -410,12 +410,12 @@ lut_destroy(struct lut_t *lut)
 	free(lut);
 }
 
-int32_t
-lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
+struct lut_t *
+lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 {
 	struct lut_t * lut = calloc(1, sizeof(*lut));
 	if(!lut)
-		return -ENOMEM;
+		return 0;
 
 	/* allocate event input to target lookup arrays */
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
@@ -430,15 +430,26 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
-
-	/* set index, append to list of LUTs */
-	lut->id = dev->lut_idx++;
-	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
-	return 0;
+	return lut;
 
 fail:
 	lut_destroy(lut);
-	return -ENOMEM;
+	return 0;
+}
+
+int32_t lut_create_add_to_dev(struct mappa_t *m,
+			      struct dev_t *dev,
+			      const struct ctlra_dev_info_t *info)
+{
+	/* add LUT to this dev */
+	struct lut_t *lut = lut_create(dev, info);
+	if(!lut) {
+		MAPPA_ERROR(m, "lut create failed, returned %p\n", lut);
+		return -ENOMEM;
+	}
+	lut->id = dev->lut_idx++;
+	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
+	return 0;
 }
 
 struct dev_t *
@@ -454,19 +465,20 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	/* store the dev info into the struct, for error checking later */
 	dev->ctlra_dev_info = *info;
 
-	/* add LUT to this dev */
-	int32_t ret = lut_create_add_to_dev(dev, info);
-	if(ret)
-		MAPPA_ERROR(m, "lut create failed with %d\n", ret);
+	int ret = lut_create_add_to_dev(m, dev, info);
+	if(ret) {
+		MAPPA_ERROR(m, "lut create_add_to_dev() ret %d\n", ret);
+	}
+	ret = lut_create_add_to_dev(m, dev, info);
+	if(ret) {
+		MAPPA_ERROR(m, "lut create_add_to_dev() ret %d\n", ret);
+	}
 
-	/* TODO remove this once dynamic layer creation is in place */
-	ret = lut_create_add_to_dev(dev, info);
-	if(ret)
-		MAPPA_ERROR(m, "lut create failed with %d\n", ret);
+	/* allocate memory for the the "flattened" lut of all the active
+	 * layers */
+	dev->active_lut = lut_create(dev, info);
 
 	dev->self = m;
-	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
-
 	dev->id = m->dev_ids++;
 	TAILQ_INSERT_TAIL(&m->dev_list, dev, tailq);
 	return dev;
@@ -660,9 +672,26 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	int dev = 0;
 
 	for(int l = 0; l < 5; l++) {
+		const char *value = 0;
 		uint32_t errors = 0;
 		char layer[32];
 		snprintf(layer, sizeof(layer), "layer.%u", l);
+
+		/* get layer name: layers without names are invalid */
+		ini_sget(config, layer, "name", NULL, &value);
+		if(!value)
+			continue;
+		printf("layer name %s\n", value);
+
+		/* check if layer exists, free it if yes */
+		/* recreate a lut for this layer */
+
+		value = 0;
+		ini_sget(config, layer, "active_on_load", NULL, &value);
+		if(value) {
+			int active = atoi(value);
+			printf("  active on load: %d\n", active);
+		}
 
 		for(int i = 0; i < 100; i++) {
 			int ret;
@@ -670,7 +699,6 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 
 			/* sliders */
 			snprintf(key, sizeof(key), "slider.%u", i);
-			const char *value = 0;
 			ini_sget(config, layer, key, NULL, &value);
 			if(value) {
 				ret = bind_config_to_target(m, dev, l,

@@ -40,7 +40,7 @@ void sw_target_float_func(uint32_t target_id,
 			  uint32_t token_size,
 			  void *userdata)
 {
-#if 0
+#if 1
 	printf("%s: target id %d, value %f, token size %d\n",
 	       __func__, target_id, value, token_size);
 #endif
