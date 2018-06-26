@@ -82,12 +82,14 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 {
 	struct dev_t *dev = userdata;
 	if(!dev) {
-		printf("programming error - dev is NULL\n");
+		printf("mappa programming error - dev is NULL\n");
 		return;
 	}
+	struct mappa_t *m = dev->self;
+
 	struct lut_t *lut = dev->active_lut;
 	if(!lut) {
-		printf("programming error - lut is NULL\n");
+		MAPPA_ERROR(m, "programming error - lut is %p\n", lut);
 		return;
 	}
 
@@ -128,7 +130,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		 */
 		const int count = dev->ctlra_dev_info.control_count[e->type];
 		if(id >= count) {
-			printf("%s() device error: type %d id %d >= control count %d\n",
+			MAPPA_ERROR(m, "%s() device error: type %d id %d >= control count %d\n",
 			       __func__, e->type, id, count);
 			continue;
 		}
@@ -273,13 +275,11 @@ void
 mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		  void *userdata)
 {
+	struct mappa_t *m = userdata;
 	struct ctlra_dev_info_t info;
 	ctlra_dev_get_info(dev, &info);
-	printf("mappa_app: removing %s %s\n", info.vendor, info.device);
-
-	struct mappa_t *m = userdata;
-	/* TODO: cleanup dev_t * and resources here */
-	//m->dev = 0x0;
+	MAPPA_INFO(m, "mappa_app: removing %s %s\n", info.vendor, info.device);
+	MAPPA_ERROR(m,"TODO: cleanup resources for dev_t %p here\n", dev);
 }
 
 #define DEV_FROM_MAPPA(m, dev, find_id) do {				\
@@ -291,7 +291,7 @@ mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
 		}							\
 	}								\
 	if(!dev) {							\
-		printf("%s invalid dev id %d\n", __func__, ctlra_dev_id);\
+		MAPPA_ERROR(m, "%s invalid dev id %d\n", __func__, find_id);\
 		return -EINVAL;						\
 	}								\
 } while(0)
@@ -313,9 +313,9 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	/* error check control type/id combo */
 	if(control_id >= dev->ctlra_dev_info.control_count[control_type] ||
 			control_type >= CTLRA_EVENT_T_COUNT) {
-		printf("%s: control id %d out of range for type %d, dev %s\n",
-		       __func__, control_id, control_type,
-		       dev->ctlra_dev_info.vendor);
+		MAPPA_WARN(m, "%s: control id %d out of range for type %d, dev %s\n",
+			   __func__, control_id, control_type,
+			   dev->ctlra_dev_info.vendor);
 		return -EINVAL;
 	}
 
@@ -329,7 +329,7 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		}
 	}
 	if(lut == 0) {
-		printf("invalid layer %d requested for binding\n", layer);
+		MAPPA_WARN(m, "invalid layer %d requested for binding\n", layer);
 		return -EINVAL;
 	}
 
@@ -338,13 +338,11 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 		if(t->id == target_id) {
 			/* point the lut event type:id combo at the target */
 			lut->target_types[control_type][control_id] = t;
-			/*
-			printf("bound layer %d, ctype %d cid %d to %s\n",
-			       layer, control_type, control_id, t->target.name);
-			*/
 			return 0;
 		}
 	}
+
+	MAPPA_WARN(m,"target id %d not found\n", target_id);
 
 	return -EINVAL;
 }
@@ -358,7 +356,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
 	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
-		printf("%s() invalid fb_id\n", __func__);
+		MAPPA_ERROR(m, "feedback id %d is out of range\n", fb_id);
 		return -EINVAL;
 	}
 
@@ -389,15 +387,6 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	/* set source to feed into the feedback id */
 	l->sources[fb_id] = &s->source;
 
-	/*
-	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
-	for(int i = 0; i < count; i++) {
-		struct mappa_source_t *s = l->sources[i];
-		if(s)
-			printf("postbind i %d, s %p, func %p\n", i, s, s->func);
-	}
-	*/
-
 	return 0;
 }
 
@@ -424,10 +413,6 @@ lut_create_add_to_dev(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
 		uint32_t c = info->control_count[i];
 		lut->target_types[i] = calloc(c, sizeof(void *));
-		/*
-		printf("lut %p type %d, size %d, ptr %p\n", lut, i, c,
-		       lut->target_types[i]);
-		*/
 		if(!lut->target_types[i])
 			goto fail;
 	}
@@ -464,11 +449,12 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	/* add LUT to this dev */
 	int32_t ret = lut_create_add_to_dev(dev, info);
 	if(ret)
-		printf("error ret from lut_create_add_to_dev: %d\n", ret);
+		MAPPA_ERROR(m, "lut create failed with %d\n", ret);
 
+	/* TODO remove this once dynamic layer creation is in place */
 	ret = lut_create_add_to_dev(dev, info);
 	if(ret)
-		printf("error ret from 2ND lut_create_add_to_dev: %d\n", ret);
+		MAPPA_ERROR(m, "lut create failed with %d\n", ret);
 
 	dev->self = m;
 	dev->active_lut = TAILQ_FIRST(&dev->lut_list);
@@ -501,9 +487,14 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 
 	struct dev_t *dev = dev_create(m, ctlra_dev, info);
 	if(!dev) {
-		printf("failed to create dev\n");
+		MAPPA_ERROR(m, "failed to create mappa dev_t for %s %s\n",
+			    info->vendor, info->device);
 		return 0;
 	}
+
+	/* TODO: check all available mappa config files to see if we want
+	 * to accept this device? Use mappa_opts to configure this?
+	 */
 
 	ctlra_dev_set_event_func(ctlra_dev, mappa_event_func);
 	ctlra_dev_set_feedback_func(ctlra_dev, mappa_feedback_func);
@@ -517,8 +508,7 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 	ctlra_dev_set_callback_userdata(ctlra_dev, dev);
 
 	/* TODO: check for default map to load for this device */
-	printf("accepting dev %s\n", info->vendor);
-
+	MAPPA_INFO(m, "accepting device %s %s\n", info->vendor, info->device);
 	return 1;
 }
 
@@ -537,18 +527,16 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 	struct mappa_t *m = userdata;
 	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
 	int layer = (int)value;
-	//printf("%s, layer = %d\n", __func__, layer);
-	/* search for correct lut layer */
+
 	struct lut_t *l;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
 		if(l->id == layer) {
 			dev->active_lut = l;
-			printf("  layer %d active!\n", layer);
-			break;
+			return;
 		}
 	}
 
-	/* TODO: how to notify of failure to switch? */
+	MAPPA_ERROR(m, "layer %d not found, switch failed\n", layer);
 }
 
 struct mappa_t *
@@ -559,17 +547,29 @@ mappa_create(struct mappa_opts_t *opts)
 	if(!m)
 		goto fail;
 
-	struct ctlra_t *c = ctlra_create(NULL);
+	if(opts)
+		m->opts = *opts;
+
+	char *mappa_debug = getenv("MAPPA_DEBUG");
+	if(mappa_debug) {
+		int debug_level = atoi(mappa_debug);
+		m->opts.debug_level = debug_level;
+		MAPPA_INFO(m, "debug level: %d\n", debug_level);
+	}
+
+	struct ctlra_create_opts_t c_opts = {
+		.debug_level = m->opts.debug_level,
+	};
+	struct ctlra_t *c = ctlra_create(&c_opts);
 	if(!c)
 		goto fail;
+	m->ctlra = c;
 
 	/* 0 is the error return for uint32_t functions, so offset
 	 * all targets by 1. They don't have an absolute meaning, so no
 	 * issue in doing this */
 	m->target_ids = 1;
 	m->source_ids = 1;
-
-	m->ctlra = c;
 
 	TAILQ_INIT(&m->target_list);
 	TAILQ_INIT(&m->dev_list);
@@ -583,10 +583,11 @@ mappa_create(struct mappa_opts_t *opts)
 
 	uint32_t sid;
 	int ret = mappa_target_add(m, &t, &sid, 0, 0);
-	assert(ret == 0);
+	if(ret != 0)
+		MAPPA_ERROR(m, "mappa target add %s failed\n", t.name);
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
-	printf("mappa connected to %d devices\n", num_devs);
+	MAPPA_INFO(m, "mappa connected to %d devices\n", num_devs);
 
 	return m;
 fail:
@@ -650,10 +651,10 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	ini_sget(config, "author", "name", NULL, &name);
 	ini_sget(config, "author", "email", NULL, &email);
 	ini_sget(config, "author", "organization", NULL, &org);
-	printf("Loading config file %s\n", file);
-	printf("  Name: %s\n", name);
-	printf("  Email: %s\n", email);
-	printf("  Org: %s\n", org);
+	MAPPA_INFO(m, "Loading config file %s\n", file);
+	MAPPA_INFO(m, "  Name: %s\n", name);
+	MAPPA_INFO(m, "  Email: %s\n", email);
+	MAPPA_INFO(m, "  Org: %s\n", org);
 
 	/* TODO: lookup dev id by vendor/device/serial */
 	int dev = 0;
@@ -661,6 +662,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	for(int l = 0; l < 5; l++) {
 		char layer[32];
 		snprintf(layer, sizeof(layer), "layer.%u", l);
+
+		uint32_t errors = 0;
 		for(int i = 0; i < 100; i++) {
 			char key[32];
 			snprintf(key, sizeof(key), "slider.%u", i);
@@ -673,7 +676,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 							CTLRA_EVENT_SLIDER,
 							i, value);
 			if(ret != 0)
-				printf("error mapping slider %s\n", value);
+				errors++;
 
 			/* buttons */
 			snprintf(key, sizeof(key), "button.%u", i);
@@ -684,8 +687,10 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			ret = bind_config_to_target(m, dev, l,
 						    CTLRA_EVENT_BUTTON,
 						    i, value);
-			if(ret != 0)
-				printf("error mapping button %s\n", value);
+			if(ret != 0) {
+				MAPPA_WARN(m, "error mapping button %s\n", value);
+				errors++;
+			}
 
 			snprintf(key, sizeof(key), "light.%u", i);
 			value = 0;
@@ -693,14 +698,23 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			if(!value)
 				continue;
 			uint32_t sid = mappa_get_source_id(m, value);
-			if(sid == 0) {
-				printf("invalid source %s\n", value);
-				continue;
+			if(ret != 0) {
+				MAPPA_WARN(m, "invalid light id %s\n", value);
+				errors++;
+			} else {
+				ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
+				if(ret != 0) {
+					MAPPA_WARN(m, "bind source %s failed\n",
+						   value);
+					errors++;
+				}
 			}
-			ret = mappa_bind_source_to_ctlra(m, 0, l, i, sid);
-			if(ret != 0)
-				printf("error mapping feedback %s\n", value);
 		}
+
+		if(errors)
+			MAPPA_ERROR(m, "error mapping control on layer %d, count %d\n",
+				    l, errors);
+		errors = 0;
 	}
 
 	ini_free(config);

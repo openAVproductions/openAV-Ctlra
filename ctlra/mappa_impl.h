@@ -5,6 +5,27 @@
 
 #include <sys/queue.h>
 
+#define mappa_print_check(c, level)					\
+	(!c || (c->opts.debug_level >= level))
+
+#define MAPPA_ERROR(mappa, fmt, ...)					\
+	do { if (mappa_print_check(mappa, MAPPA_DEBUG_ERROR))		\
+	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+#define MAPPA_WARN(mappa, fmt, ...)					\
+	do { if (mappa_print_check(mappa, MAPPA_DEBUG_WARN))		\
+	fprintf(stderr, "[\033[1;33m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+#define MAPPA_INFO(mappa, fmt, ...)					\
+	do { if (mappa_print_check(mappa, MAPPA_DEBUG_INFO))		\
+	fprintf(stderr, "[\033[1;32m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
+
+
+
 /* internal data structure for a linked list of targets */
 struct target_t {
 	TAILQ_ENTRY(target_t) tailq;
@@ -79,6 +100,7 @@ struct dev_t {
 TAILQ_HEAD(dev_list_t, dev_t);
 
 struct mappa_t {
+	struct mappa_opts_t opts;
 	struct ctlra_t *ctlra;
 
 	uint32_t dev_ids;

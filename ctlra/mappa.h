@@ -57,9 +57,18 @@ extern "C" {
  */
 struct mappa_t;
 
+/* Debug levels for mappa */
+#define MAPPA_DEBUG_ERROR 0
+#define MAPPA_DEBUG_NONE  1
+#define MAPPA_DEBUG_WARN  2
+#define MAPPA_DEBUG_INFO  3
+
+
 struct mappa_opts_t {
-	uint32_t todo;
-	/* do/do-not create ctlra context?
+	/* 0 means no prints, higher numbers increase verbosity. */
+	uint8_t debug_level;
+
+	/* TODO: do/do-not create ctlra context?
 	 * Ignore specific controllers that host implements natively?
 	 * ... ?
 	 */
