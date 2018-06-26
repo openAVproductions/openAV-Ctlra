@@ -130,8 +130,9 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		 */
 		const int count = dev->ctlra_dev_info.control_count[e->type];
 		if(id >= count) {
-			MAPPA_ERROR(m, "%s() device error: type %d id %d >= control count %d\n",
-			       __func__, e->type, id, count);
+			MAPPA_ERROR(m,
+				"ctlra device error: type %d id %d >= control count %d\n",
+				e->type, id, count);
 			continue;
 		}
 
@@ -271,15 +272,22 @@ mappa_target_remove(struct mappa_t *m, uint32_t target_id)
 	return -EINVAL;
 }
 
+void dev_destroy(struct dev_t *dev);
+
 void
-mappa_remove_func(struct ctlra_dev_t *dev, int unexpected_removal,
+mappa_remove_func(struct ctlra_dev_t *ctlra_dev, int unexpected_removal,
 		  void *userdata)
 {
-	struct mappa_t *m = userdata;
+	struct dev_t *mappa_dev = userdata;
+	struct mappa_t *m = mappa_dev->self;
+
 	struct ctlra_dev_info_t info;
-	ctlra_dev_get_info(dev, &info);
+	ctlra_dev_get_info(ctlra_dev, &info);
 	MAPPA_INFO(m, "mappa_app: removing %s %s\n", info.vendor, info.device);
-	MAPPA_ERROR(m,"TODO: cleanup resources for dev_t %p here\n", dev);
+
+	/* remove dev from tailq and free it */
+	TAILQ_REMOVE(&m->dev_list, mappa_dev, tailq);
+	dev_destroy(mappa_dev);
 }
 
 #define DEV_FROM_MAPPA(m, dev, find_id) do {				\
@@ -611,13 +619,6 @@ mappa_destroy(struct mappa_t *m)
 		s = TAILQ_FIRST(&m->source_list);
 		TAILQ_REMOVE(&m->source_list, s, tailq);
 		source_destroy(s);
-	}
-
-	struct dev_t *d;
-	while (!TAILQ_EMPTY(&m->dev_list)) {
-		d = TAILQ_FIRST(&m->dev_list);
-		TAILQ_REMOVE(&m->dev_list, d, tailq);
-		dev_destroy(d);
 	}
 
 	/* iterate over all allocated resources and free them */
