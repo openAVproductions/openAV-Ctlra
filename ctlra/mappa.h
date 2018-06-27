@@ -101,6 +101,7 @@ int32_t mappa_iter(struct mappa_t *m);
  */
 typedef void (*mappa_target_float_func)(uint32_t target_id,
 					float value,
+					/* TODO: make void *token const */
 					void *token,
 					uint32_t token_size,
 					void *userdata);
@@ -192,8 +193,6 @@ int32_t mappa_target_remove(struct mappa_t *m, uint32_t target_id);
  * float values such as EQ, Filter Cutoffs etc. These values can be mapped
  * by the user to any control surface - LED lights, moving faders etc. The
  * data should be provided in a way that allows the user to easily map it.
- *
- * TODO: link to value mushers here
  */
 int32_t mappa_source_add(struct mappa_t *m,
 			 struct mappa_source_t *t,

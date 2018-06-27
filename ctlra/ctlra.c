@@ -172,6 +172,8 @@ CTLRA_DEVICE_DECL(avtka);
 		return -EINVAL;
 	}
 
+	CTLRA_ERROR(c, "ctlra dev control count = %d\n", dev->info.control_count);
+
 	/* assuming info setup is ok, call accept dev callback in app */
 	int accepted = c->accept_dev_func(c, &dev->info, dev,
 					  c->accept_dev_func_userdata);

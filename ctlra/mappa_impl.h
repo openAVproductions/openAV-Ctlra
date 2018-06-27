@@ -97,7 +97,7 @@ struct dev_t {
 	uint32_t id;
 
 	/* ctlra dev info, required to error check binding IDs */
-	struct ctlra_dev_info_t ctlra_dev_info;
+	const struct ctlra_dev_info_t *ctlra_dev_info;
 };
 TAILQ_HEAD(dev_list_t, dev_t);
 

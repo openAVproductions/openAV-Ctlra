@@ -48,7 +48,8 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	struct lut_t *lut = dev->active_lut;
 
 	/* iterate over the # of destinations, pulling sources for each */
-	int count = dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM];
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	int count = info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct mappa_source_t *s = lut->sources[i];
 		if(s && s->func) {
@@ -128,7 +129,9 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		 * Hence, we check if the event is in the advertised range,
 		 * and bomb out if its not, notifying the dev.
 		 */
-		const int count = dev->ctlra_dev_info.control_count[e->type];
+		/* TODO: move to above loop */
+		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+		const int count = info->control_count[e->type];
 		if(id >= count) {
 			MAPPA_ERROR(m,
 				"ctlra device error: type %d id %d >= control count %d\n",
@@ -319,11 +322,12 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
 	/* error check control type/id combo */
-	if(control_id >= dev->ctlra_dev_info.control_count[control_type] ||
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	if(control_id >= info->control_count[control_type] ||
 			control_type >= CTLRA_EVENT_T_COUNT) {
 		MAPPA_WARN(m, "%s: control id %d out of range for type %d, dev %s\n",
 			   __func__, control_id, control_type,
-			   dev->ctlra_dev_info.vendor);
+			   info->vendor);
 		return -EINVAL;
 	}
 
@@ -364,10 +368,13 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	struct dev_t *dev = 0;
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
-	if(fb_id >= dev->ctlra_dev_info.control_count[CTLRA_FEEDBACK_ITEM]) {
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	int control_count = info->control_count[CTLRA_EVENT_BUTTON];
+	if(fb_id >= control_count) {
 		MAPPA_ERROR(m, "feedback id %d is out of range\n", fb_id);
 		return -EINVAL;
 	}
+
 
 	/* iterate over sources by name, compare */
 	int found = 0;
@@ -417,8 +424,10 @@ struct lut_t *
 lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 {
 	struct lut_t * lut = calloc(1, sizeof(*lut));
-	if(!lut)
+	if(!lut) {
+		printf("failed to calloc lut mem\n");
 		return 0;
+	}
 
 	/* allocate event input to target lookup arrays */
 	for(int i = 0; i < CTLRA_EVENT_T_COUNT; i++) {
@@ -433,14 +442,19 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
+
+	printf("lut ret is ok\n");
 	return lut;
 
 fail:
+	MAPPA_ERROR(dev->self, "failed to create LUT for %s %s\n",
+		    info->vendor, info->device);
 	lut_destroy(lut);
 	return 0;
 }
 
-int32_t lut_create_add_to_dev(struct mappa_t *m,
+struct lut_t *
+lut_create_add_to_dev(struct mappa_t *m,
 			      struct dev_t *dev,
 			      const struct ctlra_dev_info_t *info)
 {
@@ -448,10 +462,10 @@ int32_t lut_create_add_to_dev(struct mappa_t *m,
 	struct lut_t *lut = lut_create(dev, info);
 	if(!lut) {
 		MAPPA_ERROR(m, "lut create failed, returned %p\n", lut);
-		return -ENOMEM;
+		return 0;
 	}
 	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
-	return 0;
+	return lut;
 }
 
 struct dev_t *
@@ -465,16 +479,7 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	TAILQ_INIT(&dev->lut_list);
 
 	/* store the dev info into the struct, for error checking later */
-	dev->ctlra_dev_info = *info;
-
-	int ret = lut_create_add_to_dev(m, dev, info);
-	if(ret) {
-		MAPPA_ERROR(m, "lut create_add_to_dev() ret %d\n", ret);
-	}
-	ret = lut_create_add_to_dev(m, dev, info);
-	if(ret) {
-		MAPPA_ERROR(m, "lut create_add_to_dev() ret %d\n", ret);
-	}
+	dev->ctlra_dev_info = info;
 
 	/* allocate memory for the the "flattened" lut of all the active
 	 * layers */
@@ -666,6 +671,42 @@ bind_config_to_target(struct mappa_t *m, uint32_t dev_id,
 	return -1;
 }
 
+static int32_t
+config_file_bind_layer_type(struct mappa_t *m, struct dev_t *dev,
+			    const char *layer, uint32_t event_type)
+{
+	/* for this event type, pull out control_count, and iterate over
+	 * them. Pull the "layer", "name" pair from the config file, and
+	 * call a function to map the control if it was non-NULL */
+	return 0;
+}
+
+/* returns 0 on success, or # of FAILED bindings otherwise */
+static int32_t
+config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
+		       const char *layer)
+{
+	/* check the event type max, and pull the name of each control
+	 * item from the Ctlra device code. Call a function to set up
+	 * the mapping */
+	printf("%s: layer %s\n", __func__, layer);
+
+	/* handle all event types here */
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	uint32_t event_type_max = CTLRA_EVENT_T_COUNT;
+	for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
+		uint32_t c = info->control_count[e];
+		printf("event type %d, count = %d\n", e, c);
+		int ret = config_file_bind_layer_type(m, dev, layer, e);
+		if(ret) {
+			MAPPA_ERROR(m, "error ret from bind_layer_type() %d\n",
+				    ret);
+		}
+	}
+
+	return 0;
+}
+
 int32_t
 mappa_load_bindings(struct mappa_t *m, const char *file)
 {
@@ -687,6 +728,20 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	/* TODO: lookup dev id by vendor/device/serial */
 	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
 
+	int layer_count = 1;
+	for(int i = 0; i < layer_count; i++) {
+		/* call "config file probe" function to pull ctlra names
+		 * out of the device code, and attempt to map target */
+		const char *layer = "layer_name";
+		int ret = config_file_bind_layer(m, dev, layer);
+		if(ret) {
+			MAPPA_ERROR(m, "layer %s failed to bind %d mappings\n",
+				    layer, ret);
+		}
+	}
+
+#if 0
+	/* TODO: find # of layers from the mapping file? */
 	for(int l = 0; l < 5; l++) {
 		const char *value = 0;
 		uint32_t errors = 0;
@@ -697,11 +752,10 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 		ini_sget(config, layer, "name", NULL, &value);
 		if(!value)
 			continue;
-		printf("layer name %s\n", value);
 
 		/* check if layer exists, free it if yes */
 		/* recreate a lut for this layer */
-		struct lut_t *lut;
+		struct lut_t *lut = 0;
 		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
 			if(!lut->name) {
 				MAPPA_ERROR(m, "lut %p has no name\n", lut);
@@ -712,9 +766,11 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 				break;
 			}
 		}
-		int ret = lut_create_add_to_dev(m, dev, &dev->ctlra_dev_info);
-		if(!ret)
+		lut = lut_create_add_to_dev(m, dev, dev->ctlra_dev_info);
+		if(!lut) {
+			MAPPA_ERROR(m, "failed to create lut %s\n", "test");
 			return -ENOMEM;
+		}
 		lut->name = strdup(value);
 
 		value = 0;
@@ -724,6 +780,15 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			printf("  active on load: %d\n", active);
 		}
 
+		/* TODO: break these into seperate loops, probing using
+		 * Ctlra names instead of integers. This is more useable
+		 * for humans, and allows the mapping here to retrieve a
+		 * list of controls from the Ctlra device code, instead of
+		 * "guessing" the names which the user supplied.
+		 *
+		 * This code needs a refactor anyway - so rework it into
+		 * the Ctlra based method, and break out common functions.
+		 */
 		for(int i = 0; i < 100; i++) {
 			int ret;
 			char key[32];
@@ -781,6 +846,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			MAPPA_ERROR(m, "error mapping control on layer %d, count %d\n",
 				    l, errors);
 	}
+#endif
 
 	ini_free(config);
 
