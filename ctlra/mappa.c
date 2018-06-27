@@ -368,7 +368,8 @@ lut_destroy(struct lut_t *lut)
 }
 
 struct lut_t *
-lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
+lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
+	   const char *name)
 {
 	struct lut_t * lut = calloc(1, sizeof(*lut));
 	if(!lut) {
@@ -389,6 +390,8 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
+
+	lut->name = strdup(name);
 	return lut;
 
 fail:
@@ -401,10 +404,11 @@ fail:
 struct lut_t *
 lut_create_add_to_dev(struct mappa_t *m,
 			      struct dev_t *dev,
-			      const struct ctlra_dev_info_t *info)
+			      const struct ctlra_dev_info_t *info,
+			      const char *name)
 {
 	/* add LUT to this dev */
-	struct lut_t *lut = lut_create(dev, info);
+	struct lut_t *lut = lut_create(dev, info, name);
 	if(!lut) {
 		MAPPA_ERROR(m, "lut create failed, returned %p\n", lut);
 		return 0;
@@ -428,7 +432,7 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 
 	/* allocate memory for the the "flattened" lut of all the active
 	 * layers */
-	dev->active_lut = lut_create(dev, info);
+	dev->active_lut = lut_create(dev, info, "active_lut");
 
 	dev->self = m;
 	dev->id = m->dev_ids++;
@@ -767,12 +771,12 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 				break;
 			}
 		}
-		lut = lut_create_add_to_dev(m, dev, dev->ctlra_dev_info);
+		lut = lut_create_add_to_dev(m, dev, dev->ctlra_dev_info,
+					    layer_name);
 		if(!lut) {
 			MAPPA_ERROR(m, "failed to create lut %s\n", "test");
 			return -ENOMEM;
 		}
-		lut->name = strdup(layer_name);
 
 		/* call "config file probe" function to pull ctlra names
 		 * out of the device code, and attempt to map target */
