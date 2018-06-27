@@ -51,6 +51,7 @@ struct mappa_t;
 struct lut_t {
 	TAILQ_ENTRY(lut_t) tailq;
 
+	char *name;
 	/* The ID of this LUT. Used to switch between luts */
 	uint32_t id;
 

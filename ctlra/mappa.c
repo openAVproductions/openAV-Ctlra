@@ -405,6 +405,8 @@ lut_destroy(struct lut_t *lut)
 		if(lut->target_types[i])
 			free(lut->target_types[i]);
 	}
+	if(lut->name)
+		free(lut->name);
 	if(lut->sources)
 		free(lut->sources);
 	free(lut);
@@ -669,7 +671,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	MAPPA_INFO(m, "  Org: %s\n", org);
 
 	/* TODO: lookup dev id by vendor/device/serial */
-	int dev = 0;
+	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
 
 	for(int l = 0; l < 5; l++) {
 		const char *value = 0;
@@ -685,6 +687,24 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 
 		/* check if layer exists, free it if yes */
 		/* recreate a lut for this layer */
+		struct lut_t *lut;
+		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
+			if(!lut->name) {
+				MAPPA_ERROR(m, "lut %p has no name\n", lut);
+				return -ENOBUFS;
+			}
+			if(strcmp(lut->name, value) != 0) {
+				lut_destroy(lut);
+				break;
+			}
+		}
+		int ret = lut_create_add_to_dev(m, dev, &dev->ctlra_dev_info);
+		if(!ret)
+			return -ENOMEM;
+		/* fresh clean lut available now */
+		lut->name = strdup(value);
+
+		/* strdup name into lut->name */
 
 		value = 0;
 		ini_sget(config, layer, "active_on_load", NULL, &value);
@@ -701,7 +721,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			snprintf(key, sizeof(key), "slider.%u", i);
 			ini_sget(config, layer, key, NULL, &value);
 			if(value) {
-				ret = bind_config_to_target(m, dev, l,
+				ret = bind_config_to_target(m, dev->id, l,
 							    CTLRA_EVENT_SLIDER,
 							    i, value);
 				if(ret != 0)
@@ -713,7 +733,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			value = 0;
 			ini_sget(config, layer, key, NULL, &value);
 			if(value) {
-				ret = bind_config_to_target(m, dev, l,
+				ret = bind_config_to_target(m, dev->id, l,
 							    CTLRA_EVENT_BUTTON,
 							    i, value);
 				if(ret != 0) {
