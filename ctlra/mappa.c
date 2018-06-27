@@ -645,13 +645,29 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 	uint32_t control_count = info->control_count[event_type];
 	int32_t errors = 0;
+	const uint32_t buf_size = 256;
+	char buf[buf_size];
 
 	for(uint32_t i = 0; i < control_count; i++) {
 		const char *control_name = ctlra_info_get_name(info,
 							       event_type,
 							       i);
+		if(!control_name) {
+			MAPPA_ERROR(m, "control type %d, index %d of device %s %s has no name\n",
+				    event_type, i, info->vendor, info->device);
+			continue;
+		}
+		const char *prefix = ctlra_event_type_names[event_type];
+		int written = snprintf(buf, sizeof(buf), "%s.%s",
+				       prefix, control_name);
+		if(written < 0 || written >= buf_size) {
+			MAPPA_ERROR(m, "failed to print control name %s with prefix %s\n",
+				    control_name, prefix);
+			continue;
+		}
+
 		int ret = config_file_binding_create(dev, lut, event_type,
-						     i, layer, control_name);
+						     i, layer, buf);
 		errors += !!ret;
 	}
 
