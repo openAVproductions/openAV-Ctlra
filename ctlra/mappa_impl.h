@@ -120,6 +120,11 @@ struct mappa_t {
 
 	/* container for all sources in the system. Not used for lookup */
 	struct source_list_t source_list;
+
+	/* store a handle to ini file config, instead of passing down
+	 * through all the function calls. ONLY valid inside the function
+	 * mappa_load_bindings(), and functions called from there */
+	void *ini_file;
 };
 
 /* create a binding from the ctlra dev id at control id, to gid,iid, for

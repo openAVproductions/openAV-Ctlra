@@ -307,59 +307,6 @@ mappa_remove_func(struct ctlra_dev_t *ctlra_dev, int unexpected_removal,
 	}								\
 } while(0)
 
-int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
-				   uint32_t ctlra_dev_id,
-				   const char *layer,
-				   uint32_t control_type,
-				   uint32_t control_id,
-				   uint32_t target_id)
-{
-	if(!m)
-		return -EINVAL;
-
-	/* search for dev */
-	struct dev_t *dev = 0;
-	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
-
-	/* error check control type/id combo */
-	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-	if(control_id >= info->control_count[control_type] ||
-			control_type >= CTLRA_EVENT_T_COUNT) {
-		MAPPA_WARN(m, "%s: control id %d out of range for type %d, dev %s\n",
-			   __func__, control_id, control_type,
-			   info->vendor);
-		return -EINVAL;
-	}
-
-	/* search for correct lut layer */
-	struct lut_t *l;
-	struct lut_t *lut = 0;
-	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		if(strcmp(l->name, layer) != 0) {
-			lut = l;
-			break;
-		}
-	}
-	if(lut == 0) {
-		MAPPA_WARN(m, "invalid layer %s requested for binding\n",
-			   layer);
-		return -EINVAL;
-	}
-
-	struct target_t *t;
-	TAILQ_FOREACH(t, &m->target_list, tailq) {
-		if(t->id == target_id) {
-			/* point the lut event type:id combo at the target */
-			lut->target_types[control_type][control_id] = t;
-			return 0;
-		}
-	}
-
-	MAPPA_WARN(m,"target id %d not found\n", target_id);
-
-	return -EINVAL;
-}
-
 int32_t
 mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 			   const char *layer, uint32_t fb_id,
@@ -442,8 +389,6 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info)
 	lut->sources = calloc(items, sizeof(struct mappa_source_t));
 	if(!lut->sources)
 		goto fail;
-
-	printf("lut ret is ok\n");
 	return lut;
 
 fail:
@@ -658,110 +603,128 @@ mappa_destroy(struct mappa_t *m)
 }
 
 static int32_t
-bind_config_to_target(struct mappa_t *m, uint32_t dev_id,
-		      const char  *layer, uint32_t type, uint32_t cid,
-		      const char *target)
+config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
+			   uint32_t event_type, uint32_t control_id,
+			   const char *layer, const char *control_name)
 {
-	/* lookup target, map id */
-	uint32_t tid = mappa_get_target_id(m, target);
-	if(tid == 0)
-		return -EINVAL;
+	const char *target = 0;
+	struct mappa_t *m = dev->self;
+	ini_t *config = m->ini_file;
+	ini_sget(config, layer, control_name, NULL, &target);
+	if(!target) {
+		MAPPA_WARN(m, "Failed to bind %s %s to target %s\n",
+			   layer, control_name, target);
+		return 1;
+	}
 
-	int ret = mappa_bind_ctlra_to_target(m, dev_id, layer, type, cid, tid);
-	return -1;
+	/* Lookup the target in the mappa target list, create binding
+	 * to target from the layer's lut. Note this is *NOT* the same
+	 * as programming something to dev->active_lut. */
+	struct target_t *t;
+	TAILQ_FOREACH(t, &m->target_list, tailq) {
+		if(strcmp(t->target.name, target) == 0) {
+			lut->target_types[event_type][control_id] = t;
+			MAPPA_INFO(m, "success %s %s => %s\n", layer,
+				   control_name, target);
+			return 0;
+		}
+	}
+
+	MAPPA_WARN(m,"target %s not found\n", target);
+	return 1;
 }
 
 static int32_t
-config_file_bind_layer_type(struct mappa_t *m, struct dev_t *dev,
+config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 			    const char *layer, uint32_t event_type)
 {
+	struct mappa_t *m = dev->self;
 	/* for this event type, pull out control_count, and iterate over
 	 * them. Pull the "layer", "name" pair from the config file, and
 	 * call a function to map the control if it was non-NULL */
-	return 0;
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	uint32_t control_count = info->control_count[event_type];
+	int32_t errors = 0;
+
+	for(uint32_t i = 0; i < control_count; i++) {
+		const char *control_name = ctlra_info_get_name(info,
+							       event_type,
+							       i);
+		int ret = config_file_binding_create(dev, lut, event_type,
+						     i, layer, control_name);
+		errors += !!ret;
+	}
+
+	return errors;
 }
 
 /* returns 0 on success, or # of FAILED bindings otherwise */
 static int32_t
 config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
-		       const char *layer)
+		       struct lut_t *lut, const char *layer)
 {
 	/* check the event type max, and pull the name of each control
 	 * item from the Ctlra device code. Call a function to set up
 	 * the mapping */
-	printf("%s: layer %s\n", __func__, layer);
+	int32_t total = 0;
+	int32_t errors = 0;
 
 	/* handle all event types here */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 	uint32_t event_type_max = CTLRA_EVENT_T_COUNT;
 	for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
-		uint32_t c = info->control_count[e];
-		printf("event type %d, count = %d\n", e, c);
-		int ret = config_file_bind_layer_type(m, dev, layer, e);
-		if(ret) {
-			MAPPA_ERROR(m, "error ret from bind_layer_type() %d\n",
-				    ret);
-		}
+		total += info->control_count[e];
+		errors += config_file_bind_layer_type(dev, lut, layer, e);
 	}
 
-	return 0;
+	if(errors)
+		MAPPA_WARN(m, "Layer %s: %d bind errors, %d succesful bindings\n",
+			   layer, errors, total - errors);
+
+	return errors ? -1 : 0;
 }
 
 int32_t
 mappa_load_bindings(struct mappa_t *m, const char *file)
 {
+	/* reset state first */
+	m->ini_file = NULL;
+
 	ini_t *config = ini_load(file);
 	if(!config)
 		return -EINVAL;
 
+	m->ini_file = config;
+
+	/*
 	const char *name = 0;
 	const char *email = 0;
 	const char *org = 0;
 	ini_sget(config, "author", "name", NULL, &name);
 	ini_sget(config, "author", "email", NULL, &email);
 	ini_sget(config, "author", "organization", NULL, &org);
-	MAPPA_INFO(m, "Loading config file %s\n", file);
-	MAPPA_INFO(m, "  Name: %s\n", name);
-	MAPPA_INFO(m, "  Email: %s\n", email);
-	MAPPA_INFO(m, "  Org: %s\n", org);
+	*/
 
 	/* TODO: lookup dev id by vendor/device/serial */
 	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
 
 	int layer_count = 1;
 	for(int i = 0; i < layer_count; i++) {
-		/* call "config file probe" function to pull ctlra names
-		 * out of the device code, and attempt to map target */
-		const char *layer = "layer_name";
-		int ret = config_file_bind_layer(m, dev, layer);
-		if(ret) {
-			MAPPA_ERROR(m, "layer %s failed to bind %d mappings\n",
-				    layer, ret);
-		}
-	}
-
-#if 0
-	/* TODO: find # of layers from the mapping file? */
-	for(int l = 0; l < 5; l++) {
-		const char *value = 0;
-		uint32_t errors = 0;
-		char layer[32];
-		snprintf(layer, sizeof(layer), "layer.%u", l);
-
-		/* get layer name: layers without names are invalid */
-		ini_sget(config, layer, "name", NULL, &value);
-		if(!value)
+		/* TODO: destroy and re-create a lut for this layer */
+		char layer_id[32];
+		snprintf(layer_id, sizeof(layer_id), "layer.%u", i);
+		const char *layer_name = 0;
+		ini_sget(config, layer_id, "name", NULL, &layer_name);
+		if(!layer_name) {
+			MAPPA_ERROR(m, "Layer %d has no name - skipping\n", i);
 			continue;
+		}
 
-		/* check if layer exists, free it if yes */
-		/* recreate a lut for this layer */
+		/* (re)create the lut for this layer */
 		struct lut_t *lut = 0;
 		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
-			if(!lut->name) {
-				MAPPA_ERROR(m, "lut %p has no name\n", lut);
-				return -ENOBUFS;
-			}
-			if(strcmp(lut->name, value) != 0) {
+			assert(lut->name);
+			if(strcmp(lut->name, layer_name) != 0) {
 				lut_destroy(lut);
 				break;
 			}
@@ -771,84 +734,21 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			MAPPA_ERROR(m, "failed to create lut %s\n", "test");
 			return -ENOMEM;
 		}
-		lut->name = strdup(value);
+		lut->name = strdup(layer_name);
 
-		value = 0;
-		ini_sget(config, layer, "active_on_load", NULL, &value);
-		if(value) {
-			int active = atoi(value);
-			printf("  active on load: %d\n", active);
+		/* call "config file probe" function to pull ctlra names
+		 * out of the device code, and attempt to map target */
+		int ret = config_file_bind_layer(m, dev, lut, layer_id);
+		if(ret) {
+			MAPPA_ERROR(m, "layer %s had binding failures\n",
+				    layer_name);
 		}
-
-		/* TODO: break these into seperate loops, probing using
-		 * Ctlra names instead of integers. This is more useable
-		 * for humans, and allows the mapping here to retrieve a
-		 * list of controls from the Ctlra device code, instead of
-		 * "guessing" the names which the user supplied.
-		 *
-		 * This code needs a refactor anyway - so rework it into
-		 * the Ctlra based method, and break out common functions.
-		 */
-		for(int i = 0; i < 100; i++) {
-			int ret;
-			char key[32];
-
-			/* sliders */
-			snprintf(key, sizeof(key), "slider.%u", i);
-			ini_sget(config, layer, key, NULL, &value);
-			if(value) {
-				ret = bind_config_to_target(m, dev->id,
-							    lut->name,
-							    CTLRA_EVENT_SLIDER,
-							    i, value);
-				if(ret != 0)
-					errors++;
-			}
-
-			/* buttons */
-			snprintf(key, sizeof(key), "button.%u", i);
-			value = 0;
-			ini_sget(config, layer, key, NULL, &value);
-			if(value) {
-				ret = bind_config_to_target(m, dev->id,
-							    lut->name,
-							    CTLRA_EVENT_BUTTON,
-							    i, value);
-				if(ret != 0) {
-					MAPPA_WARN(m, "error mapping button %s\n", value);
-					errors++;
-				}
-			}
-
-			/* lights */
-			snprintf(key, sizeof(key), "light.%u", i);
-			value = 0;
-			ini_sget(config, layer, key, NULL, &value);
-			if(value) {
-				uint32_t sid = mappa_get_source_id(m, value);
-				if(ret != 0) {
-					MAPPA_WARN(m, "invalid light id %s\n",
-						   value);
-					errors++;
-				} else {
-					ret = mappa_bind_source_to_ctlra(m, 0,
-							 lut->name, i, sid);
-					if(ret != 0) {
-						MAPPA_WARN(m, "bind source %s failed\n",
-							   value);
-						errors++;
-					}
-				}
-			}
-		}
-
-		if(errors)
-			MAPPA_ERROR(m, "error mapping control on layer %d, count %d\n",
-				    l, errors);
 	}
-#endif
 
-	ini_free(config);
+	/* free and reset temporary handle */
+	if(m->ini_file)
+		ini_free(m->ini_file);
+	m->ini_file = 0;
 
 	return 0;
 }
