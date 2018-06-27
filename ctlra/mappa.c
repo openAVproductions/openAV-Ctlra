@@ -766,7 +766,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 		struct lut_t *lut = 0;
 		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
 			assert(lut->name);
-			if(strcmp(lut->name, layer_name) != 0) {
+			if(strcmp(lut->name, layer_name) == 0) {
 				lut_destroy(lut);
 				break;
 			}
