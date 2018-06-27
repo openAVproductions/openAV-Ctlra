@@ -447,6 +447,9 @@ dev_destroy(struct dev_t *dev)
 		lut_destroy(l);
 	}
 
+	/* cleanup the active "flattened" lut */
+	lut_destroy(dev->active_lut);
+
 	/* cleanup the sources */
 	free(dev);
 }
