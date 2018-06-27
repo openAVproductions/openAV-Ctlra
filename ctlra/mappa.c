@@ -306,7 +306,7 @@ mappa_remove_func(struct ctlra_dev_t *ctlra_dev, int unexpected_removal,
 
 int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 				   uint32_t ctlra_dev_id,
-				   uint32_t layer,
+				   const char *layer,
 				   uint32_t control_type,
 				   uint32_t control_id,
 				   uint32_t target_id)
@@ -331,13 +331,14 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 	struct lut_t *l;
 	struct lut_t *lut = 0;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		if(l->id == layer) {
+		if(strcmp(l->name, layer) != 0) {
 			lut = l;
 			break;
 		}
 	}
 	if(lut == 0) {
-		MAPPA_WARN(m, "invalid layer %d requested for binding\n", layer);
+		MAPPA_WARN(m, "invalid layer %s requested for binding\n",
+			   layer);
 		return -EINVAL;
 	}
 
@@ -357,7 +358,7 @@ int32_t mappa_bind_ctlra_to_target(struct mappa_t *m,
 
 int32_t
 mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
-			   uint32_t layer, uint32_t fb_id,
+			   const char *layer, uint32_t fb_id,
 			   uint32_t source_id)
 {
 	struct dev_t *dev = 0;
@@ -384,7 +385,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	struct lut_t *l;
 	found = 0;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		if(l->id == layer) {
+		if(strcmp(l->name, layer) == 0) {
 			found = 1;
 			break;
 		}
@@ -449,7 +450,6 @@ int32_t lut_create_add_to_dev(struct mappa_t *m,
 		MAPPA_ERROR(m, "lut create failed, returned %p\n", lut);
 		return -ENOMEM;
 	}
-	lut->id = dev->lut_idx++;
 	TAILQ_INSERT_TAIL(&dev->lut_list, lut, tailq);
 	return 0;
 }
@@ -547,17 +547,20 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 {
 	struct mappa_t *m = userdata;
 	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
-	int layer = (int)value;
+
+	/* TODO: extract layer name from token */
+	const char *layer = "todo: fixme invalid";
+	MAPPA_ERROR(m, "TODO: fix layer token lookup %s\n", "here");
 
 	struct lut_t *l;
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		if(l->id == layer) {
+		if(strcmp(l->name, layer) == 0) {
 			dev->active_lut = l;
 			return;
 		}
 	}
 
-	MAPPA_ERROR(m, "layer %d not found, switch failed\n", layer);
+	MAPPA_ERROR(m, "layer %s not found, switch failed\n", layer);
 }
 
 struct mappa_t *
@@ -595,7 +598,17 @@ mappa_create(struct mappa_opts_t *opts)
 	TAILQ_INIT(&m->target_list);
 	TAILQ_INIT(&m->dev_list);
 
-	/* push back "internal" targets like layer switching */
+	/* TODO: Delay creation of targets until the layer becomes
+	 * available. Make it possible to switch to it based on (dev,name)
+	 * pair, as the layer applies only to a specific device instance,
+	 * not any device in use.
+	 *
+	 * This allows a layer switch to be a "trigger" without args,
+	 * avoiding any string parse/handling, or integer enumeration of
+	 * layers.
+	 *
+	 * Internally, the target can register a token that will switch to
+	 * the correct layer */
 	struct mappa_target_t t = {
 		.name = "mappa:layer switch",
 		.func = mappa_layer_switch_target,
@@ -640,8 +653,9 @@ mappa_destroy(struct mappa_t *m)
 }
 
 static int32_t
-bind_config_to_target(struct mappa_t *m, uint32_t dev_id, uint32_t layer,
-		      uint32_t type, uint32_t cid, const char *target)
+bind_config_to_target(struct mappa_t *m, uint32_t dev_id,
+		      const char  *layer, uint32_t type, uint32_t cid,
+		      const char *target)
 {
 	/* lookup target, map id */
 	uint32_t tid = mappa_get_target_id(m, target);
@@ -701,10 +715,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 		int ret = lut_create_add_to_dev(m, dev, &dev->ctlra_dev_info);
 		if(!ret)
 			return -ENOMEM;
-		/* fresh clean lut available now */
 		lut->name = strdup(value);
-
-		/* strdup name into lut->name */
 
 		value = 0;
 		ini_sget(config, layer, "active_on_load", NULL, &value);
@@ -721,7 +732,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			snprintf(key, sizeof(key), "slider.%u", i);
 			ini_sget(config, layer, key, NULL, &value);
 			if(value) {
-				ret = bind_config_to_target(m, dev->id, l,
+				ret = bind_config_to_target(m, dev->id,
+							    lut->name,
 							    CTLRA_EVENT_SLIDER,
 							    i, value);
 				if(ret != 0)
@@ -733,7 +745,8 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			value = 0;
 			ini_sget(config, layer, key, NULL, &value);
 			if(value) {
-				ret = bind_config_to_target(m, dev->id, l,
+				ret = bind_config_to_target(m, dev->id,
+							    lut->name,
 							    CTLRA_EVENT_BUTTON,
 							    i, value);
 				if(ret != 0) {
@@ -754,7 +767,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 					errors++;
 				} else {
 					ret = mappa_bind_source_to_ctlra(m, 0,
-							 l, i, sid);
+							 lut->name, i, sid);
 					if(ret != 0) {
 						MAPPA_WARN(m, "bind source %s failed\n",
 							   value);
