@@ -43,6 +43,7 @@ extern "C" {
 #include "ctlra.h"
 #include "event.h"
 
+
 #define debug_print_check(c, level)					\
 	(!c || ((c->opts.debug_level & CTLRA_DEBUG_LEVEL_MASK) > level))
 
@@ -304,8 +305,10 @@ static void ctlra_ ## name ## _register() {			\
 	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
 }
 
-
-
+/* helper macro to compile-time debug struct sizes, and function to
+ * actually perform those checks in the correct .c file */
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+void event_checks(void);
 
 /* Helper function for dealing with wrapped encoders */
 static inline int8_t ctlra_dev_encoder_wrap_16(uint8_t newer, uint8_t older)
