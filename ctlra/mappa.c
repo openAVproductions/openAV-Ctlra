@@ -630,6 +630,20 @@ config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 		}
 	}
 
+	/* TODO: think about how to handle this better. What if the app
+	 * doesn't expose a target *YET* - but it could add it dynamically
+	 * later. In that case we don't want to reload the whole file
+	 * (overhead) - so storing the target name, but marking as invalid
+	 * (null callback?) might be enough. When an app adds a target, we
+	 * have to "re-walk" all the luts that are currently active, and
+	 * fold them down to the active_lut again - but that's less work
+	 * than re-loading the file, but gives the user the plug-and-play
+	 * experience that is required.
+	 *
+	 * Impl: instead of having the app call a rebind() function, or
+	 * performing it every time a target is added (overhead), use a
+	 * two counter approach, and when an event arrives and if the
+	 * target_add_counter != event_seen_counter, rebind */
 	MAPPA_WARN(m,"target %s not found\n", target);
 	return 1;
 }
