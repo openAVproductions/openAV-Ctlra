@@ -92,6 +92,23 @@ struct dev_t {
 	 * pointer to the lut
 	 */
 	struct lut_list_t lut_list;
+
+	/* the stack/list of luts that are currently enabled, in the order
+	 * that they should "overlay" on the others. The order of luts in
+	 * this list defines how the lut's are "flattened", with the
+	 * head/start of the list being the "lowest" layer, and all the
+	 * list entries after it being "overlayed" in higher priority,
+	 * erasing previous lower layer's functionality.
+	 *
+	 * When switching layers, the new layer must always be on "top" of
+	 * the others to ensure all its contents are visible to the user,
+	 * hence it must be appended to the list. When a layer is
+	 * deactivated, the layer is removed from the list, and any other
+	 * layers in the list are re-flattened to provide the updated
+	 * functionality in the active_lut.
+	 */
+	struct lut_list_t active_lut_list;
+
 	/* the active lut to use for incoming events */
 	struct lut_t *active_lut;
 	/* unique integer ID starting from zero for each LUT */

@@ -426,6 +426,7 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 		return 0;
 
 	TAILQ_INIT(&dev->lut_list);
+	TAILQ_INIT(&dev->active_lut_list);
 
 	/* store the dev info into the struct, for error checking later */
 	dev->ctlra_dev_info = info;
@@ -728,6 +729,23 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 	return errors ? -1 : 0;
 }
 
+static int32_t
+dev_luts_flatten(struct dev_t *dev)
+{
+	/* iterate all enabled luts, and for each one blit all callbacks
+	 * to the dev->active_lut. This enables that binding for each LUT,
+	 * but given that the higher priority ones will be over-writing
+	 * these bindings, we get the "mask" overlays for free */
+	struct lut_t *l;
+	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
+		if(l->active) {
+			printf("lut %s active\n", l->name);
+		}
+	}
+
+	return 0;
+}
+
 int32_t
 mappa_load_bindings(struct mappa_t *m, const char *file)
 {
@@ -759,9 +777,10 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 
 	int layer_count = 2;
 	for(int i = 0; i < layer_count; i++) {
-		/* TODO: destroy and re-create a lut for this layer */
 		char layer_id[32];
 		snprintf(layer_id, sizeof(layer_id), "layer.%u", i);
+
+		/* get layer name from the config file */
 		const char *layer_name = 0;
 		ini_sget(config, layer_id, "name", NULL, &layer_name);
 		if(!layer_name) {
@@ -769,7 +788,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			continue;
 		}
 
-		/* (re)create the lut for this layer */
+		/* (re)create the lut instance for this layer (resets it) */
 		struct lut_t *lut = 0;
 		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
 			assert(lut->name);
@@ -785,13 +804,14 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			return -ENOMEM;
 		}
 
+		/* check if this layer should be active on loading */
 		const char *active = 0;
 		ini_sget(config, layer_id, "active_on_load", NULL, &active);
 		if(active) {
 			lut->active = atoi(active);
 		}
-		//printf("layer %s active %d\n", lut->name, lut->active);
 
+		/* get error check value from config file if provided */
 		const char *mapping_count_str = 0;
 		ini_sget(config, layer_id, "mapping_count", NULL,
 			 &mapping_count_str);
@@ -801,8 +821,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			mapping_count = mc;
 		}
 
-		/* call "config file probe" function to pull ctlra names
-		 * out of the device code, and attempt to map target */
+		/* load the various bindings for this layer */
 		int ret = config_file_bind_layer(m, dev, lut, layer_id,
 						 mapping_count);
 		if(ret) {
@@ -810,6 +829,11 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 				    layer_name);
 		}
 	}
+
+	/* flatten layers into the active_lut now that they're loaded */
+	int32_t ret = dev_luts_flatten(dev);
+	if(ret)
+		MAPPA_ERROR(m, "Failed to flatten layers for %p\n", dev);
 
 	/* free and reset temporary handle */
 	if(m->ini_file)
