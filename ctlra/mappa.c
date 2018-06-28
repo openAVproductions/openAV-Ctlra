@@ -775,7 +775,22 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	if(!dev)
 		return -ENOSPC;
 
-	int layer_count = 2;
+	/* get layer name from the config file */
+	const char *layer_count_str = 0;
+	ini_sget(config, "mapping", "layer_count", NULL, &layer_count_str);
+	if(!layer_count_str) {
+		MAPPA_ERROR(m, "Config %s has no layer count - failing.\n",
+			    file);
+		goto fail;
+	}
+	int layer_count = atoi(layer_count_str);
+	if(layer_count == 0) {
+		MAPPA_ERROR(m, "Config %s has invalid layer count. "
+			    "Fix the [mapping] layer_count = X field.\n",
+			    file);
+		goto fail;
+	}
+
 	for(int i = 0; i < layer_count; i++) {
 		char layer_id[32];
 		snprintf(layer_id, sizeof(layer_id), "layer.%u", i);
@@ -841,4 +856,10 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	m->ini_file = 0;
 
 	return 0;
+
+fail:
+	if(m->ini_file)
+		ini_free(m->ini_file);
+	m->ini_file = 0;
+	return -EINVAL;
 }
