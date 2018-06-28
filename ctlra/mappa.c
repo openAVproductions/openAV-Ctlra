@@ -141,10 +141,16 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 
 		/* perform callback as currently mapped by lut */
 		float value = v * 1.0f; // TODO scaling here?
-		if(t && t->target.func)
+		if(t && t->target.func) {
 			t->target.func(t->id, value,
 				       t->token_buf, t->token_size,
 				       t->target.userdata);
+#if 0
+		} else {
+			printf("event value %f has no target? t %p t->func %p\n",
+			       value, t, t ? t->target.func : 0);
+#endif
+		}
 	}
 }
 
@@ -729,6 +735,26 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 	return errors ? -1 : 0;
 }
 
+
+static int32_t
+dev_luts_flatten_event(struct dev_t *dev, struct lut_t *lut,
+		       uint32_t event_type)
+{
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+	uint32_t control_count = info->control_count[event_type];
+	for(uint32_t i = 0; i < control_count; i++) {
+		struct target_t *t = lut->target_types[event_type][i];
+		if(t && t->target.func) {
+			dev->active_lut->target_types[event_type][i] = t;
+			/*
+			printf("target %s (id %d) set for event %d id %d\n",
+			       t->target.name, t->id, event_type, i);
+			*/
+		}
+	}
+	return 0;
+}
+
 static int32_t
 dev_luts_flatten(struct dev_t *dev)
 {
@@ -740,6 +766,16 @@ dev_luts_flatten(struct dev_t *dev)
 	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
 		if(l->active) {
 			printf("lut %s active\n", l->name);
+
+			/* loop over each event type, each item, if it has
+			 * a callback t and t->func, write it into the
+			 * dev->active_lut, so it is used
+			 */
+			const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+			uint32_t event_type_max = CTLRA_EVENT_T_COUNT;
+			for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
+				dev_luts_flatten_event(dev, l, e);
+			}
 		}
 	}
 
