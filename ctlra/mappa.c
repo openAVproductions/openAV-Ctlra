@@ -526,13 +526,13 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 	struct dev_t *dev = le->dev;
 	struct lut_t *lut = le->lut;
 
+	/* TODO: allow config binding to set "actuate" value for
+	 * "toggle" on press, or "momentary" (aka, revert on release)
+	 * action types.. and possibly more. */
 	if(value > 0.5) {
 		lut->active = !lut->active;
-		printf("lut %s active now %d\n", lut->name, lut->active);
 		dev_luts_flatten(dev);
 	}
-	//dev->active_lut = l;
-	//MAPPA_ERROR(m, "layer %s not found, switch failed\n", layer);
 }
 
 struct mappa_t *
