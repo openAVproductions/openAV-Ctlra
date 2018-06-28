@@ -12,6 +12,8 @@
 #include "ctlra.h"
 #include "ini.h"
 
+static int32_t dev_luts_flatten(struct dev_t *dev);
+
 /* per ctlra-device we need a look-up table, which points to the
  * correct target function pointer to call based on the current layer.
  *
@@ -504,27 +506,33 @@ mappa_iter(struct mappa_t *m)
 	return 0;
 }
 
+/* struct that the token should be cast to when recieved */
+struct mappa_layer_enable_t {
+	/* ptr to device to apply this switch to */
+	struct dev_t *dev;
+	/* ptr to the lut to enable/disable based on value */
+	struct lut_t *lut;
+};
+
 /* int cast of the float value will indicate the layer to switch to */
 void mappa_layer_switch_target(uint32_t target_id, float value,
 			       void *token, uint32_t token_size,
 			       void *userdata)
 {
 	struct mappa_t *m = userdata;
-	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
+	assert(token_size == sizeof(struct mappa_layer_enable_t));
+	struct mappa_layer_enable_t *le = token;
 
-	/* TODO: extract layer name from token */
-	const char *layer = "todo: fixme invalid";
-	MAPPA_ERROR(m, "TODO: fix layer token lookup %s\n", "here");
+	struct dev_t *dev = le->dev;
+	struct lut_t *lut = le->lut;
 
-	struct lut_t *l;
-	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
-		if(strcmp(l->name, layer) == 0) {
-			dev->active_lut = l;
-			return;
-		}
+	if(value > 0.5) {
+		lut->active = !lut->active;
+		printf("lut %s active now %d\n", lut->name, lut->active);
+		dev_luts_flatten(dev);
 	}
-
-	MAPPA_ERROR(m, "layer %s not found, switch failed\n", layer);
+	//dev->active_lut = l;
+	//MAPPA_ERROR(m, "layer %s not found, switch failed\n", layer);
 }
 
 struct mappa_t *
@@ -573,6 +581,7 @@ mappa_create(struct mappa_opts_t *opts)
 	 *
 	 * Internally, the target can register a token that will switch to
 	 * the correct layer */
+	/*
 	struct mappa_target_t t = {
 		.name = "mappa:layer switch",
 		.func = mappa_layer_switch_target,
@@ -583,6 +592,7 @@ mappa_create(struct mappa_opts_t *opts)
 	int ret = mappa_target_add(m, &t, &sid, 0, 0);
 	if(ret != 0)
 		MAPPA_ERROR(m, "mappa target add %s failed\n", t.name);
+	*/
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	MAPPA_INFO(m, "mappa connected to %d devices\n", num_devs);
@@ -636,7 +646,7 @@ config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 	 * as programming something to dev->active_lut. */
 	struct target_t *t;
 	TAILQ_FOREACH(t, &m->target_list, tailq) {
-		if(strcmp(t->target.name, target) == 0) {
+		if(t->target.name && strcmp(t->target.name, target) == 0) {
 			lut->target_types[event_type][control_id] = t;
 			MAPPA_INFO(m, "success %s %s => %s\n", layer,
 				   control_name, target);
@@ -763,7 +773,14 @@ dev_luts_flatten(struct dev_t *dev)
 	 * but given that the higher priority ones will be over-writing
 	 * these bindings, we get the "mask" overlays for free */
 	struct lut_t *l;
-	TAILQ_FOREACH(l, &dev->lut_list, tailq) {
+	/* TODO: reverse iterating is not correct: but solves the "unknown
+	 * target" issue (file only refers to existing targets that came
+	 * before it) and reverse order into the active_lut. Need to "delay"
+	 * the target binding for internal items? Or allow target-hotplug
+	 * to take case of this.
+	 * Works as is though.
+	 */
+	TAILQ_FOREACH_REVERSE(l, &dev->lut_list, lut_list_t, tailq) {
 		if(l->active) {
 			printf("lut %s active\n", l->name);
 
@@ -879,6 +896,24 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			MAPPA_ERROR(m, "layer %s had binding failures\n",
 				    layer_name);
 		}
+
+		/* register an internal target to switch to this layer */
+		struct mappa_target_t t = {
+			.func = mappa_layer_switch_target,
+			.userdata = m,
+		};
+		char buf[64];
+		snprintf(buf, sizeof(buf), "mappa:layer_enable:%s",
+			 layer_name);
+		t.name = buf;
+		/* TODO store target_id in lut_t * for removal later */
+		uint32_t tid;
+		struct mappa_layer_enable_t le = {
+			.dev = dev,
+			.lut = lut,
+		};
+		printf("register layer %s\n", buf);
+		ret = mappa_target_add(m, &t, &tid, &le, sizeof(le));
 	}
 
 	/* flatten layers into the active_lut now that they're loaded */
