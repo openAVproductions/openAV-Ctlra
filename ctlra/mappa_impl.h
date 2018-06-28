@@ -56,6 +56,10 @@ struct lut_t {
 	 * lookup - so performance is not a major concern here */
 	char *name;
 
+	/* when non-zero, this layer is active in the mappings that are
+	 * being acted on if/when events arrive. */
+	uint8_t active;
+
 	/* structure for lookup:
 	 * - dynamic alloc array for each type of control
 	 * - enables easy lookup for each event->id

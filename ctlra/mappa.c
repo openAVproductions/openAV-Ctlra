@@ -698,7 +698,8 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 /* returns 0 on success, or # of FAILED bindings otherwise */
 static int32_t
 config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
-		       struct lut_t *lut, const char *layer)
+		       struct lut_t *lut, const char *layer,
+		       int32_t mapping_count)
 {
 	/* check the event type max, and pull the name of each control
 	 * item from the Ctlra device code. Call a function to set up
@@ -714,9 +715,15 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 		errors += config_file_bind_layer_type(dev, lut, layer, e);
 	}
 
+	int32_t success = total - errors;
+
+	if(mapping_count > 0 && success == mapping_count)
+		return 0;
+
 	if(errors)
-		MAPPA_WARN(m, "Layer %s: %d bind errors, %d succesful bindings\n",
-			   layer, errors, total - errors);
+		MAPPA_WARN(m, "Layer %s: %d bind errors, %d succesful bindings. "
+			   "Mapping count from file is %d\n", layer, errors,
+			   success, mapping_count);
 
 	return errors ? -1 : 0;
 }
@@ -750,7 +757,7 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	if(!dev)
 		return -ENOSPC;
 
-	int layer_count = 1;
+	int layer_count = 2;
 	for(int i = 0; i < layer_count; i++) {
 		/* TODO: destroy and re-create a lut for this layer */
 		char layer_id[32];
@@ -778,9 +785,26 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 			return -ENOMEM;
 		}
 
+		const char *active = 0;
+		ini_sget(config, layer_id, "active_on_load", NULL, &active);
+		if(active) {
+			lut->active = atoi(active);
+		}
+		//printf("layer %s active %d\n", lut->name, lut->active);
+
+		const char *mapping_count_str = 0;
+		ini_sget(config, layer_id, "mapping_count", NULL,
+			 &mapping_count_str);
+		int32_t mapping_count = 0;
+		if(mapping_count_str) {
+			int mc = atoi(mapping_count_str);
+			mapping_count = mc;
+		}
+
 		/* call "config file probe" function to pull ctlra names
 		 * out of the device code, and attempt to map target */
-		int ret = config_file_bind_layer(m, dev, lut, layer_id);
+		int ret = config_file_bind_layer(m, dev, lut, layer_id,
+						 mapping_count);
 		if(ret) {
 			MAPPA_ERROR(m, "layer %s had binding failures\n",
 				    layer_name);
