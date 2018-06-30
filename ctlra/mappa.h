@@ -179,6 +179,13 @@ int32_t mappa_target_add(struct mappa_t *m,
 			 void *token,
 			 uint32_t token_size);
 
+/** Add a default range for this target. The Mappa library will scale the
+ * input to use the full range by default, unless the user explicitly maps
+ * a smaller range inside the application requested range.
+ */
+int32_t mappa_target_set_range(struct mappa_t *m, uint32_t tid,
+			       float max, float min);
+
 /** Remove a target from the mappa instance
  * @param m Mappa instance
  * @param unregister_id The id of the target to remove. See *mappa_target_add*

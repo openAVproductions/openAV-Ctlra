@@ -31,6 +31,18 @@ struct target_t {
 	TAILQ_ENTRY(target_t) tailq;
 	struct mappa_target_t target;
 	uint32_t id;
+
+	/* scale the range of float values */
+	float scale_range;
+	float scale_offset;
+#if 0 // FUTURE
+	/* change the "actuation" of buttons bitmask */
+	uint8_t button_actuate_mask;
+	/* allow inversion of the value eg: Hamster-style crossfaders */
+	uint8_t invert_control;
+	/* others? */
+#endif
+
 	/* variably sized token size and data */
 	uint32_t token_size;
 	uint8_t token_buf[];

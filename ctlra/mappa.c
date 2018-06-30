@@ -142,8 +142,8 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		}
 
 		/* perform callback as currently mapped by lut */
-		float value = v * 1.0f; // TODO scaling here?
 		if(t && t->target.func) {
+			float value = v * t->scale_range + t->scale_offset;
 			t->target.func(t->id, value,
 				       t->token_buf, t->token_size,
 				       t->target.userdata);
@@ -168,6 +168,9 @@ target_clone(const struct mappa_target_t *t, uint32_t token_size,
 	/* deep copy strings (to not depend on app provided strings) */
 	if(t->name)
 		n->target.name = strdup(t->name);
+	/* intialize defaults */
+	n->scale_range = 1.f;
+	n->scale_offset = 0.f;
 	/* store token */
 	n->token_size = token_size;
 	memcpy(n->token_buf, token, token_size);
@@ -265,6 +268,26 @@ mappa_get_target_id(struct mappa_t *m, const char *tname)
 		}
 	}
 	return 0;
+}
+
+int32_t
+mappa_target_set_range(struct mappa_t *m, uint32_t tid,
+		       float max, float min)
+{
+	if(min > max)
+		return -EINVAL;
+
+	struct target_t *t;
+	TAILQ_FOREACH(t, &m->target_list, tailq) {
+		if(t->id == tid) {
+			/* TODO: handle inversion here? if min > max? */
+			float r = (max - min);
+			t->scale_range = r;
+			t->scale_offset = min;
+			return 0;
+		}
+	}
+	return -ENODEV;
 }
 
 int32_t
@@ -555,6 +578,7 @@ mappa_create(struct mappa_opts_t *opts)
 
 	struct ctlra_create_opts_t c_opts = {
 		.debug_level = m->opts.debug_level,
+		.flags_usb_no_own_context = 1,
 	};
 	struct ctlra_t *c = ctlra_create(&c_opts);
 	if(!c)
