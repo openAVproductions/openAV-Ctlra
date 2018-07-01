@@ -134,19 +134,10 @@ int main(int argc, char **argv)
 	register_targets(m, 0x0);
 	register_feedback(m, 0x0);
 
-	printf("load bindings\n");
-	ret = mappa_load_bindings(m, "mappa_z1.ini");
+	ret = mappa_add_config_file(m, "mappa_z1.ini");
 	if(ret)
 		printf("%s %d: load bindings failed, ret %d\n",
 		       __func__, __LINE__, ret);
-
-	/*
-	printf("REload bindings\n");
-	ret = mappa_load_bindings(m, "mappa_z1.ini");
-	if(ret)
-		printf("%s %d: reload bindings failed, ret %d\n",
-		       __func__, __LINE__, ret);
-	*/
 
 	/* loop for testing */
 	while(!done) {

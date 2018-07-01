@@ -824,7 +824,7 @@ dev_luts_flatten(struct dev_t *dev)
 }
 
 int32_t
-mappa_load_bindings(struct mappa_t *m, const char *file)
+mappa_add_config_file(struct mappa_t *m, const char *file)
 {
 	if(!m)
 		return -EINVAL;
@@ -847,10 +847,48 @@ mappa_load_bindings(struct mappa_t *m, const char *file)
 	ini_sget(config, "author", "organization", NULL, &org);
 	*/
 
-	/* TODO: lookup dev id by vendor/device/serial */
-	struct dev_t *dev = TAILQ_FIRST(&m->dev_list);
-	if(!dev)
+	const char *vendor = 0;
+	const char *device = 0;
+	const char *serial = 0;
+	ini_sget(config, "hardware", "vendor", NULL, &vendor);
+	ini_sget(config, "hardware", "device", NULL, &device);
+	ini_sget(config, "hardware", "serial", NULL, &serial);
+	if(!vendor || !device) {
+		return -ENODATA;
+	}
+
+	/* lookup device by vendor/device/serial, apply config if matches */
+	struct dev_t *dev = 0;
+	TAILQ_FOREACH(dev, &m->dev_list, tailq) {
+		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+		assert(info);
+
+		int match_required = 2; /* vendor + device */
+		int vendor_match = strcmp(info->vendor, vendor) == 0;
+		int device_match = strcmp(info->device, device) == 0;
+		int serial_match = 0;
+		if(serial && info->serial) {
+			serial_match = strcmp(info->serial, serial) == 0;
+			match_required = 3; /* include serial too */
+		}
+
+		int match_count = vendor_match + device_match + serial_match;
+
+		printf("vendor match %s and %s = %d\n", info->vendor,
+		       vendor, vendor_match);
+
+		printf("dev %p serial is %s\n", dev, info->serial);
+
+		if(match_count == match_required) {
+			MAPPA_INFO(m, "%s %s serial %s matches with id %d\n",
+				   vendor, device, serial, dev->id);
+			break;
+		}
+	}
+	if(!dev) {
+		MAPPA_WARN(m, "No device found for this config: %s\n", file);
 		return -ENOSPC;
+	}
 
 	/* get layer name from the config file */
 	const char *layer_count_str = 0;
