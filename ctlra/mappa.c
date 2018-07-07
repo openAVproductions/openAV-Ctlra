@@ -833,8 +833,11 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	m->ini_file = NULL;
 
 	ini_t *config = ini_load(file);
-	if(!config)
+	if(!config) {
+		MAPPA_ERROR(m, "unable to load config file %s, does it exist?\n",
+			   file);
 		return -EINVAL;
+	}
 
 	m->ini_file = config;
 
