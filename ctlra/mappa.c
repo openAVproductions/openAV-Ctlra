@@ -333,7 +333,7 @@ mappa_remove_func(struct ctlra_dev_t *ctlra_dev, int unexpected_removal,
 		}							\
 	}								\
 	if(!dev) {							\
-		MAPPA_ERROR(m, "%s invalid dev id %d\n", __func__, find_id);\
+		MAPPA_ERROR(m, "%s invalid dev id %u\n", __func__, find_id);\
 		return -EINVAL;						\
 	}								\
 } while(0)
@@ -349,7 +349,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 	int control_count = info->control_count[CTLRA_EVENT_BUTTON];
 	if(fb_id >= control_count) {
-		MAPPA_ERROR(m, "feedback id %d is out of range\n", fb_id);
+		MAPPA_ERROR(m, "feedback id %u is out of range\n", fb_id);
 		return -EINVAL;
 	}
 
@@ -542,6 +542,7 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 			       void *userdata)
 {
 	struct mappa_t *m = userdata;
+	(void)m;
 	assert(token_size == sizeof(struct mappa_layer_enable_t));
 	struct mappa_layer_enable_t *le = token;
 
@@ -712,7 +713,7 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 							       event_type,
 							       i);
 		if(!control_name) {
-			MAPPA_ERROR(m, "control type %u, index %d of device %s %s has no name\n",
+			MAPPA_ERROR(m, "control type %u, index %u of device %s %s has no name\n",
 				    event_type, i, info->vendor, info->device);
 			continue;
 		}
@@ -904,7 +905,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		goto fail;
 	}
 
-	for(int i = 0; i < layer_count; i++) {
+	for(uint32_t i = 0; i < layer_count; i++) {
 		char layer_id[32];
 		snprintf(layer_id, sizeof(layer_id), "layer.%u", i);
 
