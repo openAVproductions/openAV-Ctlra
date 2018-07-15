@@ -522,17 +522,16 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 		ai.interact = 0;
 
 		/* Screen */
-		int no_create_item = 0;
 		if(item->flags & CTLRA_ITEM_FB_SCREEN) {
 			struct avtka_screen_opts_t opts = {
 				.x = ai.x,
 				.y = ai.y,
 				.w = ai.w,
 				.h = ai.h,
+				.px_x = item->params[0],
+				.px_y = item->params[1],
 				/* TODO: detect screen caps */
-				.px_x = 128,
-				.px_y = 64,
-				.flags_1bit = 1,
+				.flags_rgb = 1,
 			};
 			int32_t screen_id = avtka_screen_create(a, &opts);
 			if(screen_id < 0)
