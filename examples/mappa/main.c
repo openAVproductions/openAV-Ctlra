@@ -41,7 +41,7 @@ void sw_target_float_func(uint32_t target_id,
 			  void *userdata)
 {
 #if 1
-	printf("%s: target id %d, value %f, token size %d\n",
+	printf("%s: target id %u, value %f, token size %d\n",
 	       __func__, target_id, value, token_size);
 #endif
 	if(token_size == 8) {
@@ -102,7 +102,7 @@ register_feedback(struct mappa_t *m, void *userdata)
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
-		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+		printf("MAP %d failed: sid %u\n", __LINE__, source_id);
 
 	fb.name = "test fb 3";
 	fb.func = sw_source_float_func_2;

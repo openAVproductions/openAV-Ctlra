@@ -476,9 +476,8 @@ void
 dev_destroy(struct dev_t *dev)
 {
 	/* cleanup all LUTs */
-	struct lut_t *l;
-	while (!TAILQ_EMPTY(&dev->lut_list)) {
-		l = TAILQ_FIRST(&dev->lut_list);
+	while(!TAILQ_EMPTY(&dev->lut_list)) {
+		struct lut_t *l = TAILQ_FIRST(&dev->lut_list);
 		TAILQ_REMOVE(&dev->lut_list, l, tailq);
 		lut_destroy(l);
 	}
@@ -631,16 +630,14 @@ fail:
 void
 mappa_destroy(struct mappa_t *m)
 {
-	struct target_t *t;
-	while (!TAILQ_EMPTY(&m->target_list)) {
-		t = TAILQ_FIRST(&m->target_list);
+	while(!TAILQ_EMPTY(&m->target_list)) {
+		struct target_t *t = TAILQ_FIRST(&m->target_list);
 		TAILQ_REMOVE(&m->target_list, t, tailq);
 		target_destroy(t);
 	}
 
-	struct source_t *s;
-	while (!TAILQ_EMPTY(&m->source_list)) {
-		s = TAILQ_FIRST(&m->source_list);
+	while(!TAILQ_EMPTY(&m->source_list)) {
+		struct source_t *s = TAILQ_FIRST(&m->source_list);
 		TAILQ_REMOVE(&m->source_list, s, tailq);
 		source_destroy(s);
 	}
@@ -715,7 +712,7 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 							       event_type,
 							       i);
 		if(!control_name) {
-			MAPPA_ERROR(m, "control type %d, index %d of device %s %s has no name\n",
+			MAPPA_ERROR(m, "control type %u, index %d of device %s %s has no name\n",
 				    event_type, i, info->vendor, info->device);
 			continue;
 		}
@@ -750,7 +747,6 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 
 	/* handle all event types here */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-	uint32_t event_type_max = CTLRA_EVENT_T_COUNT;
 	for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
 		total += info->control_count[e];
 		errors += config_file_bind_layer_type(dev, lut, layer, e);
@@ -813,7 +809,6 @@ dev_luts_flatten(struct dev_t *dev)
 			 * dev->active_lut, so it is used
 			 */
 			const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-			uint32_t event_type_max = CTLRA_EVENT_T_COUNT;
 			for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
 				dev_luts_flatten_event(dev, l, e);
 			}
