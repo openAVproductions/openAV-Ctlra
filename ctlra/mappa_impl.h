@@ -9,8 +9,7 @@
 	(!c || (c->opts.debug_level >= level))
 
 #define MAPPA_ERROR(mappa, fmt, ...)					\
-	do { if (mappa_print_check(mappa, MAPPA_DEBUG_ERROR))		\
-	fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
+	do { fprintf(stderr, "[\033[1;31m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
 #define MAPPA_WARN(mappa, fmt, ...)					\

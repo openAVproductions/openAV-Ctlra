@@ -133,10 +133,10 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		 */
 		/* TODO: move to above loop */
 		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-		const int count = info->control_count[e->type];
+		const uint32_t count = info->control_count[e->type];
 		if(id >= count) {
 			MAPPA_ERROR(m,
-				"ctlra device error: type %d id %d >= control count %d\n",
+				"ctlra device error: type %u id %u >= control count %u\n",
 				e->type, id, count);
 			continue;
 		}
