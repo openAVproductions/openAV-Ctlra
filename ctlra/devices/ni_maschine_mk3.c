@@ -335,8 +335,10 @@ static struct ctlra_item_info_t sliders_info[] = {
 
 static struct ctlra_item_info_t feedback_info[] = {
 	/* Screen */
-	{.x =  88, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN},
-	{.x = 200, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN},
+	{.x =  88, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN,
+		.params[0] = 480, .params[1] = 272},
+	{.x = 200, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN,
+		.params[0] = 480, .params[1] = 272},
 	/* TODO: expose LED ids:
 	 * up    : 58
 	 * left  : 59
@@ -1131,25 +1133,8 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 
 	dev->base.info = ctlra_ni_maschine_mk3_info;
 
-	dev->base.usb_read_cb = ni_maschine_mk3_usb_read_cb;
-
-	dev->base.info.control_count[CTLRA_EVENT_BUTTON] =
-		CONTROL_NAMES_SIZE - 1; /* -1 is encoder */
-	dev->base.info.control_count[CTLRA_EVENT_ENCODER] = 1;
-	dev->base.info.control_count[CTLRA_EVENT_GRID] = 1;
-	dev->base.info.get_name = ni_maschine_mk3_control_get_name;
-
-	struct ctlra_grid_info_t *grid = &dev->base.info.grid_info[0];
-	grid->rgb = 1;
-	grid->velocity = 1;
-	grid->pressure = 1;
-	grid->x = 4;
-	grid->y = 4;
-
-	dev->base.info.vendor_id = CTLRA_DRIVER_VENDOR;
-	dev->base.info.device_id = CTLRA_DRIVER_DEVICE;
-
 	dev->base.poll = ni_maschine_mk3_poll;
+	dev->base.usb_read_cb = ni_maschine_mk3_usb_read_cb;
 	dev->base.disconnect = ni_maschine_mk3_disconnect;
 	dev->base.light_set = ni_maschine_mk3_light_set;
 	dev->base.light_flush = ni_maschine_mk3_light_flush;
