@@ -879,7 +879,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		printf("dev %p serial is %s\n", dev, info->serial);
 
 		if(match_count == match_required) {
-			MAPPA_INFO(m, "%s %s serial %s matches with id %d\n",
+			MAPPA_INFO(m, "%s %s serial %s matches with id %u\n",
 				   vendor, device, serial, dev->id);
 			break;
 		}
@@ -913,7 +913,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		const char *layer_name = 0;
 		ini_sget(config, layer_id, "name", NULL, &layer_name);
 		if(!layer_name) {
-			MAPPA_ERROR(m, "Layer %d has no name - skipping\n", i);
+			MAPPA_ERROR(m, "Layer %u has no name - skipping\n", i);
 			continue;
 		}
 
