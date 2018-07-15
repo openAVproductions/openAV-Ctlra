@@ -149,7 +149,7 @@ struct ctlra_item_info_t {
 	/* mask of colours the hw can represent */
 	uint32_t colour;
 	/* feedback parameters depending on flags */
-	uint8_t params[4];
+	uint16_t params[4];
 };
 
 /** A struct describing the properties of a grid */
