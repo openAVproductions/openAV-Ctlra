@@ -848,9 +848,6 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	if(!m)
 		return -EINVAL;
 
-	/* reset state first */
-	m->ini_file = NULL;
-
 	ini_t *config = ini_load(file);
 	if(!config) {
 		MAPPA_ERROR(m, "unable to load config file %s, does it exist?\n",
@@ -858,8 +855,22 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		return -EINVAL;
 	}
 
-	/* TODO: cleanup this and pass along the config pointer instead */
-	m->ini_file = config;
+	const char *vendor = 0;
+	const char *device = 0;
+	const char *serial = 0;
+	ini_sget(config, "hardware", "vendor", NULL, &vendor);
+	ini_sget(config, "hardware", "device", NULL, &device);
+	ini_sget(config, "hardware", "serial", NULL, &serial);
+	if(!vendor || !device) {
+		MAPPA_ERROR(m, "File %s does not have valid [hardware] tags\n",
+			    file);
+		ini_free(config);
+		return -ENODATA;
+	}
+	if(!serial) {
+		MAPPA_INFO(m, "File %s has no [hardware] serial tag, applying to all %s %s devices\n",
+			    file, vendor, device);
+	}
 
 	/*
 	const char *name = 0;
@@ -869,17 +880,6 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	ini_sget(config, "author", "email", NULL, &email);
 	ini_sget(config, "author", "organization", NULL, &org);
 	*/
-
-	const char *vendor = 0;
-	const char *device = 0;
-	const char *serial = 0;
-	ini_sget(config, "hardware", "vendor", NULL, &vendor);
-	ini_sget(config, "hardware", "device", NULL, &device);
-	ini_sget(config, "hardware", "serial", NULL, &serial);
-	if(!vendor || !device) {
-		/* TODO: cleanup properly and close file */
-		return -ENODATA;
-	}
 
 	/* lookup device by vendor/device/serial, apply config if matches */
 	struct dev_t *dev = 0;
@@ -912,7 +912,8 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	if(!dev) {
 		MAPPA_WARN(m, "No device found for this config: %s\n", file);
 		/* TODO: cleanup close file */
-		return -ENOSPC;
+		ini_free(config);
+		return -ENODEV;
 	}
 
 	/* get layer name from the config file */
@@ -930,6 +931,13 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 			    file);
 		goto fail;
 	}
+
+	/* TODO: cleanup this and pass along the config pointer instead.
+	 * Aka, remove m->ini_file */
+	if(m->ini_file)
+		MAPPA_ERROR(m, "ini file set but being overwitten %p\n",
+			    m->ini_file);
+	m->ini_file = config;
 
 	for(uint32_t i = 0; i < layer_count; i++) {
 		char layer_id[32];
