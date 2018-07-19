@@ -128,6 +128,11 @@ struct dev_t {
 	/* dev id for mappa bindings */
 	uint32_t id;
 
+	/* contains the path of the file that was used to map it, or NULL
+	 * if there is no mapping applied */
+	/* TODO: should we allow multiple files to apply to one dev? */
+	const char *conf_file_path;
+
 	/* ctlra dev info, required to error check binding IDs */
 	const struct ctlra_dev_info_t *ctlra_dev_info;
 };

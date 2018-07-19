@@ -486,6 +486,8 @@ dev_destroy(struct dev_t *dev)
 	/* cleanup the active "flattened" lut */
 	lut_destroy(dev->active_lut);
 
+	free(dev->conf_file_path);
+
 	/* cleanup the sources */
 	free(dev);
 }
@@ -683,11 +685,13 @@ config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 	struct mappa_t *m = dev->self;
 	ini_t *config = m->ini_file;
 	ini_sget(config, layer, control_name, NULL, &target);
-	if(!target) {
-		MAPPA_WARN(m, "Failed to bind %s %s to target %s\n",
-			   layer, control_name, target);
+
+	/* A MAPPA_WARN as very little value - the print says that the
+	 * user didn't map the particular control, or perhaps miss-spelled
+	 * something.
+	 */
+	if(!target)
 		return 1;
-	}
 
 	/* Lookup the target in the mappa target list, create binding
 	 * to target from the layer's lut. Note this is *NOT* the same
@@ -1024,6 +1028,15 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	if(m->ini_file)
 		ini_free(m->ini_file);
 	m->ini_file = 0;
+
+	if(dev->conf_file_path) {
+		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+		assert(info);
+		MAPPA_WARN(m, "dev %s %s - freeing conf file path %s\n",
+			   info->vendor, info->device, dev->conf_file_path);
+		free(dev->conf_file_path);
+	}
+	dev->conf_file_path = strdup(file);
 
 	return 0;
 
