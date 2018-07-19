@@ -576,6 +576,21 @@ mappa_create(struct mappa_opts_t *opts)
 		MAPPA_INFO(m, "debug level: %d\n", debug_level);
 	}
 
+	char *mappa_conf_dir = getenv("MAPPA_CONF_DIR");
+	if(mappa_conf_dir) {
+		MAPPA_INFO(m, "config files dir: %s\n", mappa_conf_dir);
+	} else {
+		MAPPA_INFO(m, "config files dir not set%s\n", "");
+	}
+
+	/* add default config search dir */
+	const char *home = getenv("HOME");
+	char conf_buf[256];
+	snprintf(conf_buf, sizeof(conf_buf), "%s/.config/openAV/mappa/",
+		 home);
+	TAILQ_INIT(&m->conf_dir_list);
+	mappa_add_config_dir(m, conf_buf);
+
 	struct ctlra_create_opts_t c_opts = {
 		.debug_level = m->opts.debug_level,
 		.flags_usb_no_own_context = 1,
@@ -641,6 +656,13 @@ mappa_destroy(struct mappa_t *m)
 		struct source_t *s = TAILQ_FIRST(&m->source_list);
 		TAILQ_REMOVE(&m->source_list, s, tailq);
 		source_destroy(s);
+	}
+
+	while(!TAILQ_EMPTY(&m->conf_dir_list)) {
+		struct conf_dir_t *d = TAILQ_FIRST(&m->conf_dir_list);
+		TAILQ_REMOVE(&m->conf_dir_list, d, tailq);
+		free(d->dir);
+		free(d);
 	}
 
 	/* iterate over all allocated resources and free them */
@@ -835,6 +857,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		return -EINVAL;
 	}
 
+	/* TODO: cleanup this and pass along the config pointer instead */
 	m->ini_file = config;
 
 	/*
@@ -853,6 +876,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	ini_sget(config, "hardware", "device", NULL, &device);
 	ini_sget(config, "hardware", "serial", NULL, &serial);
 	if(!vendor || !device) {
+		/* TODO: cleanup properly and close file */
 		return -ENODATA;
 	}
 
@@ -886,6 +910,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 	}
 	if(!dev) {
 		MAPPA_WARN(m, "No device found for this config: %s\n", file);
+		/* TODO: cleanup close file */
 		return -ENOSPC;
 	}
 
@@ -994,4 +1019,25 @@ fail:
 		ini_free(m->ini_file);
 	m->ini_file = 0;
 	return -EINVAL;
+}
+
+void
+mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
+{
+	if(!m || !abs_path) {
+		return;
+	}
+
+	/* this function adds the parameter abs_path as a directory to
+	 * search for config files. Adding a directory will cause every
+	 * file in the directory to be opened, and an attempt be made to
+	 * extract the following part of the file:
+	 *     [hardware]
+	 *     vendor = vendor_name_here
+	 *     device = device_name_here
+	 *     serial = serial_code_optionally_here
+	 */
+	struct conf_dir_t *d = calloc(1, sizeof(*d));
+	d->dir = strdup(abs_path);
+	TAILQ_INSERT_HEAD(&m->conf_dir_list, d, tailq);
 }

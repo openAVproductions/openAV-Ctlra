@@ -133,6 +133,12 @@ struct dev_t {
 };
 TAILQ_HEAD(dev_list_t, dev_t);
 
+struct conf_dir_t {
+	TAILQ_ENTRY(conf_dir_t) tailq;
+	const char *dir;
+};
+TAILQ_HEAD(conf_dir_list_t, conf_dir_t);
+
 struct mappa_t {
 	struct mappa_opts_t opts;
 	struct ctlra_t *ctlra;
@@ -157,6 +163,9 @@ struct mappa_t {
 	 * through all the function calls. ONLY valid inside the function
 	 * mappa_load_bindings(), and functions called from there */
 	void *ini_file;
+
+	/* List of directories to search for config files */
+	struct conf_dir_list_t conf_dir_list;
 };
 
 /* create a binding from the ctlra dev id at control id, to gid,iid, for
@@ -183,3 +192,5 @@ int32_t mappa_bind_source_to_ctlra(struct mappa_t *m,
 				   const char *layer,
 				   uint32_t ctlra_feedback_id,
 				   uint32_t source_id);
+
+void mappa_add_config_dir(struct mappa_t *m, const char *abs_path);
