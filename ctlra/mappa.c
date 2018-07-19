@@ -875,10 +875,6 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		ini_free(config);
 		return -ENODATA;
 	}
-	if(!serial) {
-		MAPPA_INFO(m, "File %s has no [hardware] serial tag, applying to all %s %s devices\n",
-			    file, vendor, device);
-	}
 
 	/*
 	const char *name = 0;
@@ -923,8 +919,6 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		}
 
 		if(match_count == match_required) {
-			MAPPA_INFO(m, "%s %s serial %s matches with id %u\n",
-				   vendor, device, serial, dev->id);
 			found = 1;
 			break;
 		}
@@ -935,6 +929,11 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		//MAPPA_INFO(m, "No device for config: %s\n", file);
 		ini_free(config);
 		return -ENODEV;
+	}
+
+	if(serial) {
+		MAPPA_INFO(m, "[hardware]serial found in %s, apply config only to %s %s with serial %s\n",
+			    file, vendor, device, serial);
 	}
 
 	/* get layer name from the config file */
