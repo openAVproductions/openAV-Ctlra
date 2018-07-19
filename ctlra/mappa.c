@@ -850,8 +850,8 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 
 	ini_t *config = ini_load(file);
 	if(!config) {
-		MAPPA_ERROR(m, "unable to load config file %s, does it exist?\n",
-			   file);
+		MAPPA_ERROR(m, "unable to load config file %s"
+			    ", does it exist?\n", file);
 		return -EINVAL;
 	}
 
@@ -883,6 +883,7 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 
 	/* lookup device by vendor/device/serial, apply config if matches */
 	struct dev_t *dev = 0;
+	int found = 0;
 	TAILQ_FOREACH(dev, &m->dev_list, tailq) {
 		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 		assert(info);
@@ -906,12 +907,12 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		if(match_count == match_required) {
 			MAPPA_INFO(m, "%s %s serial %s matches with id %u\n",
 				   vendor, device, serial, dev->id);
+			found = 1;
 			break;
 		}
 	}
-	if(!dev) {
-		MAPPA_WARN(m, "No device found for this config: %s\n", file);
-		/* TODO: cleanup close file */
+	if(!found) {
+		MAPPA_INFO(m, "No device for config: %s\n", file);
 		ini_free(config);
 		return -ENODEV;
 	}
