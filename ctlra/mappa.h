@@ -209,16 +209,6 @@ int32_t mappa_source_add(struct mappa_t *m,
 
 int32_t mappa_source_remove(struct mappa_t *m, uint32_t source_id);
 
-/** Inform the Mappa library about a config file.
- * The config file has a [hardware] section, indicating what controller it
- * applies to - hence it is not important here. Applications are expected
- * to push all available config files here.
- * TODO: Do we centralized mappa config files, and auto-load from known
- * locations?
- * TODO: Change API to push a config *dir* instead? Allow multiple DIRs?
- */
-int32_t mappa_add_config_file(struct mappa_t *m, const char *file);
-
 /* cleanup a mappa instance */
 void mappa_destroy(struct mappa_t *m);
 

@@ -885,15 +885,6 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		return -ENODATA;
 	}
 
-	/*
-	const char *name = 0;
-	const char *email = 0;
-	const char *org = 0;
-	ini_sget(config, "author", "name", NULL, &name);
-	ini_sget(config, "author", "email", NULL, &email);
-	ini_sget(config, "author", "organization", NULL, &org);
-	*/
-
 	/* lookup device by vendor/device/serial, apply config if matches */
 	struct dev_t *dev = 0;
 	int found = 0;
