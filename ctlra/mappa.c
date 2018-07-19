@@ -256,6 +256,7 @@ mappa_target_add(struct mappa_t *m,
 	n->id = m->target_ids++;
 	if(target_id)
 		*target_id = n->id;
+	m->target_list_rev++;
 	return 0;
 }
 
@@ -285,6 +286,7 @@ mappa_target_set_range(struct mappa_t *m, uint32_t tid,
 			float r = (max - min);
 			t->scale_range = r;
 			t->scale_offset = min;
+			m->target_list_rev++;
 			return 0;
 		}
 	}
@@ -300,6 +302,7 @@ mappa_target_remove(struct mappa_t *m, uint32_t target_id)
 			/* TODO: nuke any controller mappings here */
 			TAILQ_REMOVE(&m->target_list, t, tailq);
 			target_destroy(t);
+			m->target_list_rev++;
 			return 0;
 		}
 	}
@@ -527,7 +530,17 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 int32_t
 mappa_iter(struct mappa_t *m)
 {
+	if(m->target_list_rev != m->target_list_rev_used) {
+		/* handle if we have changed number of targets by
+		 * re-flattening the LUTs for all devices */
+		MAPPA_INFO(m, "updating to target list rev %d\n",
+			   m->target_list_rev);
+		m->target_list_rev_used = m->target_list_rev;
+	}
+
+	/* check for Ctlra events */
 	ctlra_idle_iter(m->ctlra);
+
 	return 0;
 }
 
@@ -706,21 +719,6 @@ config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 		}
 	}
 
-	/* TODO: think about how to handle this better. What if the app
-	 * doesn't expose a target *YET* - but it could add it dynamically
-	 * later. In that case we don't want to reload the whole file
-	 * (overhead) - so storing the target name, but marking as invalid
-	 * (null callback?) might be enough. When an app adds a target, we
-	 * have to "re-walk" all the luts that are currently active, and
-	 * fold them down to the active_lut again - but that's less work
-	 * than re-loading the file, but gives the user the plug-and-play
-	 * experience that is required.
-	 *
-	 * Impl: instead of having the app call a rebind() function, or
-	 * performing it every time a target is added (overhead), use a
-	 * two counter approach, and when an event arrives and if the
-	 * target_add_counter != event_seen_counter, rebind */
-	MAPPA_WARN(m,"target %s not found\n", target);
 	return 1;
 }
 
@@ -742,12 +740,12 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 		const char *control_name = ctlra_info_get_name(info,
 							       event_type,
 							       i);
+		const char *prefix = ctlra_event_type_names[event_type];
 		if(!control_name) {
-			MAPPA_ERROR(m, "control type %u, index %u of device %s %s has no name\n",
-				    event_type, i, info->vendor, info->device);
+			MAPPA_ERROR(m, "Ctlra issue: control type %s, index %u of device %s %s has no name\n",
+				    prefix, i, info->vendor, info->device);
 			continue;
 		}
-		const char *prefix = ctlra_event_type_names[event_type];
 		int written = snprintf(buf, sizeof(buf), "%s.%s",
 				       prefix, control_name);
 		if(written < 0 || written >= buf_size) {

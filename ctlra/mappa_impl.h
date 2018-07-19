@@ -160,6 +160,8 @@ struct mappa_t {
 	 * book-keeping only for add/remove, and map/unmap.
 	 */
 	struct target_list_t target_list;
+	uint32_t target_list_rev;
+	uint32_t target_list_rev_used;
 
 	/* container for all sources in the system. Not used for lookup */
 	struct source_list_t source_list;
