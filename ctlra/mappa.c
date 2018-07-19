@@ -587,7 +587,7 @@ mappa_create(struct mappa_opts_t *opts)
 	/* add default config search dir */
 	const char *home = getenv("HOME");
 	char conf_buf[256];
-	snprintf(conf_buf, sizeof(conf_buf), "%s/.config/openAV/mappa/",
+	snprintf(conf_buf, sizeof(conf_buf), "%s/.config/openAV/mappa",
 		 home);
 	TAILQ_INIT(&m->conf_dir_list);
 	mappa_add_config_dir(m, conf_buf);
@@ -1031,6 +1031,14 @@ fail:
 	return -EINVAL;
 }
 
+
+void config_file_load_cb(struct mappa_t *m, const char *file,
+			 void *userdata)
+{
+	int32_t ret = mappa_add_config_file(m, file);
+	printf("%s: add conf file returns %d\n", __func__, ret);
+}
+
 void
 mappa_for_each_config_file(struct mappa_t *m,
 			   config_foreach_cb cb,
@@ -1061,7 +1069,7 @@ mappa_for_each_config_file(struct mappa_t *m,
 				continue;
 			}
 			if(cb) {
-				cb(m, file.name, userdata);
+				cb(m, file.path, userdata);
 			} else {
 				printf("file %s\n", file.name);
 			}
@@ -1097,5 +1105,5 @@ mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
 	d->dir = strdup(abs_path);
 	TAILQ_INSERT_HEAD(&m->conf_dir_list, d, tailq);
 
-	mappa_for_each_config_file(m, 0, 0);
+	mappa_for_each_config_file(m, config_file_load_cb, 0);
 }
