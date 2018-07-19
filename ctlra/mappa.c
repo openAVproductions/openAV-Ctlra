@@ -501,6 +501,9 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 {
 	struct mappa_t *m = userdata;
 
+	/* TODO: check if we have a config file that supports this device,
+	 * otherwise what do we do? */
+
 	struct dev_t *dev = dev_create(m, ctlra_dev, info);
 	if(!dev) {
 		MAPPA_ERROR(m, "failed to create mappa dev_t for %s %s\n",
@@ -904,10 +907,20 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 
 		int match_count = vendor_match + device_match + serial_match;
 
+/* TODO: rethink how to use serial for binding. Eg: there are a number of
+ * mapping files - when do we resort to using a serial-less map? What if
+ * there are multiple maps for the hw/sw combo? */
+#if 0
 		printf("vendor match %s and %s = %d\n", info->vendor,
 		       vendor, vendor_match);
-
 		printf("dev %p serial is %s\n", dev, info->serial);
+#endif
+
+		if(match_required == 3 && match_count == 2) {
+			MAPPA_INFO(m, "Serial mismatch file '%s' vs device '%s'. "
+				   "Vendor and Device do match, but still skipping %s\n",
+				   serial, info->serial, file);
+		}
 
 		if(match_count == match_required) {
 			MAPPA_INFO(m, "%s %s serial %s matches with id %u\n",
@@ -917,7 +930,9 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		}
 	}
 	if(!found) {
-		MAPPA_INFO(m, "No device for config: %s\n", file);
+		/* This is very verbose - prints once for each device that
+		 * the user doesn't own. May be useful in dev-debugging */
+		//MAPPA_INFO(m, "No device for config: %s\n", file);
 		ini_free(config);
 		return -ENODEV;
 	}
@@ -1050,7 +1065,7 @@ void config_file_load_cb(struct mappa_t *m, const char *file,
 			 void *userdata)
 {
 	int32_t ret = mappa_add_config_file(m, file);
-	printf("%s: add conf file returns %d\n", __func__, ret);
+	(void)ret;
 }
 
 void
@@ -1063,36 +1078,35 @@ mappa_for_each_config_file(struct mappa_t *m,
 	struct conf_dir_t *conf_dir = 0;
 	TAILQ_FOREACH(conf_dir, &m->conf_dir_list, tailq) {
 		const char *d = conf_dir->dir;
-		printf("%s: dir = %s\n", __func__, d);
 		if(tinydir_open(&dir, d) == -1) {
-			printf("Error opening dir %s", d);
-			tinydir_close(&dir);
-			return;
+			MAPPA_ERROR(m, "Error opening dir %s", d);
+			goto fail;
 		}
 
 		while(dir.has_next) {
 			tinydir_file file;
 			if(tinydir_readfile(&dir, &file) != 0) {
-				printf("Error getting file from dir %s\n", d);
+				MAPPA_ERROR(m, "Error getting file from dir %s\n", d);
 				goto fail;
 			}
 
+			/* not recursive - so skip over directories */
 			if(file.is_dir) {
-				printf("skipping directory %s\n", file.name);
 				tinydir_next(&dir);
 				continue;
 			}
+
 			if(cb) {
 				cb(m, file.path, userdata);
 			} else {
-				printf("file %s\n", file.name);
+				MAPPA_ERROR(m, "sw error, no cb for file %s\n",
+					    file.name);
 			}
 
 			tinydir_next(&dir);
 		}
 		tinydir_close(&dir);
 	}
-
 	return;
 
 fail:
