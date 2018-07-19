@@ -257,6 +257,7 @@ mappa_target_add(struct mappa_t *m,
 	if(target_id)
 		*target_id = n->id;
 	m->target_list_rev++;
+	printf("add target %s\n", t->name);
 	return 0;
 }
 
@@ -538,6 +539,14 @@ mappa_iter(struct mappa_t *m)
 		 * re-flattening the LUTs for all devices */
 		MAPPA_INFO(m, "updating to target list rev %d\n",
 			   m->target_list_rev);
+
+		struct dev_t *dev = 0;
+		TAILQ_FOREACH(dev, &m->dev_list, tailq) {
+			/* TODO: re-parse the device .ini, and setup any
+			 * new mappings that are possible as new targets
+			 * may have arrived. */
+		}
+
 		m->target_list_rev_used = m->target_list_rev;
 	}
 
