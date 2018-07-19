@@ -1021,6 +1021,44 @@ fail:
 	return -EINVAL;
 }
 
+#include "tinydir.h"
+
+void
+mappa_for_each_config_file(struct mappa_t *m)
+{
+	tinydir_dir dir;
+	const char *d = "/tmp/";
+
+	if(tinydir_open(&dir, d) == -1) {
+		printf("Error opening dir %s", d);
+		tinydir_close(&dir);
+		return;
+	}
+
+	while(dir.has_next) {
+		tinydir_file file;
+		if(tinydir_readfile(&dir, &file) != 0) {
+			printf("Error getting file from dir %s\n", d);
+			goto fail;
+		}
+
+		if(file.is_dir) {
+			printf("skipping directory %s\n", file.name);
+			tinydir_next(&dir);
+			continue;
+		}
+
+		printf("got file %s\n", file.name);
+		tinydir_next(&dir);
+	}
+
+	tinydir_close(&dir);
+	return;
+
+fail:
+	tinydir_close(&dir);
+}
+
 void
 mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
 {
@@ -1040,4 +1078,7 @@ mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
 	struct conf_dir_t *d = calloc(1, sizeof(*d));
 	d->dir = strdup(abs_path);
 	TAILQ_INSERT_HEAD(&m->conf_dir_list, d, tailq);
+
+	mappa_for_each_config_file(m);
+
 }
