@@ -8,9 +8,10 @@
 
 #include "mappa.h"
 #include "mappa_impl.h"
-
 #include "ctlra.h"
+
 #include "ini.h"
+#include "tinydir.h"
 
 static int32_t dev_luts_flatten(struct dev_t *dev);
 
@@ -1021,38 +1022,46 @@ fail:
 	return -EINVAL;
 }
 
-#include "tinydir.h"
-
 void
-mappa_for_each_config_file(struct mappa_t *m)
+mappa_for_each_config_file(struct mappa_t *m,
+			   config_foreach_cb cb,
+			   void *userdata)
 {
 	tinydir_dir dir;
-	const char *d = "/tmp/";
 
-	if(tinydir_open(&dir, d) == -1) {
-		printf("Error opening dir %s", d);
-		tinydir_close(&dir);
-		return;
-	}
-
-	while(dir.has_next) {
-		tinydir_file file;
-		if(tinydir_readfile(&dir, &file) != 0) {
-			printf("Error getting file from dir %s\n", d);
-			goto fail;
+	struct conf_dir_t *conf_dir = 0;
+	TAILQ_FOREACH(conf_dir, &m->conf_dir_list, tailq) {
+		const char *d = conf_dir->dir;
+		printf("%s: dir = %s\n", __func__, d);
+		if(tinydir_open(&dir, d) == -1) {
+			printf("Error opening dir %s", d);
+			tinydir_close(&dir);
+			return;
 		}
 
-		if(file.is_dir) {
-			printf("skipping directory %s\n", file.name);
+		while(dir.has_next) {
+			tinydir_file file;
+			if(tinydir_readfile(&dir, &file) != 0) {
+				printf("Error getting file from dir %s\n", d);
+				goto fail;
+			}
+
+			if(file.is_dir) {
+				printf("skipping directory %s\n", file.name);
+				tinydir_next(&dir);
+				continue;
+			}
+			if(cb) {
+				cb(m, file.name, userdata);
+			} else {
+				printf("file %s\n", file.name);
+			}
+
 			tinydir_next(&dir);
-			continue;
 		}
-
-		printf("got file %s\n", file.name);
-		tinydir_next(&dir);
+		tinydir_close(&dir);
 	}
 
-	tinydir_close(&dir);
 	return;
 
 fail:
@@ -1079,6 +1088,5 @@ mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
 	d->dir = strdup(abs_path);
 	TAILQ_INSERT_HEAD(&m->conf_dir_list, d, tailq);
 
-	mappa_for_each_config_file(m);
-
+	mappa_for_each_config_file(m, 0, 0);
 }
