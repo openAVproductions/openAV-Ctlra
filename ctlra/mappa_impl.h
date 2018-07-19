@@ -200,6 +200,10 @@ void mappa_add_config_dir(struct mappa_t *m, const char *abs_path);
 typedef void (*config_foreach_cb)(struct mappa_t *m,
 				  const char *file,
 				  void *userdata);
+
+/* the actual callback that attempts to load each file per dev */
+void config_file_load_cb(struct mappa_t *m, const char *file, void *ud);
+
 /* internal function to iterate all files in the registered dirs */
 void mappa_for_each_config_file(struct mappa_t *m,
 				config_foreach_cb cb,

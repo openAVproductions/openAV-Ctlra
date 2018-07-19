@@ -637,6 +637,9 @@ mappa_create(struct mappa_opts_t *opts)
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	MAPPA_INFO(m, "mappa connected to %d devices\n", num_devs);
 
+	/* load each config file after we've done a probe() */
+	mappa_for_each_config_file(m, config_file_load_cb, 0);
+
 	return m;
 fail:
 	if(m)
@@ -1104,6 +1107,4 @@ mappa_add_config_dir(struct mappa_t *m, const char *abs_path)
 	struct conf_dir_t *d = calloc(1, sizeof(*d));
 	d->dir = strdup(abs_path);
 	TAILQ_INSERT_HEAD(&m->conf_dir_list, d, tailq);
-
-	mappa_for_each_config_file(m, config_file_load_cb, 0);
 }
