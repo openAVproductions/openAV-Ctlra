@@ -786,7 +786,7 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 
 	int32_t success = total - errors;
 
-	if(mapping_count > 0 && success == mapping_count)
+	if(success == mapping_count)
 		return 0;
 
 	if(errors)
