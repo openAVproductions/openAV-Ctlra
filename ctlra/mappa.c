@@ -13,6 +13,11 @@
 #include "ini.h"
 #include "tinydir.h"
 
+/* TODO: cleanup */
+static int32_t
+apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
+		  const char *file);
+
 static int32_t dev_luts_flatten(struct dev_t *dev);
 
 /* per ctlra-device we need a look-up table, which points to the
@@ -545,6 +550,18 @@ mappa_iter(struct mappa_t *m)
 			/* TODO: re-parse the device .ini, and setup any
 			 * new mappings that are possible as new targets
 			 * may have arrived. */
+
+			/* TODO: refacto ini loading here */
+			ini_t *config = ini_load(dev->conf_file_path);
+			if(!config) {
+				MAPPA_ERROR(m, "unable to load config file %s"
+					    ", does it exist?\n", dev->conf_file_path);
+				return -EINVAL;
+			}
+			int ret = apply_config_file(m, dev, config,
+						    dev->conf_file_path);
+			printf("reload dev %s = %d\n",
+			       dev->ctlra_dev_info->device, ret);
 		}
 
 		m->target_list_rev_used = m->target_list_rev;
@@ -841,6 +858,7 @@ dev_luts_flatten(struct dev_t *dev)
 	 * to take case of this.
 	 * Works as is though.
 	 */
+	int i = 0;
 	TAILQ_FOREACH_REVERSE(l, &dev->lut_list, lut_list_t, tailq) {
 		if(l->active) {
 			printf("lut %s active\n", l->name);
@@ -854,13 +872,27 @@ dev_luts_flatten(struct dev_t *dev)
 				dev_luts_flatten_event(dev, l, e);
 			}
 		}
+		i++;
+		if(i > 10)
+			break;
 	}
 
 	return 0;
 }
 
-int32_t
-mappa_add_config_file(struct mappa_t *m, const char *file)
+static void
+dev_clean_luts(struct dev_t *dev)
+{
+	printf("todo; cleanup existing stuff here\n");
+	while(!TAILQ_EMPTY(&dev->lut_list)) {
+		struct lut_t *l = TAILQ_FIRST(&dev->lut_list);
+		TAILQ_REMOVE(&dev->lut_list, l, tailq);
+		lut_destroy(l);
+	}
+}
+
+static int32_t
+mappa_load_config_file(struct mappa_t *m, const char *file)
 {
 	if(!m)
 		return -EINVAL;
@@ -936,6 +968,15 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 			    file, vendor, device, serial);
 	}
 
+	apply_config_file(m, dev, config, file);
+}
+
+static int32_t
+apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
+		  const char *file)
+{
+	dev_clean_luts(dev);
+
 	/* get layer name from the config file */
 	const char *layer_count_str = 0;
 	ini_sget(config, "mapping", "layer_count", NULL, &layer_count_str);
@@ -976,6 +1017,8 @@ mappa_add_config_file(struct mappa_t *m, const char *file)
 		TAILQ_FOREACH(lut, &dev->lut_list, tailq) {
 			assert(lut->name);
 			if(strcmp(lut->name, layer_name) == 0) {
+				printf("%s: destroy lut %p for recreate\n",
+				       __func__, lut);
 				lut_destroy(lut);
 				break;
 			}
@@ -1063,7 +1106,7 @@ fail:
 void config_file_load_cb(struct mappa_t *m, const char *file,
 			 void *userdata)
 {
-	int32_t ret = mappa_add_config_file(m, file);
+	int32_t ret = mappa_load_config_file(m, file);
 	(void)ret;
 }
 
