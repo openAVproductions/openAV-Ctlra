@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, sighndlr);
 
 	/* create mappa context */
-	struct mappa_t *m = mappa_create(NULL, "ctlra_mappa", "unique_str");
+	struct mappa_t *m = mappa_create(NULL, "ctlra_mappa", 0);
 	if(!m)
 		return -1;
 

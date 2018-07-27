@@ -606,7 +606,9 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 struct mappa_t *
 mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 {
-	(void)opts;
+	if(!name)
+		return 0;
+
 	struct mappa_t *m = calloc(1, sizeof(struct mappa_t));
 	if(!m)
 		goto fail;
@@ -627,6 +629,11 @@ mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 	} else {
 		MAPPA_INFO(m, "config files dir not set%s\n", "");
 	}
+
+	m->app_name = strdup(name);
+	if(unique)
+		m->unique_str = strdup(unique);
+
 
 	/* add default config search dir */
 	const char *home = getenv("HOME");
@@ -679,7 +686,8 @@ mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 	*/
 
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
-	MAPPA_INFO(m, "mappa connected to %d devices\n", num_devs);
+	MAPPA_INFO(m, "%s [%s]connected to %d devices\n",
+		   m->app_name, m->unique_str, num_devs);
 
 	/* load each config file after we've done a probe() */
 	mappa_for_each_config_file(m, config_file_load_cb, 0);

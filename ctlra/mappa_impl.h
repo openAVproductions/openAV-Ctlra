@@ -171,6 +171,9 @@ struct mappa_t {
 	 * mappa_load_bindings(), and functions called from there */
 	void *ini_file;
 
+	char *app_name;
+	char *unique_str;
+
 	/* List of directories to search for config files */
 	struct conf_dir_list_t conf_dir_list;
 };
