@@ -156,7 +156,7 @@ void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 #if 0
 		} else {
 			printf("event value %f has no target? t %p t->func %p\n",
-			       value, t, t ? t->target.func : 0);
+			       v, t, t ? t->target.func : 0);
 #endif
 		}
 	}
@@ -920,7 +920,13 @@ mappa_load_config_file(struct mappa_t *m, const char *file)
 			file);
 		return -ENODATA;
 	}
-	printf("software = %s\n", software_name);
+	if(strcmp(m->app_name, software_name) != 0) {
+		MAPPA_ERROR(m, "File %s does not match app %s, file has [software]name = %s\n",
+			    file, m->app_name, software_name);
+		return -EINVAL;
+	}
+	printf("app %s MATCHES target software from file = %s\n",
+	       m->app_name, software_name);
 
 	const char *vendor = 0;
 	const char *device = 0;
@@ -1106,6 +1112,8 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 		ini_free(m->ini_file);
 	m->ini_file = 0;
 
+	/*
+	TODO: when to free the file path?
 	if(dev->conf_file_path) {
 		const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 		assert(info);
@@ -1113,6 +1121,7 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 			   info->vendor, info->device, dev->conf_file_path);
 		free(dev->conf_file_path);
 	}
+	*/
 	dev->conf_file_path = strdup(file);
 
 	return 0;
