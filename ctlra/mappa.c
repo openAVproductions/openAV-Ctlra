@@ -904,6 +904,16 @@ mappa_load_config_file(struct mappa_t *m, const char *file)
 		return -EINVAL;
 	}
 
+	const char *software_name = 0;
+	ini_sget(config, "software", "name", NULL, &software_name);
+	if(!software_name) {
+		MAPPA_ERROR(m, "File %s does not have valid [software]name tag."
+			"Each file must set name of software that it maps to.\n",
+			file);
+		return -ENODATA;
+	}
+	printf("software = %s\n", software_name);
+
 	const char *vendor = 0;
 	const char *device = 0;
 	const char *serial = 0;
