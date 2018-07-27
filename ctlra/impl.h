@@ -303,6 +303,9 @@ static const struct ctlra_dev_connect_func_t __ctlra_dev = {	\
 __attribute__((constructor(102)))				\
 static void ctlra_ ## name ## _register() {			\
 	__ctlra_devices[__ctlra_device_count++] = __ctlra_dev;	\
+	if(1)							\
+	printf("[ctlra] register %s %s\n", __ctlra_dev.info->vendor,	\
+	       __ctlra_dev.info->device);			\
 }
 
 /* helper macro to compile-time debug struct sizes, and function to
