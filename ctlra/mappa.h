@@ -75,7 +75,9 @@ struct mappa_opts_t {
 };
 
 /** Initialize a mappa context */
-struct mappa_t *mappa_create(struct mappa_opts_t *opts);
+struct mappa_t *mappa_create(struct mappa_opts_t *opts,
+			     const char *application_name,
+			     const char *unique_name);
 
 /** Run an iteration of the mappa / ctlra combo */
 int32_t mappa_iter(struct mappa_t *m);

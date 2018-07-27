@@ -131,7 +131,7 @@ struct dev_t {
 	/* contains the path of the file that was used to map it, or NULL
 	 * if there is no mapping applied */
 	/* TODO: should we allow multiple files to apply to one dev? */
-	const char *conf_file_path;
+	char *conf_file_path;
 
 	/* ctlra dev info, required to error check binding IDs */
 	const struct ctlra_dev_info_t *ctlra_dev_info;
@@ -140,7 +140,7 @@ TAILQ_HEAD(dev_list_t, dev_t);
 
 struct conf_dir_t {
 	TAILQ_ENTRY(conf_dir_t) tailq;
-	const char *dir;
+	char *dir;
 };
 TAILQ_HEAD(conf_dir_list_t, conf_dir_t);
 

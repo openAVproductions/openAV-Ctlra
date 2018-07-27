@@ -604,7 +604,7 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 }
 
 struct mappa_t *
-mappa_create(struct mappa_opts_t *opts)
+mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 {
 	(void)opts;
 	struct mappa_t *m = calloc(1, sizeof(struct mappa_t));
@@ -978,7 +978,11 @@ mappa_load_config_file(struct mappa_t *m, const char *file)
 			    file, vendor, device, serial);
 	}
 
-	apply_config_file(m, dev, config, file);
+	int ret = apply_config_file(m, dev, config, file);
+	if(ret)
+		return -1;
+
+	return 0;
 }
 
 static int32_t

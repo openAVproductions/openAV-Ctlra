@@ -45,7 +45,7 @@ cairo_dep = dependency('cairo', required: false)
 subdir('ctlra')
 
 install_headers(ctlra_hdr, subdir : 'ctlra')
-ctlra_includes = include_directories('ctlra')
+ctlra_includes  = include_directories('ctlra', '.')
 
 if (get_option('examples') != '')
 	subdir('examples')

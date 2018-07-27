@@ -121,13 +121,10 @@ register_feedback(struct mappa_t *m, void *userdata)
 
 int main(int argc, char **argv)
 {
-	//tests();
-
-	int ret;
 	signal(SIGINT, sighndlr);
 
 	/* create mappa context */
-	struct mappa_t *m = mappa_create(NULL);
+	struct mappa_t *m = mappa_create(NULL, "ctlra_mappa", "unique_str");
 	if(!m)
 		return -1;
 
@@ -156,7 +153,7 @@ void tests(void)
 	printf("errno %d\n", errno);
 	assert(!ret);
 
-	struct mappa_t *m = mappa_create(NULL);
+	struct mappa_t *m = mappa_create(NULL, "test", "no_unique");
 	assert(m);
 
 
