@@ -723,6 +723,8 @@ mappa_destroy(struct mappa_t *m)
 
 	/* iterate over all allocated resources and free them */
 	ctlra_exit(m->ctlra);
+
+	free(m->app_name);
 	free(m);
 }
 
@@ -918,11 +920,13 @@ mappa_load_config_file(struct mappa_t *m, const char *file)
 		MAPPA_ERROR(m, "File %s does not have valid [software]name tag."
 			"Each file must set name of software that it maps to.\n",
 			file);
+		ini_free(config);
 		return -ENODATA;
 	}
 	if(strcmp(m->app_name, software_name) != 0) {
 		MAPPA_ERROR(m, "File %s does not match app %s, file has [software]name = %s\n",
 			    file, m->app_name, software_name);
+		ini_free(config);
 		return -EINVAL;
 	}
 	printf("app %s MATCHES target software from file = %s\n",
@@ -1122,7 +1126,8 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 		free(dev->conf_file_path);
 	}
 	*/
-	dev->conf_file_path = strdup(file);
+	if(!dev->conf_file_path)
+		dev->conf_file_path = strdup(file);
 
 	return 0;
 
