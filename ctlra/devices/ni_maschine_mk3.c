@@ -233,16 +233,18 @@ static const struct ni_maschine_mk3_ctlra_t buttons[] = {
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
 #define MK3_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
+#define MK3_BTN_NOFB (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY)
 static struct ctlra_item_info_t buttons_info[] = {
 	/* TODO: represent encoders better in the UI */
 	/* encoder press, right up left down */
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	/* shift, top-right above screen (mad ordering..) */
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 60},
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 58},
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 59},
+	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 61},
+	/* shift */
 	{.x =  94, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 44},
+	/* top-right (button 8) above screen, 1-7 are below (mad ordering..) */
 	{.x = 278, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
 	/* group ABCDEFGH */
 	{.x =  9, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 29},
@@ -278,7 +280,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 137, .y = 248, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 56},
 	{.x = 137, .y = 266, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 57},
 	/* Pitch, Mod, Perform */
-	{.x =  9, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
+	{.x =  9, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 25},
 	{.x = 37, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 26},
 	{.x = 65, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 27},
 	/* restart, erase, tap, follow */
@@ -304,7 +306,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 9, .y =  62, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 6},
 	{.x = 9, .y =  74, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 8},
 	{.x = 9, .y =  86, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 10},
-	/* Top buttons (7, 8 already above) */
+	/* Top buttons (8 already above) */
 	{.x =  82, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 12},
 	{.x = 110, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 13},
 	{.x = 138, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 14},
@@ -312,18 +314,18 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 194, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 16},
 	{.x = 222, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 17},
 	{.x = 250, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 18},
-	{.x = 278, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
 	/* TODO: show encoder dial touch control */
 	/* big dial encoder touch */
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
 	/* 1-8 dial encoder touch */
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
+	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
 };
 
 static struct ctlra_item_info_t sliders_info[] = {
@@ -424,7 +426,10 @@ struct ni_maschine_mk3_t {
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
-	float hw_values[CONTROLS_SIZE];
+	// AG: These appear to spit out some random values initially, which we
+	// just record on the first run without passing them on. Same applies
+	// to the big encoder and the touchstrip below.
+	float hw_values[CONTROLS_SIZE], hw_init[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 	uint8_t lights_pads_dirty;
@@ -440,8 +445,8 @@ struct ni_maschine_mk3_t {
 	/* state of the pedal, according to the hardware */
 	uint8_t pedal;
 
-	uint8_t encoder_value;
-	uint16_t touchstrip_value;
+	uint8_t encoder_value, encoder_init;
+	uint16_t touchstrip_value, touchstrip_init;
 	/* Pressure filtering for note-onset detection */
 	uint64_t pad_last_msg_time;
 	uint16_t pad_hit;
@@ -540,9 +545,7 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		if(current == new)
 			continue;
 
-		/* rotate grid to match order on device (but zero
-		 * based counting instead of 1 based). */
-		event.grid.pos = (3-(i/4))*4 + (i%4);
+		event.grid.pos = i;
 		int press = new > 0;
 		event.grid.pressed = press;
 		event.grid.pressure = pad_pressures[i] * (1 / 4096.f) * press;
@@ -626,7 +629,7 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		/* pedal */
 		int pedal = buf[3] > 0;
 		if(pedal != dev->pedal) {
-			printf("PEDAL: %d, inv = %d\n", pedal, !pedal);
+			//printf("PEDAL: %d, inv = %d\n", pedal, !pedal);
 			struct ctlra_event_t event[] = {
 				{ .type = CTLRA_EVENT_BUTTON,
 				  .button  = {
@@ -650,7 +653,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 
 		/* touchstrip: dont send event if 0, as this is release */
 		uint16_t v = *((uint16_t *)&buf[30]);
-		if(v && v != dev->touchstrip_value) {
+		if(!dev->touchstrip_init) {
+			dev->touchstrip_value = v;
+			dev->touchstrip_init = 1;
+		} else if(v && v != dev->touchstrip_value) {
 			struct ctlra_event_t event = {
 				.type = CTLRA_EVENT_SLIDER,
 				.slider = {
@@ -695,7 +701,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			const float value = v / 1000.f;
 			const uint8_t idx = BUTTONS_SIZE + i;
 
-			if(dev->hw_values[idx] != value) {
+			if(!dev->hw_init[idx]) {
+				dev->hw_values[idx] = value;
+				dev->hw_init[idx] = 1;
+			} else if(dev->hw_values[idx] != value) {
 				const float d = (value - dev->hw_values[idx]);
 				if(fabsf(d) > 0.7) {
 					/* wrap around */
@@ -729,7 +738,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		};
 		struct ctlra_event_t *e = {&event};
 		int8_t enc   = buf[11] & 0x0f;
-		if(enc != dev->encoder_value) {
+		if(!dev->encoder_init) {
+			dev->encoder_value = enc;
+			dev->encoder_init = 1;
+		} else if(enc != dev->encoder_value) {
 			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
 			event.encoder.delta = dir;
 			dev->encoder_value = enc;
@@ -751,8 +763,7 @@ static void ni_maschine_mk3_light_set(struct ctlra_dev_t *base,
 	if(!dev)
 		return;
 
-	// TODO: debug the -1, why is it required to get the right size?
-	if(light_id > (LIGHTS_SIZE + 25 + 16) - 1)
+	if(light_id >= (LIGHTS_SIZE + 25 + 16))
 		return;
 
 	int idx = light_id;
