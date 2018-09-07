@@ -77,6 +77,7 @@ struct ctlra_midi_t *ctlra_midi_open(const char *name,
 	res = snd_midi_event_new(1024, &m->decoder);
 	if (res < 0)
 		printf("%s: error creating decoder\n", __func__);
+	snd_midi_event_no_status(m->decoder, 1);
 	snd_midi_event_init(m->decoder);
 
 	/* Keep callback / ud */
