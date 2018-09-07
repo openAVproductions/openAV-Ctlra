@@ -74,7 +74,7 @@ struct ctlra_midi_t *ctlra_midi_open(const char *name,
 		printf("%s: error creating encoder\n", __func__);
 	snd_midi_event_no_status(m->encoder, 1);
 
-	res = snd_midi_event_new(32, &m->decoder);
+	res = snd_midi_event_new(1024, &m->decoder);
 	if (res < 0)
 		printf("%s: error creating decoder\n", __func__);
 	snd_midi_event_init(m->decoder);
@@ -121,7 +121,7 @@ int ctlra_midi_input_poll(struct ctlra_midi_t *s)
 {
 	int res;
 	int nbytes;
-	uint8_t buffer[3];
+	uint8_t buffer[1024];
 	snd_seq_event_t *seq_ev;
 
 	int input_pending = 1;
@@ -137,7 +137,7 @@ int ctlra_midi_input_poll(struct ctlra_midi_t *s)
 			return 0;
 		}
 
-		nbytes= snd_midi_event_decode(s->encoder, buffer, 3, seq_ev);
+		nbytes= snd_midi_event_decode(s->encoder, buffer, 1024, seq_ev);
 		if (nbytes < 0) {
 			continue;
 		}
