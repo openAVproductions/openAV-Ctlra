@@ -130,16 +130,10 @@ int ctlra_midi_input_poll(struct ctlra_midi_t *s)
 
 	int input_pending = 1;
 
-	while (input_pending) {
+	while (input_pending > 0) {
 		res = snd_seq_event_input(s->seq, &seq_ev);
 		if(res < 0)
 			return 0;
-
-		input_pending = snd_seq_event_input_pending(s->seq, 1);
-		if (input_pending < 0) {
-			snd_seq_free_event(seq_ev);
-			return 0;
-		}
 
 		if (seq_ev->type == SND_SEQ_EVENT_SYSEX && seq_ev->data.ext.len > MAX_MSG_SIZE) {
 			// message too big, just skip it
@@ -158,6 +152,8 @@ int ctlra_midi_input_poll(struct ctlra_midi_t *s)
 		s->input_cb(nbytes, buffer, s->input_cb_ud);
 
 		snd_seq_free_event(seq_ev);
+
+		input_pending = snd_seq_event_input_pending(s->seq, 1);
 	}
 
 	return 0;
