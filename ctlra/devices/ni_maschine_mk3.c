@@ -69,7 +69,6 @@ static const char *ni_maschine_mk3_control_names[] = {
 	"Enc. Left",
 	"Enc. Down",
 	"Shift",
-	"Top 8",
 	"A",
 	"B",
 	"C",
@@ -126,6 +125,7 @@ static const char *ni_maschine_mk3_control_names[] = {
 	"Top 5",
 	"Top 6",
 	"Top 7",
+	"Top 8",
 	"Enc. Touch",
 	"Enc. Touch 8",
 	"Enc. Touch 7",
@@ -146,9 +146,8 @@ static const struct ni_maschine_mk3_ctlra_t buttons[] = {
 	{1, 1, 0x04},
 	{1, 1, 0x20},
 	{1, 1, 0x10},
-	/* shift, top right above screen */
+	/* shift */
 	{1, 1, 0x40},
-	{1, 1, 0x80},
 	/* group buttons ABCDEFGH */
 	{1, 2, 0x01},
 	{1, 2, 0x02},
@@ -218,6 +217,9 @@ static const struct ni_maschine_mk3_ctlra_t buttons[] = {
 	{1, 9, 0x10},
 	{1, 9, 0x20},
 	{1, 9, 0x40},
+	// AG: note that "Top 8" is actually stored in the first byte, NI
+	// probably crammed it in there to save an extra byte
+	{1, 1, 0x80},
 	/* Encoder Touch */
 	{1, 9, 0x80},
 	/* Dial touch 8 - 1 */
@@ -244,8 +246,6 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 61},
 	/* shift */
 	{.x =  94, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 44},
-	/* top-right (button 8) above screen, 1-7 are below (mad ordering..) */
-	{.x = 278, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
 	/* group ABCDEFGH */
 	{.x =  9, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 29},
 	{.x = 37, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 30},
@@ -306,7 +306,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 9, .y =  62, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 6},
 	{.x = 9, .y =  74, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 8},
 	{.x = 9, .y =  86, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 10},
-	/* Top buttons (8 already above) */
+	/* Top buttons */
 	{.x =  82, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 12},
 	{.x = 110, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 13},
 	{.x = 138, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 14},
@@ -314,6 +314,7 @@ static struct ctlra_item_info_t buttons_info[] = {
 	{.x = 194, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 16},
 	{.x = 222, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 17},
 	{.x = 250, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 18},
+	{.x = 278, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
 	/* TODO: show encoder dial touch control */
 	/* big dial encoder touch */
 	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN_NOFB, .colour = 0xff000000, .fb_id = 0},
