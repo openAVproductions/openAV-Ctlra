@@ -638,7 +638,10 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		break;
 	case 42: {
 		/* pedal */
-		int pedal = buf[3] > 0;
+		// AG: 0x40 = bit mask for pedal; we *must* test for this
+		// specific value, since other bits of this byte may also be
+		// set by some of the buttons (see below)
+		int pedal = buf[3] & 0x40;
 		if(pedal != dev->pedal) {
 			struct ctlra_event_t event[] = {
 				{ .type = CTLRA_EVENT_BUTTON,
@@ -678,7 +681,16 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 			int offset = buttons[i].buf_byte_offset;
 			int mask   = buttons[i].mask;
 
+#if 0
+// AG XXXFIXME: Why should we read a 16 bit value here, only to mask out the
+// MSB immediately? (Note that all the button masks are single-byte.) Also,
+// the byte offsets for the various buttons are consecutive, so we'd actually
+// be reading overlapping values here. This just doesn't make any sense to me.
 			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+#else
+// This should work just as well.
+			uint16_t v = buf[offset] & mask;
+#endif
 			int value_idx = i;
 
 			if(dev->hw_values[value_idx] != v) {
