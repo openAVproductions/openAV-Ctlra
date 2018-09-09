@@ -128,14 +128,14 @@ static const char *ni_maschine_mk3_control_names[] = {
 	"Top 7",
 	"Top 8",
 	"Enc. Touch",
-	"Enc. Touch 8",
-	"Enc. Touch 7",
-	"Enc. Touch 6",
-	"Enc. Touch 5",
-	"Enc. Touch 4",
-	"Enc. Touch 3",
-	"Enc. Touch 2",
 	"Enc. Touch 1",
+	"Enc. Touch 2",
+	"Enc. Touch 3",
+	"Enc. Touch 4",
+	"Enc. Touch 5",
+	"Enc. Touch 6",
+	"Enc. Touch 7",
+	"Enc. Touch 8",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mk3_control_names) /\
 			    sizeof(ni_maschine_mk3_control_names[0]))
@@ -223,15 +223,15 @@ static const struct ni_maschine_mk3_ctlra_t buttons[] = {
 	{1, 1, 0x80},
 	/* Encoder Touch */
 	{1, 9, 0x80},
-	/* Dial touch 8 - 1 */
-	{1, 10, 0x01},
-	{1, 10, 0x02},
-	{1, 10, 0x04},
-	{1, 10, 0x08},
-	{1, 10, 0x10},
-	{1, 10, 0x20},
-	{1, 10, 0x40},
+	/* Dial touch 1 - 8 (reverse order in data) */
 	{1, 10, 0x80},
+	{1, 10, 0x40},
+	{1, 10, 0x20},
+	{1, 10, 0x10},
+	{1, 10, 0x08},
+	{1, 10, 0x04},
+	{1, 10, 0x02},
+	{1, 10, 0x01},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
