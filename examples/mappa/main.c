@@ -128,6 +128,10 @@ int main(int argc, char **argv)
 	if(!m)
 		return -1;
 
+	/* run first to enable device grabbing, to test target hotplug */
+	mappa_iter(m);
+	mappa_iter(m);
+
 	register_targets(m, 0x0);
 	register_feedback(m, 0x0);
 

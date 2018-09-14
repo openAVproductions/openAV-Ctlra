@@ -462,6 +462,15 @@ ni_maschine_mk3_control_get_name(enum ctlra_event_type_t type,
 		return encoder_names[control_id];
 	if(type == CTLRA_EVENT_SLIDER && control_id == 0)
 		return "Touchstrip";
+	if(type == CTLRA_EVENT_GRID && control_id == 0)
+		return "Pad Grid";
+	if(type == CTLRA_FEEDBACK_ITEM) {
+		if(control_id == 0)
+			return "Left Screen";
+		else
+			return "Right Screen";
+	}
+
 	return 0;
 }
 
