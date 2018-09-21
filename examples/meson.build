@@ -10,7 +10,9 @@ fluidsynth_dep = dependency('fluidsynth', required: false)
 foreach name: get_option('examples').split(',')
   example_src = []
   dependencies = []
+  c_args = []
   link_args = []
+  install = false
 
   subdir(name)
 
@@ -18,6 +20,8 @@ foreach name: get_option('examples').split(',')
              example_src,
              include_directories: ctlra_includes,
              dependencies : dependencies,
+             install : install,
+             c_args : c_args,
              link_args : link_args,
              link_with: ctlra)
 endforeach
