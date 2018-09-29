@@ -507,8 +507,14 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 {
 	struct mappa_t *m = userdata;
 
-	/* TODO: check if we have a config file that supports this device,
-	 * otherwise what do we do? */
+	/* check name of accept-device against .ini files that we have:
+	 * if exists, continue,
+	 * if not existing, print warning, or call callback into app?
+	 */
+
+	/* load each config file after we've done a probe() */
+	mappa_for_each_config_file(m, config_file_load_cb, 0);
+
 
 	struct dev_t *dev = dev_create(m, ctlra_dev, info);
 	if(!dev) {
@@ -516,10 +522,6 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 			    info->vendor, info->device);
 		return 0;
 	}
-
-	/* TODO: check all available mappa config files to see if we want
-	 * to accept this device? Use mappa_opts to configure this?
-	 */
 
 	ctlra_dev_set_event_func(ctlra_dev, mappa_event_func);
 	ctlra_dev_set_feedback_func(ctlra_dev, mappa_feedback_func);
@@ -551,11 +553,18 @@ mappa_iter(struct mappa_t *m)
 			 * new mappings that are possible as new targets
 			 * may have arrived. */
 
+			if(!dev->conf_file_path)
+				continue;
+
 			/* TODO: refacto ini loading here */
 			ini_t *config = ini_load(dev->conf_file_path);
 			if(!config) {
+				static int printed;
+				if(!printed) {
 				MAPPA_ERROR(m, "unable to load config file %s"
-					    ", does it exist?\n", dev->conf_file_path);
+					    "does it exist?\n", dev->conf_file_path);
+					printed = 1;
+				}
 				return -EINVAL;
 			}
 			int ret = apply_config_file(m, dev, config,
@@ -688,9 +697,6 @@ mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 	int num_devs = ctlra_probe(c, mappa_accept_func, m);
 	MAPPA_INFO(m, "%s [%s]connected to %d devices\n",
 		   m->app_name, m->unique_str, num_devs);
-
-	/* load each config file after we've done a probe() */
-	mappa_for_each_config_file(m, config_file_load_cb, 0);
 
 	return m;
 fail:
@@ -924,8 +930,8 @@ mappa_load_config_file(struct mappa_t *m, const char *file)
 		return -ENODATA;
 	}
 	if(strcmp(m->app_name, software_name) != 0) {
-		MAPPA_ERROR(m, "File %s does not match app %s, file has [software]name = %s\n",
-			    file, m->app_name, software_name);
+		MAPPA_INFO(m, "File %s does not match app %s, file has"
+			"[software]name = %s\n", file, m->app_name, software_name);
 		ini_free(config);
 		return -EINVAL;
 	}
