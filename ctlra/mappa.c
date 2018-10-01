@@ -512,10 +512,6 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 	 * if not existing, print warning, or call callback into app?
 	 */
 
-	/* load each config file after we've done a probe() */
-	mappa_for_each_config_file(m, config_file_load_cb, 0);
-
-
 	struct dev_t *dev = dev_create(m, ctlra_dev, info);
 	if(!dev) {
 		MAPPA_ERROR(m, "failed to create mappa dev_t for %s %s\n",
@@ -533,6 +529,9 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 	 * pointer in order to communicate with "self" if required.
 	 */
 	ctlra_dev_set_callback_userdata(ctlra_dev, dev);
+
+	/* load each config file after we've done a probe() */
+	mappa_for_each_config_file(m, config_file_load_cb, 0);
 
 	MAPPA_INFO(m, "accepting device %s %s\n", info->vendor, info->device);
 	return 1;
