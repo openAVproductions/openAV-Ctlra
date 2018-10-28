@@ -86,6 +86,38 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	*/
 }
 
+int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
+			  uint8_t *pixel_data, uint32_t bytes,
+			  struct ctlra_screen_zone_t *redraw_zone,
+			  void *userdata)
+{
+	struct dev_t *dev = userdata;
+	if(!dev) {
+		printf("mappa programming error - dev is NULL\n");
+		return 0;
+	}
+	struct mappa_t *m = dev->self;
+
+	struct lut_t *lut = dev->active_lut;
+	if(!lut) {
+		MAPPA_ERROR(m, "programming error - lut is %p\n", lut);
+		return 0;
+	}
+
+	/* figure out which AVTKA instance to use to redraw */
+	/* find the bound feedback sources, retrieve values? */
+	/* update AVTKA UI with new values */
+	/* retrieve pixels, convert pixels as required */
+	uint64_t col = 0b10000100001;
+	uint64_t u64_col = (col << 48) | (col << 32) | (col << 16) | col;
+	uint64_t *px = (uint64_t *)pixel_data;
+	for(int i = 0; i < (bytes / 8); i++) {
+		px[i] = u64_col;
+	}
+
+	return 1;
+}
+
 void mappa_event_func(struct ctlra_dev_t* ctlra_dev, uint32_t num_events,
 		       struct ctlra_event_t** events, void *userdata)
 {
@@ -521,6 +553,7 @@ mappa_accept_func(struct ctlra_t *ctlra, const struct ctlra_dev_info_t *info,
 
 	ctlra_dev_set_event_func(ctlra_dev, mappa_event_func);
 	ctlra_dev_set_feedback_func(ctlra_dev, mappa_feedback_func);
+	ctlra_dev_set_screen_feedback_func(ctlra_dev, mappa_screen_func);
 	ctlra_dev_set_remove_func(ctlra_dev, mappa_remove_func);
 
 	/* the callback here is set per *DEVICE* - NOT the mappa pointer!
