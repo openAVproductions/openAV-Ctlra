@@ -611,6 +611,17 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 	}
 }
 
+void
+mappa_dev_reload(uint32_t target_id, float value, void *token,
+		 uint32_t token_size, void *userdata)
+{
+	struct mappa_t *m = userdata;
+	if(value > 0.5) {
+		m->target_list_rev_used = !m->target_list_rev;
+	}
+}
+
+
 struct mappa_t *
 mappa_create(struct mappa_opts_t *opts, const char *name, const char *unique)
 {
@@ -1109,6 +1120,20 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 		};
 		printf("register layer %s\n", buf);
 		ret = mappa_target_add(m, &t, &tid, &le, sizeof(le));
+	}
+
+	/* register internal target to reload the mappa config */
+	{
+		/* register an internal target to switch to this layer */
+		struct mappa_target_t t = {
+			.func = mappa_dev_reload,
+			.userdata = m,
+			.name = "mappa:reload",
+		};
+		/* TODO store target_id in dev_t * for removal later? */
+		uint32_t tid;
+		int ret = mappa_target_add(m, &t, &tid, 0, 0);
+		printf("register reload, ret = %d\n", ret);
 	}
 
 	/* flatten layers into the active_lut now that they're loaded */
