@@ -818,7 +818,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 	struct timeval tv;
 	tv.tv_sec = 0;
-	tv.tv_usec = 10;
+	tv.tv_usec = 100;
 
 	/* if there are inflight writes, these are often to disable any
 	 * LEDs or lights on the device. If so, wait a bit, to be nice :)
@@ -827,7 +827,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 	do {
 		libusb_handle_events_timeout(ctlra->ctx, &tv);
 	} while(dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE] &&
-		wait_count++ < 100);
+		wait_count++ < 1000);
 
 	int32_t inf_writes = dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE];
 	if(inf_writes)
