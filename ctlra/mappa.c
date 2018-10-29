@@ -55,24 +55,29 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	struct mappa_t *m = dev->self;
 	struct lut_t *lut = dev->active_lut;
 
-#if 0
+#if 1
 	/* iterate over the # of destinations, pulling sources for each */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-	int count = info->control_count[CTLRA_FEEDBACK_ITEM];
+#warning HRD_CODED COUNT
+	int count = 1;//info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct mappa_source_t *s = lut->sources[i];
+		printf("s %p, func %p\n", s, s ? s->func : 0);
 		if(s && s->func) {
 			float v;
 			uint32_t token_size = 0;
 
 			/* map v to the correct ID */
 			s->func(&v, 0, token_size, s->userdata);
-			printf("fb func %f\n", v);
+			ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
 
+#if 0
 			for(int j = 0; j < 7; j++) {
 				ctlra_dev_light_set(ctlra_dev, i * 7 + j,
 						    source_mush_value_to_array(v, j, 7));
 			}
+#endif
+
 		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
@@ -86,7 +91,7 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 		if(s && s->source.func) {
 			uint32_t token_size = 0;
 			s->source.func(&v, 0, token_size, s->source.userdata);
-			printf("fb func %f\n", v);
+			//printf("fb func %f\n", v);
 			ctlra_dev_light_set(ctlra_dev, 1, v > 0.5 ? -1 : 0);
 		}
 	}
@@ -619,7 +624,7 @@ mappa_iter(struct mappa_t *m)
 
 			printf("mappa setup source->hw now..\n");
 			ret = mappa_bind_source_to_ctlra(m, dev->id,
-							"test_layer", 1, 2);
+							"test_layer", 10, 2);
 			printf("mappa setup source->hw done, ret %d\n", ret);
 		}
 
@@ -796,12 +801,46 @@ mappa_destroy(struct mappa_t *m)
 }
 
 static int32_t
+config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
+			    const char *layer, const char *control_name,
+			    uint32_t fb_id)
+{
+	struct mappa_t *m = dev->self;
+	const char *source = 0;
+	ini_sget(m->ini_file, layer, control_name, NULL, &source);
+
+	// no bindings just ignore
+	if(!source)
+		return 0;
+
+	printf("layer %s control %s to bind to source %s, ctlra fb id %d\n",
+	       layer, control_name, source, fb_id);
+
+	/* implement source_t mapping for this LUT */
+#warning FIXME: hard coded 0 as CTLRA_FEEDBACK_ITEM_ID
+
+	struct source_t *s;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		printf("comparing %s with %s\n", source, s->source.name);
+		if(strcmp(source, s->source.name) == 0) {
+			printf(".. light bind success! %d: %s == s %p\n",
+			       __LINE__, source, s);
+			lut->sources[0] = &s->source;
+			return 0;
+		}
+	}
+
+	MAPPA_ERROR(m, "Source not found: %s\n", source);
+	return -1;
+}
+
+static int32_t
 config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 			   uint32_t event_type, uint32_t control_id,
 			   const char *layer, const char *control_name)
 {
-	const char *target = 0;
 	struct mappa_t *m = dev->self;
+	const char *target = 0;
 	ini_t *config = m->ini_file;
 	ini_sget(config, layer, control_name, NULL, &target);
 
@@ -830,7 +869,7 @@ config_file_binding_create(struct dev_t *dev, struct lut_t *lut,
 
 static int32_t
 config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
-			    const char *layer, uint32_t event_type)
+			    const char *layer, const uint32_t event_type)
 {
 	struct mappa_t *m = dev->self;
 	/* for this event type, pull out control_count, and iterate over
@@ -860,9 +899,25 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 			continue;
 		}
 
+		/* create input binding from this string */
 		int ret = config_file_binding_create(dev, lut, event_type,
 						     i, layer, buf);
 		errors += !!ret;
+
+		/* create feedback binding for this input devices fb_id */
+		written = snprintf(buf, sizeof(buf), "%s.%s.light", prefix, control_name);
+		if(written < 0 || written >= buf_size) {
+			MAPPA_ERROR(m, "failed to print control name %s with prefix %s\n",
+				    control_name, prefix);
+			continue;
+		}
+		struct ctlra_item_info_t *event_array = info->control_info[event_type];
+		if(event_array) {
+			int32_t fb_ok = config_file_feedback_create(dev, lut, layer, buf,
+						event_array[i].fb_id);
+		} else {
+		}
+
 	}
 
 	return errors;
@@ -900,7 +955,6 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 	return errors ? -1 : 0;
 }
 
-
 static int32_t
 dev_luts_flatten_event(struct dev_t *dev, struct lut_t *lut,
 		       uint32_t event_type)
@@ -915,6 +969,24 @@ dev_luts_flatten_event(struct dev_t *dev, struct lut_t *lut,
 			printf("target %s (id %d) set for event %d id %d\n",
 			       t->target.name, t->id, event_type, i);
 			*/
+		}
+	}
+	return 0;
+}
+
+static int32_t
+dev_luts_flatten_feedback(struct dev_t *dev, struct lut_t *lut)
+{
+	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
+#warning hard-coded control count constant for LUT flatten
+	uint32_t feedback_count = 1;//info->control_count[event_type];
+
+	for(uint32_t i = 0; i < feedback_count; i++) {
+		struct source_t *s = lut->sources[i];
+		if(s && s->source.func) {
+			dev->active_lut->sources[i] = s;
+			printf("source %s (id %d) set for event %d id %d\n",
+			       s->source.name, s->id, i);
 		}
 	}
 	return 0;
@@ -948,6 +1020,7 @@ dev_luts_flatten(struct dev_t *dev)
 			for(int e = 0; e < CTLRA_EVENT_T_COUNT; e++) {
 				dev_luts_flatten_event(dev, l, e);
 			}
+			dev_luts_flatten_feedback(dev, l);
 		}
 		i++;
 		if(i > 10)
