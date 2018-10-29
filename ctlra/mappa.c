@@ -55,6 +55,7 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	struct mappa_t *m = dev->self;
 	struct lut_t *lut = dev->active_lut;
 
+#if 0
 	/* iterate over the # of destinations, pulling sources for each */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 	int count = info->control_count[CTLRA_FEEDBACK_ITEM];
@@ -63,7 +64,11 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 		if(s && s->func) {
 			float v;
 			uint32_t token_size = 0;
+
+			/* map v to the correct ID */
 			s->func(&v, 0, token_size, s->userdata);
+			printf("fb func %f\n", v);
+
 			for(int j = 0; j < 7; j++) {
 				ctlra_dev_light_set(ctlra_dev, i * 7 + j,
 						    source_mush_value_to_array(v, j, 7));
@@ -71,19 +76,22 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
+#else
 
-	/*
 	int sidx = 0;
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
 		float v;
 		void *token = 0x0;
-		if(s && s->source.func)
-			s->source.func(token, &v, s->source.userdata);
-
+		if(s && s->source.func) {
+			uint32_t token_size = 0;
+			s->source.func(&v, 0, token_size, s->source.userdata);
+			printf("fb func %f\n", v);
+			ctlra_dev_light_set(ctlra_dev, 1, v > 0.5 ? -1 : 0);
+		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
-	*/
+#endif
 }
 
 int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
@@ -237,8 +245,10 @@ source_deep_copy(const struct mappa_source_t *s)
 {
 	struct source_t *n = calloc(1, sizeof(struct source_t));
 	n->source = *s;
-	if(s->name)
+	if(s->name) {
+		printf("%s: %s\n", __func__, s->name);
 		n->source.name = strdup(s->name);
+	}
 	return n;
 }
 
@@ -247,6 +257,7 @@ mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 		 uint32_t *source_id, void *token, uint32_t token_size)
 {
 	struct source_t *n = source_deep_copy(t);
+	printf("%d: source add %s\n", __LINE__, t->name);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
 	n->id = m->source_ids++;
 	if(source_id)
@@ -387,6 +398,8 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 {
 	struct dev_t *dev = 0;
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
+
+	MAPPA_INFO(m, "src2ctlra: layer %s, fb id %d\n", layer, fb_id);
 
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 	int control_count = info->control_count[CTLRA_EVENT_BUTTON];
@@ -603,6 +616,11 @@ mappa_iter(struct mappa_t *m)
 						    dev->conf_file_path);
 			printf("reload dev %s = %d\n",
 			       dev->ctlra_dev_info->device, ret);
+
+			printf("mappa setup source->hw now..\n");
+			ret = mappa_bind_source_to_ctlra(m, dev->id,
+							"test_layer", 1, 2);
+			printf("mappa setup source->hw done, ret %d\n", ret);
 		}
 
 		m->target_list_rev_used = m->target_list_rev;

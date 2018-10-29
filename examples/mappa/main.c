@@ -88,7 +88,7 @@ register_feedback(struct mappa_t *m, void *userdata)
 {
 	/****** Feedback ******/
 	struct mappa_source_t fb = {
-		.name = "test fb 1",
+		.name = "test_fb_1",
 		.func = sw_source_float_func_1,
 		.userdata = 0,
 	};
@@ -98,7 +98,7 @@ register_feedback(struct mappa_t *m, void *userdata)
 		printf("MAP %d failed: source name %s\n", __LINE__, fb.name);
 
 	/**** FB item 2 */
-	fb.name = "test fb 2";
+	fb.name = "testfb2";
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
