@@ -82,7 +82,7 @@ struct lut_t {
 	/* array of feedback items that the HW has, that can be mapped to.
 	 * The size of the array is defined by the number of feedback items
 	 * on the device */
-	struct mappa_source_t **sources;
+	struct source_t **sources;
 };
 TAILQ_HEAD(lut_list_t, lut_t);
 

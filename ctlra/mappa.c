@@ -61,14 +61,13 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 #warning HRD_CODED COUNT
 	int count = 1;//info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
-		struct mappa_source_t *s = lut->sources[i];
-		printf("s %p, func %p\n", s, s ? s->func : 0);
-		if(s && s->func) {
+		struct source_t *s = lut->sources[i];
+		if(s && s->source.func) {
 			float v;
 			uint32_t token_size = 0;
 
 			/* map v to the correct ID */
-			s->func(&v, 0, token_size, s->userdata);
+			s->source.func(&v, 0, token_size, s->source.userdata);
 			ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
 
 #if 0
@@ -439,7 +438,7 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 		return -EINVAL;
 
 	/* set source to feed into the feedback id */
-	l->sources[fb_id] = &s->source;
+	l->sources[fb_id] = s;
 
 	return 0;
 }
@@ -478,7 +477,7 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
 
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
-	lut->sources = calloc(items, sizeof(struct mappa_source_t));
+	lut->sources = calloc(items, sizeof(struct source_t));
 	if(!lut->sources)
 		goto fail;
 
@@ -825,7 +824,7 @@ config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
 		if(strcmp(source, s->source.name) == 0) {
 			printf(".. light bind success! %d: %s == s %p\n",
 			       __LINE__, source, s);
-			lut->sources[0] = &s->source;
+			lut->sources[0] = s;
 			return 0;
 		}
 	}
