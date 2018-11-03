@@ -59,7 +59,7 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	/* iterate over the # of destinations, pulling sources for each */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 #warning HRD_CODED COUNT
-	int count = 1;//info->control_count[CTLRA_FEEDBACK_ITEM];
+	int count = 50;//info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct source_t *s = lut->sources[i];
 		if(s && s->source.func) {
@@ -67,6 +67,7 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 			uint32_t token_size = 0;
 
 			/* map v to the correct ID */
+			printf("light %d being written\n", i);
 			s->source.func(&v, 0, token_size, s->source.userdata);
 			ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
 
@@ -477,6 +478,8 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
 
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
+#warning HACK: large items array
+	items = 1024;
 	lut->sources = calloc(items, sizeof(struct source_t));
 	if(!lut->sources)
 		goto fail;
@@ -802,7 +805,7 @@ mappa_destroy(struct mappa_t *m)
 static int32_t
 config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
 			    const char *layer, const char *control_name,
-			    uint32_t fb_id)
+			    uint32_t event_type, uint32_t fb_id)
 {
 	struct mappa_t *m = dev->self;
 	const char *source = 0;
@@ -824,7 +827,7 @@ config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
 		if(strcmp(source, s->source.name) == 0) {
 			printf(".. light bind success! %d: %s == s %p\n",
 			       __LINE__, source, s);
-			lut->sources[0] = s;
+			lut->sources[fb_id] = s;
 			return 0;
 		}
 	}
@@ -913,7 +916,7 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 		struct ctlra_item_info_t *event_array = info->control_info[event_type];
 		if(event_array) {
 			int32_t fb_ok = config_file_feedback_create(dev, lut, layer, buf,
-						event_array[i].fb_id);
+						event_type, event_array[i].fb_id);
 		} else {
 		}
 
@@ -978,7 +981,7 @@ dev_luts_flatten_feedback(struct dev_t *dev, struct lut_t *lut)
 {
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
 #warning hard-coded control count constant for LUT flatten
-	uint32_t feedback_count = 1;//info->control_count[event_type];
+	uint32_t feedback_count = 1024;//info->control_count[event_type];
 
 	for(uint32_t i = 0; i < feedback_count; i++) {
 		struct source_t *s = lut->sources[i];
