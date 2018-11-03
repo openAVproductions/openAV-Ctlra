@@ -66,13 +66,12 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	//info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct source_t *s = lut->sources[i];
+		float v = 0; // default off
 		if(s && s->source.func) {
-			float v;
-			/* map v to the correct ID */
 			s->source.func(&v, s->token_buf, s->token_size,
 				       s->source.userdata);
-			ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
 		}
+		ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
 }
@@ -966,6 +965,7 @@ dev_luts_flatten_feedback(struct dev_t *dev, struct lut_t *lut)
 
 	for(uint32_t i = 0; i < feedback_count; i++) {
 		struct source_t *s = lut->sources[i];
+		dev->active_lut->sources[i] = 0;
 		if(s && s->source.func) {
 			dev->active_lut->sources[i] = s;
 			printf("source %s (id %d) set for event %d\n",
