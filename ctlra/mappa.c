@@ -292,7 +292,6 @@ mappa_target_add(struct mappa_t *m,
 	if(target_id)
 		*target_id = n->id;
 	m->target_list_rev++;
-	printf("add target %s\n", t->name);
 	return 0;
 }
 
@@ -798,16 +797,13 @@ config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
 	if(!source)
 		return 0;
 
-	printf("layer %s control %s to bind to source %s, ctlra fb id %d\n",
-	       layer, control_name, source, fb_id);
-
 	/* implement source_t mapping for this LUT */
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
-		printf("comparing %s with %s\n", source, s->source.name);
+		//printf("comparing %s with %s\n", source, s->source.name);
 		if(strcmp(source, s->source.name) == 0) {
-			printf(".. light bind success! %d: %s == s %p\n",
-			       __LINE__, source, s);
+			MAPPA_INFO(m, "light bind success: %d: %s == s %p\n",
+				   __LINE__, source, s);
 			lut->sources[fb_id] = s;
 			return 0;
 		}
@@ -1016,7 +1012,7 @@ dev_luts_flatten(struct dev_t *dev)
 static void
 dev_clean_luts(struct dev_t *dev)
 {
-	printf("todo; cleanup existing stuff here\n");
+#warning Cleanup any remaining things here
 	while(!TAILQ_EMPTY(&dev->lut_list)) {
 		struct lut_t *l = TAILQ_FIRST(&dev->lut_list);
 		TAILQ_REMOVE(&dev->lut_list, l, tailq);
@@ -1225,7 +1221,6 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 			.dev = dev,
 			.lut = lut,
 		};
-		printf("register layer %s\n", buf);
 		ret = mappa_target_add(m, &t, &tid, &le, sizeof(le));
 	}
 
