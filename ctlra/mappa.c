@@ -130,13 +130,13 @@ int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
 	}
 
 	/* invoke callbacks here *BASED ON LUT* for screen sources */
-	struct avtka_t *a = dev->avtka_screens[screen_idx];
+	struct avtka_t *a = lut->avtka_screens[screen_idx];
 	if(!a) {
 		return 0;
 	}
 
 	float dial_value = 0.1;
-	struct source_t *s = dev->screen_sources[0];
+	struct source_t *s = lut->screen_sources[0];
 	if(s && s->source.func) {
 		s->source.func(&dial_value, s->token_buf, s->token_size,
 			       s->source.userdata);
@@ -522,6 +522,13 @@ lut_destroy(struct lut_t *lut)
 	free(lut);
 }
 
+static void
+mappa_avtka_event_cb(struct avtka_t *avtka, uint32_t item_id, float v,
+		     void *userdata)
+{
+	struct dev_t *dev = userdata;
+}
+
 struct lut_t *
 lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
 	   const char *name)
@@ -546,6 +553,31 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
 	lut->sources = calloc(items, sizeof(struct source_t));
 	if(!lut->sources)
 		goto fail;
+
+	/* allocate AVTKA screen resources */
+	/* TODO: implement pixel widths etc here */
+	struct avtka_opts_t opts = {
+		.w = 480,
+		.h = 272,
+		.event_callback = mappa_avtka_event_cb,
+		.event_callback_userdata = dev,
+		.offscreen_only = 1, /* pixel buffer - no window shown */
+	};
+
+	struct avtka_t *a = avtka_create("mappa_screen", &opts);
+	if(!a) {
+		printf("failed to create avtka instance, quitting\n");
+		goto fail;
+	}
+	struct avtka_item_opts_t item = {
+		.name = "Dial 1",
+		.x = 10, .y = 10, .w = 50, .h = 50,
+		.draw = AVTKA_DRAW_DIAL,
+		.interact = AVTKA_INTERACT_DRAG_V,
+	};
+	uint32_t d1 = avtka_item_create(a, &item);
+	lut->avtka_screens[0] = a;
+	printf("avtka %p : d1 = %d\n", a, d1);
 
 	lut->name = strdup(name);
 	return lut;
@@ -573,13 +605,6 @@ lut_create_add_to_dev(struct mappa_t *m,
 	return lut;
 }
 
-static void
-mappa_avtka_event_cb(struct avtka_t *avtka, uint32_t item_id, float v,
-		     void *userdata)
-{
-	struct dev_t *dev = userdata;
-}
-
 struct dev_t *
 dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	   const struct ctlra_dev_info_t *info)
@@ -597,34 +622,6 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	/* allocate memory for the the "flattened" lut of all the active
 	 * layers */
 	dev->active_lut = lut_create(dev, info, "active_lut");
-
-	/* create AVTKA instances for each screen */
-	/* TODO: implement pixel widths etc here */
-	struct avtka_opts_t opts = {
-		.w = 480,
-		.h = 272,
-		.event_callback = mappa_avtka_event_cb,
-		.event_callback_userdata = dev,
-		/* raw pixel buffer only - no window shown */
-		.offscreen_only = 1,
-	};
-
-	struct avtka_t *a = avtka_create("mappa_screen", &opts);
-	if(!a) {
-		printf("failed to create avtka instance, quitting\n");
-		return 0;
-	}
-	struct avtka_item_opts_t item = {
-		.name = "Dial 1",
-		.x = 10, .y = 10, .w = 50, .h = 50,
-		.draw = AVTKA_DRAW_DIAL,
-		.interact = AVTKA_INTERACT_DRAG_V,
-	};
-	uint32_t d1 = avtka_item_create(a, &item);
-	dev->avtka_screens[0] = a;
-	printf("avtka %p : d1 = %d\n", a, d1);
-
-	dev->screen_sources[0] = NULL;
 
 	dev->self = m;
 	dev->id = m->dev_ids++;
@@ -1055,8 +1052,7 @@ config_file_bind_screen_feedback(struct mappa_t *m, struct dev_t *dev,
 	}
 	printf("screen found, s = %p\n", s);
 
-	/* TODO: enable LUTs to remap the UI */
-	dev->screen_sources[0] = s;
+	lut->screen_sources[0] = s;
 }
 
 /* returns 0 on success, or # of FAILED bindings otherwise */
@@ -1134,6 +1130,22 @@ dev_luts_flatten_feedback(struct dev_t *dev, struct lut_t *lut)
 }
 
 static int32_t
+dev_luts_flatten_screen_sources(struct dev_t *dev, struct lut_t *lut)
+{
+	const uint32_t count = 1;
+	for(uint32_t i = 0; i < count; i++) {
+		struct source_t *s = lut->screen_sources[i];
+		dev->active_lut->screen_sources[i] = 0;
+		if(s && s->source.func) {
+			dev->active_lut->screen_sources[i] = s;
+			printf("SCREEN source %s (id %d) set for event %d\n",
+			       s->source.name, s->id, i);
+		}
+	}
+	return 0;
+}
+
+static int32_t
 dev_luts_flatten(struct dev_t *dev)
 {
 	/* iterate all enabled luts, and for each one blit all callbacks
@@ -1162,6 +1174,7 @@ dev_luts_flatten(struct dev_t *dev)
 				dev_luts_flatten_event(dev, l, e);
 			}
 			dev_luts_flatten_feedback(dev, l);
+			dev_luts_flatten_screen_sources(dev, l);
 		}
 		i++;
 		if(i > 10)
