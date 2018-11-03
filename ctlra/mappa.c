@@ -10,6 +10,9 @@
 #include "mappa_impl.h"
 #include "ctlra.h"
 
+#include "avtka.h"
+#include <cairo/cairo.h>
+
 #include "ini.h"
 #include "tinydir.h"
 
@@ -76,9 +79,41 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	ctlra_dev_light_flush(ctlra_dev, 1);
 }
 
+static inline
+void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
+{
+	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
+	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
+	b = ((int)((b / 255.0) * 31)) & ((1<<5)-1);
+
+	uint16_t combined = (b | g << 5 | r << 11);
+	data[0] = combined >> 8;
+	data[1] = combined & 0xff;
+}
+
+static inline void
+convert_scalar(unsigned char *data, uint8_t *pixels, uint32_t stride)
+{
+	const uint16_t HEIGHT = 272;
+	const uint16_t WIDTH = 480;
+	uint16_t *write_head = (uint16_t*)pixels;
+	/* Copy the Cairo pixels to the usb buffer, taking the
+	 * stride of the cairo memory into account, converting from
+	 * RGB into the BGR that the screen expects */
+	for(int j = 0; j < HEIGHT; j++) {
+		for(int i = 0; i < WIDTH; i++) {
+			uint8_t *p = &data[(j * stride) + (i*4)];
+			int idx = (j * WIDTH) + (i);
+			pixel_convert_from_argb(p[2], p[1], p[0],
+						(uint8_t*)&write_head[idx]);
+		}
+	}
+}
+
+
 int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
 			  uint8_t *pixel_data, uint32_t bytes,
-			  struct ctlra_screen_zone_t *redraw_zone,
+			  struct ctlra_screen_zone_t *zone,
 			  void *userdata)
 {
 	struct dev_t *dev = userdata;
@@ -94,6 +129,45 @@ int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
 		return 0;
 	}
 
+	/* invoke callbacks here *BASED ON LUT* for screen sources */
+	struct avtka_t *a = dev->avtka_screens[screen_idx];
+	if(!a) {
+		return 0;
+	}
+
+	avtka_item_value(a, 1, 0.5);
+
+	/* iterate once to draw screen, then take screenshot */
+	avtka_iterate(a);
+	avtka_redraw(a);
+
+#if 0
+	int ret = avtka_take_screenshot(a, "screen.png");
+	if(ret)
+		printf("screenshot error, returned %d\n", ret);
+#endif
+
+	cairo_surface_t *surf = avtka_get_cairo_surface(a);
+	if(!surf) {
+		printf("error getting surface!!\n");
+		exit(-2);
+	}
+
+	unsigned char * data = cairo_image_surface_get_data(surf);
+	if(!data) {
+		printf("error data == 0\n");
+		exit(-1);
+	}
+	int stride = cairo_image_surface_get_stride(surf);
+
+	/* convert from ARGB32 to 565 */
+	convert_scalar(data, pixel_data, stride);
+
+	/* fill in redraw co-ords */
+	avtka_redraw_get_damaged_area(a, &zone->x, &zone->y,
+				         &zone->w, &zone->h);
+
+#if 0
 	/* figure out which AVTKA instance to use to redraw */
 	/* find the bound feedback sources, retrieve values? */
 	/* update AVTKA UI with new values */
@@ -104,6 +178,7 @@ int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
 	for(int i = 0; i < (bytes / 8); i++) {
 		px[i] = u64_col;
 	}
+#endif
 
 	return 1;
 }
@@ -492,6 +567,13 @@ lut_create_add_to_dev(struct mappa_t *m,
 	return lut;
 }
 
+static void
+mappa_avtka_event_cb(struct avtka_t *avtka, uint32_t item_id, float v,
+		     void *userdata)
+{
+	struct dev_t *dev = userdata;
+}
+
 struct dev_t *
 dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	   const struct ctlra_dev_info_t *info)
@@ -509,6 +591,32 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	/* allocate memory for the the "flattened" lut of all the active
 	 * layers */
 	dev->active_lut = lut_create(dev, info, "active_lut");
+
+	/* create AVTKA instances for each screen */
+	/* TODO: implement pixel widths etc here */
+	struct avtka_opts_t opts = {
+		.w = 480,
+		.h = 272,
+		.event_callback = mappa_avtka_event_cb,
+		.event_callback_userdata = dev,
+		/* raw pixel buffer only - no window shown */
+		.offscreen_only = 1,
+	};
+
+	struct avtka_t *a = avtka_create("mappa_screen", &opts);
+	if(!a) {
+		printf("failed to create avtka instance, quitting\n");
+		return 0;
+	}
+	struct avtka_item_opts_t item = {
+		.name = "Dial 1",
+		.x = 10, .y = 10, .w = 50, .h = 50,
+		.draw = AVTKA_DRAW_DIAL,
+		.interact = AVTKA_INTERACT_DRAG_V,
+	};
+	uint32_t d1 = avtka_item_create(a, &item);
+	dev->avtka_screens[0] = a;
+	printf("avtka %p : d1 = %d\n", a, d1);
 
 	dev->self = m;
 	dev->id = m->dev_ids++;

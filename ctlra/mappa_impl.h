@@ -3,6 +3,8 @@
 #include "mappa.h"
 #include "ctlra.h"
 
+struct avtka_t;
+
 #include <sys/queue.h>
 
 #define mappa_print_check(c, level)					\
@@ -130,6 +132,9 @@ struct dev_t {
 
 	/* dev id for mappa bindings */
 	uint32_t id;
+
+	uint32_t screen_count;
+	struct avtka_t *avtka_screens[2];
 
 	/* contains the path of the file that was used to map it, or NULL
 	 * if there is no mapping applied */
