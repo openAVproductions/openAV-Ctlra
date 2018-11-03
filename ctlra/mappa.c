@@ -13,6 +13,9 @@
 #include "ini.h"
 #include "tinydir.h"
 
+#warning Rework this MAX to be provided by Ctlra dev instance
+#define MAPPA_LUT_SRC_MAX (1024)
+
 /* TODO: cleanup */
 static int32_t
 apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
@@ -40,6 +43,7 @@ static int32_t dev_luts_flatten(struct dev_t *dev);
  * --- Adding a new layer adds Group "mappa" : Item "Layer 1" ?
  */
 
+#if 0
 /* mushes a single float to multiple feedback items. Eg: volume LEDs.
  * The application supplies a single float value, shown as VU LED strip
  */
@@ -48,6 +52,7 @@ source_mush_value_to_array(float v, uint32_t idx, uint32_t total)
 {
 	return v > (idx / ((float)total)) ? -1 : 0xf;
 }
+#endif
 
 void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 {
@@ -55,48 +60,21 @@ void mappa_feedback_func(struct ctlra_dev_t *ctlra_dev, void *userdata)
 	struct mappa_t *m = dev->self;
 	struct lut_t *lut = dev->active_lut;
 
-#if 1
 	/* iterate over the # of destinations, pulling sources for each */
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-#warning HRD_CODED COUNT
-	int count = 50;//info->control_count[CTLRA_FEEDBACK_ITEM];
+	int count = MAPPA_LUT_SRC_MAX;
+	//info->control_count[CTLRA_FEEDBACK_ITEM];
 	for(int i = 0; i < count; i++) {
 		struct source_t *s = lut->sources[i];
 		if(s && s->source.func) {
 			float v;
-			uint32_t token_size = 0;
-
 			/* map v to the correct ID */
-			printf("light %d being written\n", i);
-			s->source.func(&v, 0, token_size, s->source.userdata);
+			s->source.func(&v, s->token_buf, s->token_size,
+				       s->source.userdata);
 			ctlra_dev_light_set(ctlra_dev, i, v > 0.5 ? -1 : 0);
-
-#if 0
-			for(int j = 0; j < 7; j++) {
-				ctlra_dev_light_set(ctlra_dev, i * 7 + j,
-						    source_mush_value_to_array(v, j, 7));
-			}
-#endif
-
 		}
 	}
 	ctlra_dev_light_flush(ctlra_dev, 1);
-#else
-
-	int sidx = 0;
-	struct source_t *s;
-	TAILQ_FOREACH(s, &m->source_list, tailq) {
-		float v;
-		void *token = 0x0;
-		if(s && s->source.func) {
-			uint32_t token_size = 0;
-			s->source.func(&v, 0, token_size, s->source.userdata);
-			//printf("fb func %f\n", v);
-			ctlra_dev_light_set(ctlra_dev, 1, v > 0.5 ? -1 : 0);
-		}
-	}
-	ctlra_dev_light_flush(ctlra_dev, 1);
-#endif
 }
 
 int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
@@ -246,7 +224,8 @@ source_destroy(struct source_t *s)
 }
 
 struct source_t *
-source_deep_copy(const struct mappa_source_t *s)
+source_deep_copy(const struct mappa_source_t *s, void *token,
+		 uint32_t token_size)
 {
 	struct source_t *n = calloc(1, sizeof(struct source_t));
 	n->source = *s;
@@ -254,6 +233,10 @@ source_deep_copy(const struct mappa_source_t *s)
 		printf("%s: %s\n", __func__, s->name);
 		n->source.name = strdup(s->name);
 	}
+
+	/* store token */
+	n->token_size = token_size;
+	memcpy(n->token_buf, token, token_size);
 	return n;
 }
 
@@ -261,7 +244,7 @@ int32_t
 mappa_source_add(struct mappa_t *m, struct mappa_source_t *t,
 		 uint32_t *source_id, void *token, uint32_t token_size)
 {
-	struct source_t *n = source_deep_copy(t);
+	struct source_t *n = source_deep_copy(t, token, token_size);
 	printf("%d: source add %s\n", __LINE__, t->name);
 	TAILQ_INSERT_HEAD(&m->source_list, n, tailq);
 	n->id = m->source_ids++;
@@ -401,6 +384,8 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 			   const char *layer, uint32_t fb_id,
 			   uint32_t source_id)
 {
+	return 0;
+
 	struct dev_t *dev = 0;
 	DEV_FROM_MAPPA(m, dev, ctlra_dev_id);
 
@@ -478,8 +463,7 @@ lut_create(struct dev_t *dev, const struct ctlra_dev_info_t *info,
 
 	/* allocate feedback item lookup array */
 	int items = info->control_count[CTLRA_FEEDBACK_ITEM];
-#warning HACK: large items array
-	items = 1024;
+	items = MAPPA_LUT_SRC_MAX;
 	lut->sources = calloc(items, sizeof(struct source_t));
 	if(!lut->sources)
 		goto fail;
@@ -819,8 +803,6 @@ config_file_feedback_create(struct dev_t *dev, struct lut_t *lut,
 	       layer, control_name, source, fb_id);
 
 	/* implement source_t mapping for this LUT */
-#warning FIXME: hard coded 0 as CTLRA_FEEDBACK_ITEM_ID
-
 	struct source_t *s;
 	TAILQ_FOREACH(s, &m->source_list, tailq) {
 		printf("comparing %s with %s\n", source, s->source.name);
@@ -980,14 +962,13 @@ static int32_t
 dev_luts_flatten_feedback(struct dev_t *dev, struct lut_t *lut)
 {
 	const struct ctlra_dev_info_t *info = dev->ctlra_dev_info;
-#warning hard-coded control count constant for LUT flatten
-	uint32_t feedback_count = 1024;//info->control_count[event_type];
+	uint32_t feedback_count = MAPPA_LUT_SRC_MAX;//info->control_count[event_type];
 
 	for(uint32_t i = 0; i < feedback_count; i++) {
 		struct source_t *s = lut->sources[i];
 		if(s && s->source.func) {
 			dev->active_lut->sources[i] = s;
-			printf("source %s (id %d) set for event %d id %d\n",
+			printf("source %s (id %d) set for event %d\n",
 			       s->source.name, s->id, i);
 		}
 	}

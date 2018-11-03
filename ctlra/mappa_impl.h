@@ -53,6 +53,9 @@ struct source_t {
 	TAILQ_ENTRY(source_t) tailq;
 	struct mappa_source_t source;
 	uint32_t id;
+	/* variably sized token size and data */
+	uint32_t token_size;
+	uint8_t token_buf[];
 };
 TAILQ_HEAD(source_list_t, source_t);
 
