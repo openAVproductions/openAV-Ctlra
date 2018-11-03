@@ -45,6 +45,8 @@ void sw_source_float_func_1(float *value, void *token, uint32_t token_size,
 			    void *userdata)
 {
 	*value = the_value;
+	varray[0] = the_value;
+	printf("the value %f\n", the_value);
 }
 
 void sw_source_float_func_2(float *value, void *token, uint32_t token_size,

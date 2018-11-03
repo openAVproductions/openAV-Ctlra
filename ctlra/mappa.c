@@ -135,7 +135,14 @@ int32_t mappa_screen_func(struct ctlra_dev_t *ctlra_dev, uint32_t screen_idx,
 		return 0;
 	}
 
-	avtka_item_value(a, 1, 0.5);
+	float dial_value = 0.1;
+	struct source_t *s = dev->screen_sources[0];
+	if(s && s->source.func) {
+		s->source.func(&dial_value, s->token_buf, s->token_size,
+			       s->source.userdata);
+	}
+
+	avtka_item_value(a, 1, dial_value);
 
 	/* iterate once to draw screen, then take screenshot */
 	avtka_iterate(a);
@@ -471,7 +478,6 @@ mappa_bind_source_to_ctlra(struct mappa_t *m, uint32_t ctlra_dev_id,
 		return -EINVAL;
 	}
 
-
 	/* iterate over sources by name, compare */
 	int found = 0;
 	struct source_t *s;
@@ -618,6 +624,8 @@ dev_create(struct mappa_t *m, struct ctlra_dev_t *ctlra_dev,
 	dev->avtka_screens[0] = a;
 	printf("avtka %p : d1 = %d\n", a, d1);
 
+	dev->screen_sources[0] = NULL;
+
 	dev->self = m;
 	dev->id = m->dev_ids++;
 	TAILQ_INSERT_TAIL(&m->dev_list, dev, tailq);
@@ -757,6 +765,14 @@ void mappa_layer_switch_target(uint32_t target_id, float value,
 		lut->active = !lut->active;
 		dev_luts_flatten(dev);
 	}
+}
+
+void
+mappa_screen_value_set(uint32_t target_id, float value, void *token,
+		       uint32_t token_size, void *userdata)
+{
+	struct dev_t *dev = userdata;
+	printf("dev screen0 = %f\n", value);
 }
 
 void
@@ -1010,6 +1026,39 @@ config_file_bind_layer_type(struct dev_t *dev, struct lut_t *lut,
 	return errors;
 }
 
+static int32_t
+config_file_bind_screen_feedback(struct mappa_t *m, struct dev_t *dev,
+				 struct lut_t *lut, const char *layer,
+				 uint32_t screen_idx)
+{
+	ini_t *config = m->ini_file;
+	const char *source = 0;
+	ini_sget(config, layer, "screen0.dial0", NULL, &source);
+	printf("screen0.dial0 = %s\n", source);
+
+	if(!source) {
+		return -1;
+	}
+
+	/* iterate over sources by name, compare */
+	int found = 0;
+	struct source_t *s;
+	TAILQ_FOREACH(s, &m->source_list, tailq) {
+		if(strcmp(s->source.name, source) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	if(!found) {
+		MAPPA_WARN(m, "Screen mapping from %s failed.\n", source);
+		return -EINVAL;
+	}
+	printf("screen found, s = %p\n", s);
+
+	/* TODO: enable LUTs to remap the UI */
+	dev->screen_sources[0] = s;
+}
+
 /* returns 0 on success, or # of FAILED bindings otherwise */
 static int32_t
 config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
@@ -1030,6 +1079,11 @@ config_file_bind_layer(struct mappa_t *m, struct dev_t *dev,
 	}
 
 	int32_t success = total - errors;
+
+	/* probe for screen mappings here */
+	uint32_t screen_idx = 0;
+	config_file_bind_screen_feedback(m, dev, lut, layer, screen_idx);
+
 
 	if(success == mapping_count)
 		return 0;
@@ -1331,6 +1385,23 @@ apply_config_file(struct mappa_t *m, struct dev_t *dev, ini_t *config,
 		};
 		ret = mappa_target_add(m, &t, &tid, &le, sizeof(le));
 	}
+
+#if 0
+	/* register internal target to draw to AVTKA provided screen */
+	{
+		struct mappa_target_t t = {
+			.func = mappa_screen_value_set,
+			.userdata = dev,
+			.name = "screen0",
+		};
+		/* TODO store target_id in dev_t * for removal later? */
+		uint32_t tid;
+		uint32_t token = 0; // screen index
+		int ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint32_t));
+		printf("target screen0, ret = %d\n", ret);
+	}
+#endif
+
 
 	/* register internal target to reload the mappa config */
 	{

@@ -133,8 +133,13 @@ struct dev_t {
 	/* dev id for mappa bindings */
 	uint32_t id;
 
+	/* TODO: refactor to have a screen struct */
 	uint32_t screen_count;
 	struct avtka_t *avtka_screens[2];
+	/* dynamically allocated array of float values to contain the
+	 * resulting float values of the screen-mapped source_t-s? */
+	//float screen_values[8];
+	struct source_t *screen_sources[1];
 
 	/* contains the path of the file that was used to map it, or NULL
 	 * if there is no mapping applied */
