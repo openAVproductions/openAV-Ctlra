@@ -487,7 +487,7 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 
 		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
 		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
-		uint64_t nanos_elapsed = secs * 10e9 + nanos;
+		uint64_t nanos_elapsed = secs * 1e9 + nanos;
 		uint64_t fps_in_nanos = 100000000;
 
 		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
