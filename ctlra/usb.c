@@ -718,6 +718,43 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 #endif /* CTLRA_USE_ASYNC_XFER */
 }
 
+int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
+				 uint32_t endpoint, uint8_t *buffer,
+				 uint32_t size, uint32_t timeout)
+{
+	struct ctlra_t *ctlra = dev->ctlra_context;
+
+#if CTLRA_USE_ASYNC_XFER
+#warning This function is implemented as sync! TODO make it async
+#endif
+
+	int transferred = 0;
+	int r = libusb_interrupt_transfer(dev->usb_handle[idx], endpoint,
+	                                  buffer, size, &transferred, timeout);
+	if(r == LIBUSB_ERROR_TIMEOUT)
+		return 0;
+	/* buffer too small, indicates data available. Could be used as
+	 * canary to check if data available without reading it.
+	if(r == LIBUSB_ERROR_OVERFLOW)
+		return 0;
+	*/
+	if (r < 0) {
+		CTLRA_DRIVER(ctlra, "dev banished, usb error %s : %s\n",
+			libusb_error_name(r), libusb_strerror(r));
+		ctlra_dev_impl_banish(dev);
+		return r;
+	}
+
+	if(!dev->usb_read_cb) {
+		CTLRA_ERROR(ctlra, "DRIVER ERROR: no USB READ CB = %p!\n",
+			    dev->usb_read_cb);
+		return 0;
+	}
+	dev->usb_read_cb(dev, endpoint, buffer, transferred);
+	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
+	return r;
+}
+
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
                                   uint32_t endpoint, uint8_t *data,
                                   uint32_t size)

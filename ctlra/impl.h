@@ -227,6 +227,13 @@ int ctlra_dev_impl_usb_interrupt_write(struct ctlra_dev_t *dev, uint32_t idx,
 				       uint32_t endpoint, uint8_t *data,
 				       uint32_t size);
 
+/** Reads bytes from the device using a bulk USB transfer.
+ * Reads up to *buf_size* bytes, putting the result into *data*.
+ * If the data available is greater than *buf_size*, -ENOSPC is returned */
+int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
+				 uint32_t endpoint, uint8_t *buffer,
+				 uint32_t buf_size, uint32_t timeout);
+
 /** Writes bytes to the device using a bulk USB transfer*/
 int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 				  uint32_t endpoint, uint8_t *data,
