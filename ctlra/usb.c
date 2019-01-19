@@ -378,7 +378,10 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 
 	/* enable auto management of kernel claiming / unclaiming */
 	if (libusb_has_capability(LIBUSB_CAP_SUPPORTS_DETACH_KERNEL_DRIVER)) {
+		printf("attempting to unlink kernel driver\n");
 		ret = libusb_set_auto_detach_kernel_driver(handle, 1);
+		printf("ret = %d\n", ret);
+
 		if(ret != LIBUSB_SUCCESS) {
 			CTLRA_ERROR(ctlra,
 				    "Enable auto-kernel unclaiming err: %d\n",
@@ -729,17 +732,24 @@ int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
 #endif
 
 	int transferred = 0;
-	int r = libusb_interrupt_transfer(dev->usb_handle[idx], endpoint,
-	                                  buffer, size, &transferred, timeout);
+	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
+				     buffer, size, &transferred, timeout);
+
+	if(r < 0) {
+		printf("bulk transfer ret %d, %s, %s\n", r,
+			libusb_error_name(r), libusb_strerror(r));
+	}
+
 	if(r == LIBUSB_ERROR_TIMEOUT)
 		return 0;
+
 	/* buffer too small, indicates data available. Could be used as
 	 * canary to check if data available without reading it.
 	if(r == LIBUSB_ERROR_OVERFLOW)
 		return 0;
 	*/
 	if (r < 0) {
-		CTLRA_DRIVER(ctlra, "dev banished, usb error %s : %s\n",
+		CTLRA_ERROR(ctlra, "dev banished, usb error %s : %s\n",
 			libusb_error_name(r), libusb_strerror(r));
 		ctlra_dev_impl_banish(dev);
 		return r;
@@ -752,6 +762,7 @@ int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 	dev->usb_read_cb(dev, endpoint, buffer, transferred);
 	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
+	printf("ret here\n");
 	return r;
 }
 
