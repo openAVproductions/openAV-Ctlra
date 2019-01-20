@@ -214,6 +214,13 @@ int ctlra_dev_impl_usb_open(struct ctlra_dev_t *dev, int vid, int pid);
 int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 				      int interface, int handle_idx);
 
+/** Changes an existing USB interface to use a new "alternative setting"
+ * mode. This is required for some controller to send device updates
+ */
+int ctlra_dev_impl_usb_set_alt_setting(struct ctlra_dev_t *ctlra_dev, int
+				        handle_idx, int interface_num,
+				       int alt_setting);
+
 /** Read bytes from the usb device, this is a non-blocking function but
  * _not_ realtime safe function. It polls the usb handle specified by *idx*
  * of the device *dev*, reading bytes up to *size* into the buffer pointed

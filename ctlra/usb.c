@@ -395,8 +395,8 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	ret = libusb_claim_interface(handle, interface);
 	if(ret != LIBUSB_SUCCESS) {
 		CTLRA_ERROR(ctlra,
-			    "Ctlra: Could not claim device %s, is it already in use?\n",
-			    ctlra_dev->info.device);
+			    "Ctlra: Could not claim device %s, is it already in use? (libusb says %s)\n",
+			    ctlra_dev->info.device, libusb_error_name(ret));
 		int kernel_active = libusb_kernel_driver_active(handle,
 		                    interface);
 		if(kernel_active)
@@ -411,6 +411,16 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	ctlra_dev->usb_interface[handle_idx] = interface;
 
 	return 0;
+}
+
+int
+ctlra_dev_impl_usb_set_alt_setting(struct ctlra_dev_t *ctlra_dev, int handle_idx,
+				   int if_num, int alt)
+{
+	//struct ctlra_t *ctlra = ctlra_dev->ctlra_context;
+	int ret = libusb_set_interface_alt_setting(ctlra_dev->usb_handle[0],
+						   if_num, alt);
+	return ret;
 }
 
 #if CTLRA_USE_ASYNC_XFER
