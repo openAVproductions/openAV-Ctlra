@@ -745,13 +745,15 @@ int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
 	int r = libusb_bulk_transfer(dev->usb_handle[idx], endpoint,
 				     buffer, size, &transferred, timeout);
 
+	if(r == LIBUSB_ERROR_TIMEOUT)
+		return 0;
+
+#if 0
 	if(r < 0) {
 		printf("bulk transfer ret %d, %s, %s\n", r,
 			libusb_error_name(r), libusb_strerror(r));
 	}
-
-	if(r == LIBUSB_ERROR_TIMEOUT)
-		return 0;
+#endif
 
 	/* buffer too small, indicates data available. Could be used as
 	 * canary to check if data available without reading it.
@@ -772,7 +774,6 @@ int ctlra_dev_impl_usb_bulk_read(struct ctlra_dev_t *dev, uint32_t idx,
 	}
 	dev->usb_read_cb(dev, endpoint, buffer, transferred);
 	dev->usb_xfer_counts[USB_XFER_INT_READ]++;
-	printf("ret here\n");
 	return r;
 }
 
