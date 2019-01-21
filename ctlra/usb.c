@@ -918,8 +918,18 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 				CTLRA_ERROR(ctlra, "libusb release interface error: %s\n",
 					libusb_strerror(ret));
 
+#if 0
+			/* Doesn't work in testing */
+			/* optionally restore kernel */
+			int r = libusb_attach_kernel_driver(dev->usb_handle[i],
+							dev->usb_interface[i]);
+			printf("re-attach kernel %d, %s %s\n", r,
+			       libusb_error_name(r), libusb_strerror(r));
+#endif
+
 			/* close() takes a handle* ptr... */
 			libusb_close(dev->usb_handle[i]);
+
 		}
 	}
 
