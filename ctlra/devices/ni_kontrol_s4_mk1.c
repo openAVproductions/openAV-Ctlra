@@ -810,6 +810,20 @@ ctlra_ni_kontrol_s4mk1_connect(ctlra_event_func event_func,
 	if(!dev)
 		goto fail;
 
+#warning The approach taken here it to detach the S4 device from the \
+kernel driver, and to read the bytes for the USB HID endpoint directly. \
+Although this allows Ctlra to function with the keys/buttons/jog-wheels \
+in the same way as the other devices, detaching the *whole* device (as \
+is required for the S4 Mk1, and NOT required for other devices) causes \
+the audio driver (snd-usb-caiaq) to get disconnecated, meaning that the \
+ALSA card is no longer available for the end user. This is a severe \
+limitation.\
+\
+The correct solution (on linux) is probably to make Ctlra read the linux \
+input events as provided by the snd-usb-caiaq kernel module. As the device \
+is still under kernel module control, ALSA device is available, and the \
+linux input events are translated to Ctlra events to provide any Ctlra \
+applications with a consistent event model.
 	int err = ctlra_dev_impl_usb_open(&dev->base,
 					  CTLRA_DRIVER_VENDOR,
 					  CTLRA_DRIVER_DEVICE);
