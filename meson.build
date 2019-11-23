@@ -1,5 +1,5 @@
-project('openav_ctlra', 'c')
-add_project_arguments('-std=gnu99', language : 'c')
+project('openav_ctlra', 'c',
+    default_options : ['c_std=gnu99'])
 
 conf_data = configuration_data()
 conf_data.set('version', '0.1')
