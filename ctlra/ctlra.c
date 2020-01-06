@@ -559,6 +559,10 @@ void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)
 
 void ctlra_exit(struct ctlra_t *ctlra)
 {
+	/* Ensures idle_iter is ran before cleanup to try handle any
+	 * pending reads/writes */
+	ctlra_idle_iter(ctlra);
+
 	struct ctlra_dev_t *dev_iter = ctlra->dev_list;
 	while(dev_iter) {
 		struct ctlra_dev_t *dev_free = dev_iter;
