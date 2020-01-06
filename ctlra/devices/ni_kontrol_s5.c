@@ -53,7 +53,7 @@
 #define USB_INTERFACE_SCREEN      (0x4)
 #define USB_ENDPOINT_SCREEN_WRITE (0x3)
 
-#define LIGHTS_SIZE (125 + 1)
+#define LIGHTS_SIZE (105 + 1)
 /* 25 + 16 bytes enough, but padding required for USB message */
 #define LIGHTS_PADS_SIZE (80)
 
