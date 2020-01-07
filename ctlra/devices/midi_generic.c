@@ -194,4 +194,4 @@ struct ctlra_dev_info_t ctlra_midi_generic_info = {
 	.get_name =  midi_generic_control_get_name,
 };
 
-//CTLRA_DEVICE_REGISTER(midi_generic)
+CTLRA_DEVICE_REGISTER(midi_generic)

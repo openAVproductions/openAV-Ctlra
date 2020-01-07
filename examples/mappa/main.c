@@ -17,12 +17,36 @@ void sighndlr(int signal)
 	printf("\n");
 }
 
+static float varray[64];
+
+void sw_target_varray(uint32_t target_id, float value, void *token,
+		      uint32_t token_size, void *userdata)
+{
+	float *v = token;
+	*v = value;
+#if 0
+	printf("%p = %f\n", v, *v);
+	for(int i = 0; i < 10; i++)
+		printf("array %p: %d = %f\n", &varray[i], i, varray[i]);
+#endif
+}
+
+void sw_source_varray(float *value, void *token, uint32_t token_size,
+		      void *userdata)
+{
+	float *v = (float *)token;
+	//printf("%p = %f\n", token, *v);
+	*value = ((float)*v) > 0.5 ? 0xfffff : 0;
+}
+
 static float the_value;
 
 void sw_source_float_func_1(float *value, void *token, uint32_t token_size,
 			    void *userdata)
 {
 	*value = the_value;
+	varray[0] = the_value;
+	printf("the value %f\n", the_value);
 }
 
 void sw_source_float_func_2(float *value, void *token, uint32_t token_size,
@@ -40,14 +64,16 @@ void sw_target_float_func(uint32_t target_id,
 			  uint32_t token_size,
 			  void *userdata)
 {
-#if 1
-	printf("%s: target id %d, value %f, token size %d\n",
+#if 0
+	printf("%s: target id %u, value %f, token size %d\n",
 	       __func__, target_id, value, token_size);
 #endif
 	if(token_size == 8) {
-		uint64_t t = *(uint64_t *)token;
-		assert(t == 0xcafe);
+		uint64_t *t = (uint64_t *)token;
+		//assert(*t == 0xcafe);
 		assert(token_size == sizeof(uint64_t));
+		*t = !*t;
+		value = *t;
 	} else if (token_size == sizeof(token_test)) {
 		assert(memcmp(token, token_test, sizeof(token_test)) == 0);
 	}
@@ -76,6 +102,19 @@ register_targets(struct mappa_t *m, void *userdata)
 	ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint64_t));
 	assert(ret == 0);
 
+	/* targets 3 - 64 */
+#if 1
+	t.func = sw_target_varray;
+	for(int i = 3; i < 64; i++) {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "t_%u", i);
+		t.name = buf;
+		void *token = &varray[i];
+		ret = mappa_target_add(m, &t, &tid, &token, sizeof(uint64_t));
+		assert(ret == 0);
+	}
+#endif
+
 	t.name = "t_3";
 	ret = mappa_target_add(m, &t, &tid, &token_test, sizeof(token_test));
 	assert(ret == 0);
@@ -88,7 +127,7 @@ register_feedback(struct mappa_t *m, void *userdata)
 {
 	/****** Feedback ******/
 	struct mappa_source_t fb = {
-		.name = "test fb 1",
+		.name = "test_fb_1",
 		.func = sw_source_float_func_1,
 		.userdata = 0,
 	};
@@ -98,17 +137,28 @@ register_feedback(struct mappa_t *m, void *userdata)
 		printf("MAP %d failed: source name %s\n", __LINE__, fb.name);
 
 	/**** FB item 2 */
-	fb.name = "test fb 2";
+	fb.name = "testfb2";
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
-		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+		printf("MAP %d failed: sid %u\n", __LINE__, source_id);
 
 	fb.name = "test fb 3";
 	fb.func = sw_source_float_func_2;
 	ret = mappa_source_add(m, &fb, &source_id, 0, 0);
 	if(ret != 0)
 		printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+
+	for(int i = 4; i < 64; i++) {
+		float *token = &varray[i];
+		char buf[32];
+		snprintf(buf, sizeof(buf), "test_fb_%d", i);
+		fb.name = buf;
+		fb.func = sw_source_varray;
+		ret = mappa_source_add(m, &fb, &source_id, token, 8);
+		if(ret != 0)
+			printf("MAP %d failed: sid %d\n", __LINE__, source_id);
+	}
 
 	/* verify removal */
 	ret = mappa_source_remove(m, source_id);
@@ -121,23 +171,19 @@ register_feedback(struct mappa_t *m, void *userdata)
 
 int main(int argc, char **argv)
 {
-	//tests();
-
-	int ret;
 	signal(SIGINT, sighndlr);
 
 	/* create mappa context */
-	struct mappa_t *m = mappa_create(NULL);
+	struct mappa_t *m = mappa_create(NULL, "ctlra_mappa", 0);
 	if(!m)
 		return -1;
 
+	/* run first to enable device grabbing, to test target hotplug */
+	mappa_iter(m);
+	mappa_iter(m);
+
 	register_targets(m, 0x0);
 	register_feedback(m, 0x0);
-
-	ret = mappa_add_config_file(m, "mappa_mmk3.ini");
-	if(ret)
-		printf("%s %d: load bindings failed, ret %d\n",
-		       __func__, __LINE__, ret);
 
 	/* loop for testing */
 	while(!done) {
@@ -161,7 +207,7 @@ void tests(void)
 	printf("errno %d\n", errno);
 	assert(!ret);
 
-	struct mappa_t *m = mappa_create(NULL);
+	struct mappa_t *m = mappa_create(NULL, "test", "no_unique");
 	assert(m);
 
 
