@@ -51,7 +51,38 @@ ctlra_screen_cairo_565_to_dev(uint8_t *device_data, uint32_t device_bytes,
 	uint16_t *pixels_565 = (uint16_t *)device_data;
 
 /* Use Vector implementation */
-#ifdef __AVX2__
+#ifdef __AVX512F__
+	/* AVX-512 version:
+	 *  - Same steps as SSE: one load, two shifts, one or, store
+	 *  - Manually unrolled 4x to diminish loop overhead
+	 */
+	for(int i = 0; i < (480 * 272); i += 128) {
+		__m512i input1 = _mm512_loadu_si512((__m512i *)&rgb565[i+ 0]);
+		__m512i input2 = _mm512_loadu_si512((__m512i *)&rgb565[i+32]);
+		__m512i input3 = _mm512_loadu_si512((__m512i *)&rgb565[i+64]);
+		__m512i input4 = _mm512_loadu_si512((__m512i *)&rgb565[i+96]);
+
+		__m512i high1 = _mm512_slli_epi16(input1, 8);
+		__m512i low1  = _mm512_srli_epi16(input1, 8);
+		__m512i blend1 = _mm512_or_si512(high1, low1);
+		_mm512_storeu_si512((__m512i *)&pixels_565[i], blend1);
+
+		__m512i high2 = _mm512_slli_epi16(input2, 8);
+		__m512i low2  = _mm512_srli_epi16(input2, 8);
+		__m512i blend2 = _mm512_or_si512(high2, low2);
+		_mm512_storeu_si512((__m512i *)&pixels_565[i+32], blend2);
+
+		__m512i high3 = _mm512_slli_epi16(input3, 8);
+		__m512i low3  = _mm512_srli_epi16(input3, 8);
+		__m512i blend3 = _mm512_or_si512(high3, low3);
+		_mm512_storeu_si512((__m512i *)&pixels_565[i+64], blend3);
+
+		__m512i high4 = _mm512_slli_epi16(input4, 8);
+		__m512i low4  = _mm512_srli_epi16(input4, 8);
+		__m512i blend4 = _mm512_or_si512(high4, low4);
+		_mm512_storeu_si512((__m512i *)&pixels_565[i+96], blend4);
+	}
+#elif __AVX2__
 	/* AVX2 version:
 	 *  - See notes on SSE below
 	 *  - Avx2 has 256 bit registers, so 2X as effective
