@@ -229,14 +229,15 @@ void tcc_event_proxy(struct ctlra_dev_t* dev,
 	 * neither Ctlra or the App need to know what happend */
 	struct script_t *script = userdata;
 
-	static int do_once;
-	if(!do_once) {
+#if 0
+	static int do_once; if(!do_once) {
 		int32_t ret = ctlra_dev_screen_register_callback(dev, 30,
 								 tcc_screen_redraw_proxy,
 								 script);
 		if(ret)
 			printf("WARNING: Failed to register screen callback\n");
 	}
+#endif
 
 
 	/* Check if we need to recompile script based on modified time of
@@ -272,13 +273,20 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	script_free(script);
 }
 
-int accept_dev_func(const struct ctlra_dev_info_t *info,
-                    ctlra_event_func *event_func,
-                    ctlra_feedback_func *feedback_func,
-                    ctlra_remove_dev_func *remove_func,
-                    void **userdata_for_event_func,
+
+int accept_dev_func(struct ctlra_t *ctlra,
+		    const struct ctlra_dev_info_t *info,
+		    struct ctlra_dev_t *dev,
                     void *userdata)
 {
+	/* here we use the Ctlra APIs to set callback functions to get
+	 * events and send feedback updates to/from the device */
+	ctlra_dev_set_event_func(dev, tcc_event_proxy);
+	ctlra_dev_set_feedback_func(dev, tcc_feedback_func);
+	//ctlra_dev_set_screen_feedback_func(dev, simple_screen_redraw_func);
+	//ctlra_dev_set_remove_func(dev, remove_dev_func);
+	ctlra_dev_set_callback_userdata(dev, userdata);
+
 	static int accepted;
 
 	/* Just one ctlra for now */
@@ -313,10 +321,6 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	printf("tcc: accepting %s %s, script = %p\n",
 	       info->vendor, info->device, script);
-	*event_func = tcc_event_proxy;
-	*feedback_func = tcc_feedback_func;
-	*remove_func = remove_dev_func;
-	*userdata_for_event_func = script;
 
 	accepted = 1;
 

@@ -8,6 +8,7 @@ typedef int int32_t;
 #include "loopa.h"
 #include "event.h"
 
+
 #define HIGH ((uint32_t)-1)
 #define LOW  ((uint32_t)0xef000000)
 
@@ -149,7 +150,7 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 {
 	int flush = 1;
 
-	memset(pixel_data, 0, bytes);
+	//memset(pixel_data, 0, bytes);
 
 	static int flush_1;
 
@@ -173,7 +174,7 @@ int script_screen_redraw_func(struct ctlra_dev_t *dev, uint32_t screen_idx,
 	if(screen_idx == 1) {
 		if(!flush_1) {
 			flush_1 = 1;
-			printf("blit screen %d\n", screen_idx);
+			//printf("blit screen %d\n", screen_idx);
 			return 1;
 		}
 		return 0;
