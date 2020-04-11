@@ -21,7 +21,7 @@ if avtka_dep.found()
   ctlra_lib_deps_impl += avtka_dep
 endif
 
-if cairo_dep.found()
+if cairo_dep.found() and avtka_dep.found()
   ctlra_src += files('ctlra_cairo.c')
 endif
 
