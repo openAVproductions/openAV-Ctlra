@@ -532,8 +532,9 @@ ctlra_build_avtka_ui(struct cavtka_t *dev,
 				.h = ai.h,
 				.px_x = item->params[0],
 				.px_y = item->params[1],
-				/* TODO: detect screen caps */
-				.flags_rgb = 1,
+				/* TODO: detect screen caps from device,
+				 * and set appropriate flag here */
+				.flags_px_rgb_16_565 = 1,
 			};
 			int32_t screen_id = avtka_screen_create(a, &opts);
 			if(screen_id < 0)

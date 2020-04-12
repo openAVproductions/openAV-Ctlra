@@ -142,15 +142,23 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	 * the cairo_surface_t from the AVTKA UI instance (it provides that
 	 * function for you :) and call the Cairo->DeviceScreen helper
 	 */
+	printf("screen: %d, pixel data %p\n", screen_idx, pixel_data);
 
 	/* TODO: how to get an appropriate FORMAT HEIGHT WIDTH? */
+	/* TODO: cleanup img / cr alloc/dealloc */
 	static cairo_surface_t *img;
 	static cairo_t *cr;
 	if(!img) {
-		/* TODO: cleanup img / cr */
-		//img = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
-		img = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565,
-						 480, 272);
+
+/* input format doesn't matter, it is abstracted and converted to the
+ * required pixel format for the device anyway before being written to
+ * the provided data pointer.
+ */
+#if 1
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 480, 272);
+#else
+		img = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565, 480, 272);
+#endif
 		cr = cairo_create(img);
 	}
 
@@ -159,41 +167,44 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	cairo_rectangle(cr, 0, 0, 480, 272);
 	cairo_fill(cr);
 
+	/* move blocks down for each screen just to have a difference */
+	int y = 32 + (50 * screen_idx);
+
 	int x = 32;
 	int xoff = 62;
 
-	cairo_set_source_rgb(cr, 1, 0, 0);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 0, 1, 0);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 0, 0, 1);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 1, 1, 0);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 1, 0, 1);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 0, 1, 1);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
 	cairo_set_source_rgb(cr, 1, 1, 1);
-	cairo_rectangle(cr, x, 20, 40, 40);
+	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
 
@@ -202,6 +213,11 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	} else {
 		/* draw screen B */
 	}
+
+	char buf[64];
+	snprintf(buf, 64, "ctlra_screen_%d.png", screen_idx);
+	cairo_surface_write_to_png(img, buf);
+
 	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
 				     redraw_zone, img);
 
