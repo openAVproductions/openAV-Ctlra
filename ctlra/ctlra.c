@@ -317,7 +317,7 @@ int32_t ctlra_screen_get_data(struct ctlra_dev_t *dev,
 {
 	if(dev && dev->screen_get_data)
 		return dev->screen_get_data(dev, screen_idx, pixels, bytes,
-					    redraw, flush);
+				     redraw, flush);
 	return -ENOTSUP;
 }
 
@@ -511,6 +511,8 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 					continue;
 				}
 
+				uint8_t px_end_before = pixel[bytes];
+
 				struct ctlra_screen_zone_t redraw;
 				int32_t flush = dev_iter->screen_redraw_cb(
 					dev_iter,
@@ -519,6 +521,14 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 					bytes,
 					&redraw,
 					dev_iter->screen_redraw_ud);
+
+				uint8_t px_end_after = pixel[bytes];
+				if (px_end_before != px_end_after) {
+					CTLRA_ERROR(ctlra,
+"Application over-runs pixels[] by at least %d. "
+"Please file bug on application screen drawing!\n", 1);
+				}
+
 				if(flush)
 					ctlra_screen_get_data(dev_iter,
 							      i,

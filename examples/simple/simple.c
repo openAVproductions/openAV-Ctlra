@@ -220,6 +220,11 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
 				     redraw_zone, img);
 
+#if 0
+	static uint32_t counter;
+	pixel_data[bytes] = counter++;
+#endif
+
 	/* return 1 to flush the screens - helper function above already
 	 * handles this.
 	 */
