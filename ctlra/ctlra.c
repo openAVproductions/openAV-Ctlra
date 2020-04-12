@@ -453,6 +453,50 @@ int ctlra_probe(struct ctlra_t *ctlra,
 	return num_accepted;
 }
 
+static void
+ctlra_impl_screen_redraw(struct ctlra_t *ctlra,
+			 struct ctlra_dev_t *dev_iter,
+			 uint32_t screen_idx)
+{
+	uint8_t *pixel;
+	uint32_t bytes;
+	struct ctlra_screen_zone_t zone_redraw;
+
+	int32_t err = ctlra_screen_get_data(dev_iter, screen_idx,
+					    &pixel, &bytes,
+					    &zone_redraw, 0);
+	if(err) {
+		return;
+	}
+
+	if(pixel == 0) {
+		CTLRA_WARN(ctlra, "pixels[] = %p, programming error\n",
+				 pixel);
+		return;
+	}
+
+	uint8_t px_end_before = pixel[bytes];
+
+	struct ctlra_screen_zone_t redraw;
+	int32_t flush = dev_iter->screen_redraw_cb(dev_iter, screen_idx,
+						   pixel, bytes, &redraw,
+						   dev_iter->screen_redraw_ud);
+
+	uint8_t px_end_after = pixel[bytes];
+	if(px_end_before != px_end_after) {
+		CTLRA_ERROR(ctlra,
+"Application over-runs pixels[] by at least %d. "
+"Please file bug on application screen drawing!\n", 1);
+	}
+
+	if(!flush)
+		return;
+
+	/* Flush data to screen */
+	ctlra_screen_get_data(dev_iter, screen_idx, &pixel, &bytes,
+			      &redraw, flush);
+}
+
 void ctlra_idle_iter(struct ctlra_t *ctlra)
 {
 	ctlra_impl_usb_idle_iter(ctlra);
@@ -493,49 +537,7 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
 			dev_iter->screen_last_redraw = now;
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
-				uint8_t *pixel;
-				uint32_t bytes;
-
-				struct ctlra_screen_zone_t zone_redraw;
-				int32_t ret = ctlra_screen_get_data(dev_iter,
-								    i,
-								    &pixel,
-								    &bytes,
-								    &zone_redraw,
-								    0);
-				if(ret)
-					continue;
-
-				if(pixel == 0) {
-					printf("pixel == NULL\n");
-					continue;
-				}
-
-				uint8_t px_end_before = pixel[bytes];
-
-				struct ctlra_screen_zone_t redraw;
-				int32_t flush = dev_iter->screen_redraw_cb(
-					dev_iter,
-					i, /* screen idx */
-					pixel,
-					bytes,
-					&redraw,
-					dev_iter->screen_redraw_ud);
-
-				uint8_t px_end_after = pixel[bytes];
-				if (px_end_before != px_end_after) {
-					CTLRA_ERROR(ctlra,
-"Application over-runs pixels[] by at least %d. "
-"Please file bug on application screen drawing!\n", 1);
-				}
-
-				if(flush)
-					ctlra_screen_get_data(dev_iter,
-							      i,
-							      &pixel,
-							      &bytes,
-							      &redraw,
-							      flush);
+				ctlra_impl_screen_redraw(ctlra, dev_iter, i);
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;

@@ -172,7 +172,7 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	int x = 32;
 	int xoff = 62;
 
-	cairo_set_source_rgb(cr, 1, 1, 1);
+	cairo_set_source_rgb(cr, 1, 0, 0);
 	cairo_rectangle(cr, x, y, 40, 40);
 	cairo_fill(cr);
 	x += xoff;
