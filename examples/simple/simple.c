@@ -14,8 +14,6 @@ static uint32_t led;
 static uint32_t led_set;
 static int redraw_screens = 1;
 
-static float xoff;
-
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	/* feedback like LEDs and Screen drawing based on application
@@ -77,13 +75,12 @@ void simple_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
 		case CTLRA_EVENT_ENCODER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_ENCODER,
 						   e->encoder.id);
-			printf("[%s] encoder %s (%d)\n",
+			printf("[%s] encoder %s (%d) type = %s\n",
 			       e->encoder.delta > 0 ? " ->" : "<- ",
-			       name, e->button.id);
-			if(e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT) {
-				xoff += e->encoder.delta_float * 100;
-				printf("xoff = %f\n", xoff);
-			} break;
+			       name, e->encoder.id,
+			       e->encoder.flags & CTLRA_EVENT_ENCODER_FLAG_FLOAT ?
+					"smooth" : "notched");
+			break;
 
 		case CTLRA_EVENT_SLIDER:
 			name = ctlra_info_get_name(&info, CTLRA_EVENT_SLIDER,
