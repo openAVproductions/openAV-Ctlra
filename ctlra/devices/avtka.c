@@ -246,16 +246,12 @@ avtka_screen_get_data(struct ctlra_dev_t *base,
 	if(!pixels || !bytes)
 		return -1;
 
-	/* TODO update Ctlra API to return screen data for ID */
-	uint8_t screen = 0;
-	if(screen >= CTLRA_NUM_SCREENS_MAX)
+	if(screen_idx >= CTLRA_NUM_SCREENS_MAX)
 		return -2;
 
-	struct avtka_screent_t *scr = &dev->screen[screen];
-	*pixels = avtka_screen_get_data_ptr(a, screen);
-	/* TODO: fix hard coded size */
+	struct avtka_screent_t *scr = &dev->screen[screen_idx];
+	*pixels = avtka_screen_get_data_ptr(a, screen_idx);
 	*bytes = ((scr->h_px * scr->w_px) * scr->bits_per_pixel) / 8;
-	//*bytes = (128 * 64 / 8);
 
 	return 0;
 }

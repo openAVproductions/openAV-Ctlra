@@ -142,7 +142,6 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	 * the cairo_surface_t from the AVTKA UI instance (it provides that
 	 * function for you :) and call the Cairo->DeviceScreen helper
 	 */
-	printf("screen: %d, pixel data %p\n", screen_idx, pixel_data);
 
 	/* TODO: how to get an appropriate FORMAT HEIGHT WIDTH? */
 	/* TODO: cleanup img / cr alloc/dealloc */
