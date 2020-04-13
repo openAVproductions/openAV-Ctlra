@@ -10,10 +10,10 @@
 
 #include "immintrin.h"
 
+#ifdef __SSE4_2__
 // warning, type promo through args
-static inline __attribute__((always_inline))
-void pixel_convert_from_argb_vec(uint32_t input_stride,
-				 uint8_t *in_888, uint8_t *out_565)
+static inline __attribute__((always_inline)) void
+pixel_convert_from_argb_vec(uint32_t input_stride, uint8_t *in_888, uint8_t *out_565)
 {
 	/* Load 16B of pixels RGB 888 bits format */
 	/* TODO: support ARGB? */
@@ -99,39 +99,32 @@ void pixel_convert_from_argb_vec(uint32_t input_stride,
 
 	_mm_storeu_si128((void*)out_565, v_u16_byteswap);
 }
+#endif
 
 void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
 {
-	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
-	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
-	b = ((int)((b / 255.0) * 31)) & ((1<<5)-1);
-
-	uint16_t combined = (b | g << 5 | r << 11);
-	data[0] = combined >> 8;
-	data[1] = combined & 0xff;
+	uint16_t r_ = (((uint16_t)r) * 254) >> 11;
+	uint16_t g_ = ((((uint16_t)g) * 254) >> 5) & (((1 << 6)-1) << 5);
+	uint16_t b_ = (((uint16_t)b) * 254) & (((1 << 5)-1) << 11);
+	uint16_t rgb565 = b_ | g_ | r_;
+	uint16_t *out = (uint16_t *)data;
+	*out = (rgb565 << 8) | (rgb565 >> 8);
 }
 
+void
+ctlra_screen_cairo_888_to_dev(uint8_t *device_data, uint32_t device_bytes,
+			      uint8_t *input_data, uint32_t width,
+			      uint32_t height, uint32_t input_stride);
+
 // Scalar Today: 44 cycles on ICL
-static __attribute__((noinline)) void
+__attribute__((noinline)) void
 ctlra_screen_cairo_888_to_dev(uint8_t *device_data, uint32_t device_bytes,
 			      uint8_t *input_data, uint32_t width,
 			      uint32_t height, uint32_t input_stride)
 {
 	uint16_t *write_head = (uint16_t*)device_data;
 
-#if 0
-	/* Copy the Cairo pixels to the usb buffer, taking the
-	 * stride of the cairo memory into account, converting from
-	 * RGB into the BGR that the screen expects */
-	for(int j = 0; j < height; j++) {
-		for(int i = 0; i < width; i++) {
-			uint8_t *p = &input_data[(j * input_stride) + (i*4)];
-			int idx = (j * width) + (i);
-			pixel_convert_from_argb(p[2], p[1], p[0],
-						(uint8_t*)&write_head[idx]);
-		}
-	}
-#else
+#if 0 /* #ifdef __SSE4_2__ */
 	int stride = input_stride / width;
 
 	if(stride == 4) {
@@ -152,6 +145,19 @@ ctlra_screen_cairo_888_to_dev(uint8_t *device_data, uint32_t device_bytes,
 				pixel_convert_from_argb_vec(stride, &p[0],
 							(uint8_t*)&write_head[idx]);
 			}
+		}
+	}
+
+#else
+	/* Copy the Cairo pixels to the usb buffer, taking the
+	 * stride of the cairo memory into account, converting from
+	 * RGB into the BGR that the screen expects */
+	for(int j = 0; j < height; j++) {
+		for(int i = 0; i < width; i++) {
+			uint8_t *p = &input_data[(j * input_stride) + (i*4)];
+			int idx = (j * width) + (i);
+			pixel_convert_from_argb(p[2], p[1], p[0],
+						(uint8_t*)&write_head[idx]);
 		}
 	}
 #endif
