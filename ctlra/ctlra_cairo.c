@@ -10,8 +10,26 @@
 
 #include "immintrin.h"
 
-static inline
-void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
+// warning, type promo through args
+static inline __attribute__((always_inline))
+void pixel_convert_from_argb(uint16_t r, uint16_t g, uint16_t b, uint8_t *data)
+{
+#if 1
+	r = (r * 254) >> 11;
+	g = (g * 254) >> 10;
+	b = (b * 254) >> 11;
+#else
+	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
+	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
+	b = ((int)((b / 255.0) * 31)) & ((1<<5)-1);
+#endif
+
+	uint16_t combined = (b | g << 5 | r << 11);
+	data[0] = combined >> 8;
+	data[1] = combined & 0xff;
+}
+
+void pixel_convert_from_argb_old(int r, int g, int b, uint8_t *data)
 {
 	r = ((int)((r / 255.0) * 31)) & ((1<<5)-1);
 	g = ((int)((g / 255.0) * 63)) & ((1<<6)-1);
@@ -22,7 +40,8 @@ void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
 	data[1] = combined & 0xff;
 }
 
-static inline void
+// Scalar Today: 44 cycles on ICL
+static __attribute__((noinline)) void
 ctlra_screen_cairo_888_to_dev(uint8_t *device_data, uint32_t device_bytes,
 			      uint8_t *input_data, uint32_t width,
 			      uint32_t height, uint32_t input_stride)
@@ -37,6 +56,88 @@ ctlra_screen_cairo_888_to_dev(uint8_t *device_data, uint32_t device_bytes,
 			int idx = (j * width) + (i);
 			pixel_convert_from_argb(p[2], p[1], p[0],
 						(uint8_t*)&write_head[idx]);
+
+#if 1
+			/* Load 16B of pixels RGB 888 bits format */
+			/* TODO: support ARGB? */
+			__m128i v_in_px = _mm_loadu_si128((void *)&p[0]);
+
+			/* Convert u8 rgb values into u16's for conversion
+			 * to 565, which needs multiplies */
+			const __m128i v_zeros = _mm_setzero_si128();
+			const __m128i v_254_u16 = _mm_set1_epi16(254);
+
+			static const uint8_t col_to_u16[16] = {
+				   0, 0xFF,    3, 0xFF,
+				   6, 0xFF,    9, 0xFF,
+				  12, 0xFF, 0xFF, 0xFF,
+				0xFF, 0xFF, 0xFF, 0xFF,
+			};
+			__m128i v_col_to_u16 = _mm_loadu_si128((void *)col_to_u16);
+
+			/* Red */
+			__m128i v_u16_r = _mm_shuffle_epi8(v_in_px, v_col_to_u16);
+			/* Green */
+			v_in_px = _mm_alignr_epi8(v_in_px, v_in_px, 1);
+			__m128i v_u16_g = _mm_shuffle_epi8(v_in_px, v_col_to_u16);
+			/* Blue */
+			v_in_px = _mm_alignr_epi8(v_in_px, v_in_px, 1);
+			__m128i v_u16_b = _mm_shuffle_epi8(v_in_px, v_col_to_u16);
+
+			/* Multiply the converted u16 values to 65k */
+			__m128i v_u16_mul_r = _mm_mullo_epi16(v_u16_r, v_254_u16);
+			__m128i v_u16_mul_g = _mm_mullo_epi16(v_u16_g, v_254_u16);
+			__m128i v_u16_mul_b = _mm_mullo_epi16(v_u16_b, v_254_u16);
+
+			static const uint16_t green_mask[8] = {
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+				((1 << 6) - 1) << 5,
+			};
+			__m128i v_green_mask = _mm_loadu_si128((void *)green_mask);
+
+			/* Shift u16 to right, clearing high 11 bits */
+			__m128i v_u16_done_red = _mm_srli_epi16(v_u16_mul_r, 11);
+
+			/* Shift Green to middle 6 bits, use mask to clear */
+			__m128i v_u16_done_green = _mm_srli_epi16(v_u16_mul_g, 5);
+			v_u16_done_green = _mm_and_si128(v_u16_done_green, v_green_mask);
+
+			/* Blue: mask with ANDNOT green mask, leave in place */
+			__m128i v_u16_done_blue = _mm_andnot_si128(v_green_mask, v_u16_mul_b);
+
+			/* OR together the masked results */
+			__m128i v_u16_done = _mm_or_si128(v_u16_done_green,
+							v_u16_done_blue);
+			v_u16_done = _mm_or_si128(v_u16_done, v_u16_done_red);
+
+			/* Byteswap each pixel */
+			static const uint8_t byteswap[16] = {
+				1, 0, 3, 2,
+				5, 4, 7, 6,
+				9, 8, 11, 10,
+				13, 12, 15, 14,
+			};
+			__m128i v_byteswap_mask = _mm_loadu_si128((void *)byteswap);
+			__m128i v_u16_byteswap = _mm_shuffle_epi8(v_u16_done, v_byteswap_mask);
+
+			uint16_t tmp[16];
+			_mm_storeu_si128((void*)tmp, v_u16_byteswap);
+			if(write_head[idx] != 0 && tmp[0] != 0) {
+				if(0 && write_head[idx] != tmp[0]) {
+					printf("sca %x, vec %x : delta %d\n",
+					       write_head[idx], tmp[0],
+					       write_head[idx] - tmp[0]);
+				}
+			}
+			write_head[idx] = tmp[0];
+#endif
+
 		}
 	}
 }

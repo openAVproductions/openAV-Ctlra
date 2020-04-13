@@ -212,7 +212,7 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 
 	char buf[64];
 	snprintf(buf, 64, "ctlra_screen_%d.png", screen_idx);
-	cairo_surface_write_to_png(img, buf);
+	//cairo_surface_write_to_png(img, buf);
 
 	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
 				     redraw_zone, img);
