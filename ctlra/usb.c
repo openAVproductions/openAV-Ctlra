@@ -367,8 +367,9 @@ int ctlra_dev_impl_usb_open_interface(struct ctlra_dev_t *ctlra_dev,
 	/* now that we've found the device, open the handle */
 	int ret = libusb_open(usb_dev, &handle);
 	if(ret != LIBUSB_SUCCESS) {
-		CTLRA_ERROR(ctlra, "Error in opening interface, dev %s: %s\n",
-		       ctlra_dev->info.device, libusb_strerror(ret));
+		CTLRA_ERROR(ctlra,
+		       "Error in opening interface, dev %s: interface %d, root cause: %s\n",
+		       ctlra_dev->info.device, interface, libusb_strerror(ret));
 		return -1;
 	}
 
