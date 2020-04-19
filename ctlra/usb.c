@@ -840,7 +840,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 
 	libusb_context *ctx = ctlra->ctx;
 
-	int ret = libusb_handle_events_completed(ctlra->ctx, 0);
+	int ret = libusb_handle_events_timeout_completed(ctlra->ctx, &tv, 0);
 	int32_t inf_cancels = dev->usb_xfer_counts[USB_XFER_INFLIGHT_CANCEL];
 	if(ret || inf_cancels) {
 		CTLRA_WARN(ctlra,
