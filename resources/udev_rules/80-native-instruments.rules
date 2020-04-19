@@ -1,0 +1,5 @@
+# Native Instruments USB device permissions to users
+
+# Machine Mk3 HID (kernel=hidraw) and Bulk (SUBSYSTEM=usb) endpoints
+KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1600", GROUP="plugdev" MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1600", GROUP="plugdev" MODE="0660"
