@@ -103,9 +103,9 @@ pixel_convert_from_argb_vec(uint32_t input_stride, uint8_t *in_888, uint8_t *out
 
 void pixel_convert_from_argb(int r, int g, int b, uint8_t *data)
 {
-	uint16_t r_ = (((uint16_t)r) * 254) >> 11;
+	uint16_t r_ = (((uint16_t)r) * 254) & (((1 << 5)-1) << 11);
 	uint16_t g_ = ((((uint16_t)g) * 254) >> 5) & (((1 << 6)-1) << 5);
-	uint16_t b_ = (((uint16_t)b) * 254) & (((1 << 5)-1) << 11);
+	uint16_t b_ = (((uint16_t)b) * 254) >> 11;
 	uint16_t rgb565 = b_ | g_ | r_;
 	uint16_t *out = (uint16_t *)data;
 	*out = (rgb565 << 8) | (rgb565 >> 8);
