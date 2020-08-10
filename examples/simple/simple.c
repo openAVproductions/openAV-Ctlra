@@ -12,6 +12,7 @@
 static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
+static int screens_enabled = 1;
 static int redraw_screens = 1;
 
 void simple_feedback_func(struct ctlra_dev_t *dev, void *d)
@@ -133,6 +134,8 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 				  struct ctlra_screen_zone_t *redraw_zone,
 				  void *userdata)
 {
+	if (!screens_enabled)
+		return 0;
 
 	/* do drawing using your favorite toolkit here: Cairo / QT etc.
 	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out
@@ -251,6 +254,10 @@ int main(int argc, char **argv)
 	if(argc > 1) {
 		led = atoi(argv[1]);
 		led_set = 1;
+	}
+	if(argc > 2) {
+		screens_enabled = 0;
+		printf("screens redrawing disabled.\n");
 	}
 
 	signal(SIGINT, sighndlr);
