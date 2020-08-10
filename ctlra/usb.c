@@ -817,9 +817,10 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
 
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 10;
+	struct timeval tv = {
+		.tv_sec = 0,
+		.tv_usec = 1,
+	};
 
 	/* if there are inflight writes, these are often to disable any
 	 * LEDs or lights on the device. If so, wait a bit, to be nice :)
@@ -828,7 +829,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 	do {
 		libusb_handle_events_timeout(ctlra->ctx, &tv);
 	} while(dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE] &&
-		wait_count++ < 1000);
+		wait_count++ < 10000);
 
 	int32_t inf_writes = dev->usb_xfer_counts[USB_XFER_INFLIGHT_WRITE];
 	if(inf_writes)
@@ -878,10 +879,12 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 		"Inflight Cancel",
 	};
 	for(int i = 0; i < USB_XFER_COUNT; i++) {
-		CTLRA_INFO(ctlra, "[%s] usb %s count (type %d) = %d\n",
-			   dev->info.device, usb_xfer_str[i], i,
+		CTLRA_INFO(ctlra, "[%s] usb %s count = %d\n",
+			   dev->info.device, usb_xfer_str[i],
 			   dev->usb_xfer_counts[i]);
 	}
+	CTLRA_INFO(ctlra, "[%s] usb writes drain time = %d usecs.\n",
+		   dev->info.device, wait_count);
 }
 
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra)
