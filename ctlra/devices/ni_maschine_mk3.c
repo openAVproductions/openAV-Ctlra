@@ -947,7 +947,11 @@ ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 			printf("px idx = %d\n", px_idx);
 			uint8_t *px_in_data = (uint8_t *)&dev->screen_left.pixels[px_idx];
 
-			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			if (0) {
+				/* Debugging usage */
+				ni_screen_var_px(cmd, &idx, 12, px_in_data);
+			}
+
 			ni_screen_line(cmd, &idx, 12, 0b11111100000, 0b11111100000);
 			//ni_screen_var_px(cmd, &idx, 12, px_in_data);
 			//ni_screen_var_px(cmd, &idx, 12, test_px);
