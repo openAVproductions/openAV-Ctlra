@@ -606,15 +606,12 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 				  uint32_t endpoint, uint8_t *data,
 				  uint32_t size)
 {
-	struct ni_maschine_mk3_t *dev =
-		(struct ni_maschine_mk3_t *)base;
-	static double worst_poll;
+	struct ni_maschine_mk3_t *dev = (struct ni_maschine_mk3_t *)base;
 	int32_t nbytes = size;
 
 	int count = 0;
 
 	uint8_t *buf = data;
-
 	switch(nbytes) {
 	case 81: {
 		/* Return of LED state, after update written to device */
@@ -626,23 +623,14 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		/* pedal */
 		int pedal = buf[3] > 0;
 		if(pedal != dev->pedal) {
-			printf("PEDAL: %d, inv = %d\n", pedal, !pedal);
 			struct ctlra_event_t event[] = {
 				{ .type = CTLRA_EVENT_BUTTON,
 				  .button  = {
 					.id = BUTTONS_SIZE,
 					.pressed = pedal, },
 				},
-				{ .type = CTLRA_EVENT_BUTTON,
-				  .button  = {
-					.id = BUTTONS_SIZE + 1,
-					.pressed = !pedal, },
-				}
 			};
 			struct ctlra_event_t *e = &event[0];
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-			e = &event[1];
 			dev->base.event_func(&dev->base, 1, &e,
 					     dev->base.event_func_userdata);
 			dev->pedal = pedal;
