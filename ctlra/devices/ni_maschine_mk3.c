@@ -43,6 +43,7 @@
 
 // Uncomment to debug pad on/off
 //#define CTLRA_MK3_PADS 1
+//#define CTLRA_MK3_PRESSURE_DEBUG 1
 
 #define CTLRA_DRIVER_VENDOR (0x17cc)
 #define CTLRA_DRIVER_DEVICE (0x1600)
@@ -489,7 +490,8 @@ static const uint8_t pad_cols[] = {
 
 static void
 ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
-				uint8_t *buf)
+				uint8_t *buf,
+				uint8_t msg_idx)
 {
 	/* This function decodes a single 64 byte pads message. See
 	 * comments in calling code to understand how sets work */
@@ -507,7 +509,7 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 
 	/* pre-process pressed pads into bitmask. Keep state from before,
 	 * the messages will update only those that have changed */
-	uint16_t pad_pressures[16];
+	uint16_t pad_pressures[16] = {0};
 	uint16_t rpt_pressed = dev->pad_hit;
 	int flush_lights = 0;
 	uint8_t d1, d2;
@@ -537,8 +539,20 @@ ni_maschine_mk3_pads_decode_set(struct ni_maschine_mk3_t *dev,
 		/* detect state change */
 		int current = (dev->pad_hit & (1 << i));
 		int new     = (rpt_pressed  & (1 << i));
-		if(current == new)
+
+		int state_change = (current != new);
+		int pressure_change = pad_pressures[i] != dev->pad_pressures[i];
+
+#ifdef CTLRA_MK3_PRESSURE_DEBUG
+		printf("[msg_idx:%d]: pad %2d state (CH %d, V %d) pressure(CH %d, V %d)\n",
+		       msg_idx, i, state_change, new > 0, pressure_change,
+		       pad_pressures[i]);
+#endif
+
+		/* Pressure value */
+		if(current == new) {
 			continue;
+		}
 
 		/* rotate grid to match order on device (but zero
 		 * based counting instead of 1 based). */
@@ -597,8 +611,8 @@ ni_maschine_mk3_pads(struct ni_maschine_mk3_t *dev,
 	printf("\n");
 #endif
 	/* call for Set A, then again for set B */
-	ni_maschine_mk3_pads_decode_set(dev, &buf[0]);
-	ni_maschine_mk3_pads_decode_set(dev, &buf[64]);
+	ni_maschine_mk3_pads_decode_set(dev, &buf[0], 0);
+	ni_maschine_mk3_pads_decode_set(dev, &buf[64], 1);
 };
 
 void
