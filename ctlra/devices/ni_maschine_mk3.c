@@ -591,7 +591,7 @@ ni_maschine_mk3_pads(struct ni_maschine_mk3_t *dev,
 	for(int i = 0; i < 64; i++) {
 		printf("%02x ", buf[i]);
 		printf("%02x ", buf[i+64]);
-		if(i > 0 && buf[i] == 0)
+		if(i > 1 && buf[i] == 0)
 			break;
 	}
 	printf("\n");
