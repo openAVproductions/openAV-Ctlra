@@ -56,6 +56,11 @@ configure_file(input : 'examples/loopa/loopa_mk3.c',
     output : 'loopa_mk3.c',
     configuration : configuration_data())
 
+# Copy UDEV rules to filesystem
+udev_rules = '80-native-instruments.rules'
+udev_paths = join_paths('resources', join_paths('udev_rules', udev_rules))
+install_data(udev_paths, install_dir: '/etc/udev/rules.d')
+
 # generate configuration file
 configure_file(input : join_paths('ctlra', 'config.h.in'),
                output : 'config.h',
