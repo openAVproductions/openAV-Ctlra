@@ -813,6 +813,28 @@ int ctlra_dev_impl_usb_bulk_write(struct ctlra_dev_t *dev, uint32_t idx,
 #endif /* CTLRA_USE_ASYNC_XFER */
 }
 
+void ctlra_dev_usb_stats_debug(struct ctlra_dev_t *dev)
+{
+	struct ctlra_t *ctlra = dev->ctlra_context;
+	static const char *usb_xfer_str[] = {
+		"Int. Read",
+		"Int. Write",
+		"Bulk Write",
+		"Cancelled",
+		"Timeout",
+		"Error",
+		"Bulk Error",
+		"Inflight Read",
+		"Inflight Write",
+		"Inflight Cancel",
+	};
+	for(int i = 0; i < USB_XFER_COUNT; i++) {
+		CTLRA_INFO(ctlra, "[%s] usb %s count = %d\n",
+			   dev->info.device, usb_xfer_str[i],
+			   dev->usb_xfer_counts[i]);
+	}
+}
+
 void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 {
 	struct ctlra_t *ctlra = dev->ctlra_context;
@@ -866,23 +888,7 @@ void ctlra_dev_impl_usb_close(struct ctlra_dev_t *dev)
 		}
 	}
 
-	static const char *usb_xfer_str[] = {
-		"Int. Read",
-		"Int. Write",
-		"Bulk Write",
-		"Cancelled",
-		"Timeout",
-		"Error",
-		"Bulk Error",
-		"Inflight Read",
-		"Inflight Write",
-		"Inflight Cancel",
-	};
-	for(int i = 0; i < USB_XFER_COUNT; i++) {
-		CTLRA_INFO(ctlra, "[%s] usb %s count = %d\n",
-			   dev->info.device, usb_xfer_str[i],
-			   dev->usb_xfer_counts[i]);
-	}
+	ctlra_dev_usb_stats_debug(dev);
 	CTLRA_INFO(ctlra, "[%s] usb writes drain time = %d usecs.\n",
 		   dev->info.device, wait_count);
 }

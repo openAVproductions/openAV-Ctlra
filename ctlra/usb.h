@@ -40,6 +40,8 @@ int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra);
 void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra);
 /* For cleaning up the USB subsystem */
 void ctlra_impl_usb_shutdown(struct ctlra_t *ctlra);
+/* Print stats for a specific USB based dev_t */
+void ctlra_dev_usb_stats_debug(struct ctlra_dev_t *dev);
 
 
 #endif /* CTLRA_USB_H */

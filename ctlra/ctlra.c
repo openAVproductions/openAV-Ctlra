@@ -586,6 +586,8 @@ void ctlra_exit(struct ctlra_t *ctlra)
 	while(dev_iter) {
 		struct ctlra_dev_t *dev_free = dev_iter;
 		dev_iter = dev_iter->dev_list_next;
+
+		ctlra_dev_usb_stats_debug(dev_free);
 		ctlra_dev_disconnect(dev_free);
 	}
 
