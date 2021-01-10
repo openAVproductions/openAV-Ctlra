@@ -99,6 +99,12 @@ struct ctlra_create_opts_t {
 	/* debug verbosity */
 	uint8_t debug_level;
 
+	/* for any devices with screens, attempt to achieve this number of
+	 * frames-per-second. This means the screen_redraw() callback will
+	 * be called this fps value number of times per second.
+	 */
+	uint8_t screen_redraw_target_fps;
+
 	/* reserve lots of space */
 	uint8_t padding[62];
 };

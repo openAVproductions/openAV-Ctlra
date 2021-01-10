@@ -260,6 +260,9 @@ struct ctlra_t
 	/* List of devices that are banished */
 	struct ctlra_dev_t *banished_list;
 
+	/* For devices with screens, this is redraw timeout in nanos. */
+	uint64_t screen_redraw_ns;
+
 	/* context aware error message pointer */
 	const char *strerror;
 };

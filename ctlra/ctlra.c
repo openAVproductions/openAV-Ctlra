@@ -363,6 +363,7 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	} else {
 		/* defaults */
 		c->opts.debug_level = CTLRA_DEBUG_ERROR;
+		c->opts.screen_redraw_target_fps = 30;
 	}
 
 	/* ENV variables override application opts */
@@ -371,6 +372,8 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 		int debug_level = atoi(ctlra_debug);
 		c->opts.debug_level = debug_level;
 		CTLRA_INFO(c, "debug level: %d\n", debug_level);
+		CTLRA_INFO(c, "screen redraw target FPS: %d\n",
+			   c->opts.screen_redraw_target_fps);
 	}
 
 	if(ctlra_debug) {
@@ -378,6 +381,9 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 		CTLRA_INFO(c, "ALSA: %s\n", CTLRA_OPT_ALSA);
 		CTLRA_INFO(c, "Cairo: %s\n", CTLRA_OPT_CAIRO);
 	}
+
+	/* Setup/compute runtime values */
+	c->screen_redraw_ns = 1000000000.f / c->opts.screen_redraw_target_fps;
 
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
@@ -532,9 +538,9 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
 		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
 		uint64_t nanos_elapsed = secs * 1e9 + nanos;
-		uint64_t fps_in_nanos = 100000000;
 
-		if(dev_iter->screen_redraw_cb && fps_in_nanos < nanos_elapsed) {
+		if(dev_iter->screen_redraw_cb &&
+			ctlra->screen_redraw_ns <= nanos_elapsed) {
 			dev_iter->screen_last_redraw = now;
 			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 				ctlra_impl_screen_redraw(ctlra, dev_iter, i);

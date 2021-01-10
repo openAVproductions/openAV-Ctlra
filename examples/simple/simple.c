@@ -262,7 +262,11 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, sighndlr);
 
-	struct ctlra_t *ctlra = ctlra_create(NULL);
+	struct ctlra_create_opts_t opts = {
+		.screen_redraw_target_fps = 25,
+	};
+
+	struct ctlra_t *ctlra = ctlra_create(&opts);
 	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
 	printf("connected devices %d\n", num_devs);
 
