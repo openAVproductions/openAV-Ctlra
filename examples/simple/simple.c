@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_create_opts_t opts = {
-		.screen_redraw_target_fps = 25,
+		.screen_redraw_target_fps = 15,
 	};
 
 	struct ctlra_t *ctlra = ctlra_create(&opts);
