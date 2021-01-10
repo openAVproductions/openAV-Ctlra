@@ -529,21 +529,22 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 				dev_iter->event_func_userdata);
 		}
 
-		struct timespec now;
-		int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-		if(err)
-			CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
-				    err);
+		if(dev_iter->screen_redraw_cb) {
+			struct timespec now;
+			int err = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+			if(err)
+				CTLRA_ERROR(ctlra, "Error getting MONOTONIC_RAW clock: %d\n",
+					    err);
 
-		time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
-		long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
-		uint64_t nanos_elapsed = secs * 1e9 + nanos;
+			time_t secs = now.tv_sec  - dev_iter->screen_last_redraw.tv_sec;
+			long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
+			uint64_t nanos_elapsed = secs * 1e9 + nanos;
 
-		if(dev_iter->screen_redraw_cb &&
-			ctlra->screen_redraw_ns <= nanos_elapsed) {
-			dev_iter->screen_last_redraw = now;
-			for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
-				ctlra_impl_screen_redraw(ctlra, dev_iter, i);
+			if (ctlra->screen_redraw_ns <= nanos_elapsed) {
+				dev_iter->screen_last_redraw = now;
+				for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
+					ctlra_impl_screen_redraw(ctlra, dev_iter, i);
+				}
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
