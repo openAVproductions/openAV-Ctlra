@@ -1,5 +1,8 @@
 project('openav_ctlra', 'c',
-    default_options : ['c_std=gnu99'])
+    default_options : [
+      'c_std=gnu99',
+      'buildtype=release',
+    ])
 
 conf_data = configuration_data()
 conf_data.set('version', '0.1')
