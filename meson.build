@@ -9,21 +9,21 @@ conf_data.set('version', '0.1')
 
 cc  = meson.get_compiler('c')
 
-required_libs = ['libusb-1.0', 'alsa']
+required_libs = ['libusb-1.0'] 
 
 ctlra_lib_incs = []
 
-avtka_dep = dependency('openav_avtka', required: false)
 if(get_option('avtka') == true)
-    if (not avtka_dep.found())
-      avtka_git = subproject('avtka')
-      avtka_dep = avtka_git.get_variable('avtka_dep')
-    endif
+  avtka_dep = dependency('openav_avtka', required: false)
+  if (not avtka_dep.found())
+    avtka_git = subproject('avtka')
+    avtka_dep = avtka_git.get_variable('avtka_dep')
+  endif
 
-    add_project_arguments('-DHAVE_AVTKA', language : 'c')
-    required_libs += 'openav_avtka'
+  add_project_arguments('-DHAVE_AVTKA', language : 'c')
+  required_libs += 'openav_avtka'
+  ctlra_lib_deps = avtka_dep
 endif
-ctlra_lib_deps = avtka_dep
 
 if get_option('firmata')
   firmatac = subproject('firmatac')
@@ -37,13 +37,14 @@ else
   conf_data.set('HAVE_TCC', 0)
 endif
 
-midi_dep = dependency('alsa', required: false)
-if not midi_dep.found()
+if get_option('midi')
+  midi_dep = dependency('alsa', required: false)
+  if midi_dep.found()
+    required_libs += ['alsa']
+  endif
+else
   midi_dep = disabler()
-  message('MIDI = disabler')
 endif
-
-cairo_dep = dependency('cairo', required: false)
 
 subdir('ctlra')
 

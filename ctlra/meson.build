@@ -9,20 +9,20 @@ subdir('devices')
 cargs = ['-Wno-unused-variable']
 
 libusb = dependency('libusb-1.0')
+cairo_dep = dependency('cairo', required: false)
 gl     = dependency('gl', required: false)
 
 conf_data.set('libusb', libusb.found())
 conf_data.set('alsa', midi_dep.found())
 conf_data.set('cairo', cairo_dep.found())
 
-ctlra_lib_deps_impl = [libusb, gl]
+ctlra_lib_deps_impl = [libusb]
 
-if avtka_dep.found()
+if get_option('avtka')
   ctlra_lib_deps_impl += avtka_dep
-endif
-
-if cairo_dep.found() and avtka_dep.found()
-  ctlra_src += files('ctlra_cairo.c')
+  if cairo_dep.found() and avtka_dep.found()
+    ctlra_src += files('ctlra_cairo.c')
+  endif
 endif
 
 if get_option('firmata')
