@@ -4,10 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include <cairo/cairo.h>
-
 #include "ctlra.h"
-#include "ctlra_cairo.h"
 
 static volatile uint32_t done;
 static uint32_t led;
@@ -137,97 +134,28 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	if (!screens_enabled)
 		return 0;
 
-	/* do drawing using your favorite toolkit here: Cairo / QT etc.
-	 * Example: use OpenAV AVTKA toolkit for UI widgets, then pull out
-	 * the cairo_surface_t from the AVTKA UI instance (it provides that
-	 * function for you :) and call the Cairo->DeviceScreen helper
+	/* Draw images to pixel_data here. Note that the exact data-format
+	 * for the specific device is not abstracted from the application today
+	 * resulting in this callback giving raw access to the device's I/O
+	 * pixel format. For many devices this is RGB565 or BGR565, for 2 bytes
+	 * per pixel.
+	 *
+	 * It is likely that your UI toolkit of choice has routines to render
+	 * or draw to a buffer, and later retrieve those pixels. The pixel
+	 * format can be converted to the hardware pixel format here, and then
+	 * pushed to the device.
+	 *
+	 * It may seem a sub-optimal solution from a performance perspective
+	 * to have to convert between buffers, but in practice drawing in any
+	 * complex format such as RGB565 is way more CPU intensive than drawing
+	 * in RGB888 or RGBA8888.
+	 *
+	 * A number of lightweight and embeddable libraries exist for drawing
+	 * pixels, but if unsure of what to use, the Cairo library is
+	 * recommended for starting as it is widely used and packaged.
 	 */
 
-	/* TODO: how to get an appropriate FORMAT HEIGHT WIDTH? */
-	/* TODO: cleanup img / cr alloc/dealloc */
-	static cairo_surface_t *img;
-	static cairo_t *cr;
-	if(!img) {
-
-/* input format doesn't matter, it is abstracted and converted to the
- * required pixel format for the device anyway before being written to
- * the provided data pointer.
- */
-#if 1
-		img = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 480, 272);
-#else
-		img = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565, 480, 272);
-#endif
-		cr = cairo_create(img);
-	}
-
-	/* blank out bg */
-	cairo_set_source_rgb(cr, 0, 0, 0);
-	cairo_rectangle(cr, 0, 0, 480, 272);
-	cairo_fill(cr);
-
-	/* move blocks down for each screen just to have a difference */
-	int y = 32 + (50 * screen_idx);
-
-	int x = 32;
-	int xoff = 62;
-
-	cairo_set_source_rgb(cr, 1, 0, 0);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 0, 1, 0);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 0, 0, 1);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 1, 1, 0);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 1, 0, 1);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 0, 1, 1);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	cairo_set_source_rgb(cr, 1, 1, 1);
-	cairo_rectangle(cr, x, y, 40, 40);
-	cairo_fill(cr);
-	x += xoff;
-
-	if(screen_idx == 0) {
-		/* draw screen A */
-	} else {
-		/* draw screen B */
-	}
-
-	char buf[64];
-	snprintf(buf, 64, "ctlra_screen_%d.png", screen_idx);
-	//cairo_surface_write_to_png(img, buf);
-
-	ctlra_screen_cairo_to_device(dev, screen_idx, pixel_data, bytes,
-				     redraw_zone, img);
-
-#if 0
-	static uint32_t counter;
-	pixel_data[bytes] = counter++;
-#endif
-
-	/* return 1 to flush the screens - helper function above already
-	 * handles this.
-	 */
+	/* return 1 to flush updates to the screens. */
 	return 1;
 }
 
