@@ -69,6 +69,11 @@ extern "C" {
 	fprintf(stderr, "[\033[1;36m%s +%d\033[0m] " fmt,		\
 		__func__, __LINE__, __VA_ARGS__);			\
 	} while (0)
+#define CTLRA_REDRAW(ctlra, fmt, ...)					\
+	do { if (!ctlra || ctlra->opts.debug_level & CTLRA_DEBUG_REDRAW)\
+	fprintf(stderr, "[\033[1;36m%s +%d\033[0m] " fmt,		\
+		__func__, __LINE__, __VA_ARGS__);			\
+	} while (0)
 
 
 struct ctlra_dev_t;
