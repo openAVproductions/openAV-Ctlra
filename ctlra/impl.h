@@ -262,6 +262,8 @@ struct ctlra_t
 
 	/* For devices with screens, this is redraw timeout in nanos. */
 	uint64_t screen_redraw_ns;
+	uint8_t screen_redraw_requested;
+	uint8_t screen_redraw_app_driven; /* 0FPS updates requested. */
 
 	/* context aware error message pointer */
 	const char *strerror;

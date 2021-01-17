@@ -383,6 +383,7 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	}
 
 	/* Setup/compute runtime values */
+	c->screen_redraw_app_driven = (c->opts.screen_redraw_target_fps == 0);
 	c->screen_redraw_ns = 1000000000.f / c->opts.screen_redraw_target_fps;
 
 	/* register USB hotplug etc */
@@ -540,11 +541,14 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 			long nanos  = now.tv_nsec - dev_iter->screen_last_redraw.tv_nsec;
 			uint64_t nanos_elapsed = secs * 1e9 + nanos;
 
-			if (ctlra->screen_redraw_ns <= nanos_elapsed) {
+			if (ctlra->screen_redraw_requested ||
+			    (!ctlra->screen_redraw_app_driven &&
+			     ctlra->screen_redraw_ns <= nanos_elapsed)) {
 				dev_iter->screen_last_redraw = now;
 				for(int i = 0; i < CTLRA_NUM_SCREENS_MAX; i++) {
 					ctlra_impl_screen_redraw(ctlra, dev_iter, i);
 				}
+				ctlra->screen_redraw_requested = 0;
 			}
 		}
 		dev_iter = dev_iter->dev_list_next;
@@ -558,6 +562,11 @@ void ctlra_idle_iter(struct ctlra_t *ctlra)
 		ctlra_dev_disconnect(ctlra->banished_list);
 		ctlra->banished_list = tmp;
 	}
+}
+
+void ctlra_screen_request_redraw(struct ctlra_t *ctlra)
+{
+	ctlra->screen_redraw_requested = 1;
 }
 
 void ctlra_dev_impl_banish(struct ctlra_dev_t *dev)

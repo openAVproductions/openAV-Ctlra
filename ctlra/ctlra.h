@@ -341,6 +341,13 @@ void ctlra_dev_set_remove_func(struct ctlra_dev_t *dev,
  */
 void ctlra_idle_iter(struct ctlra_t *ctlra);
 
+/** Request Ctlra library to perform a screen refresh. This enables application
+ * driven screen redrawing/refresh timeouts, to provide as timely screen updates
+ * to controllers as is possible.
+ */
+void
+ctlra_screen_request_redraw(struct ctlra_t *ctlra);
+
 /** Cleanup any resources allocated internally in Ctlra. This function
  * releases all resources attached to this context, but does NOT interfere
  * with other ctlra instances */
