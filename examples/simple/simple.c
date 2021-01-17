@@ -155,6 +155,18 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	 * recommended for starting as it is widely used and packaged.
 	 */
 
+	printf("in %s, screen idx %d\n", __func__, screen_idx);
+
+	/* Fill with some sort of data. Please note that this is *expected* to
+	 * show random colors on the screen. Its just to demo it works - the
+	 * application must figure out how to draw useful stuff.
+	 */
+	uint8_t col1 = rand();
+
+	for (uint32_t i = 0; i < bytes; i++) {
+		pixel_data[i] = col1;
+	}
+
 	/* return 1 to flush updates to the screens. */
 	return 1;
 }
@@ -191,7 +203,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_create_opts_t opts = {
-		.screen_redraw_target_fps = 15,
+		.screen_redraw_target_fps = 1,
 	};
 
 	struct ctlra_t *ctlra = ctlra_create(&opts);
