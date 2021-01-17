@@ -499,6 +499,8 @@ ctlra_impl_screen_redraw(struct ctlra_t *ctlra,
 	if(!flush)
 		return;
 
+	CTLRA_DRIVER(ctlra, "Screen %d redrawing now\n", screen_idx);
+
 	/* Flush data to screen */
 	ctlra_screen_get_data(dev_iter, screen_idx, &pixel, &bytes,
 			      &redraw, flush);
