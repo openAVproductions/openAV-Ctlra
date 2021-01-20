@@ -1,3 +1,5 @@
-gcc/*
-subprojects/avtka/*
+build*/
+gcc*/
+clang/*
+subprojects/*
 *.swp
