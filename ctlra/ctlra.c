@@ -331,6 +331,17 @@ int32_t ctlra_dev_screen_get_data(struct ctlra_dev_t *dev,
 	return ctlra_screen_get_data(dev, 0, pixels, bytes, &redraw, flush);
 }
 
+int32_t
+ctlra_dev_screen_redraw_raw_data(struct ctlra_dev_t *dev,
+				 uint32_t sidx,
+				 uint8_t *data,
+				 uint32_t size)
+{
+	if (dev && dev->screen_redraw_raw)
+		return dev->screen_redraw_raw(dev, sidx, data, size);
+	return -ENOTSUP;
+}
+
 void ctlra_dev_get_info(const struct ctlra_dev_t *dev,
 		       struct ctlra_dev_info_t * info)
 {

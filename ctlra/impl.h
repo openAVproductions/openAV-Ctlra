@@ -102,6 +102,10 @@ typedef int32_t (*ctlra_dev_impl_screen_get_data)(struct ctlra_dev_t *dev,
 						  uint32_t *bytes,
 						  struct ctlra_screen_zone_t *redraw,
 						  uint8_t flush);
+typedef int32_t (*ctlra_dev_screen_redraw_raw)(struct ctlra_dev_t *dev,
+					       uint32_t screen_idx,
+					       uint8_t *device_spec_raw_data,
+					       uint32_t raw_data_size);
 typedef int32_t (*ctlra_dev_impl_grid_light_set)(struct ctlra_dev_t *dev,
 						uint32_t grid_id,
 						uint32_t light_id,
@@ -186,6 +190,7 @@ struct ctlra_dev_t {
 
 	/* Screen related functions */
 	ctlra_dev_impl_screen_get_data screen_get_data;
+	ctlra_dev_screen_redraw_raw screen_redraw_raw;
 	ctlra_screen_redraw_cb screen_redraw_cb;
 	void *screen_redraw_ud;
 	struct timespec screen_last_redraw;

@@ -348,6 +348,21 @@ void ctlra_idle_iter(struct ctlra_t *ctlra);
 void
 ctlra_screen_request_redraw(struct ctlra_t *ctlra);
 
+/** Submit a screen redraw request using the raw data hardware format. Note
+ * that this is very advanced usage to maximize screen redraw speed. The format
+ * that the application must provide to this function is device specific.
+ *
+ * It is strongly recommended to first build full-screen redraws using the
+ * generic redraw API, and only when you have measured redraw speed and know
+ * it is not sufficient to investigate this API.
+ */
+int32_t
+ctlra_dev_screen_redraw_raw_data(struct ctlra_dev_t *dev,
+				 uint32_t screen_idx,
+				 uint8_t *device_specific_raw_data,
+				 uint32_t raw_data_size);
+
+
 /** Cleanup any resources allocated internally in Ctlra. This function
  * releases all resources attached to this context, but does NOT interfere
  * with other ctlra instances */
