@@ -909,6 +909,21 @@ ni_screen_var_px(uint8_t *data, uint32_t *idx, uint32_t num_px,
 }
 
 int32_t
+ni_maschine_mk3_screen_redraw_raw(struct ctlra_dev_t *base,
+				  uint32_t screen_idx,
+				  uint8_t *raw_data,
+				  uint32_t raw_data_size)
+{
+	/* TODO: implement usb write here to screen IDX handle */
+	int write_err = ctlra_dev_impl_usb_bulk_write(base,
+						USB_HANDLE_SCREEN_IDX,
+						USB_ENDPOINT_SCREEN_WRITE,
+						raw_data,
+						raw_data_size);
+	return write_err;
+}
+
+int32_t
 ni_maschine_mk3_screen_get_data(struct ctlra_dev_t *base,
 				uint32_t screen_idx,
 				uint8_t **pixels,
@@ -1145,6 +1160,7 @@ ctlra_ni_maschine_mk3_connect(ctlra_event_func event_func,
 	dev->base.light_set = ni_maschine_mk3_light_set;
 	dev->base.light_flush = ni_maschine_mk3_light_flush;
 	dev->base.screen_get_data = ni_maschine_mk3_screen_get_data;
+	dev->base.screen_redraw_raw = ni_maschine_mk3_screen_redraw_raw;
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
