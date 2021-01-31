@@ -70,10 +70,16 @@ configure_file(input : join_paths('ctlra', 'config.h.in'),
                output : 'config.h',
                configuration : conf_data)
 
-pkg = import('pkgconfig')
-pkg.generate(name: 'openav_ctlra',
-              description: 'OpenAV Ctlra Library',
-              version: conf_data.get('version'),
-              requires: required_libs,
-              subdirs : 'ctlra',
-              libraries: ctlra)
+# Use this dependency object to link in Meson SubProjects
+ctlra_dep = declare_dependency(include_directories: ctlra_includes,
+    link_with: ctlra)
+
+if not meson.is_subproject()
+  pkg = import('pkgconfig')
+  pkg.generate(name: 'openav_ctlra',
+                description: 'OpenAV Ctlra Library',
+                version: conf_data.get('version'),
+                requires: required_libs,
+                subdirs : 'ctlra',
+                libraries: ctlra)
+endif

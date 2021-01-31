@@ -37,7 +37,7 @@ endif
 devices_lib = static_library('ctlra_devices', devices_src,
     c_args: cargs,
     install : false,
-    include_directories : ctlra_lib_incs,
+    include_directories : [ctlra_lib_incs],
     link_args : '-Wl,--whole-archive',
     dependencies: ctlra_lib_deps_impl)
 
