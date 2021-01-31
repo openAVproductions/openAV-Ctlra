@@ -6,6 +6,135 @@
 
 #include "ctlra.h"
 
+/* TODO: move to NI Screens.h? */
+static const uint8_t header_left[] = {
+	0x84, 0x00, 0x00, 0x60,
+	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+	0x01, 0xe0, 0x01, 0x10,
+};
+static const uint8_t header_right[] = {
+	0x84, 0x00, 0x01, 0x60,
+	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+	0x01, 0xe0, 0x01, 0x10,
+};
+static const uint8_t footer_left[] = {
+	0x03, 0x00, 0x00, 0x00,
+	0x40, 0x00, 0x00, 0x00
+};
+/* Notice the 2nd last byte is 0x01 for the right screen */
+static const uint8_t footer_right[] = {
+	0x03, 0x00, 0x00, 0x00,
+	0x40, 0x00, 0x01, 0x00,
+};
+
+
+static const uint8_t var_px_command[] = {
+	/* num_px/2: 0xff00 is the (total_px/2) */
+	0x00, 0x0, 0xff, 0x00,
+};
+
+struct ni_screen_blit_t {
+	uint8_t cmd;
+	uint8_t zero;
+	uint16_t pixels_div_two;
+	uint16_t pixel_data[0];
+};
+/** Blit pixels to the screen.
+ * Note that pixels must be a multiple of two!
+ * Once done, the application must fill in blit
+ */
+static inline uint32_t
+ni_screen_blit(struct ni_screen_blit_t *blit, uint16_t pixels)
+{
+	uint16_t px_div2 = (pixels >> 1);
+	*blit = (struct ni_screen_blit_t) {
+		.cmd = 0x0,
+		.pixels_div_two = (px_div2 >> 8) | (px_div2 << 8),
+	};
+	/* Application now has pixel-data[0..(pixels-1)] to fill in. */
+	return sizeof(struct ni_screen_blit_t) + (sizeof(uint16_t) * pixels);
+}
+
+struct ni_screen_line_t {
+	uint8_t cmd;
+	uint8_t zero;
+	uint16_t length_div_two;
+	uint16_t pixel_a;
+	uint16_t pixel_b;
+};
+static inline uint32_t
+ni_screen_line(void *data, uint16_t len, uint16_t px_a, uint16_t px_b)
+{
+	/* Zero lenght lines are not allowed, they freeze the screen. Returning
+	 * zero here makes the next command overwrite, so its transparent to
+	 * the caller.
+	 */
+	if (len == 0) {
+		return 0;
+	}
+	uint16_t len_div_two = (len >> 1);
+	struct ni_screen_line_t *line = data;
+	*line = (struct ni_screen_line_t) {
+		.cmd = 0x1,
+		.length_div_two = (len_div_two >> 8) | (len_div_two << 8),
+		.pixel_a = (px_a >> 8) | (px_a << 8),
+		.pixel_b = (px_b >> 8) | (px_b << 8),
+	};
+	return sizeof(struct ni_screen_line_t);
+}
+
+struct ni_screen_skip_t {
+	uint8_t cmd;
+	uint8_t zero;
+	uint16_t length_div_two;
+};
+static inline uint32_t
+ni_screen_skip(void *data, uint16_t len)
+{
+	uint16_t len_div_two = (len >> 1);
+	struct ni_screen_skip_t *skip = data;
+	*skip = (struct ni_screen_skip_t) {
+		.cmd = 0x2,
+		.length_div_two = (len_div_two >> 8) | (len_div_two << 8),
+	};
+	return sizeof(struct ni_screen_skip_t);
+}
+
+uint32_t
+ni_screen_audio_meter(void *data, float audio_level)
+{
+	uint32_t margin = 20;
+	uint32_t width = 480 - (margin*2);
+
+	uint32_t ridx = 0;
+	ridx += ni_screen_skip(&data[ridx], margin);
+	ridx += ni_screen_line(&data[ridx], width, 0xffff, 0xffff);
+	ridx += ni_screen_skip(&data[ridx], margin * 2);
+
+	uint16_t audio_col = 0b11111100000;
+	if (audio_level > 1.0f) {
+		audio_level = 1.0f;
+	}
+	float a_to_col = (audio_level - 0.7f) * 20;
+	audio_col = audio_col << (int)(a_to_col);
+
+	uint32_t audio_len = ((uint32_t)(width * audio_level)) & (~1);
+	uint32_t blank_len = width - audio_len;
+	uint32_t skip_len  = margin * 2;
+
+	for (int i = 0; i < 10; i++) {
+		ridx += ni_screen_line(&data[ridx], audio_len, audio_col, audio_col);
+		ridx += ni_screen_line(&data[ridx], blank_len, 0, 0);
+		ridx += ni_screen_skip(&data[ridx], skip_len);
+	}
+
+	ridx += ni_screen_line(&data[ridx], width, 0xffff, 0xffff);
+	ridx += ni_screen_skip(&data[ridx], margin);
+	return ridx;
+}
+
 static volatile uint32_t done;
 static uint32_t led;
 static uint32_t led_set;
@@ -161,7 +290,78 @@ int32_t simple_screen_redraw_func(struct ctlra_dev_t *dev,
 	 * show random colors on the screen. Its just to demo it works - the
 	 * application must figure out how to draw useful stuff.
 	 */
-	uint8_t col1 = rand();
+	uint16_t col1 = rand();
+
+	uint8_t *header = header_left;
+	uint8_t *footer = footer_left;
+	if (screen_idx == 1) {
+		header = header_right;
+		footer = footer_right;
+	}
+
+	uint32_t px_done = 0;
+	uint32_t raw_idx = 0;
+	uint8_t dev_spec_raw_data[1024 * 16] = {0};
+	memcpy(&dev_spec_raw_data[raw_idx], header, 16);
+	raw_idx += 16;
+
+#if 0
+	uint16_t red = ((1 << 5) - 1) << 11;
+	uint16_t grn = ((1 << 6) - 1) << 5;
+	uint16_t blu = ((1 << 5) - 1);
+
+	for (int i = 0; i < 20; i++) {
+		raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], 30);
+		raw_idx += ni_screen_line(&dev_spec_raw_data[raw_idx], 210, red, red);
+		raw_idx += ni_screen_line(&dev_spec_raw_data[raw_idx], 240, blu, blu);
+		px_done += (30 + 210 + 240);
+	}
+#endif
+
+	/* Skip to half way */
+	uint32_t px_screen_half = (480 * 272)/2;
+	uint32_t px_to_skip = px_screen_half - px_done;
+	raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], px_to_skip);
+	//raw_idx += ni_screen_line(&dev_spec_raw_data[raw_idx], px_screen_half, 0,0);
+
+#if 0
+	uint32_t blit_px = 480 * 8;
+	struct ni_screen_blit_t *blit = &dev_spec_raw_data[raw_idx];
+	raw_idx += ni_screen_blit(blit, blit_px);
+	for (uint32_t i = 0; i < blit_px; i++) {
+		blit->pixel_data[i] = rand();
+	}
+#endif
+
+	float r = rand() / (float)RAND_MAX * 0.25;
+#if 0
+	raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], 480*10);
+	raw_idx += ni_screen_audio_meter(&dev_spec_raw_data[raw_idx], 0.1f);
+
+	raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], 480*10);
+	raw_idx += ni_screen_audio_meter(&dev_spec_raw_data[raw_idx], 0.4f + r);
+
+	raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], 480*10);
+	raw_idx += ni_screen_audio_meter(&dev_spec_raw_data[raw_idx], 1.f);
+#endif
+	raw_idx += ni_screen_skip(&dev_spec_raw_data[raw_idx], 480*10);
+	raw_idx += ni_screen_audio_meter(&dev_spec_raw_data[raw_idx], 0.75f + r);
+
+
+	memcpy(&dev_spec_raw_data[raw_idx], footer, 8);
+	raw_idx += 8;
+	printf("raw buffer xfer size %d\n", raw_idx);
+
+	int32_t raw_written = ctlra_dev_screen_redraw_raw_data(dev,
+					screen_idx,
+					dev_spec_raw_data,
+					raw_idx);
+
+	if (raw_written == raw_idx) {
+		/* Return *without* flush, as raw() already blitted. */
+		return 0;
+	}
+
 
 	for (uint32_t i = 0; i < bytes; i++) {
 		pixel_data[i] = col1;
@@ -203,7 +403,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, sighndlr);
 
 	struct ctlra_create_opts_t opts = {
-		.screen_redraw_target_fps = 1,
+		.screen_redraw_target_fps = 3,
 	};
 
 	struct ctlra_t *ctlra = ctlra_create(&opts);
