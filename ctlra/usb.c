@@ -237,11 +237,14 @@ static int ctlra_usb_impl_hotplug_cb(libusb_context *ctx,
 
 void ctlra_impl_usb_idle_iter(struct ctlra_t *ctlra)
 {
-	struct timeval tv = {0};
 	/* 1st: NULL context
-	 * 2nd: timeval to wait - 0 returns as if non blocking
+	 * 2nd: timeval to wait - 0 returns as if non blocking.
+	 *      If set, reduces CPU overhead in polling, but also delays
+	 *      calling thread. The timeout should be chosen carefully to
+	 *      return within the screen-redraw timeout.
 	 * 3rd: int* to completed event - unused by Ctlra */
-	libusb_handle_events_timeout_completed(ctlra->ctx, &tv, NULL);
+	libusb_handle_events_timeout_completed(ctlra->ctx,
+					       &ctlra->usb_timeout, NULL);
 }
 
 int ctlra_dev_impl_usb_init(struct ctlra_t *ctlra)

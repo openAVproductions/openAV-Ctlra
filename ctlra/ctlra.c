@@ -397,6 +397,13 @@ struct ctlra_t *ctlra_create(const struct ctlra_create_opts_t *opts)
 	c->screen_redraw_app_driven = (c->opts.screen_redraw_target_fps == 0);
 	c->screen_redraw_ns = 1000000000.f / c->opts.screen_redraw_target_fps;
 
+	/* Setup USB polling/waiting timeout. */
+	if (!c->opts.flags_usb_no_block) {
+		c->usb_timeout = (struct timeval) {
+			.tv_usec = c->screen_redraw_ns / 1000,
+		};
+	}
+
 	/* register USB hotplug etc */
 	int err = ctlra_dev_impl_usb_init(c);
 	if(err)

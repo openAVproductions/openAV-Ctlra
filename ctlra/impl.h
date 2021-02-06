@@ -264,6 +264,7 @@ struct ctlra_t
 	/* USB backend context */
 	struct libusb_context *ctx;
 	uint8_t usb_initialized;
+	struct timeval usb_timeout;
 
 	/* Linked list of devices currently in use */
 	struct ctlra_dev_t *dev_list;

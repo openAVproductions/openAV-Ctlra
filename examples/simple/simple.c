@@ -412,7 +412,10 @@ int main(int argc, char **argv)
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
-		usleep(10 * 1000);
+		/* Sleeping is not required, as Ctlra will block.
+		 * If you want non-blocking behaviour in Ctlra, this can be
+		 * requested at create() time using opts.flags_usb_no_block.
+		 */
 	}
 
 	ctlra_exit(ctlra);

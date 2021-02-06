@@ -93,8 +93,12 @@ struct ctlra_t;
  * to ctlra, without breaking all the function calls */
 struct ctlra_create_opts_t {
 	/* creation time flags */
+	/** When set, the libUSB context will be shared. This is not advised. */
 	uint8_t flags_usb_no_own_context : 1;
-	uint8_t flags_usb_unsued : 7;
+	/** When set, the USB polls will never block. This can be useful if an
+	 * application wishes to drive Ctlra manually, but is not advised. */
+	uint8_t flags_usb_no_block : 1;
+	uint8_t flags_usb_unused : 6;
 
 	/* debug verbosity */
 	uint8_t debug_level;
