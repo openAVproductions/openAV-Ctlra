@@ -69,86 +69,84 @@ static const char *ni_maschine_mikro_mk3_control_names[] = {
 	"Tempo",
 	"Plug-in",
 	"Sampling",
-	"B",
-	"C",
-	"D",
-	"E",
-	"F",
-	"G",
-	"H",
-	"Notes",
-	"Volume",
-	"Swing",
-	"Tempo",
-	"Note Repeat",
-	"Lock",
-	"Pad Mode",
-	"Keyboard",
-	"Chords",
-	"Step",
-	"Fixed Vel.",
-	"Scene",
-	"Pattern",
-	"Events",
-	"Variations",
-	"Duplicate",
-	"Select",
-	"Solo",
-	"Mute",
-	"Pitch",
-	"Mod",
-	"Perform",
-	"Restart",
-	"Erase",
-	"Tap",
-	"Follow",
-	"Play",
-	"Rec",
-	"Stop",
-	"Macro",
-	"Settings",
-	"Arrow Right",
-	"Sampling",
-	"Mixer",
-	"Plug-in",
-	"Channel",
-	"Arranger",
-	"Browser",
-	"Arrow Left",
-	"File",
-	"Auto",
-	"Top 1",
-	"Top 2",
-	"Top 3",
-	"Top 4",
-	"Top 5",
-	"Top 6",
-	"Top 7",
-	"Enc. Touch",
-	"Enc. Touch 8",
-	"Enc. Touch 7",
-	"Enc. Touch 6",
-	"Enc. Touch 5",
-	"Enc. Touch 4",
-	"Enc. Touch 3",
-	"Enc. Touch 2",
-	"Enc. Touch 1",
+    "Left Arrow",
+    "Right Arrow",
+    "Pitch",
+    "Mod",
+    "Perform",
+    "Notes",
+    "Group",
+    "Auto",
+    "Lock",
+    "Note Repeat",
+    "Restart",
+    "Erase",
+    "Tap",
+    "Follow",
+    "Play",
+    "Rec",
+    "Stop",
+    "Shift",
+    "Fixed Vel.",
+    "Pad Mode",
+    "Keyboard",
+    "Chords",
+    "Step",
+    "Scene",
+    "Pattern",
+    "Events",
+    "Variations",
+    "Duplicate",
+    "Select",
+    "Solo",
+    "Mute",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mikro_mk3_control_names) /\
 			    sizeof(ni_maschine_mikro_mk3_control_names[0]))
 
 static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 	/* encoder */
-	{NI_MASCHINE_MIKRO_MK3_BTN_NATIVE_INSTRUMENTS, 1, 0x01},
-	{NI_MASCHINE_MIKRO_MK3_BTN_STAR,        1, 0x02},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SEARCH,      1, 0x04},
-	{NI_MASCHINE_MIKRO_MK3_BTN_VOLUME,      1, 0x08},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SWING,       1, 0x10},
-	{NI_MASCHINE_MIKRO_MK3_BTN_TEMPO,       1, 0x20},
-	{NI_MASCHINE_MIKRO_MK3_BTN_PLUG_IN,     1, 0x40},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SAMPLING,    1, 0x80},
+	{NI_MASCHINE_MIKRO_MK3_BTN_NATIVE_INSTRUMENTS,  1, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_STAR,                1, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SEARCH,              1, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_VOLUME,              1, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SWING,               1, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_TEMPO,               1, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PLUG_IN,             1, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SAMPLING,            1, 0x80},
+    {NI_MASCHINE_MIKRO_MK3_BTN_LEFT_ARROW,          2, 0x01},
+    {NI_MASCHINE_MIKRO_MK3_BTN_RIGHT_ARROW,         2, 0x02},
+    {NI_MASCHINE_MIKRO_MK3_BTN_PITCH,               2, 0x04},
+    {NI_MASCHINE_MIKRO_MK3_BTN_MOD,                 2, 0x08},
+    {NI_MASCHINE_MIKRO_MK3_BTN_PERFORM,             2, 0x10},
+    {NI_MASCHINE_MIKRO_MK3_BTN_NOTES,               2, 0x20},
+    {NI_MASCHINE_MIKRO_MK3_BTN_GROUP,               2, 0x40},
+    {NI_MASCHINE_MIKRO_MK3_BTN_AUTO,                2, 0x80},
+    {NI_MASCHINE_MIKRO_MK3_BTN_LOCK,                3, 0x01},
+    {NI_MASCHINE_MIKRO_MK3_BTN_NOTE_REPEAT,         3, 0x02},
+    {NI_MASCHINE_MIKRO_MK3_BTN_RESTART,             3, 0x04},
+    {NI_MASCHINE_MIKRO_MK3_BTN_ERASE,               3, 0x08},
+    {NI_MASCHINE_MIKRO_MK3_BTN_TAP,                 3, 0x10},
+    {NI_MASCHINE_MIKRO_MK3_BTN_FOLLOW,              3, 0x20},
+    {NI_MASCHINE_MIKRO_MK3_BTN_PLAY,                3, 0x40},
+    {NI_MASCHINE_MIKRO_MK3_BTN_RECORD,              3, 0x80},
+    {NI_MASCHINE_MIKRO_MK3_BTN_STOP,                4, 0x01},
+    {NI_MASCHINE_MIKRO_MK3_BTN_SHIFT,               4, 0x02},
+    {NI_MASCHINE_MIKRO_MK3_BTN_FIXED_VEL,           4, 0x04},
+    {NI_MASCHINE_MIKRO_MK3_BTN_PAD_MODE,            4, 0x08},
+    {NI_MASCHINE_MIKRO_MK3_BTN_KEYBOARD,            4, 0x10},
+    {NI_MASCHINE_MIKRO_MK3_BTN_CHORDS,              4, 0x20},
+    {NI_MASCHINE_MIKRO_MK3_BTN_STEP,                4, 0x40},
+    {NI_MASCHINE_MIKRO_MK3_BTN_SCENE,               4, 0x80},
+    {NI_MASCHINE_MIKRO_MK3_BTN_PATTERN,             5, 0x01},
+    {NI_MASCHINE_MIKRO_MK3_BTN_EVENTS,              5, 0x02},
+    {NI_MASCHINE_MIKRO_MK3_BTN_VARIATION,           5, 0x04},
+    {NI_MASCHINE_MIKRO_MK3_BTN_DUPLICATE,           5, 0x08},
+    {NI_MASCHINE_MIKRO_MK3_BTN_SELECT,              5, 0x10},
+    {NI_MASCHINE_MIKRO_MK3_BTN_SOLO,                5, 0x20},
+    {NI_MASCHINE_MIKRO_MK3_BTN_MUTE,                5, 0x40},
 };
-#define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
+#define BUTTONS_SIZE (sizeof(buttons) / sizeof(butt ons[0]))
 
 #define MK3_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
 static struct ctlra_item_info_t buttons_info[] = {
@@ -249,49 +247,13 @@ static struct ctlra_item_info_t sliders_info[] = {
 	/* TODO: verify measurements - these are guesses */
 	{.x = 9, .y =185, .w = 109,  .h = 14, .flags = CTLRA_ITEM_FADER},
 };
-#define SLIDERS_SIZE (1)
-
-static struct ctlra_item_info_t feedback_info[] = {
-	/* Screen */
-	{.x =  88, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN,
-		.params[0] = 480, .params[1] = 272},
-	{.x = 200, .y =  33, .w = 94,  .h = 54, .flags = CTLRA_ITEM_FB_SCREEN,
-		.params[0] = 480, .params[1] = 272},
-	/* TODO: expose LED ids:
-	 * up    : 58
-	 * left  : 59
-	 * right : 60
-	 * down  : 61
-	 * Strip : 62 -> 86
-	 */
-};
-#define FEEDBACK_SIZE (sizeof(feedback_info) / sizeof(feedback_info[0]))
-
-static const char *encoder_names[] = {
-	"Enc. Turn",
-	"Enc. 1 Turn",
-	"Enc. 2 Turn",
-	"Enc. 3 Turn",
-	"Enc. 4 Turn",
-	"Enc. 5 Turn",
-	"Enc. 6 Turn",
-	"Enc. 7 Turn",
-	"Enc. 8 Turn",
-};
 
 static struct ctlra_item_info_t encoder_info[] = {
 	/* big one on the left */
 	{.x = 20, .y = 128, .w = 28,  .h = 28, .flags = CTLRA_ITEM_ENCODER},
-	/* 8 across */
-	{.x = 85 + 29 * 0, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 1, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 2, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 3, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 4, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 5, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 6, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
-	{.x = 85 + 29 * 7, .y = 98, .w = 18,  .h = 18, .flags = CTLRA_ITEM_ENCODER},
 };
+
+#define SLIDERS_SIZE (1)
 #define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
@@ -376,8 +338,8 @@ ni_maschine_mikro_mk3_control_get_name(enum ctlra_event_type_t type,
 {
 	if(type == CTLRA_EVENT_BUTTON && control_id < CONTROL_NAMES_SIZE)
 		return ni_maschine_mikro_mk3_control_names[control_id];
-	if(type == CTLRA_EVENT_ENCODER && control_id < 9)
-		return encoder_names[control_id];
+	if(type == CTLRA_EVENT_ENCODER)
+		return "Encoder";
 	if(type == CTLRA_EVENT_SLIDER && control_id == 0)
 		return "Touchstrip";
 	return 0;
@@ -835,8 +797,8 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk3_info = {
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
 	.control_info [CTLRA_EVENT_BUTTON] = buttons_info,
 
-	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
-	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
+//	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
+//	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
 
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
 	.control_info [CTLRA_EVENT_SLIDER] = sliders_info,
