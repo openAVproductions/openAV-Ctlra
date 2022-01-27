@@ -9,7 +9,7 @@
 
 static volatile uint32_t done;
 
-#define GRID_SIZE 64
+#define GRID_SIZE 16
 
 /* a struct to pass around as userdata to callbacks */
 struct daemon_t {
@@ -24,21 +24,22 @@ struct daemon_t {
 
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
-	struct daemon_t *daemon = d;
-	if(daemon->has_grid) {
-		for(int i = 0; i < 16; i++) {
-			int id = daemon->info.grid_info[0].info.params[0] + i;
-			uint32_t col = daemon->grid_col * (daemon->grid[i] > 0);
-			ctlra_dev_light_set(dev, id, col);
-		}
-	}
-
-	/* lights for grids */
-	for(int i = 0 ; i < 16; i++) {
-		ctlra_dev_light_set(dev, i, 0);
-	}
-
-	ctlra_dev_light_flush(dev, 0);
+    return;
+//	struct daemon_t *daemon = d;
+//	if(daemon->has_grid) {
+//		for(int i = 0; i < 16; i++) {
+//			int id = daemon->info.grid_info[0].info.params[0] + i;
+//			uint32_t col = daemon->grid_col * (daemon->grid[i] > 0);
+//			ctlra_dev_light_set(dev, id, col);
+//		}
+//	}
+//
+//	/* lights for grids */
+//	for(int i = 0 ; i < 16; i++) {
+//		ctlra_dev_light_set(dev, i, 0);
+//	}
+//
+//	ctlra_dev_light_flush(dev, 0);
 }
 
 int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
@@ -46,16 +47,16 @@ int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
 	return 0;
 }
 
-void demo_event_func(struct ctlra_dev_t* dev,
-                     uint32_t num_events,
-                     struct ctlra_event_t** events,
-                     void *userdata)
+void demo_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
+                     struct ctlra_event_t** events, void *userdata)
 {
+    printf("====================================%d", num_events);
+    printf("%d", num_events);
 	struct daemon_t *daemon = userdata;
 	struct ctlra_midi_t *midi = daemon->midi;
 	uint8_t msg[3] = {0};
 
-	for(uint32_t i = 0; i < num_events; i++) {
+    for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		int ret;
 		switch(e->type) {
@@ -112,17 +113,16 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	free(daemon);
 }
 
-int accept_dev_func(const struct ctlra_dev_info_t *info,
-                    ctlra_event_func *event_func,
-                    ctlra_feedback_func *feedback_func,
-                    ctlra_remove_dev_func *remove_func,
-                    void **userdata_for_event_func,
+int accept_dev_func(struct ctlra_t *ctlra,
+                    const struct ctlra_dev_info_t *info,
+                    struct ctlra_dev_t *dev,
                     void *userdata)
 {
 	printf("daemon: accepting %s %s\n", info->vendor, info->device);
-	*event_func = demo_event_func;
-	*feedback_func = demo_feedback_func;
-	*remove_func = remove_dev_func;
+    ctlra_dev_set_event_func(dev, demo_event_func);
+    ctlra_dev_set_callback_userdata(dev, 0x0);
+//	*feedback_func = demo_feedback_func;
+//	*remove_func = remove_dev_func;
 
 	/* TODO: open MIDI output, store pointer in device */
 	struct daemon_t *daemon = calloc(1, sizeof(struct daemon_t));
@@ -146,8 +146,6 @@ int accept_dev_func(const struct ctlra_dev_info_t *info,
 
 	if(!daemon->midi)
 		goto fail;
-
-	*userdata_for_event_func = daemon;
 
 	return 1;
 fail:
