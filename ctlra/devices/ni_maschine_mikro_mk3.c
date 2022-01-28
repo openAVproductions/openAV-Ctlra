@@ -151,111 +151,6 @@ static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
-#define MK3_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
-static struct ctlra_item_info_t buttons_info[] = {
-	/* TODO: represent encoders better in the UI */
-	/* encoder press, right up left down */
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 21, .y = 138, .w = 18,  .h = 10, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	/* shift, top-right above screen (mad ordering..) */
-	{.x =  94, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 44},
-	{.x = 278, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
-	/* group ABCDEFGH */
-	{.x =  9, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 29},
-	{.x = 37, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 30},
-	{.x = 65, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 31},
-	{.x = 94, .y = 210, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 32},
-	{.x =  9, .y = 230, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 33},
-	{.x = 37, .y = 230, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 34},
-	{.x = 65, .y = 230, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 35},
-	{.x = 94, .y = 230, .w = 24,  .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 36},
-	/* notes volume swing tempo */
-	{.x = 94, .y = 170, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 28},
-	{.x = 65, .y = 126, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 20},
-	{.x = 65, .y = 137, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 21},
-	{.x = 65, .y = 149, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 23},
-	/* Note Repeat, Lock */
-	{.x = 93, .y = 126, .w = 24, .h = 20, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 22},
-	{.x = 93, .y = 149, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 24},
-	/* Pad mode, keyboard, chords, step */
-	{.x = 169, .y = 126, .w = 32, .h = 8, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 46},
-	{.x = 205, .y = 126, .w = 32, .h = 8, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 47},
-	{.x = 241, .y = 126, .w = 32, .h = 8, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 48},
-	{.x = 277, .y = 126, .w = 32, .h = 8, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 49},
-	/* Fixed Vel, Scene, Pattern, Events */
-	{.x = 137, .y = 126, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 45},
-	{.x = 137, .y = 140, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 50},
-	{.x = 137, .y = 158, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 51},
-	{.x = 137, .y = 176, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 52},
-	/* Variation, Dupliate, Select, Solo, Mute */
-	{.x = 137, .y = 194, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 53},
-	{.x = 137, .y = 212, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 54},
-	{.x = 137, .y = 230, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 55},
-	{.x = 137, .y = 248, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 56},
-	{.x = 137, .y = 266, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 57},
-	/* Pitch, Mod, Perform */
-	{.x =  9, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 37, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 26},
-	{.x = 65, .y = 170, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 27},
-	/* restart, erase, tap, follow */
-	{.x =  9, .y = 250, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 37},
-	{.x = 37, .y = 250, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 38},
-	{.x = 65, .y = 250, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 39},
-	{.x = 93, .y = 250, .w = 24, .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 40},
-	/* Play, Rec, Stop */
-	{.x =  9, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff00ff00, .fb_id = 41},
-	{.x = 37, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xffff0000, .fb_id = 42},
-	{.x = 65, .y = 268, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 43},
-	/* Macro, settings, > sampling mixer plugin */
-	{.x = 38, .y =  86, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 11},
-	{.x = 38, .y =  74, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 9},
-	{.x = 38, .y =  62, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 7},
-	{.x = 38, .y =  44, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 5},
-	{.x = 38, .y =  26, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 3},
-	{.x = 38, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 1},
-	/* Channel, Arranger, Browser, <, File, Auto */
-	{.x = 9, .y =  10, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 9, .y =  26, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xffffffff, .fb_id = 2},
-	{.x = 9, .y =  44, .w = 24, .h = 14, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 4},
-	{.x = 9, .y =  62, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 6},
-	{.x = 9, .y =  74, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 8},
-	{.x = 9, .y =  86, .w = 24, .h =  8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 10},
-	/* Top buttons (7, 8 already above) */
-	{.x =  82, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 12},
-	{.x = 110, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 13},
-	{.x = 138, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 14},
-	{.x = 166, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 15},
-	{.x = 194, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 16},
-	{.x = 222, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 17},
-	{.x = 250, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 18},
-	{.x = 278, .y = 10, .w = 24,  .h = 8, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 19},
-	/* TODO: show encoder dial touch control */
-	/* big dial encoder touch */
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	/* 1-8 dial encoder touch */
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-	{.x = 1, .y = 1, .w = 1, .h = 1, .flags = MK3_BTN, .colour = 0xff000000, .fb_id = 0},
-};
-
-static struct ctlra_item_info_t sliders_info[] = {
-	/* touchstrip */
-	/* TODO: verify measurements - these are guesses */
-	{.x = 9, .y =185, .w = 109,  .h = 14, .flags = CTLRA_ITEM_FADER},
-};
-
-static struct ctlra_item_info_t encoder_info[] = {
-	/* big one on the left */
-	{.x = 20, .y = 128, .w = 28,  .h = 28, .flags = CTLRA_ITEM_ENCODER},
-};
-
 #define SLIDERS_SIZE (1)
 #define ENCODERS_SIZE (1)
 
@@ -271,35 +166,17 @@ static struct ctlra_item_info_t encoder_info[] = {
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
 
 
-/* TODO: Refactor out screen impl, and push to ctlra_ni_screen.h ? */
-/* Screen blit commands - no need to have publicly in header */
-static const uint8_t header_right[] = {
-	0x84,  0x0, 0x01, 0x60,
-	0x0,  0x0, 0x0,  0x0,
-	0x0,  0x0, 0x0,  0x0,
-	0x1, 0xe0, 0x1, 0x10,
+static const uint8_t display_header_top[] = {
+    0xE0, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x02, 0x00
 };
-static const uint8_t header_left[] = {
-	0x84,  0x0, 0x00, 0x60,
-	0x0,  0x0, 0x0,  0x0,
-	0x0,  0x0, 0x0,  0x0,
-	0x1, 0xe0, 0x1, 0x10,
+
+static const uint8_t display_header_bottom[] = {
+    0xE0, 0x00, 0x00, 0x02, 0x00, 0x80, 0x00, 0x02, 0x00
 };
-static const uint8_t command[] = {
-	/* num_px/2: 0xff00 is the (total_px/2) */
-	0x00, 0x0, 0xff, 0x00,
-};
-static const uint8_t footer[] = {
-	0x03, 0x00, 0x00, 0x00,
-	0x40, 0x00, 0x00, 0x00
-};
-/* 565 encoding, hence 2 bytes per px */
-#define NUM_PX (480 * 272)
+
 struct ni_screen_t {
-	uint8_t header [sizeof(header_left)];
-	uint8_t command[sizeof(command)];
-	uint16_t pixels [NUM_PX]; // 565 uses 2 bytes per pixel
-	uint8_t footer [sizeof(footer)];
+    uint8_t header [sizeof(display_header_bottom)];
+    uint8_t pixels[256];
 };
 
 /* Represents the the hardware device */
@@ -323,7 +200,7 @@ struct ni_maschine_mikro_mk3_t {
 	/* state of the pedal, according to the hardware */
 	uint8_t pedal;
 
-	uint8_t encoder_value;
+	uint8_t encoder_value, encoder_init;
 	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
 	uint64_t pad_last_msg_time;
@@ -331,8 +208,8 @@ struct ni_maschine_mikro_mk3_t {
 	uint16_t pad_idx[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
 
-	struct ni_screen_t screen_left;
-	struct ni_screen_t screen_right;
+    struct ni_screen_t screen_top;
+    struct ni_screen_t screen_bottom;
 };
 
 static const char *
@@ -422,10 +299,10 @@ ni_maschine_mikro_mk3_pads_decode_set(struct ni_maschine_mikro_mk3_t *dev,
 		int current = (dev->pad_hit & (1 << i));
 		int new     = (rpt_pressed  & (1 << i));
 
-		int state_change = (current != new);
+#ifdef CTLRA_MIKRO_MK3_PRESSURE_DEBUG
+        int state_change = (current != new);
 		int pressure_change = pad_pressures[i] != dev->pad_pressures[i];
 
-#ifdef CTLRA_MIKRO_MK3_PRESSURE_DEBUG
 		printf("[msg_idx:%d]: pad %2d state (CH %d, V %d) pressure(CH %d, V %d)\n",
 		       msg_idx, i, state_change, new > 0, pressure_change,
 		       pad_pressures[i]);
@@ -445,6 +322,7 @@ ni_maschine_mikro_mk3_pads_decode_set(struct ni_maschine_mikro_mk3_t *dev,
 
 		dev->base.event_func(&dev->base, 1, &e,
 				     dev->base.event_func_userdata);
+
 #ifdef CTLRA_MIKRO_MK3_PADS
 		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 		ni_maschine_mikro_mk3_light_flush(&dev->base, 1);
@@ -507,13 +385,6 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 
 	int count = 0;
 
-//    DEBUG
-//    printf("%s : size = %d\n", __func__, size);
-//    for(int i = 0; i < size; i++) {
-//        printf("%02x ", data[i]);
-//    }
-//    printf("\n");
-
 	uint8_t *buf = data;
 
     switch(nbytes) {
@@ -524,21 +395,20 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		ni_maschine_mikro_mk3_pads(dev, data);
 		break;
 	case 14: {
-		/* touchstrip: dont send event if 0, as this is release */
-//		uint16_t v = *((uint16_t *)&buf[30]);
-//		if(v && v != dev->touchstrip_value) {
-//			struct ctlra_event_t event = {
-//				.type = CTLRA_EVENT_SLIDER,
-//				.slider = {
-//					.id = 0,
-//					.value = v / 1024.f,
-//				},
-//			};
-//			struct ctlra_event_t *e = {&event};
-//			dev->base.event_func(&dev->base, 1, &e,
-//					     dev->base.event_func_userdata);
-//			dev->touchstrip_value = v;
-//		}
+        uint16_t v = buf[10] | (buf[11] << 8);
+		if(v && v != dev->touchstrip_value) {
+			struct ctlra_event_t event = {
+				.type = CTLRA_EVENT_SLIDER,
+				.slider = {
+					.id = 0,
+					.value = v / 1024.f,
+				},
+			};
+			struct ctlra_event_t *e = {&event};
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+			dev->touchstrip_value = v;
+		}
 
 		/* Buttons */
 		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
@@ -566,8 +436,13 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		}
 
 		/* Main Encoder */
-		int8_t enc   = buf[11] & 0x0f;
-		if(enc != dev->encoder_value) {
+		int8_t enc   = buf[7] & 0x0f;
+
+        /* Skip first event, it will be always send */
+        if(!dev->encoder_init) {
+            dev->encoder_value = enc;
+            dev->encoder_init = 1;
+        } else if(enc != dev->encoder_value) {
 			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
 			dev->encoder_value = enc;
 
@@ -698,6 +573,30 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 					   LIGHTS_SIZE + 1);
 }
 
+
+static void
+maschine_mikro_mk3_blit_to_screen(struct ni_maschine_mikro_mk3_t *dev)
+{
+    void *data_top = &dev->screen_top;
+    void *data_bottom = &dev->screen_bottom;
+
+    int ret_top = ctlra_dev_impl_usb_bulk_write(&dev->base,
+                                            USB_HANDLE_IDX,
+                                            USB_ENDPOINT_WRITE,
+                                            data_top,
+                                            sizeof(dev->screen_top));
+
+    int ret_bottom = ctlra_dev_impl_usb_bulk_write(&dev->base,
+                                                USB_HANDLE_IDX,
+                                                USB_ENDPOINT_WRITE,
+                                                data_bottom,
+                                                sizeof(dev->screen_bottom));
+
+    if(ret_top < 0 || ret_bottom < 0)
+        printf("%s screen write failed!\n", __func__);
+}
+
+
 static int32_t
 ni_maschine_mikro_mk3_disconnect(struct ctlra_dev_t *base)
 {
@@ -710,10 +609,6 @@ ni_maschine_mikro_mk3_disconnect(struct ctlra_dev_t *base)
 
 	if(!base->banished) {
 		ni_maschine_mikro_mk3_light_flush(base, 1);
-		memset(dev->screen_left.pixels, 0x0,
-		       sizeof(dev->screen_left.pixels));
-		memset(dev->screen_right.pixels, 0x0,
-		       sizeof(dev->screen_right.pixels));
 	}
 
 	ctlra_dev_impl_usb_close(base);
@@ -749,6 +644,19 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
+    memcpy(dev->screen_top.header , display_header_top, sizeof(dev->screen_top.header));
+    memcpy(dev->screen_bottom.header , display_header_bottom, sizeof(dev->screen_bottom.header));
+
+    uint8_t *st = dev->screen_top.pixels;
+    uint8_t *sb = dev->screen_bottom.pixels;
+
+    for(int i = 0; i < sizeof(dev->screen_top.pixels); i++) {
+        *st++ = 0xff;
+        *sb++ = 0x00;
+    }
+
+    maschine_mikro_mk3_blit_to_screen(dev);
+
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
 
@@ -762,6 +670,12 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+    uint8_t ptr[256];
+
+    for(int i=0; i<sizeof(ptr); ++i){
+        ptr[i] = 0xff;
+    }
 
 	return (struct ctlra_dev_t *)dev;
 fail:
@@ -778,18 +692,14 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk3_info = {
 	.size_y    = 290,
 
 	.control_count[CTLRA_EVENT_BUTTON] = BUTTONS_SIZE,
-	.control_info [CTLRA_EVENT_BUTTON] = buttons_info,
 
 //	.control_count[CTLRA_FEEDBACK_ITEM] = FEEDBACK_SIZE,
 //	.control_info [CTLRA_FEEDBACK_ITEM] = feedback_info,
 
 	.control_count[CTLRA_EVENT_SLIDER] = SLIDERS_SIZE,
-	.control_info [CTLRA_EVENT_SLIDER] = sliders_info,
 
 	.control_count[CTLRA_EVENT_ENCODER] = ENCODERS_SIZE,
-	.control_info [CTLRA_EVENT_ENCODER] = encoder_info,
 
-#if 1
 	.control_count[CTLRA_EVENT_GRID] = 1,
 	.grid_info[0] = {
 		.rgb = 1,
@@ -808,7 +718,6 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk3_info = {
 			.params[1] = 87 + 16,
 		}
 	},
-#endif
 
 	.get_name = ni_maschine_mikro_mk3_control_get_name,
 };
