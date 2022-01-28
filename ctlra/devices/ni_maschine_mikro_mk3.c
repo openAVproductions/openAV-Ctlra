@@ -146,7 +146,7 @@ static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
     {NI_MASCHINE_MIKRO_MK3_BTN_SOLO,                5, 0x20},
     {NI_MASCHINE_MIKRO_MK3_BTN_MUTE,                5, 0x40},
 };
-#define BUTTONS_SIZE (sizeof(buttons) / sizeof(butt ons[0]))
+#define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
 #define MK3_BTN (CTLRA_ITEM_BUTTON | CTLRA_ITEM_LED_INTENSITY | CTLRA_ITEM_HAS_FB_ID)
 static struct ctlra_item_info_t buttons_info[] = {
@@ -563,23 +563,24 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		}
 
 		/* Main Encoder */
-//		struct ctlra_event_t event = {
-//			.type = CTLRA_EVENT_ENCODER,
-//			.encoder = {
-//				.id = 0,
-//				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
-//				.delta = 0,
-//			},
-//		};
-//		struct ctlra_event_t *e = {&event};
-//		int8_t enc   = buf[11] & 0x0f;
-//		if(enc != dev->encoder_value) {
-//			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
-//			event.encoder.delta = dir;
-//			dev->encoder_value = enc;
-//			dev->base.event_func(&dev->base, 1, &e,
-//					     dev->base.event_func_userdata);
-//		}
+		int8_t enc   = buf[11] & 0x0f;
+		if(enc != dev->encoder_value) {
+			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+			dev->encoder_value = enc;
+
+            struct ctlra_event_t event = {
+                    .type = CTLRA_EVENT_ENCODER,
+                    .encoder = {
+                            .id = 0,
+                            .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+                            .delta = 0,
+                    },
+            };
+            struct ctlra_event_t *e = {&event};
+            event.encoder.delta = dir;
+			dev->base.event_func(&dev->base, 1, &e,
+					     dev->base.event_func_userdata);
+		}
 		break;
 		} /* case 42: buttons */
 	}
@@ -745,27 +746,6 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
-	/* initialize blit mem in driver */
-	memcpy(dev->screen_left.header , header_left, sizeof(dev->screen_left.header));
-	memcpy(dev->screen_left.command, command, sizeof(dev->screen_left.command));
-	memcpy(dev->screen_left.footer , footer , sizeof(dev->screen_left.footer));
-	/* right */
-	memcpy(dev->screen_right.header , header_right, sizeof(dev->screen_right.header));
-	memcpy(dev->screen_right.command, command, sizeof(dev->screen_right.command));
-	memcpy(dev->screen_right.footer , footer , sizeof(dev->screen_right.footer));
-
-	/* blit stuff to screen */
-	uint8_t col_1 = 0b00010000;
-	uint8_t col_2 = 0b11000011;
-	uint16_t col = (col_2 << 8) | col_1;
-
-	uint16_t *sl = dev->screen_left.pixels;
-	uint16_t *sr = dev->screen_right.pixels;
-
-	for(int i = 0; i < NUM_PX; i++) {
-		*sl++ = col;
-		*sr++ = col;
-	}
 	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
 
