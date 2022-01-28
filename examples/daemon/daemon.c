@@ -9,7 +9,7 @@
 
 static volatile uint32_t done;
 
-#define GRID_SIZE 16
+#define GRID_SIZE 64
 
 /* a struct to pass around as userdata to callbacks */
 struct daemon_t {
@@ -24,22 +24,21 @@ struct daemon_t {
 
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
-    return;
-//	struct daemon_t *daemon = d;
-//	if(daemon->has_grid) {
-//		for(int i = 0; i < 16; i++) {
-//			int id = daemon->info.grid_info[0].info.params[0] + i;
-//			uint32_t col = daemon->grid_col * (daemon->grid[i] > 0);
-//			ctlra_dev_light_set(dev, id, col);
-//		}
-//	}
-//
-//	/* lights for grids */
-//	for(int i = 0 ; i < 16; i++) {
-//		ctlra_dev_light_set(dev, i, 0);
-//	}
-//
-//	ctlra_dev_light_flush(dev, 0);
+	struct daemon_t *daemon = d;
+	if(daemon->has_grid) {
+		for(int i = 0; i < 16; i++) {
+			int id = daemon->info.grid_info[0].info.params[0] + i;
+			uint32_t col = daemon->grid_col * (daemon->grid[i] > 0);
+			ctlra_dev_light_set(dev, id, col);
+		}
+	}
+
+	/* lights for grids */
+	for(int i = 0 ; i < 16; i++) {
+		ctlra_dev_light_set(dev, i, 0);
+	}
+
+	ctlra_dev_light_flush(dev, 0);
 }
 
 int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
@@ -47,11 +46,11 @@ int ignored_input_cb(uint8_t nbytes, uint8_t * buffer, void *ud)
 	return 0;
 }
 
-void demo_event_func(struct ctlra_dev_t* dev, uint32_t num_events,
-                     struct ctlra_event_t** events, void *userdata)
+void demo_event_func(struct ctlra_dev_t* dev,
+                     uint32_t num_events,
+                     struct ctlra_event_t** events,
+                     void *userdata)
 {
-    printf("====================================%d", num_events);
-    printf("%d", num_events);
 	struct daemon_t *daemon = userdata;
 	struct ctlra_midi_t *midi = daemon->midi;
 	uint8_t msg[3] = {0};
@@ -112,7 +111,6 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	ctlra_midi_destroy(daemon->midi);
 	free(daemon);
 }
-
 int accept_dev_func(struct ctlra_t *ctlra,
                     const struct ctlra_dev_info_t *info,
                     struct ctlra_dev_t *dev,
@@ -120,9 +118,8 @@ int accept_dev_func(struct ctlra_t *ctlra,
 {
 	printf("daemon: accepting %s %s\n", info->vendor, info->device);
     ctlra_dev_set_event_func(dev, demo_event_func);
-    ctlra_dev_set_callback_userdata(dev, 0x0);
-//	*feedback_func = demo_feedback_func;
-//	*remove_func = remove_dev_func;
+    ctlra_dev_set_feedback_func(dev, demo_feedback_func);
+    ctlra_dev_set_remove_func(dev, remove_dev_func);
 
 	/* TODO: open MIDI output, store pointer in device */
 	struct daemon_t *daemon = calloc(1, sizeof(struct daemon_t));
@@ -147,6 +144,8 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	if(!daemon->midi)
 		goto fail;
 
+    ctlra_dev_set_callback_userdata(dev, daemon);
+
 	return 1;
 fail:
 	printf("failed to alloc/open midi backend\n");
@@ -160,9 +159,9 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-	struct ctlra_t *ctlra = ctlra_create(NULL);
-	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
-	printf("daemon: connected devices: %d\n", num_devs);
+    struct ctlra_t *ctlra = ctlra_create(NULL);
+    int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+    printf("daemon: connected devices: %d\n", num_devs);
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);

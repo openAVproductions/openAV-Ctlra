@@ -4,6 +4,9 @@
 KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1600", GROUP="plugdev" MODE="0660"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1600", GROUP="plugdev" MODE="0660"
 
+# Maschine Mikro MK3
+KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1700", GROUP="plugdev" MODE="0660"
+
 # Kontrol S2 Mk2
 KERNEL=="hidraw*", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1320", GROUP="plugdev" MODE="0660"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="17cc", ATTRS{idProduct}=="1320", GROUP="plugdev" MODE="0660"
