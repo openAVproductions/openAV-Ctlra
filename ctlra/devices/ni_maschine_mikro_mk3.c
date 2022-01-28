@@ -53,6 +53,9 @@
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
 
+#define LIGHTS_ENDPOINT       (0x80)
+#define LIGHT_PADS_ENDPOINT   (0x81)
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mikro_mk3_ctlra_t {
 	int event_id;
@@ -258,7 +261,7 @@ static struct ctlra_item_info_t encoder_info[] = {
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
 
-#define LIGHTS_SIZE (62)
+#define LIGHTS_SIZE (80)
 /* 25 + 16 bytes enough, but padding required for USB message */
 #define LIGHTS_PADS_SIZE (80)
 
@@ -677,7 +680,7 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 		return;
 
 	uint8_t *data = &dev->lights_endpoint;
-	dev->lights_endpoint = 0x80;
+	dev->lights_endpoint = LIGHTS_ENDPOINT;
 
 	/* error handling in USB subsystem */
 	ctlra_dev_impl_usb_interrupt_write(base,
@@ -687,7 +690,7 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 					   LIGHTS_SIZE + 1);
 
 	data = &dev->lights_pads_endpoint;
-	dev->lights_pads_endpoint = 0x81;
+	dev->lights_pads_endpoint = LIGHT_PADS_ENDPOINT;
 	ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
