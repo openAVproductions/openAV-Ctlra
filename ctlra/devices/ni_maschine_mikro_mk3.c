@@ -549,7 +549,7 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
 			break;
 		};
 		dev->lights_dirty = 1;
-	} else {
+	} else if (idx < BUTTONS_LIGHTS_SIZE + NPADS){
 		/* 25 strip + 16 pads */
 		uint8_t v = (hue << 2) | (bright & 0x3);
         uint8_t pad_idx = pad_idx_light_mapping[idx - BUTTONS_LIGHTS_SIZE];
