@@ -743,21 +743,21 @@ ni_maschine_mk3_usb_read_cb(struct ctlra_dev_t *base,
 		}
 
 		/* Main Encoder */
-		struct ctlra_event_t event = {
-			.type = CTLRA_EVENT_ENCODER,
-			.encoder = {
-				.id = 0,
-				.flags = CTLRA_EVENT_ENCODER_FLAG_INT,
-				.delta = 0,
-			},
-		};
-		struct ctlra_event_t *e = {&event};
 		int8_t enc   = buf[11] & 0x0f;
 		if(!dev->encoder_init) {
 			dev->encoder_value = enc;
 			dev->encoder_init = 1;
 		} else if(enc != dev->encoder_value) {
 			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+            struct ctlra_event_t event = {
+                    .type = CTLRA_EVENT_ENCODER,
+                    .encoder = {
+                            .id = 0,
+                            .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+                            .delta = 0,
+                    },
+            };
+            struct ctlra_event_t *e = {&event};
 			event.encoder.delta = dir;
 			dev->encoder_value = enc;
 			dev->base.event_func(&dev->base, 1, &e,
