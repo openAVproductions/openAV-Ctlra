@@ -552,24 +552,28 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
 	} else {
 		/* 25 strip + 16 pads */
 		uint8_t v = (hue << 2) | (bright & 0x3);
-		dev->lights.data[pad_idx_light_mapping[idx - BUTTONS_LIGHTS_SIZE]] = v;
-        dev->lights_dirty = 1;
+        uint8_t pad_idx = pad_idx_light_mapping[idx - BUTTONS_LIGHTS_SIZE];
+
+        if(dev->lights.data[pad_idx] != v) {
+            dev->lights.data[pad_idx] = v;
+            dev->lights_dirty = 1;
+        }
 	}
 }
 
 void
 ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 {
-	struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
-	if(!dev->lights_dirty && !force)
-		return;
+    struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
+    if(!dev->lights_dirty && !force)
+        return;
 
-	/* error handling in USB subsystem */
-	int ret = ctlra_dev_impl_usb_interrupt_write(base,
-					   USB_HANDLE_IDX,
-					   USB_ENDPOINT_WRITE,
-					   &dev->lights,
-					   LIGHTS_SIZE + 1);
+    /* error handling in USB subsystem */
+    int ret = ctlra_dev_impl_usb_interrupt_write(base,
+                                                 USB_HANDLE_IDX,
+                                                 USB_ENDPOINT_WRITE,
+                                                 &dev->lights,
+                                                 LIGHTS_SIZE + 1);
 
     if (ret >= 0){
         dev->lights_dirty = 0;
