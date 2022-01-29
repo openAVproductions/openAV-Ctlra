@@ -25,6 +25,7 @@ struct daemon_t {
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	struct daemon_t *daemon = d;
+
 	if(daemon->has_grid) {
 		for(int i = 0; i < 16; i++) {
 			int id = daemon->info.grid_info[0].info.params[0] + i;
@@ -34,9 +35,9 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 	}
 
 	/* lights for grids */
-	for(int i = 0 ; i < 16; i++) {
-		ctlra_dev_light_set(dev, i, 0);
-	}
+//	for(int i = 0 ; i < 16; i++) {
+//		ctlra_dev_light_set(dev, i, 0);
+//	}
 
 	ctlra_dev_light_flush(dev, 0);
 }
@@ -110,7 +111,11 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct daemon_t *daemon = userdata;
 	ctlra_midi_destroy(daemon->midi);
 	free(daemon);
+    struct ctlra_dev_info_t info;
+    ctlra_dev_get_info(dev, &info);
+    printf("daemon: removing %s %s\n", info.vendor, info.device);
 }
+
 int accept_dev_func(struct ctlra_t *ctlra,
                     const struct ctlra_dev_info_t *info,
                     struct ctlra_dev_t *dev,

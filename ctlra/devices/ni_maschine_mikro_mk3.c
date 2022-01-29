@@ -53,9 +53,6 @@
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
 
-#define LIGHTS_ENDPOINT       (0x80)
-#define LIGHT_PADS_ENDPOINT   (0x81)
-
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mikro_mk3_ctlra_t {
 	int event_id;
@@ -155,16 +152,32 @@ static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 #define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
-
+#define BUTTONS_LIGHTS_SIZE ((int)NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT)
 #define LIGHTS_SIZE (80)
-/* 25 + 16 bytes enough, but padding required for USB message */
-#define LIGHTS_PADS_SIZE (80)
 
 #define NPADS                  (16)
 /* KERNEL_LENGTH must be a power of 2 for masking */
 #define KERNEL_LENGTH          (8)
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
 
+static const uint8_t pad_idx_light_mapping[] = {
+    BUTTONS_LIGHTS_SIZE + 12,
+    BUTTONS_LIGHTS_SIZE + 13,
+    BUTTONS_LIGHTS_SIZE + 14,
+    BUTTONS_LIGHTS_SIZE + 15,
+    BUTTONS_LIGHTS_SIZE + 8,
+    BUTTONS_LIGHTS_SIZE + 9,
+    BUTTONS_LIGHTS_SIZE + 10,
+    BUTTONS_LIGHTS_SIZE + 11,
+    BUTTONS_LIGHTS_SIZE + 4,
+    BUTTONS_LIGHTS_SIZE + 5,
+    BUTTONS_LIGHTS_SIZE + 6,
+    BUTTONS_LIGHTS_SIZE + 7,
+    BUTTONS_LIGHTS_SIZE,
+    BUTTONS_LIGHTS_SIZE + 1,
+    BUTTONS_LIGHTS_SIZE + 2,
+    BUTTONS_LIGHTS_SIZE + 3
+};
 
 static const uint8_t display_header_top[] = {
     0xE0, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x02, 0x00
@@ -179,6 +192,11 @@ struct ni_screen_t {
     uint8_t pixels[256];
 };
 
+struct ni_lights_t {
+    uint8_t header;
+    uint8_t data[LIGHTS_SIZE];
+};
+
 /* Represents the the hardware device */
 struct ni_maschine_mikro_mk3_t {
 	/* base handles usb i/o etc */
@@ -187,18 +205,10 @@ struct ni_maschine_mikro_mk3_t {
 	float hw_values[CONTROLS_SIZE];
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
-	uint8_t lights_pads_dirty;
 
-	/* Lights endpoint used to transfer with hidapi */
-	uint8_t lights_endpoint;
-	uint8_t lights[LIGHTS_SIZE];
+    struct ni_lights_t lights;
 
-	uint8_t lights_pads_endpoint;
-	uint8_t lights_pads[LIGHTS_PADS_SIZE];
 	uint8_t pad_colour;
-
-	/* state of the pedal, according to the hardware */
-	uint8_t pedal;
 
 	uint8_t encoder_value, encoder_init;
 	uint16_t touchstrip_value;
@@ -324,7 +334,7 @@ ni_maschine_mikro_mk3_pads_decode_set(struct ni_maschine_mikro_mk3_t *dev,
 				     dev->base.event_func_userdata);
 
 #ifdef CTLRA_MIKRO_MK3_PADS
-		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
+//		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
 		ni_maschine_mikro_mk3_light_flush(&dev->base, 1);
 #endif
 	}
@@ -519,7 +529,7 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
 		hue = 0;
 
 	/* normal LEDs */
-	if(idx < LIGHTS_SIZE) {
+	if(idx < NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT) {
 		switch(idx) {
 		/* Sampling */
 		case 5:
@@ -530,20 +540,20 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
 		case 58: case 59: case 60: case 61:
 		{
 			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
-			dev->lights[idx] = v;
+			dev->lights.data[idx] = v;
 		} break;
 		default:
 			/* brighness 2 bits at the start of the
 			 * uint8_t for the light */
-			dev->lights[idx] = bright;
+			dev->lights.data[idx] = bright;
 			break;
 		};
 		dev->lights_dirty = 1;
 	} else {
 		/* 25 strip + 16 pads */
 		uint8_t v = (hue << 2) | (bright & 0x3);
-		dev->lights_pads[idx - LIGHTS_SIZE] = v;
-		dev->lights_pads_dirty = 1;
+		dev->lights.data[pad_idx_light_mapping[idx - BUTTONS_LIGHTS_SIZE]] = v;
+        dev->lights_dirty = 1;
 	}
 }
 
@@ -554,23 +564,16 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
 	if(!dev->lights_dirty && !force)
 		return;
 
-	uint8_t *data = &dev->lights_endpoint;
-	dev->lights_endpoint = LIGHTS_ENDPOINT;
-
 	/* error handling in USB subsystem */
-	ctlra_dev_impl_usb_interrupt_write(base,
+	int ret = ctlra_dev_impl_usb_interrupt_write(base,
 					   USB_HANDLE_IDX,
 					   USB_ENDPOINT_WRITE,
-					   data,
+					   &dev->lights,
 					   LIGHTS_SIZE + 1);
 
-	data = &dev->lights_pads_endpoint;
-	dev->lights_pads_endpoint = LIGHT_PADS_ENDPOINT;
-	ctlra_dev_impl_usb_interrupt_write(base,
-					   USB_HANDLE_IDX,
-					   USB_ENDPOINT_WRITE,
-					   data,
-					   LIGHTS_SIZE + 1);
+    if (ret >= 0){
+        dev->lights_dirty = 0;
+    }
 }
 
 
@@ -581,16 +584,16 @@ maschine_mikro_mk3_blit_to_screen(struct ni_maschine_mikro_mk3_t *dev)
     void *data_bottom = &dev->screen_bottom;
 
     int ret_top = ctlra_dev_impl_usb_bulk_write(&dev->base,
-                                            USB_HANDLE_IDX,
-                                            USB_ENDPOINT_WRITE,
-                                            data_top,
-                                            sizeof(dev->screen_top));
-
-    int ret_bottom = ctlra_dev_impl_usb_bulk_write(&dev->base,
                                                 USB_HANDLE_IDX,
                                                 USB_ENDPOINT_WRITE,
-                                                data_bottom,
-                                                sizeof(dev->screen_bottom));
+                                                data_top,
+                                                sizeof(dev->screen_top));
+
+    int ret_bottom = ctlra_dev_impl_usb_bulk_write(&dev->base,
+                                                   USB_HANDLE_IDX,
+                                                   USB_ENDPOINT_WRITE,
+                                                   data_bottom,
+                                                   sizeof(dev->screen_bottom));
 
     if(ret_top < 0 || ret_bottom < 0)
         printf("%s screen write failed!\n", __func__);
@@ -602,13 +605,18 @@ ni_maschine_mikro_mk3_disconnect(struct ctlra_dev_t *base)
 {
 	struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
 
-	memset(dev->lights, 0x0, LIGHTS_SIZE);
+	memset(dev->lights.data, 0x0, LIGHTS_SIZE);
 	dev->lights_dirty = 1;
-	memset(dev->lights_pads, 0x0, LIGHTS_PADS_SIZE);
-	dev->lights_pads_dirty = 1;
 
 	if(!base->banished) {
 		ni_maschine_mikro_mk3_light_flush(base, 1);
+
+        /* Make screen black */
+        memset(dev->screen_top.pixels, 0xff,
+               sizeof(dev->screen_top.pixels));
+        memset(dev->screen_bottom.pixels, 0xff,
+               sizeof(dev->screen_bottom.pixels));
+        maschine_mikro_mk3_blit_to_screen(dev);
 	}
 
 	ctlra_dev_impl_usb_close(base);
@@ -644,6 +652,8 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 		return 0;
 	}
 
+    dev->lights.header = 0x80;
+
     memcpy(dev->screen_top.header , display_header_top, sizeof(dev->screen_top.header));
     memcpy(dev->screen_bottom.header , display_header_bottom, sizeof(dev->screen_bottom.header));
 
@@ -670,12 +680,6 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
-
-    uint8_t ptr[256];
-
-    for(int i=0; i<sizeof(ptr); ++i){
-        ptr[i] = 0xff;
-    }
 
 	return (struct ctlra_dev_t *)dev;
 fail:
@@ -713,9 +717,9 @@ struct ctlra_dev_info_t ctlra_ni_maschine_mikro_mk3_info = {
 			.w = 138,
 			.h = 138,
 			/* start light id */
-			.params[0] = 87,
+			.params[0] = BUTTONS_LIGHTS_SIZE,
 			/* end light id */
-			.params[1] = 87 + 16,
+			.params[1] = BUTTONS_LIGHTS_SIZE + NPADS,
 		}
 	},
 
