@@ -53,11 +53,13 @@
 #define USB_ENDPOINT_READ     (0x81)
 #define USB_ENDPOINT_WRITE    (0x01)
 
+//#define DEBUG_USB_READ 1
+
 /* This struct is a generic struct to identify hw controls */
 struct ni_maschine_mikro_mk3_ctlra_t {
-	int event_id;
-	int buf_byte_offset;
-	uint32_t mask;
+    int event_id;
+    int buf_byte_offset;
+    uint32_t mask;
 };
 
 static const char *ni_maschine_mikro_mk3_control_names[] = {
@@ -152,7 +154,8 @@ static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 #define ENCODERS_SIZE (1)
 
 #define CONTROLS_SIZE (BUTTONS_SIZE + ENCODERS_SIZE)
-#define BUTTONS_LIGHTS_SIZE ((int)NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT)
+/* Its the first pad in hw index */
+#define BUTTONS_LIGHTS_SIZE ((int)NI_MASCHINE_MIKRO_MK3_LED_PAD13)
 #define LIGHTS_SIZE (80)
 
 #define NPADS                  (16)
@@ -161,22 +164,22 @@ static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 #define KERNEL_MASK            (KERNEL_LENGTH-1)
 
 static const uint8_t pad_idx_light_mapping[] = {
-    BUTTONS_LIGHTS_SIZE + 12,
-    BUTTONS_LIGHTS_SIZE + 13,
-    BUTTONS_LIGHTS_SIZE + 14,
-    BUTTONS_LIGHTS_SIZE + 15,
-    BUTTONS_LIGHTS_SIZE + 8,
-    BUTTONS_LIGHTS_SIZE + 9,
-    BUTTONS_LIGHTS_SIZE + 10,
-    BUTTONS_LIGHTS_SIZE + 11,
-    BUTTONS_LIGHTS_SIZE + 4,
-    BUTTONS_LIGHTS_SIZE + 5,
-    BUTTONS_LIGHTS_SIZE + 6,
-    BUTTONS_LIGHTS_SIZE + 7,
-    BUTTONS_LIGHTS_SIZE,
-    BUTTONS_LIGHTS_SIZE + 1,
-    BUTTONS_LIGHTS_SIZE + 2,
-    BUTTONS_LIGHTS_SIZE + 3
+    NI_MASCHINE_MIKRO_MK3_LED_PAD1,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD2,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD3,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD4,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD5,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD6,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD7,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD8,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD9,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD10,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD11,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD12,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD13,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD14,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD15,
+    NI_MASCHINE_MIKRO_MK3_LED_PAD16,
 };
 
 static const uint8_t display_header_top[] = {
@@ -207,8 +210,6 @@ struct ni_maschine_mikro_mk3_t {
 	uint8_t lights_dirty;
 
     struct ni_lights_t lights;
-
-	uint8_t pad_colour;
 
 	uint8_t encoder_value, encoder_init;
 	uint16_t touchstrip_value;
@@ -246,15 +247,6 @@ static uint32_t ni_maschine_mikro_mk3_poll(struct ctlra_dev_t *base)
 
 void
 ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force);
-
-/* ABCDEFGH Pad colour */
-static const uint8_t pad_cols[] = {
-	0x2a, 0b11101, 0b11000011, 0x5e,
-	0b11011,
-	0b1111,
-	0b1011,
-	0b101,
-};
 
 static void
 ni_maschine_mikro_mk3_pads_decode_set(struct ni_maschine_mikro_mk3_t *dev,
@@ -331,11 +323,6 @@ ni_maschine_mikro_mk3_pads_decode_set(struct ni_maschine_mikro_mk3_t *dev,
 
 		dev->base.event_func(&dev->base, 1, &e,
 				     dev->base.event_func_userdata);
-
-#ifdef CTLRA_MIKRO_MK3_PADS
-//		dev->lights_pads[25+i] = dev->pad_colour * event.grid.pressed;
-		ni_maschine_mikro_mk3_light_flush(&dev->base, 1);
-#endif
 	}
 
 	dev->pad_hit = rpt_pressed;
@@ -393,6 +380,13 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 	int32_t nbytes = size;
 
 	uint8_t *buf = data;
+
+#ifdef DEBUG_USB_READ
+    for(int i=0; i< size; i++){
+        printf("%2x ", buf[i]);
+    }
+    printf("\n");
+#endif
 
     switch(nbytes) {
         /* Return of LED state, after update written to device */
@@ -479,7 +473,6 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
                                             uint32_t light_id,
                                             uint32_t light_status) {
     struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *) base;
-    int ret;
 
     if (!dev)
         return;
@@ -488,64 +481,61 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
     if (light_id > (LIGHTS_SIZE + NPADS) - 1)
         return;
 
-    uint32_t bright;
-    uint8_t hue;
+    uint32_t bright = light_status >> 27;
 
-    /* if the input was totally zero, set the LED off */
-    if (light_status == 0) {
-        hue = 0;
-        bright = 0;
-    } else {
+    /* normal LEDs */
+	if(light_id < BUTTONS_LIGHTS_SIZE) {
+        if(dev->lights.data[light_id] != bright) {
+            dev->lights.data[light_id] = bright;
+            dev->lights_dirty = 1;
+        }
+	} else {
+        uint8_t hue;
+
         const uint8_t r = ((light_status >> 16) & 0xFF);
         const uint8_t g = ((light_status >> 8) & 0xFF);
         const uint8_t b = ((light_status >> 0) & 0xFF);
 
-        bright = light_status >> 27;
-
-        /* if equal components, then set white */
-        if(r == g && r == b) {
-            hue = 0xff;
+        /* if the input was totally zero, set the LED off */
+        if (light_status == 0) {
+            hue = 0;
+            bright = 0;
         } else {
-            uint8_t max = r > g ? r : g;
-            max = b > max ? b : max;
-            uint8_t min = r < g ? r : g;
-            min = b < min ? b : min;
-
-            /* rgb to hsv: nasty, but the device requires a H value input,
-             * so we have to calculate it here. Icky branchy divide-y... */
-            uint8_t v = max;
-            uint8_t h, s;
-            if (v == 0 || (max - min) == 0) {
-                h = 0;
-                s = 0;
+            /* if equal components, then set white */
+            if(r == g && r == b) {
+                hue = 0xff;
             } else {
-                s = 255 * (max - min) / v;
-                if (s == 0)
+                uint8_t max = r > g ? r : g;
+                max = b > max ? b : max;
+                uint8_t min = r < g ? r : g;
+                min = b < min ? b : min;
+
+                /* rgb to hsv: nasty, but the device requires a H value input,
+                 * so we have to calculate it here. Icky branchy divide-y... */
+                uint8_t v = max;
+                uint8_t h, s;
+                if (v == 0 || (max - min) == 0) {
                     h = 0;
-                if (max == r)
-                    h = 0 + 43 * (g - b) / (max - min);
-                else if (max == g)
-                    h = 85 + 43 * (b - r) / (max - min);
-                else
-                    h = 171 + 43 * (r - g) / (max - min);
+                    s = 0;
+                } else {
+                    s = 255 * (max - min) / v;
+                    if (s == 0)
+                        h = 0;
+                    if (max == r)
+                        h = 0 + 43 * (g - b) / (max - min);
+                    else if (max == g)
+                        h = 85 + 43 * (b - r) / (max - min);
+                    else
+                        h = 171 + 43 * (r - g) / (max - min);
+                }
+
+                hue = h / 16 + 1;
             }
-
-            hue = h / 16 + 1;
-        }
-    };
-
-    uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
-
-	/* normal LEDs */
-	if(light_id < NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT) {
-        if(dev->lights.data[light_id] != v) {
-            dev->lights.data[light_id] = v;
-            dev->lights_dirty = 1;
-        }
-	} else {
+        };
 		/* 25 strip + 16 pads */
         uint8_t pad_idx = pad_idx_light_mapping[light_id - BUTTONS_LIGHTS_SIZE];
 
+        uint8_t v = (hue << 2) | (bright & 0x3);
         if(dev->lights.data[pad_idx] != v) {
             dev->lights.data[pad_idx] = v;
             dev->lights_dirty = 1;
@@ -564,7 +554,7 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
     int ret = ctlra_dev_impl_usb_interrupt_write(base,
                                                  USB_HANDLE_IDX,
                                                  USB_ENDPOINT_WRITE,
-                                                 &dev->lights,
+                                                 (uint8_t *)&dev->lights,
                                                  LIGHTS_SIZE + 1);
     if (ret >= 0){
         dev->lights_dirty = 0;
@@ -662,7 +652,6 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 
     maschine_mikro_mk3_blit_to_screen(dev);
 
-	dev->pad_colour = pad_cols[0];
 	dev->lights_dirty = 1;
 
 	dev->base.info = ctlra_ni_maschine_mikro_mk3_info;
