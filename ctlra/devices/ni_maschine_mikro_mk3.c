@@ -213,7 +213,6 @@ struct ni_maschine_mikro_mk3_t {
 	uint8_t encoder_value, encoder_init;
 	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
-	uint64_t pad_last_msg_time;
 	uint16_t pad_hit;
 	uint16_t pad_idx[NPADS];
 	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
@@ -393,166 +392,159 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 	struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
 	int32_t nbytes = size;
 
-	int count = 0;
-
 	uint8_t *buf = data;
 
     switch(nbytes) {
-//	case 81: {
-//		/* Return of LED state, after update written to device */
-//		} break;
-	case 128:
-		ni_maschine_mikro_mk3_pads(dev, data);
-		break;
-	case 14: {
-        uint16_t v = buf[10] | (buf[11] << 8);
-		if(v && v != dev->touchstrip_value) {
-			struct ctlra_event_t event = {
-				.type = CTLRA_EVENT_SLIDER,
-				.slider = {
-					.id = 0,
-					.value = v / 1024.f,
-				},
-			};
-			struct ctlra_event_t *e = {&event};
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-			dev->touchstrip_value = v;
-		}
+        /* Return of LED state, after update written to device */
+        case 81: {
+//        if(!memcmp(data, &dev->lights, sizeof(dev->lights))){
+//            dev->lights_dirty = 0;
+//        }
+//
+        } break;
+        case 128:
+            ni_maschine_mikro_mk3_pads(dev, data);
+            break;
+        case 14: {
+            uint16_t v = buf[10] | (buf[11] << 8);
+            if(v && v != dev->touchstrip_value) {
+                struct ctlra_event_t event = {
+                        .type = CTLRA_EVENT_SLIDER,
+                        .slider = {
+                                .id = 0,
+                                .value = v / 1024.f,
+                        },
+                };
+                struct ctlra_event_t *e = {&event};
+                dev->base.event_func(&dev->base, 1, &e,
+                                     dev->base.event_func_userdata);
+                dev->touchstrip_value = v;
+            }
 
-		/* Buttons */
-		for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-			int id     = buttons[i].event_id;
-			int offset = buttons[i].buf_byte_offset;
-			int mask   = buttons[i].mask;
+            /* Buttons */
+            for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+                int id     = buttons[i].event_id;
+                int offset = buttons[i].buf_byte_offset;
+                int mask   = buttons[i].mask;
 
-			uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-			int value_idx = i;
+                uint16_t v = *((uint16_t *)&buf[offset]) & mask;
+                int value_idx = i;
 
-			if(dev->hw_values[value_idx] != v) {
-				dev->hw_values[value_idx] = v;
+                if(dev->hw_values[value_idx] != v) {
+                    dev->hw_values[value_idx] = v;
 
-				struct ctlra_event_t event = {
-					.type = CTLRA_EVENT_BUTTON,
-					.button  = {
-						.id = i,
-						.pressed = v > 0
-					},
-				};
-				struct ctlra_event_t *e = {&event};
-				dev->base.event_func(&dev->base, 1, &e,
-						     dev->base.event_func_userdata);
-			}
-		}
+                    struct ctlra_event_t event = {
+                            .type = CTLRA_EVENT_BUTTON,
+                            .button  = {
+                                    .id = i,
+                                    .pressed = v > 0
+                            },
+                    };
+                    struct ctlra_event_t *e = {&event};
+                    dev->base.event_func(&dev->base, 1, &e,
+                                         dev->base.event_func_userdata);
+                }
+            }
 
-		/* Main Encoder */
-		int8_t enc   = buf[7] & 0x0f;
+            /* Main Encoder */
+            int8_t enc = buf[7] & 0x0f;
 
-        /* Skip first event, it will be always send */
-        if(!dev->encoder_init) {
-            dev->encoder_value = enc;
-            dev->encoder_init = 1;
-        } else if(enc != dev->encoder_value) {
-			int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
-			dev->encoder_value = enc;
+            /* Skip first event, it will be always send */
+            if(!dev->encoder_init) {
+                dev->encoder_value = enc;
+                dev->encoder_init = 1;
+            } else if(enc != dev->encoder_value) {
+                int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+                dev->encoder_value = enc;
 
-            struct ctlra_event_t event = {
-                    .type = CTLRA_EVENT_ENCODER,
-                    .encoder = {
-                            .id = 0,
-                            .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
-                            .delta = 0,
-                    },
-            };
-            struct ctlra_event_t *e = {&event};
-            event.encoder.delta = dir;
-			dev->base.event_func(&dev->base, 1, &e,
-					     dev->base.event_func_userdata);
-		}
-		break;
-		} /* case 42: buttons */
-	}
+                struct ctlra_event_t event = {
+                        .type = CTLRA_EVENT_ENCODER,
+                        .encoder = {
+                                .id = 0,
+                                .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+                                .delta = 0,
+                        },
+                };
+                struct ctlra_event_t *e = {&event};
+                event.encoder.delta = dir;
+                dev->base.event_func(&dev->base, 1, &e,
+                                     dev->base.event_func_userdata);
+            }
+            break;
+        } /* case 42: buttons */
+    }
 }
 
 static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
-                uint32_t light_id,
-                uint32_t light_status)
-{
-	struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
-	int ret;
+                                            uint32_t light_id,
+                                            uint32_t light_status) {
+    struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *) base;
+    int ret;
 
-	if(!dev)
-		return;
+    if (!dev)
+        return;
 
-	// TODO: debug the -1, why is it required to get the right size?
-	if(light_id > (LIGHTS_SIZE + 25 + 16) - 1)
-		return;
+    // TODO: debug the -1, why is it required to get the right size?
+    if (light_id > (LIGHTS_SIZE + NPADS) - 1)
+        return;
 
-	int idx = light_id;
-	const uint8_t r = ((light_status >> 16) & 0xFF);
-	const uint8_t g = ((light_status >>  8) & 0xFF);
-	const uint8_t b = ((light_status >>  0) & 0xFF);
+    uint32_t bright;
+    uint8_t hue;
 
-	uint8_t max = r > g ? r : g;
-	max = b > max ? b : max;
-	uint8_t min = r < g ? r : g;
-	min = b < min ? b : min;
+    /* if the input was totally zero, set the LED off */
+    if (light_status == 0) {
+        hue = 0;
+        bright = 0;
+    } else {
+        const uint8_t r = ((light_status >> 16) & 0xFF);
+        const uint8_t g = ((light_status >> 8) & 0xFF);
+        const uint8_t b = ((light_status >> 0) & 0xFF);
 
-	/* rgb to hsv: nasty, but the device requires a H value input,
-	 * so we have to calculate it here. Icky branchy divide-y... */
-	uint8_t v = max;
-	uint8_t h, s;
-	if (v == 0 || (max - min) == 0) {
-		h = 0;
-		s = 0;
-	} else {
-		s = 255 * (max - min) / v;
-		if (s == 0)
-			h = 0;
-		if (max == r)
-			h = 0 + 43 * (g - b) / (max - min);
-		else if (max == g)
-			h = 85 + 43 * (b - r) / (max - min);
-		else
-			h = 171 + 43 * (r - g) / (max - min);
-	}
+        bright = light_status >> 27;
 
-	uint32_t bright = light_status >> 27;
-	uint8_t hue = h / 16 + 1;
+        /* if equal components, then set white */
+        if(r == g && r == b) {
+            hue = 0xff;
+        } else {
+            uint8_t max = r > g ? r : g;
+            max = b > max ? b : max;
+            uint8_t min = r < g ? r : g;
+            min = b < min ? b : min;
 
-	/* if equal components, then set white */
-	if(r == g && r == b)
-		hue = 0xff;
+            /* rgb to hsv: nasty, but the device requires a H value input,
+             * so we have to calculate it here. Icky branchy divide-y... */
+            uint8_t v = max;
+            uint8_t h, s;
+            if (v == 0 || (max - min) == 0) {
+                h = 0;
+                s = 0;
+            } else {
+                s = 255 * (max - min) / v;
+                if (s == 0)
+                    h = 0;
+                if (max == r)
+                    h = 0 + 43 * (g - b) / (max - min);
+                else if (max == g)
+                    h = 85 + 43 * (b - r) / (max - min);
+                else
+                    h = 171 + 43 * (r - g) / (max - min);
+            }
 
-	/* if the input was totally zero, set the LED off */
-	if(light_status == 0)
-		hue = 0;
+            hue = h / 16 + 1;
+        }
+    };
+
+    uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
 
 	/* normal LEDs */
-	if(idx < NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT) {
-		switch(idx) {
-		/* Sampling */
-		case 5:
-		/* ABCDEFGH */
-		case 29: case 30: case 31: case 32:
-		case 33: case 34: case 35: case 36:
-		/* Encoder up, left, right, down */
-		case 58: case 59: case 60: case 61:
-		{
-			uint8_t v = (hue << 2) | ((bright >> 2) & 0x3);
-			dev->lights.data[idx] = v;
-		} break;
-		default:
-			/* brighness 2 bits at the start of the
-			 * uint8_t for the light */
-			dev->lights.data[idx] = bright;
-			break;
-		};
-		dev->lights_dirty = 1;
-	} else if (idx < BUTTONS_LIGHTS_SIZE + NPADS){
+	if(light_id < NI_MASCHINE_MIKRO_MK3_BUTTONS_LED_COUNT) {
+        if(dev->lights.data[light_id] != v) {
+            dev->lights.data[light_id] = v;
+            dev->lights_dirty = 1;
+        }
+	} else {
 		/* 25 strip + 16 pads */
-		uint8_t v = (hue << 2) | (bright & 0x3);
-        uint8_t pad_idx = pad_idx_light_mapping[idx - BUTTONS_LIGHTS_SIZE];
+        uint8_t pad_idx = pad_idx_light_mapping[light_id - BUTTONS_LIGHTS_SIZE];
 
         if(dev->lights.data[pad_idx] != v) {
             dev->lights.data[pad_idx] = v;
@@ -574,7 +566,6 @@ ni_maschine_mikro_mk3_light_flush(struct ctlra_dev_t *base, uint32_t force)
                                                  USB_ENDPOINT_WRITE,
                                                  &dev->lights,
                                                  LIGHTS_SIZE + 1);
-
     if (ret >= 0){
         dev->lights_dirty = 0;
     }
