@@ -1,5 +1,4 @@
-Ctlra - A C Library for Controller Support
-==========================================
+# Ctlra - A C Library for Controller Support
 
 Ctlra is a plain C library that supports easily programming with
 hardware controllers like USB HID devices. Recently controllers have
@@ -17,8 +16,7 @@ This library may be of interest if you are writing music, video or other
 media software. Or if you just want to hack controller support into your
 web-browser because you can...
 
-Usage
------
+## Usage
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/676339a2937046f28fdcd5697c1259c1)](https://www.codacy.com/app/harryhaaren/openAV-Ctlra?utm_source=github.com&utm_medium=referral&utm_content=openAVproductions/openAV-Ctlra&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/openAVproductions/openAV-Ctlra.svg?branch=master)](https://travis-ci.org/openAVproductions/openAV-Ctlra)
@@ -29,7 +27,7 @@ Download the source-code, compile using [Meson](http://mesonbuild.com/) and [Nin
 meson build
 cd build
 ninja
-./simple
+./examples/ctlra_simple
 ```
 
 Your application can now statically link against this library. Providing
@@ -38,8 +36,22 @@ without recompilation of the application are long-term goals, which can be
 discussed when the initial API has been reviewed and used in a few serious
 applications.
 
-Supported Devices
------------------
+### Midi daemon examples
+
+It can send midi messaged, using supported controller.
+
+In root directory:
+
+```
+meson build -D midi=true -D examples=simple,daemon --reconfigure || meson build -D midi=true -D examples=simple,daemon
+cd build
+ninja
+./examples/ctlra_daemon
+```
+
+And connect your controller. You should see midi ports, for example in jack patchbay.
+
+## Supported Devices
 
 This library currently supports the following devices:
 
@@ -60,15 +72,13 @@ These devices include:
 - Generic OSC
 - Arduino Serial
 
-Device Manufacturers
---------------------
+## Device Manufacturers
 
 If you are or represent a manufacturer of a device, and wish to have your
 device supported by Ctlra, please contact OpenAV for information on how to
 best upstream support for your device to Ctlra.
 
-Contact
--------
+## Contact
 
 Harry van Haaren <harryhaaren@gmail.com>
 OpenAV Productions http://openavproductions.com
