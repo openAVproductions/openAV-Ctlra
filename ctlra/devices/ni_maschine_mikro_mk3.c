@@ -391,10 +391,9 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
     switch(nbytes) {
         /* Return of LED state, after update written to device */
         case 81: {
-//        if(!memcmp(data, &dev->lights, sizeof(dev->lights))){
-//            dev->lights_dirty = 0;
-//        }
-//
+            if(memcmp(data, &dev->lights, sizeof(dev->lights)) != 0){
+                dev->lights_dirty = 1;
+            }
         } break;
         case 128:
             ni_maschine_mikro_mk3_pads(dev, data);
@@ -664,6 +663,12 @@ ctlra_ni_maschine_mikro_mk3_connect(ctlra_event_func event_func,
 
 	dev->base.event_func = event_func;
 	dev->base.event_func_userdata = userdata;
+
+    for(int i = 0; i < 16; i++) {
+        int id = pad_idx_light_mapping[i];
+        uint32_t col = 0x0;
+        dev->base.light_set(&dev->base, id, col);
+    }
 
 	return (struct ctlra_dev_t *)dev;
 fail:
