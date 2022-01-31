@@ -371,15 +371,85 @@ ni_maschine_mikro_mk3_pads(struct ni_maschine_mikro_mk3_t *dev,
 	ni_maschine_mikro_mk3_pads_decode_set(dev, &buf[64], 1);
 };
 
+void ni_maschine_mikro_mk3_decode_button(struct ni_maschine_mikro_mk3_t *dev,
+        uint8_t *data) {
+    uint8_t *buf = data;
+
+    uint16_t v = buf[10] | (buf[11] << 8);
+    if (v && v != dev->touchstrip_value) {
+        struct ctlra_event_t event = {
+                .type = CTLRA_EVENT_SLIDER,
+                .slider = {
+                        .id = 0,
+                        .value = v / 1024.f,
+                },
+        };
+        struct ctlra_event_t *e = {&event};
+        dev->base.event_func(&dev->base, 1, &e,
+                             dev->base.event_func_userdata);
+        dev->touchstrip_value = v;
+    }
+
+    /* Buttons */
+    for (uint32_t i = 0; i < BUTTONS_SIZE; i++) {
+        int id = buttons[i].event_id;
+        int offset = buttons[i].buf_byte_offset;
+        int mask = buttons[i].mask;
+
+        uint16_t v = *((uint16_t *) &buf[offset]) & mask;
+        int value_idx = i;
+
+        if (dev->hw_values[value_idx] != v) {
+            dev->hw_values[value_idx] = v;
+
+            struct ctlra_event_t event = {
+                    .type = CTLRA_EVENT_BUTTON,
+                    .button  = {
+                            .id = i,
+                            .pressed = v > 0
+                    },
+            };
+            struct ctlra_event_t *e = {&event};
+            dev->base.event_func(&dev->base, 1, &e,
+                                 dev->base.event_func_userdata);
+        }
+    }
+
+    /* Main Encoder */
+    int8_t enc = buf[7] & 0x0f;
+
+    /* Skip first event, it will be always send */
+    if (!dev->encoder_init) {
+        dev->encoder_value = enc;
+        dev->encoder_init = 1;
+    } else if (enc != dev->encoder_value) {
+        int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
+        dev->encoder_value = enc;
+
+        struct ctlra_event_t event = {
+                .type = CTLRA_EVENT_ENCODER,
+                .encoder = {
+                        .id = 0,
+                        .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
+                        .delta = 0,
+                },
+        };
+        struct ctlra_event_t *e = {&event};
+        event.encoder.delta = dir;
+        dev->base.event_func(&dev->base, 1, &e,
+                             dev->base.event_func_userdata);
+    }
+}
+
 void
 ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
-				  uint32_t endpoint, uint8_t *data,
-				  uint32_t size)
+                                  uint32_t endpoint, uint8_t *data,
+                                  uint32_t size)
 {
-	struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
-	int32_t nbytes = size;
+    struct ni_maschine_mikro_mk3_t *dev = (struct ni_maschine_mikro_mk3_t *)base;
+    int32_t nbytes = size;
 
-	uint8_t *buf = data;
+    uint8_t *buf = data;
 
 #ifdef DEBUG_USB_READ
     for(int i=0; i< size; i++){
@@ -389,7 +459,12 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
 #endif
 
     switch(nbytes) {
-        /* Return of LED state, after update written to device */
+        /* Looks like after pressing pads, sometimes this message is being sent, it contains single 64 byte message for pad and 14 byte message for buttons */
+        case 78: {
+            ni_maschine_mikro_mk3_decode_button(dev, buf + 64);
+            ni_maschine_mikro_mk3_pads_decode_set(dev, &buf[0], 0);
+        }
+            /* Return of LED state, after update written to device */
         case 81: {
             if(memcmp(data, &dev->lights, sizeof(dev->lights)) != 0){
                 dev->lights_dirty = 1;
@@ -398,73 +473,9 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
         case 128:
             ni_maschine_mikro_mk3_pads(dev, data);
             break;
-        case 14: {
-            uint16_t v = buf[10] | (buf[11] << 8);
-            if(v && v != dev->touchstrip_value) {
-                struct ctlra_event_t event = {
-                        .type = CTLRA_EVENT_SLIDER,
-                        .slider = {
-                                .id = 0,
-                                .value = v / 1024.f,
-                        },
-                };
-                struct ctlra_event_t *e = {&event};
-                dev->base.event_func(&dev->base, 1, &e,
-                                     dev->base.event_func_userdata);
-                dev->touchstrip_value = v;
-            }
-
-            /* Buttons */
-            for(uint32_t i = 0; i < BUTTONS_SIZE; i++) {
-                int id     = buttons[i].event_id;
-                int offset = buttons[i].buf_byte_offset;
-                int mask   = buttons[i].mask;
-
-                uint16_t v = *((uint16_t *)&buf[offset]) & mask;
-                int value_idx = i;
-
-                if(dev->hw_values[value_idx] != v) {
-                    dev->hw_values[value_idx] = v;
-
-                    struct ctlra_event_t event = {
-                            .type = CTLRA_EVENT_BUTTON,
-                            .button  = {
-                                    .id = i,
-                                    .pressed = v > 0
-                            },
-                    };
-                    struct ctlra_event_t *e = {&event};
-                    dev->base.event_func(&dev->base, 1, &e,
-                                         dev->base.event_func_userdata);
-                }
-            }
-
-            /* Main Encoder */
-            int8_t enc = buf[7] & 0x0f;
-
-            /* Skip first event, it will be always send */
-            if(!dev->encoder_init) {
-                dev->encoder_value = enc;
-                dev->encoder_init = 1;
-            } else if(enc != dev->encoder_value) {
-                int dir = ctlra_dev_encoder_wrap_16(enc, dev->encoder_value);
-                dev->encoder_value = enc;
-
-                struct ctlra_event_t event = {
-                        .type = CTLRA_EVENT_ENCODER,
-                        .encoder = {
-                                .id = 0,
-                                .flags = CTLRA_EVENT_ENCODER_FLAG_INT,
-                                .delta = 0,
-                        },
-                };
-                struct ctlra_event_t *e = {&event};
-                event.encoder.delta = dir;
-                dev->base.event_func(&dev->base, 1, &e,
-                                     dev->base.event_func_userdata);
-            }
+        case 14:
+            ni_maschine_mikro_mk3_decode_button(dev, buf);
             break;
-        } /* case 42: buttons */
     }
 }
 
