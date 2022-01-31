@@ -476,8 +476,7 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
     if (!dev)
         return;
 
-    // TODO: debug the -1, why is it required to get the right size?
-    if (light_id > (LIGHTS_SIZE + NPADS) - 1)
+    if(light_id > sizeof(dev->lights.data))
         return;
 
     uint32_t bright = light_status >> 27;
@@ -488,6 +487,7 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
             dev->lights.data[light_id] = bright;
             dev->lights_dirty = 1;
         }
+    /* 25 strip + 16 pads */
 	} else {
         uint8_t hue;
 
@@ -531,7 +531,6 @@ static void ni_maschine_mikro_mk3_light_set(struct ctlra_dev_t *base,
                 hue = h / 16 + 1;
             }
         };
-		/* 25 strip + 16 pads */
         uint8_t pad_idx = pad_idx_light_mapping[light_id - BUTTONS_LIGHTS_SIZE];
 
         uint8_t v = (hue << 2) | (bright & 0x3);
