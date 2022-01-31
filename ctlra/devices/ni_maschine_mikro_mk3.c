@@ -381,7 +381,7 @@ void ni_maschine_mikro_mk3_decode_button(struct ni_maschine_mikro_mk3_t *dev,
                 .type = CTLRA_EVENT_SLIDER,
                 .slider = {
                         .id = 0,
-                        .value = v / 1024.f,
+                        .value = v / 200.f,
                 },
         };
         struct ctlra_event_t *e = {&event};
