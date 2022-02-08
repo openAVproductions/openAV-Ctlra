@@ -463,7 +463,7 @@ ni_maschine_mikro_mk3_usb_read_cb(struct ctlra_dev_t *base,
         case 78: {
             ni_maschine_mikro_mk3_decode_button(dev, buf + 64);
             ni_maschine_mikro_mk3_pads_decode_set(dev, &buf[0], 0);
-        }
+        } break;
             /* Return of LED state, after update written to device */
         case 81: {
             if(memcmp(data, &dev->lights, sizeof(dev->lights)) != 0){
