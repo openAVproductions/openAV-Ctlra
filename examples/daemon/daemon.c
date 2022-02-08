@@ -25,7 +25,6 @@ struct daemon_t {
 void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 {
 	struct daemon_t *daemon = d;
-
 	if(daemon->has_grid) {
 		for(int i = 0; i < 16; i++) {
 			int id = daemon->info.grid_info[0].info.params[0] + i;
@@ -35,9 +34,9 @@ void demo_feedback_func(struct ctlra_dev_t *dev, void *d)
 	}
 
 	/* lights for grids */
-//	for(int i = 0 ; i < 16; i++) {
-//		ctlra_dev_light_set(dev, i, 0);
-//	}
+	for(int i = 0 ; i < 16; i++) {
+		ctlra_dev_light_set(dev, i, 0);
+	}
 
 	ctlra_dev_light_flush(dev, 0);
 }
@@ -56,7 +55,7 @@ void demo_event_func(struct ctlra_dev_t* dev,
 	struct ctlra_midi_t *midi = daemon->midi;
 	uint8_t msg[3] = {0};
 
-    for(uint32_t i = 0; i < num_events; i++) {
+	for(uint32_t i = 0; i < num_events; i++) {
 		struct ctlra_event_t *e = events[i];
 		int ret;
 		switch(e->type) {
@@ -111,20 +110,19 @@ void remove_dev_func(struct ctlra_dev_t *dev, int unexpected_removal,
 	struct daemon_t *daemon = userdata;
 	ctlra_midi_destroy(daemon->midi);
 	free(daemon);
-    struct ctlra_dev_info_t info;
-    ctlra_dev_get_info(dev, &info);
-    printf("daemon: removing %s %s\n", info.vendor, info.device);
 }
 
-int accept_dev_func(struct ctlra_t *ctlra,
-                    const struct ctlra_dev_info_t *info,
-                    struct ctlra_dev_t *dev,
+int accept_dev_func(const struct ctlra_dev_info_t *info,
+                    ctlra_event_func *event_func,
+                    ctlra_feedback_func *feedback_func,
+                    ctlra_remove_dev_func *remove_func,
+                    void **userdata_for_event_func,
                     void *userdata)
 {
 	printf("daemon: accepting %s %s\n", info->vendor, info->device);
-    ctlra_dev_set_event_func(dev, demo_event_func);
-    ctlra_dev_set_feedback_func(dev, demo_feedback_func);
-    ctlra_dev_set_remove_func(dev, remove_dev_func);
+	*event_func = demo_event_func;
+	*feedback_func = demo_feedback_func;
+	*remove_func = remove_dev_func;
 
 	/* TODO: open MIDI output, store pointer in device */
 	struct daemon_t *daemon = calloc(1, sizeof(struct daemon_t));
@@ -149,7 +147,7 @@ int accept_dev_func(struct ctlra_t *ctlra,
 	if(!daemon->midi)
 		goto fail;
 
-    ctlra_dev_set_callback_userdata(dev, daemon);
+	*userdata_for_event_func = daemon;
 
 	return 1;
 fail:
@@ -164,9 +162,9 @@ int main()
 {
 	signal(SIGINT, sighndlr);
 
-    struct ctlra_t *ctlra = ctlra_create(NULL);
-    int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
-    printf("daemon: connected devices: %d\n", num_devs);
+	struct ctlra_t *ctlra = ctlra_create(NULL);
+	int num_devs = ctlra_probe(ctlra, accept_dev_func, 0x0);
+	printf("daemon: connected devices: %d\n", num_devs);
 
 	while(!done) {
 		ctlra_idle_iter(ctlra);
