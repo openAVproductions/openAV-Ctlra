@@ -106,7 +106,7 @@ struct ctlra_create_opts_t {
 	uint8_t screen_redraw_target_fps;
 
 	/* reserve lots of space */
-	uint8_t padding[62];
+	uint8_t padding[61];
 };
 
 /** Get the human readable name for *control_id* from *dev*. The
