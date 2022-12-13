@@ -43,6 +43,7 @@ if get_option('midi')
     required_libs += ['alsa']
   endif
 else
+  warning('midi dep not found, disabling!!')
   midi_dep = disabler()
 endif
 

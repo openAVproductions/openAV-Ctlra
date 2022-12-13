@@ -8,6 +8,7 @@ fluidsynth_dep = dependency('fluidsynth', required: false)
 
 
 foreach name: get_option('examples').split(',')
+  message('in example' + name)
   example_src = []
   dependencies = []
   link_args = []
