@@ -177,14 +177,12 @@ void daemon_feedback_func(struct ctlra_dev_t *dev, void *d)
 	  if(daemon->slider_count && (daemon->feedback_items&FB_CONTROLS)) {
 	    // The touchstrip has 25 LEDs, scale the controller value
 	    // accordingly.
-	    int val = daemon->ctl[daemon->encoder_count]/5;
+	    int val= daemon->ctl[daemon->encoder_count];
 	    int col = daemon->ctl_col[daemon->encoder_count];
 	    for (int i = 0; i < 25; i++) {
 	      int id = 62+i;
-	      if (i < val)
-		ctlra_dev_light_set(dev, id, col);
-	      else
-		ctlra_dev_light_set(dev, id, 0);
+				int c = (i < val) ? col : 0;
+				ctlra_dev_light_set(dev, id, c);
 	    }
 	  }
 	}
