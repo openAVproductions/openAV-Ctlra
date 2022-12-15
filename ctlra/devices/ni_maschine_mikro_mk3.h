@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, OpenAV Productions,
  * Harry van Haaren <harryhaaren@gmail.com>
+ * Michał Ciemięga <zewelor@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

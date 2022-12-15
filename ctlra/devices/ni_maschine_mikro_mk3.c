@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017, OpenAV Productions,
  * Harry van Haaren <harryhaaren@gmail.com>
+ * Michał Ciemięga <zewelor@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,82 +72,82 @@ static const char *ni_maschine_mikro_mk3_control_names[] = {
 	"Tempo",
 	"Plug-in",
 	"Sampling",
-    "Left Arrow",
-    "Right Arrow",
-    "Pitch",
-    "Mod",
-    "Perform",
-    "Notes",
-    "Group",
-    "Auto",
-    "Lock",
-    "Note Repeat",
-    "Restart",
-    "Erase",
-    "Tap",
-    "Follow",
-    "Play",
-    "Rec",
-    "Stop",
-    "Shift",
-    "Fixed Vel.",
-    "Pad Mode",
-    "Keyboard",
-    "Chords",
-    "Step",
-    "Scene",
-    "Pattern",
-    "Events",
-    "Variations",
-    "Duplicate",
-    "Select",
-    "Solo",
-    "Mute",
+	"Left Arrow",
+	"Right Arrow",
+	"Pitch",
+	"Mod",
+	"Perform",
+	"Notes",
+	"Group",
+	"Auto",
+	"Lock",
+	"Note Repeat",
+	"Restart",
+	"Erase",
+	"Tap",
+	"Follow",
+	"Play",
+	"Rec",
+	"Stop",
+	"Shift",
+	"Fixed Vel.",
+	"Pad Mode",
+	"Keyboard",
+	"Chords",
+	"Step",
+	"Scene",
+	"Pattern",
+	"Events",
+	"Variations",
+	"Duplicate",
+	"Select",
+	"Solo",
+	"Mute",
 };
 #define CONTROL_NAMES_SIZE (sizeof(ni_maschine_mikro_mk3_control_names) /\
 			    sizeof(ni_maschine_mikro_mk3_control_names[0]))
 
 static const struct ni_maschine_mikro_mk3_ctlra_t buttons[] = {
 	/* encoder */
-	{NI_MASCHINE_MIKRO_MK3_BTN_NATIVE_INSTRUMENTS,  1, 0x01},
-	{NI_MASCHINE_MIKRO_MK3_BTN_STAR,                1, 0x02},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SEARCH,              1, 0x04},
-	{NI_MASCHINE_MIKRO_MK3_BTN_VOLUME,              1, 0x08},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SWING,               1, 0x10},
-	{NI_MASCHINE_MIKRO_MK3_BTN_TEMPO,               1, 0x20},
-	{NI_MASCHINE_MIKRO_MK3_BTN_PLUG_IN,             1, 0x40},
-	{NI_MASCHINE_MIKRO_MK3_BTN_SAMPLING,            1, 0x80},
-    {NI_MASCHINE_MIKRO_MK3_BTN_LEFT_ARROW,          2, 0x01},
-    {NI_MASCHINE_MIKRO_MK3_BTN_RIGHT_ARROW,         2, 0x02},
-    {NI_MASCHINE_MIKRO_MK3_BTN_PITCH,               2, 0x04},
-    {NI_MASCHINE_MIKRO_MK3_BTN_MOD,                 2, 0x08},
-    {NI_MASCHINE_MIKRO_MK3_BTN_PERFORM,             2, 0x10},
-    {NI_MASCHINE_MIKRO_MK3_BTN_NOTES,               2, 0x20},
-    {NI_MASCHINE_MIKRO_MK3_BTN_GROUP,               2, 0x40},
-    {NI_MASCHINE_MIKRO_MK3_BTN_AUTO,                2, 0x80},
-    {NI_MASCHINE_MIKRO_MK3_BTN_LOCK,                3, 0x01},
-    {NI_MASCHINE_MIKRO_MK3_BTN_NOTE_REPEAT,         3, 0x02},
-    {NI_MASCHINE_MIKRO_MK3_BTN_RESTART,             3, 0x04},
-    {NI_MASCHINE_MIKRO_MK3_BTN_ERASE,               3, 0x08},
-    {NI_MASCHINE_MIKRO_MK3_BTN_TAP,                 3, 0x10},
-    {NI_MASCHINE_MIKRO_MK3_BTN_FOLLOW,              3, 0x20},
-    {NI_MASCHINE_MIKRO_MK3_BTN_PLAY,                3, 0x40},
-    {NI_MASCHINE_MIKRO_MK3_BTN_RECORD,              3, 0x80},
-    {NI_MASCHINE_MIKRO_MK3_BTN_STOP,                4, 0x01},
-    {NI_MASCHINE_MIKRO_MK3_BTN_SHIFT,               4, 0x02},
-    {NI_MASCHINE_MIKRO_MK3_BTN_FIXED_VEL,           4, 0x04},
-    {NI_MASCHINE_MIKRO_MK3_BTN_PAD_MODE,            4, 0x08},
-    {NI_MASCHINE_MIKRO_MK3_BTN_KEYBOARD,            4, 0x10},
-    {NI_MASCHINE_MIKRO_MK3_BTN_CHORDS,              4, 0x20},
-    {NI_MASCHINE_MIKRO_MK3_BTN_STEP,                4, 0x40},
-    {NI_MASCHINE_MIKRO_MK3_BTN_SCENE,               4, 0x80},
-    {NI_MASCHINE_MIKRO_MK3_BTN_PATTERN,             5, 0x01},
-    {NI_MASCHINE_MIKRO_MK3_BTN_EVENTS,              5, 0x02},
-    {NI_MASCHINE_MIKRO_MK3_BTN_VARIATION,           5, 0x04},
-    {NI_MASCHINE_MIKRO_MK3_BTN_DUPLICATE,           5, 0x08},
-    {NI_MASCHINE_MIKRO_MK3_BTN_SELECT,              5, 0x10},
-    {NI_MASCHINE_MIKRO_MK3_BTN_SOLO,                5, 0x20},
-    {NI_MASCHINE_MIKRO_MK3_BTN_MUTE,                5, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_NATIVE_INSTRUMENTS, 1, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_STAR, 1, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SEARCH, 1, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_VOLUME, 1, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SWING, 1, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_TEMPO, 1, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PLUG_IN, 1, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SAMPLING, 1, 0x80},
+	{NI_MASCHINE_MIKRO_MK3_BTN_LEFT_ARROW, 2, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_RIGHT_ARROW, 2, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PITCH, 2, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_MOD, 2, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PERFORM, 2, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_NOTES, 2, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_GROUP, 2, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_AUTO, 2, 0x80},
+	{NI_MASCHINE_MIKRO_MK3_BTN_LOCK, 3, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_NOTE_REPEAT, 3, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_RESTART, 3, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_ERASE, 3, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_TAP, 3, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_FOLLOW, 3, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PLAY, 3, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_RECORD, 3, 0x80},
+	{NI_MASCHINE_MIKRO_MK3_BTN_STOP, 4, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SHIFT, 4, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_FIXED_VEL, 4, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PAD_MODE, 4, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_KEYBOARD, 4, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_CHORDS, 4, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_STEP, 4, 0x40},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SCENE, 4, 0x80},
+	{NI_MASCHINE_MIKRO_MK3_BTN_PATTERN, 5, 0x01},
+	{NI_MASCHINE_MIKRO_MK3_BTN_EVENTS, 5, 0x02},
+	{NI_MASCHINE_MIKRO_MK3_BTN_VARIATION, 5, 0x04},
+	{NI_MASCHINE_MIKRO_MK3_BTN_DUPLICATE, 5, 0x08},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SELECT, 5, 0x10},
+	{NI_MASCHINE_MIKRO_MK3_BTN_SOLO, 5, 0x20},
+	{NI_MASCHINE_MIKRO_MK3_BTN_MUTE, 5, 0x40},
 };
 #define BUTTONS_SIZE (sizeof(buttons) / sizeof(buttons[0]))
 
@@ -201,7 +202,8 @@ struct ni_lights_t {
 };
 
 /* Represents the the hardware device */
-struct ni_maschine_mikro_mk3_t {
+struct ni_maschine_mikro_mk3_t
+{
 	/* base handles usb i/o etc */
 	struct ctlra_dev_t base;
 	/* current value of each controller is stored here */
@@ -209,17 +211,17 @@ struct ni_maschine_mikro_mk3_t {
 	/* current state of the lights, only flush on dirty */
 	uint8_t lights_dirty;
 
-    struct ni_lights_t lights;
+	struct ni_lights_t lights;
 
 	uint8_t encoder_value, encoder_init;
 	uint16_t touchstrip_value;
 	/* Pressure filtering for note-onset detection */
 	uint16_t pad_hit;
 	uint16_t pad_idx[NPADS];
-	uint16_t pad_pressures[NPADS*KERNEL_LENGTH];
+	uint16_t pad_pressures[NPADS * KERNEL_LENGTH];
 
-    struct ni_screen_t screen_top;
-    struct ni_screen_t screen_bottom;
+	struct ni_screen_t screen_top;
+	struct ni_screen_t screen_bottom;
 };
 
 static const char *
