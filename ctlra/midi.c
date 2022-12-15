@@ -16,9 +16,6 @@ struct ctlra_midi_t {
 	void *input_cb_ud;
 };
 
-// Maximum size of (sysex) message we expect to deal with on input.
-#define MAX_MSG_SIZE 1024
-
 /* Create a single input and single output port for communicating with
  * MIDI controllers */
 struct ctlra_midi_t *ctlra_midi_open(const char *name,
@@ -77,10 +74,9 @@ struct ctlra_midi_t *ctlra_midi_open(const char *name,
 		printf("%s: error creating encoder\n", __func__);
 	snd_midi_event_no_status(m->encoder, 1);
 
-	res = snd_midi_event_new(MAX_MSG_SIZE, &m->decoder);
+	res = snd_midi_event_new(32, &m->decoder);
 	if (res < 0)
 		printf("%s: error creating decoder\n", __func__);
-	snd_midi_event_no_status(m->decoder, 1);
 	snd_midi_event_init(m->decoder);
 
 	/* Keep callback / ud */
@@ -125,35 +121,30 @@ int ctlra_midi_input_poll(struct ctlra_midi_t *s)
 {
 	int res;
 	int nbytes;
-	uint8_t buffer[MAX_MSG_SIZE];
+	uint8_t buffer[3];
 	snd_seq_event_t *seq_ev;
 
 	int input_pending = 1;
 
-	while (input_pending > 0) {
+	while (input_pending) {
 		res = snd_seq_event_input(s->seq, &seq_ev);
 		if(res < 0)
 			return 0;
 
-		if (seq_ev->type == SND_SEQ_EVENT_SYSEX && seq_ev->data.ext.len > MAX_MSG_SIZE) {
-			// message too big, just skip it
+		input_pending = snd_seq_event_input_pending(s->seq, 1);
+		if (input_pending < 0) {
 			snd_seq_free_event(seq_ev);
-			continue;
+			return 0;
 		}
 
-		nbytes = snd_midi_event_decode(s->decoder, buffer, MAX_MSG_SIZE, seq_ev);
-		if (nbytes <= 0) {
-			// reinitialize the decoder, to be on the safe side
-			snd_midi_event_init(s->decoder);
-			snd_seq_free_event(seq_ev);
+		nbytes= snd_midi_event_decode(s->encoder, buffer, 3, seq_ev);
+		if (nbytes < 0) {
 			continue;
 		}
 
 		s->input_cb(nbytes, buffer, s->input_cb_ud);
 
 		snd_seq_free_event(seq_ev);
-
-		input_pending = snd_seq_event_input_pending(s->seq, 1);
 	}
 
 	return 0;
