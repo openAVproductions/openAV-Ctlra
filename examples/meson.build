@@ -5,6 +5,7 @@ m_dep = cc.find_library('m', required : false)
 jack_dep = dependency('jack', required: false)
 sndfile_dep    = dependency('sndfile', required: false)
 fluidsynth_dep = dependency('fluidsynth', required: false)
+opencv_dep     = dependency('opencv4', required: false)
 
 
 foreach name: get_option('examples').split(',')

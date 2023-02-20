@@ -8,7 +8,8 @@ devices_src = files('3dconnexion.c',
                     'ni_maschine_jam.c',
                     'ni_maschine_mk3.c',
                     'ni_maschine_mikro_mk3.c',
-                    'ni_maschine_mikro_mk2.c')
+                    'ni_maschine_mikro_mk2.c',
+                    'ni_kontrol_s4_mk3.c')
 
 if get_option('midi')
   devices_src += files('midi_generic.c')
